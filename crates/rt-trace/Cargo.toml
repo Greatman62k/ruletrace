@@ -1,0 +1,19 @@
+[package]
+name = "rt-trace"
+description = "Outcome, Decision_Trace, three-valued Tri and replay (class core)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rt-foundation = { path = "../rt-foundation" }
+rt-numeric = { path = "../rt-numeric" }
+rt-json = { path = "../rt-json" }
+
+[dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }
