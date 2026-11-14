@@ -12,7 +12,7 @@ use super::commit_tests::{
     adoption_fs, approve, clean_run, decide_args, fixture, journal_after_crash, position, probe,
     Fixture,
 };
-use super::fault_tests::{FaultFs, OpRecord};
+use super::fault_tests::{Fault, FaultFs, OpRecord};
 use super::*;
 
 const LOCK: &str = "ledger.jsonl.lock";
@@ -173,5 +173,82 @@ fn a_held_lock_is_not_reported_as_unsupported() {
         );
         assert!(!out.stderr.contains("RT-APR-0215"), "{name}");
         assert_eq!(fs.snapshot(), with_lock, "{name}");
+    }
+}
+
+/// Regression for a reader that proceeded with no lock held: with no lock
+/// file, a probe that fails for any reason other than a missing file or a
+/// held lock must refuse with RT-APR-0214 before any file is read.
+#[test]
+fn a_failed_probe_with_no_lock_file_refuses_every_reader() {
+    let fx = fixture();
+    let files = adoption_fs(&fx, true).snapshot();
+    assert!(!files.contains_key(Path::new(LOCK)));
+    for (name, args) in readers() {
+        let clean = FaultFs::from_map(files.clone());
+        let _ = run(&args, &clean);
+        let probe_at = position(&clean.log(), |o| {
+            o.kind == "try_lock_shared" && o.path == Path::new("rb.json")
+        });
+        let fs = FaultFs::from_map(files.clone());
+        fs.set_fault(Fault::Fail(probe_at));
+        let out = run(&args, &fs);
+        assert_eq!(out.code.value(), 2, "{name}: {}", out.stderr);
+        assert!(
+            out.stderr.starts_with("error RT-APR-0214:"),
+            "{name}: {}",
+            out.stderr
+        );
+        assert_eq!(out.stderr.matches("RT-").count(), 1, "{name}");
+        assert!(!out.stderr.contains("RT-APR-0215"), "{name}");
+        assert_eq!(fs.snapshot(), files, "{name}: files changed");
+        assert!(fs.log().iter().all(is_lock_kind), "{name}: {:?}", fs.log());
+    }
+}
+
+/// A probe lock held by a writer on the Rulebook, with no lock file, is the
+/// held-lock refusal of a reader, not the unsupported one.
+#[test]
+fn a_held_probe_lock_with_no_lock_file_refuses_every_reader_with_0214() {
+    let fx = fixture();
+    let files = adoption_fs(&fx, true).snapshot();
+    for (name, args) in readers() {
+        let fs = FaultFs::from_map(files.clone());
+        let _guard = fs.hold_lock("rb.json");
+        let out = run(&args, &fs);
+        assert_eq!(out.code.value(), 2, "{name}: {}", out.stderr);
+        assert!(
+            out.stderr.starts_with("error RT-APR-0214:"),
+            "{name}: {}",
+            out.stderr
+        );
+        assert_eq!(fs.snapshot(), files, "{name}");
+        assert!(fs.log().iter().all(is_lock_kind), "{name}: {:?}", fs.log());
+    }
+}
+
+/// Documented exception (design §3.8.3): with the Rulebook absent there is
+/// nothing to probe, so the missing-input refusal wins over RT-APR-0215.
+#[test]
+fn an_absent_rulebook_reports_missing_input_before_unsupported_locking() {
+    let fx = fixture();
+    let mut files = adoption_fs(&fx, true).snapshot();
+    files.remove(Path::new("rb.json"));
+    for (name, args) in readers() {
+        let fs = FaultFs::from_map(files.clone()).without_advisory_locks();
+        let out = run(&args, &fs);
+        assert_eq!(out.code.value(), 2, "{name}: {}", out.stderr);
+        assert!(out.stderr.contains("RT-CLI-0003"), "{name}: {}", out.stderr);
+        assert!(
+            out.stderr.contains("input file 'rb.json' does not exist"),
+            "{name}: {}",
+            out.stderr
+        );
+        assert!(
+            !out.stderr.contains("RT-APR-0215"),
+            "{name}: {}",
+            out.stderr
+        );
+        assert_eq!(fs.snapshot(), files, "{name}");
     }
 }

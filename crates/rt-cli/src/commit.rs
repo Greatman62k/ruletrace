@@ -730,13 +730,22 @@ const READ_NEEDS: &str = "to read the Rulebook and the ledger as one consistent 
 /// With no lock file yet, no review command has taken the lock, so there is
 /// nothing to lock. Support is probed on the Rulebook instead, so that a file
 /// system without advisory locks refuses here as well. The probe lock is
-/// released at once.
+/// released at once. A missing Rulebook is left to the missing-input path;
+/// every other failure, including a held lock, refuses with `RT-APR-0214`.
 fn probe_locking(fs: &dyn Fs, rulebook: &Path) -> Result<(), Box<Diagnostic>> {
     match fs.try_lock_shared(rulebook) {
         Err(e) if e.kind() == ErrorKind::Unsupported => {
             Err(Box::new(locking_unsupported(rulebook, READ_NEEDS)))
         }
-        _ => Ok(()),
+        Err(e) if e.kind() == ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(changed_during_read(
+            rulebook,
+            &format!(
+                "the lock probe on '{}' failed ({e}), so no lock could be taken; a review commit may be running",
+                shown(rulebook)
+            ),
+        )),
+        Ok(_held) => Ok(()),
     }
 }
 

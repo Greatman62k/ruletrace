@@ -1079,7 +1079,7 @@ A malformed journal, a journal that names other files, a damaged or missing back
 
 *Readers.* `validate`, `review list` and `evaluate` with `--proof-report` (and later the Prize Check and Bracket Check applications) read the Rulebook and the ledger through one function, `read_pair` in `rt-cli`, which returns the two files as one verified pair or refuses (Req 26.32):
 
-1. Take the shared lock on `<ledger>.lock` without creating it (`Fs::try_lock_shared`). `Unsupported` refuses with `RT-APR-0215` (exit 70) before any read. A missing lock file is remembered, and support is then probed with a shared lock on the Rulebook, released at once, so that a file system without locks refuses here too. A lock held by a writer, or any other lock error, refuses with `RT-APR-0214`.
+1. Take the shared lock on `<ledger>.lock` without creating it (`Fs::try_lock_shared`). `Unsupported` refuses with `RT-APR-0215` (exit 70) before any read. A missing lock file is remembered, and support is then probed with a shared lock on the Rulebook, released at once, so that a file system without locks refuses here too. A lock held by a writer, or any other lock or probe error except `NotFound`, refuses with `RT-APR-0214`. If the Rulebook is also absent there is no file to probe and fabricating a probe target is not allowed, so the missing-input refusal wins over `RT-APR-0215`; this is the one exception to the lock-first order.
 2. Check `<ledger>.journal`. When it exists, or cannot be inspected, refuse. Nothing else is read.
 3. Read the Rulebook, then the ledger.
 4. Check the journal again.
