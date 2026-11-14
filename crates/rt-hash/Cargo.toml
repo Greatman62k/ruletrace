@@ -1,0 +1,15 @@
+[package]
+name = "rt-hash"
+description = "SHA-256 wrapper and Sha256Hex newtype (class core)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+
+[dependencies]
+sha2 = { version = "0.10", default-features = false }
