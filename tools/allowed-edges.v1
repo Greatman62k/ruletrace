@@ -14,7 +14,7 @@ crate rt-compiled    class core   deps rt-foundation rt-numeric rt-hash rt-json 
 crate rt-compile     class core   deps rt-foundation rt-numeric rt-hash rt-ir rt-ledger rt-validate rt-compiled rt-json rt-srcmodel
 crate rt-data        class core   deps rt-foundation rt-json rt-numeric
 crate rt-trace       class core   deps rt-foundation rt-numeric rt-json
-crate rt-engine      class core   deps rt-foundation rt-numeric rt-compiled rt-data rt-trace rt-ir rt-hash
+crate rt-engine      class core   deps rt-foundation rt-numeric rt-compiled rt-data rt-trace
 crate rt-explain     class core   deps rt-foundation rt-srcmodel rt-trace rt-json rt-numeric
 crate rt-review      class core   deps rt-foundation rt-hash rt-json rt-ir rt-ledger rt-proposals rt-validate rt-srcmodel rt-explain
 crate rt-cli         class core   deps rt-foundation rt-hash rt-json rt-numeric rt-srcmodel rt-source rt-ir rt-ledger rt-proposals rt-validate rt-compiled rt-compile rt-data rt-trace rt-engine rt-explain rt-review
@@ -44,7 +44,7 @@ forbid-transitive prize-check bracket-check -> rt-cli rt-review rt-ledger rt-val
 forbid-name  prize-check -> bracket-check
 forbid-name  bracket-check -> prize-check
 forbid-name  rt-ai-* -> rt-compile rt-engine rt-review rt-cli rt-compiled
-forbid-name  rt-engine -> rt-explain
+forbid-name  rt-engine -> rt-explain rt-ir rt-hash
 forbid-external ureq rustls hyper reqwest h2 tokio openssl native-tls curl isahc attohttpc ring except-under rt-ai-openai
 # external <crate> allowed-in <crate...>   (dev-only entries are marked dev)
 external sha2 allowed-in rt-hash

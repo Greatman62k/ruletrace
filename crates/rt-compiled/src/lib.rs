@@ -41,5 +41,15 @@ pub use model::{
 pub use parse::parse_compiled;
 pub use serial::FORMAT_NAME;
 
+// Types the compiled model exposes, so consumers need no rt-ir edge.
+pub use rt_hash::Sha256Hex;
+pub use rt_ir::{AggFn, BinaryOp, CmpOp, Date, Direction, IrVersion, Name, Places, Rounding, Ties};
+
+/// Hashes `bytes`, so consumer tests can build a [`Sha256Hex`] without
+/// depending on the hashing crate.
+pub fn sha256_of(bytes: &[u8]) -> Sha256Hex {
+    rt_hash::sha256(bytes)
+}
+
 #[cfg(test)]
 mod tests;

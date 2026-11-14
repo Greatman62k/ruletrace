@@ -1,10 +1,10 @@
 //! Values, the three-way intermediate result `Eval` and the conversion of data
 //! values.
 
+use rt_compiled::Date;
 use rt_compiled::{CType, CompiledLiteral, CompiledRulebook, EnumIdx, MemberIdx, RuleIdx};
 use rt_data::DataValue;
 use rt_foundation::Diagnostic;
-use rt_ir::Date;
 use rt_numeric::{parse_literal, to_canonical, ExactNumber};
 use rt_trace::{Reason, TraceValue};
 

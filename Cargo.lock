@@ -304,8 +304,6 @@ dependencies = [
  "rt-compiled",
  "rt-data",
  "rt-foundation",
- "rt-hash",
- "rt-ir",
  "rt-numeric",
  "rt-trace",
 ]

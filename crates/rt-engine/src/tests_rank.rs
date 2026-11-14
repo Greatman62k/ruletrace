@@ -4,6 +4,7 @@
 use crate::tests::*;
 use crate::*;
 use proptest::prelude::*;
+use rt_compiled::{BinaryOp, Direction, Ties};
 use rt_compiled::{
     CType, CompiledBody, CompiledRule, CompiledTieBreaker, NodeIdx, NodeKind, TargetIdx,
 };
@@ -11,8 +12,6 @@ use rt_data::{
     DataValue, ParticipantId, PublishedNumber, PublishedResult, PublishedValue, Question,
     TargetName,
 };
-use rt_ir::BinaryOp;
-use rt_ir::{Direction, Ties};
 use rt_numeric::parse_literal;
 use rt_trace::{CriterionResult, Entry, NotAppliedReason, Place, TraceValue};
 use std::collections::BTreeMap;

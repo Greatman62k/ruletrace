@@ -329,7 +329,7 @@ forbid-transitive prize-check bracket-check -> rt-cli rt-review rt-ledger rt-val
 forbid-name  prize-check -> bracket-check
 forbid-name  bracket-check -> prize-check
 forbid-name  rt-ai-* -> rt-compile rt-engine rt-review rt-cli rt-compiled
-forbid-name  rt-engine -> rt-explain
+forbid-name  rt-engine -> rt-explain rt-ir rt-hash
 ```
 
 (Abbreviated here; the file lists every crate of §3.1.) External crates are listed under `external <crate> allowed-in <crate...>`.
@@ -343,7 +343,7 @@ forbid-name  rt-engine -> rt-explain
 | core to aux | Class check |
 | core, rt-cli or rt-ai-mock to a network client, AI provider library or rt-ai-openai | `forbid-external` list: ureq, rustls, hyper, reqwest, h2, tokio, openssl, native-tls, curl, isahc, attohttpc, ring (except under rt-ai-openai) |
 | AI crate to rt-compile, rt-engine, rt-review (approval and append), rt-compiled | `forbid-name` |
-| rt-engine to rt-explain | `forbid-name` |
+| rt-engine to rt-explain, rt-ir, rt-hash | `forbid-name` |
 | Stage crate to a later stage crate | `stage` numbers |
 | Engine, compiler, validator or explainer to a crate that does file I/O | Only rt-cli, rt-ai-*, and the `io.rs` and `main.rs` files of `prize-check` and `bracket-check` do I/O |
 | Application layer to `rt-cli`, `rt-review`, `rt-ledger`, `rt-validate`, `rt-compile`, `rt-source`, `rt-proposals`, any `rt-ai-*`, a network client, the other application, `rt-demo` or `rt-xtask`, directly or transitively (Req 24.12) | `forbid-transitive`, `forbid-class`, `forbid-name`, `forbid-external`; any direct edge not in the allowed list also fails |

@@ -1,5 +1,7 @@
 use crate::*;
 use proptest::prelude::*;
+use rt_compiled::sha256_of as sha256;
+use rt_compiled::{AggFn, BinaryOp, CmpOp, IrVersion, Name, Places, Rounding};
 use rt_compiled::{
     CType, CollectionIdx, CompiledBody, CompiledCollection, CompiledDocument, CompiledField,
     CompiledInput, CompiledLiteral, CompiledNode, CompiledParts, CompiledRule, CompiledSpan,
@@ -9,8 +11,6 @@ use rt_data::{
     DataValue, Element, Participant, ParticipantId, PublishedResult, Question, TargetName,
 };
 use rt_foundation::{DocumentId, Location, RevisionNumber, RuleId, Severity};
-use rt_hash::sha256;
-use rt_ir::{AggFn, BinaryOp, CmpOp, IrVersion, Name, Places, Rounding};
 use rt_numeric::{parse_canonical, parse_literal, ExactNumber, RoundingMode};
 use rt_trace::Tri;
 use std::collections::BTreeMap;
@@ -21,7 +21,7 @@ pub(crate) fn name(s: &str) -> Name {
     Name::new(s).unwrap()
 }
 
-pub(crate) fn doc_sha() -> rt_hash::Sha256Hex {
+pub(crate) fn doc_sha() -> rt_compiled::Sha256Hex {
     sha256(b"the source document")
 }
 

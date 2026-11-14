@@ -13,10 +13,10 @@ use crate::index::Index;
 use crate::support::{conflict, rule_location, rule_ref, trace_spans};
 use crate::value::{normalise_unks, Eval, Unk, Value};
 use crate::{finish, invalid, refused, state_of, Answer};
+use rt_compiled::Direction;
 use rt_compiled::{CompiledBody, CompiledRule, CompiledRulebook, NodeIdx, RuleIdx};
 use rt_data::{CompetitionData, ParticipantId, TargetName};
 use rt_foundation::{escape_controls, Code, Diagnostic};
-use rt_ir::Direction;
 use rt_numeric as num;
 use rt_trace::{
     CompareCriterion, CompareEntry, CriterionResult, DecisionEntry, DecisionOp, DecisionValue,

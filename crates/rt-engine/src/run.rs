@@ -9,13 +9,13 @@
 use crate::index::{Index, Prec};
 use crate::support::{conflict, input_location, rule_location, rule_ref, trace_spans};
 use crate::value::{convert, faults_of, show, unknowns_of, Eval, Refusal, Unk, Val, Value};
+use rt_compiled::{AggFn, BinaryOp, CmpOp, Rounding};
 use rt_compiled::{
     CType, CollectionIdx, CompiledBody, CompiledRule, CompiledRulebook, CompiledTerm, FieldIdx,
     InputIdx, NodeIdx, NodeKind, RuleIdx, SetIdx, TargetIdx,
 };
 use rt_data::{Participant, ParticipantId};
 use rt_foundation::{escape_controls, Code, Diagnostic, Location};
-use rt_ir::{AggFn, BinaryOp, CmpOp, Rounding};
 use rt_numeric as num;
 use rt_numeric::{ExactNumber, NumericError};
 use rt_trace::{

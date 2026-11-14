@@ -16,8 +16,6 @@ rt-numeric = { path = "../rt-numeric" }
 rt-compiled = { path = "../rt-compiled" }
 rt-data = { path = "../rt-data" }
 rt-trace = { path = "../rt-trace" }
-rt-ir = { path = "../rt-ir" }
 
 [dev-dependencies]
 proptest = { version = "1", default-features = false, features = ["std"] }
-rt-hash = { path = "../rt-hash" }
