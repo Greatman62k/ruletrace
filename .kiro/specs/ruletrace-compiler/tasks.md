@@ -740,14 +740,14 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Phase 5: Proposals and adoption (`rt-proposals`, adoption in `rt-review`, `FaultFs`; Demo Slice 1 begins)
-  - [-] 7.1 Implement `rt-proposals` (Proposal_Store data model)
+  - [x] 7.1 Implement `rt-proposals` (Proposal_Store data model)
     - Define the batch file model (`format`, `version`, `request_id`, `response_sha256`, provider, model, adapter version, AI identities, `created_at`, proposals with `proposal_id = SHA-256(request_id ":" index)`, kind, proposer, evidence, rule draft with Draft hash, Semantic_Outcome Diagnostics), its parser and printer, and the Pending_Proposal derivation (a `rule_suggestion` whose id is not referenced by an Origin in the Rulebook). Store the accepted response as the `response` member (`completion` and exact `payload`) as the UD-36 record says. Reject flag and lifecycle keys with the RT-DGN codes. No AI logic and no network dependency.
     - Observable: a batch round-trips byte-identically, and a batch with a `has_errors` key is rejected with `RT-DGN-0001`.
     - Blocked by: 1.8, 4.6, 6.11.
     - _Requirements: 23.11, 23.12, 23.13, 30.5, 22.16, 33.8_
     - Design §3.7.5, §3.8.2, §8.11.7
 
-  - [ ] 7.2 Implement adoption planning in `rt-review`
+  - [x] 7.2 Implement adoption planning in `rt-review`
     - Extend `plan_review` with the Proposal_Store input: the prospective revision (`1 + max`, `RT-APR-0210` on exhaustion), the prospective Rule_Content_Hash that the Reviewer must name, and the plan holding the exact new bytes of both the ledger and the Rulebook (the adopted revision with its Origin). A rejection adopts the revision as Rejected so no number gap appears. Reviewer checks compare with the identities recorded in Origin and the batch.
     - Observable: adopting a Pending_Proposal gives revision 1, a rejection of the next gives revision 2 with no gap.
     - Blocked by: 7.1, 6.1.
@@ -787,7 +787,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 26.19, 26.31_
     - Design §3.8.3 (Crash recovery, Concurrency)
 
-  - [ ] 7.8 Extend the contradictory-flag property test to the other input kinds
+  - [x] 7.8 Extend the contradictory-flag property test to the other input kinds
     - **Property 5: Contradictory flag input is rejected**
     - Extend the generator of 4.12 to the validation artifact, compiled artifact, Proposal_Store entry, review decision, fixtures and CLI input, each with exit code 2. The Provider_Response case (`RT-AI-0204`, exit 6) is added in 8.11 and the application input kinds in 9.12. Required.
     - Observable: every input kind rejects each flag and lifecycle key with the specified code.
