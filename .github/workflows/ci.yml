@@ -232,10 +232,14 @@ jobs:
           if-no-files-found: warn
 
   core-only:
-    # STUB: later tasks build the core crates and `ruletrace` with auxiliary crates excluded,
-    # check the dependency tree for network and AI crates, and compare output bytes.
+    # Design §7.4, Req 20.16: the core with every auxiliary crate excluded. `--exclude` of a package
+    # that is not yet in the workspace only warns, so the list is stable while the AI crates are added.
     name: core-only (linux)
     runs-on: ubuntu-24.04
+    env:
+      AUX_EXCLUDE: >-
+        --exclude rt-ai-adapter --exclude rt-ai-mock --exclude rt-ai-openai
+        --exclude rt-ai-tool --exclude rt-tests-ai
     steps:
       - uses: actions/checkout@v4
       - name: Install pinned toolchain
@@ -243,15 +247,97 @@ jobs:
           channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
           rustup toolchain install "$channel" --profile minimal
           rustup default "$channel"
-      - name: Build workspace (core-only checks are added by later tasks)
-        run: cargo build --workspace
+      - name: Build and test the core with auxiliary crates excluded
+        run: |
+          mkdir -p ci-output
+          set -o pipefail
+          {
+            cargo build --workspace $AUX_EXCLUDE --bins --target-dir target/core-only
+            cargo test --workspace --all-features $AUX_EXCLUDE --target-dir target/core-only
+          } 2>&1 | tee ci-output/core-only.log
+      - name: Resolved tree has no network or AI crate (check-tree)
+        run: |
+          set -o pipefail
+          cargo run -q -p rt-xtask -- check-tree 2>&1 | tee ci-output/core-only-tree.log
+          cargo tree -p rt-cli -e normal,build,dev --all-features --prefix none 2>/dev/null \
+            | tee ci-output/rt-cli-tree.txt
+          if grep -Eiq '^(ureq|reqwest|hyper|tokio|openssl|native-tls|rustls|curl|isahc|attohttpc|rt-ai-)' ci-output/rt-cli-tree.txt; then
+            echo "network or AI crate in the ruletrace tree" >&2
+            exit 1
+          fi
+      - name: Output bytes equal the full build (hand profile against goldens)
+        # Both builds run the same hand-profile tests, which compare every output byte with the
+        # golden files, so equal goldens mean equal bytes (Req 20.16).
+        run: |
+          set -o pipefail
+          cargo build --workspace --bins --target-dir target/full
+          for dir in core-only full; do
+            RT_BIN_DIR="$PWD/target/$dir/debug" cargo test -p rt-demo --all-features \
+              --test stand_in_hand --test acceptance_hand --target-dir "target/$dir" 2>&1 \
+              | tee -a ci-output/core-only-hand.log
+          done
+      - name: Keep failed-check output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-only-linux
+          path: ci-output/
+          if-no-files-found: warn
+
+  demo-offline:
+    # Design §7.4, Req 33.15, 33.16, 20.26: the `hand` profile with no credential. On Linux the run
+    # happens in an empty network namespace. macOS and Windows have no portable equivalent; the
+    # harness gives every process an empty environment and the job sets no credential.
+    name: demo-offline (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14, windows-2022]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned toolchain
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - name: Fetch dependencies and build the executables
+        run: |
+          mkdir -p ci-output
+          set -o pipefail
+          cargo fetch --locked
+          cargo build --workspace --bins --offline 2>&1 | tee ci-output/demo-build.log
+          cargo test -p rt-demo --all-features --offline --no-run 2>&1 | tee -a ci-output/demo-build.log
+      - name: Run the hand profile with no network and no credential
+        env:
+          RULETRACE_CI_PLATFORM: ${{ matrix.os }}
+        run: |
+          set -o pipefail
+          export RT_BIN_DIR="$PWD/target/debug"
+          unset OPENAI_API_KEY RULETRACE_AI_KEY
+          cmd=(cargo test -p rt-demo --all-features --offline --test stand_in_hand --test acceptance_hand)
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo unshare --net -- sudo -u "$USER" env "PATH=$PATH" "HOME=$HOME" "RT_BIN_DIR=$RT_BIN_DIR" "${cmd[@]}" 2>&1 | tee ci-output/demo-offline.log
+          else
+            "${cmd[@]}" 2>&1 | tee ci-output/demo-offline.log
+          fi
+      - name: Keep failed-check output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-offline-${{ matrix.os }}
+          path: ci-output/
+          if-no-files-found: warn
 
   # Single required check for branch protection. It fails if any job, on any platform, is
   # failed, skipped or cancelled, and if a platform is missing from a matrix (design §7.4, Req 21.4).
   gate:
     name: ci-gate
     if: ${{ always() }}
-    needs: [fmt, clippy, test, golden, toolchain, graph, deny, core-only]
+    needs: [fmt, clippy, test, golden, toolchain, graph, deny, core-only, demo-offline]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -268,6 +354,6 @@ jobs:
         run: |
           for label in ubuntu-24.04 macos-14 windows-2022; do
             n=$(grep -c "os: \[ubuntu-24.04, macos-14, windows-2022\]" .github/workflows/ci.yml)
-            test "$n" -eq 5 || { echo "expected 5 three-platform matrices, found $n" >&2; exit 1; }
+            test "$n" -eq 6 || { echo "expected 6 three-platform matrices, found $n" >&2; exit 1; }
             grep -q "$label" .github/workflows/ci.yml || { echo "missing platform $label" >&2; exit 1; }
           done
