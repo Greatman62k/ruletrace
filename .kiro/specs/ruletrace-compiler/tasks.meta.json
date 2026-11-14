@@ -230,6 +230,16 @@
         "executionId": "24a94c1c-968a-451e-9605-46484c9d6a38",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794654919009
+      },
+      {
+        "executionId": "bdd6e06a-b781-4022-b294-cde4905f6e31",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794671390473
+      },
+      {
+        "executionId": "bdd6e06a-b781-4022-b294-cde4905f6e31",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794671534283
       }
     ],
     "1.9 Decision gate UD-26 (exit code with blocking semantic outcomes)": [
@@ -237,6 +247,16 @@
         "executionId": "24a94c1c-968a-451e-9605-46484c9d6a38",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794654919023
+      },
+      {
+        "executionId": "bdd6e06a-b781-4022-b294-cde4905f6e31",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794671390540
+      },
+      {
+        "executionId": "bdd6e06a-b781-4022-b294-cde4905f6e31",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794671534331
       }
     ],
     "1.10 Decision gate UD-34 (demonstration documents)": [
@@ -244,6 +264,11 @@
         "executionId": "24a94c1c-968a-451e-9605-46484c9d6a38",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794654919036
+      },
+      {
+        "executionId": "bdd6e06a-b781-4022-b294-cde4905f6e31",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794671390599
       }
     ],
     "1.11 Decision gate UD-32 (rank-based qualification: Threshold_Only or Rank_Reference)": [

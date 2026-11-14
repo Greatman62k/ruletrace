@@ -84,6 +84,7 @@ Points the detailing pass raised that need a decision (not decided by the pass):
 - Req 8.15: RESOLVED (UD-30). Count and sum of an empty collection are 0. Minimum and maximum are undefined and give an Indeterminate Outcome with RT-DGN-0005 when required (8.29 to 8.31).
 - Req 25.1: RESOLVED (UD-28). The Revision_Number range 1 to 4,294,967,295 is confirmed.
 - Req 28.2: RESOLVED (UD-28). Default 20 and range 1 to 100 for maximum Candidate_Clauses per request are confirmed.
+- Req 16.16, 30.3: RESOLVED (UD-26). Exit 0 with RT-AI-0305 for a stored batch with blocking semantic findings; see tools/decisions/UD-26.md.
 - Req 13.17: RESOLVED (UD-31). Confirmed and extended by 13.22 and 13.23.
 - Req 23.35: RESOLVED (UD-29). Earlier batches are kept, the run is marked incomplete (23.36 to 23.38, RT-AI-0306), and the exit code is that of the failing request.
 - Req 30: no catalogue code exists for a wrong line or column claim (mapped to RT-PRV-0101). When several elements fail in one batch, only the earliest-stage code decides the exit code. Confirm whether all failures are reported.
@@ -137,4 +138,15 @@ Unchanged requirements: 1 to 6, 8 to 13, 16 to 19, 21, 23, 25, 26, 29, 30 (excep
 
 Mapping of the user's items to the requirements: (a) Introduction, Scope, Glossary, 14.5, 14.11 to 14.14, 15.8, 15.10; (b) 24.12, 27.1, 27.15, 31, 32; (c) 28.21, 33; (d) 34, R-17; (e) 20.26, 20.27.
 
-New decisions: UD-32 (Open), UD-33 (Recommended-pending, applied in 27.1), UD-34 (Open), UD-35 (Open, recommendation given), UD-36 (Recommended-pending).
+New decisions: UD-32 (Open), UD-33 (Recommended-pending, applied in 27.1), UD-34 (Open), UD-35 (Open, recommendation given), UD-36 (Confirmed, option 1; see tools/decisions/UD-36.md).
+
+## Gate 1.10 amendment (UD-34 and exit-code ordering)
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 13 | Decision Trace and Provenance | Changed | 18 (exit 2 only when no earlier stage failed; exit 4 outranks a stage 7 provenance Error) | 24 (test of simultaneous Indeterminate execution and provenance failure) | Conflict with 16.17 and Property 30 |
+| 33 | Reproducible End-to-End Demonstration over Real Public Documents | Unchanged | - | - | UD-34 confirmed (see `tools/decisions/UD-34.md`) |
+
+Other sections changed: Unresolved Decisions register (UD-34 entry now Confirmed; its "no document is named" sentence refers to the record); Supersession Record (two entries); design §3.5, §6.1, §8.4 (exit derivation) and the status table row for UD-34.
+
+UD-32 is not changed. It stays Open for gate 1.11, with Rank_Reference recommended, because top-two qualification in the Bracket_Check demonstration depends on it.

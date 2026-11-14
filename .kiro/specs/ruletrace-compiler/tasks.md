@@ -137,21 +137,21 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 23.15, 26.17 (UD-23)_
     - Design §3.8.3, §9.2
 
-  - [~] 1.8 Decision gate UD-36 (capture of the recorded provider response)
+  - [x] 1.8 Decision gate UD-36 (capture of the recorded provider response)
     - Create `tools/decisions/UD-36.md` with the three capture options of design §8.11.7 and the recommended option 1 (the Proposal_Store retains the accepted response; `rt-xtask export-script` writes the script). Record the wording change RN-27 for Req 30.1 and 23.25. Ask the user, then stop.
     - Observable: record `Confirmed`. Task 7.1 reads the chosen option.
     - Blocked by: Slice 0 complete (6.9).
     - _Requirements: 30.1, 33.8, 23.25 (UD-36)_
     - Design §3.7.5, §8.11.7, §9.4 (RN-27)
 
-  - [~] 1.9 Decision gate UD-26 (exit code with blocking semantic outcomes)
+  - [x] 1.9 Decision gate UD-26 (exit code with blocking semantic outcomes)
     - Create `tools/decisions/UD-26.md` with the recommendation (exit 0 with the `RT-AI-0305` Warning when a stored proposal carries blocking semantic findings) and the alternative. Ask the user, then stop.
     - Observable: record `Confirmed`.
     - Blocked by: Slice 0 complete (6.9).
     - _Requirements: 23.35, 23.36, 30.2, 27.8 (UD-26)_
     - Design §6.1, §9.2
 
-  - [~] 1.10 Decision gate UD-34 (demonstration documents)
+  - [-] 1.10 Decision gate UD-34 (demonstration documents)
     - Create `tools/decisions/UD-34.md` with the selection criteria of Req 33.3 and design §8.11.1. Do not name or assume any document. Ask the user to supply the documents (or state that the stand-in stays for now), the retrieval text, the licence or permission, and whether transmission to the provider is permitted. If a document is PDF-only, ask for the manual conversion record of Req 33.5. Stop.
     - Observable: record `Confirmed` with the user's references, or `Deferred` with the stand-in named. Only `Confirmed` unblocks tasks 10.8 and 11.1.
     - Blocked by: Slice 0 complete (6.9).

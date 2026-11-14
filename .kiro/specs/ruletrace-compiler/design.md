@@ -34,11 +34,11 @@ Section numbers (`§n.m`) are used by the traceability table in §10.
 | --- | --- | --- | --- |
 | 8 | Two thin Application_Layers, `prize-check` and `bracket-check`, each one package with a library (input mapping, Questions, report layout) and a small Demonstration_Executable (UD-33, option B: recommended and applied, user confirmation pending) | Applied | §3.1, §3.3, §8.2 |
 | 9 | Qualification only as a Qualification_Predicate. Both UD-32 options are designed; Rank_Reference is recommended if the confirmed tournament document states rank-based qualification | UD-32 Open | §8.9 |
-| 10 | The Proposal_Store retains the accepted response bytes and a deterministic export writes the Recorded_Provider_Script (UD-36, option 1: recommended and designed) | Applied pending confirmation | §3.7.5, §8.11.7 |
+| 10 | The Proposal_Store retains the accepted response bytes and a deterministic export writes the Recorded_Provider_Script (UD-36, option 1: Confirmed) | Applied, Confirmed | §3.7.5, §8.11.7 |
 | 11 | Reproducible offline demonstration with golden files, an acceptance test that executes the runbook, mutation checks, a Coverage_Statement and a Proof_Report | Designed | §8.11 |
 | 12 | Honest-claims statements and a prohibited-phrase scan | Designed | §8.12 |
 | 13 | Demonstration-first phase plan: Demo Slice 0 (hand-authored rules), Slice 1 (mock AI and human approval), Slice 2 (real provider, two applications, published checks, mutation checks) | Designed | §7.5 |
-| Open | UD-34 (which public documents), UD-35 (real or synthetic data). The harness is document-agnostic and names no document | Open, user decides | §8.11.1, §9.2 |
+| Open | UD-34 (which public documents: Confirmed, see `tools/decisions/UD-34.md`), UD-35 (real or synthetic data, Open). The harness is document-agnostic and names no document. UD-32 stays Open for gate 1.11 | UD-34 Confirmed; UD-35 Open | §8.11.1, §9.2 |
 
 ## Architecture
 
@@ -225,7 +225,7 @@ AI output reaches the core only through the Proposal_Store and a human `review a
 | D-12 | One serializer for the results file, in `rt-explain`, used by `ruletrace evaluate` and both applications | Each executable serializes its own | One function. Byte identity (Req 31.5) holds by construction (§8.10). |
 | D-13 | Report model, writers and Proof_Report builder live in `rt-explain` | New `rt-report` crate | `rt-explain`. A new crate needs an addition to the Req 24.12 whitelist (RN-22). |
 | D-14 | Rank reference is one expression node that reuses the ranking function and always reads the ranking over all participants (only if UD-32 selects it) | Separate rank computation; per-question population | One node, one memo table, population independent of the Questions asked (§8.9). |
-| D-15 | Proposal_Store retains the accepted response payload inside the batch file; export to a Recorded_Provider_Script is a pure function run by `rt-xtask` (UD-36 option 1) | Recording file written by `ruletrace-ai`; recording in test code | Retention in the batch. No new write target (§8.11.7). |
+| D-15 | Proposal_Store retains the accepted response payload inside the batch file; export to a Recorded_Provider_Script is a pure function run by `rt-xtask` (UD-36 option 1, Confirmed) | Recording file written by `ruletrace-ai`; recording in test code | Retention in the batch. No new write target (§8.11.7). |
 
 Further decisions are recorded where they arise and in the register §9.2.
 
@@ -617,7 +617,7 @@ Format detection: extension `.md` or `.markdown` gives `markdown`; `.txt`, `.tex
 
 A trace is `Verified` iff it has at least one span, every span resolved and its verification state has no blocking item. Zero spans: Warning `RT-PRV-0007` and not verified. All spans failed: not verified, no text rendered. Rendering escapes every Unicode `Cc` character except the line feed that ends an output line, as `\u{XXXX}` in printable ASCII (Req 19.5, 19.10). The engine never receives a model: the verification section is a separate part of the evaluate output (RN-14).
 
-Unresolvable document or span: no text invented. Diagnostic code and exit codes as in §4.3: `evaluate` exits 2 when an Error row applies, still writing complete outcomes and traces, with unaffected traces remaining `verified` (Req 13.18).
+Unresolvable document or span: no text invented. Diagnostic code and exit codes as in §4.3: `evaluate` exits 2 when an Error row applies and no earlier stage failed. An Indeterminate Outcome (stage 6, exit 4) outranks a stage 7 provenance Error, so the exit is 4 when both apply. Complete outcomes and traces are written in both cases, with unaffected traces remaining `verified` (Req 13.18, 13.24, 16.17).
 
 ### 3.6 Validation, compilation and deterministic execution
 
@@ -1893,7 +1893,7 @@ Exit codes of `ruletrace`: 0, 2, 3, 4, 70. Of `ruletrace-ai`: 0, 2, 3, 5, 6, 70.
 - **4 Indeterminate Outcome at evaluate**, including a runtime conflict (RT-DGN-0004) and empty min or max (RT-DGN-0005). Never 3 (Req 16.23, UD-13).
 - **70 internal error or failed write**: output write failure, ledger and rulebook commit failure, lock failure, Transmission_Log and store write failure, invariant violation.
 
-A failed command writes its Diagnostics to stderr in canonical order and creates no result file; existing output files stay byte identical because every write is `write temp`, `sync`, `rename`. Exceptions: evaluate with Indeterminate Outcomes or failed provenance writes complete outcomes (Req 16.9, 13.18). Exit 0 requires no blocking Diagnostic, no invalid input, no Indeterminate Outcome and no internal error (Req 16.13). Warnings go to stderr and leave the code unchanged.
+A failed command writes its Diagnostics to stderr in canonical order and creates no result file; existing output files stay byte identical because every write is `write temp`, `sync`, `rename`. Exceptions: evaluate with Indeterminate Outcomes or failed provenance writes complete outcomes (Req 16.9, 13.18). When both apply the exit code is 4, because stage 6 precedes stage 7 (Req 16.17, 13.18, 13.24); provenance failure alone exits 2. Exit 0 requires no blocking Diagnostic, no invalid input, no Indeterminate Outcome and no internal error (Req 16.13). Warnings go to stderr and leave the code unchanged.
 
 Library error conversion: every internal error enum converts to `Diagnostic` through an exhaustive match; panics are not caught and are prevented by lints (`clippy::unwrap_used`, `clippy::expect_used`, `clippy::panic`, `clippy::indexing_slicing` denied in library crates) and by fuzz-style property tests of the parsers.
 
@@ -2270,7 +2270,7 @@ pub enum AppExit { Complete, Indeterminate, InvalidInput }       // codes 0, 4, 
 
 **Question construction.** Request sets are `BTreeSet`s, so Target order comes from the collection and not from a sort call. Questions are built in this order: all `eligibility` Targets, then all `score` Targets, then all `ranking` Targets; within a Target, one `value` Question per participant in the order of the `BTreeMap` of Competition_Data (ascending identifier); one `rank` Question per ranking Target with `participants: null` (all participants). `prize-check` takes `--eligibility`, `--score`, `--ranking`; `bracket-check` takes `--standings` (ranking Targets) and `--qualification` (eligibility Targets). A Target of the wrong kind for its option is RT-APP-0006. Exactly one `evaluate` call receives the complete Question list (Req 31.2).
 
-**Exit code.** `AppExit` is derived: `InvalidInput` if `state` has a blocking Diagnostic of the application or of the Explainer rows that Req 13.16 maps to exit 2 (the run still carries the complete Outcomes marked not verified, Req 13.18); else `Indeterminate` if any Outcome is Indeterminate; else `Complete`. This is the same derivation `ruletrace evaluate` uses (§6.1), which is why Req 31.12 holds.
+**Exit code.** `AppExit` is derived: `InvalidInput` if `state` has a blocking Diagnostic of the application (stages before evaluation); else `Indeterminate` if any Outcome is Indeterminate; else `InvalidInput` if `state` has an Explainer Error row that Req 13.16 maps to exit 2 (the run still carries the complete Outcomes marked not verified, Req 13.18); else `Complete`. An Indeterminate Outcome therefore outranks a provenance Error (Req 13.18, 13.24). This is the same derivation `ruletrace evaluate` uses (§6.1), which is why Req 31.12 holds.
 
 **Limit stated honestly.** A ranking Question covers all participants of the Competition_Data. First-version rules cannot restrict a ranking to eligible participants (there is no conditional expression and the engine's ranking has no filter), and an application may not call the engine twice to build a filtered participant set (Req 31.2). `prize-check` therefore reports eligibility and ranking side by side and its header says that the ranking is not filtered by eligibility (RN-23).
 
@@ -2746,7 +2746,7 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 | UD-23 | Reviewer identity check | **Recommended-pending** | Exact comparison with identities recorded in Origin and the batch (§3.8.3). Hardening option: compare with all identities in the store | User |
 | UD-24 | Proposal_Schema format | Resolved-in-design | JSON, schema version "1" (§3.7.3) | Design review |
 | UD-25 | Clause_Context size policy | Resolved-in-design | 8,192 bytes per clause, 256 KiB per request, greedy split (§3.7.2) | Design review |
-| UD-26 | Exit code with blocking semantic outcomes | **Recommended-pending** | Exit 0 with RT-AI-0305 | User |
+| UD-26 | Exit code with blocking semantic outcomes | Resolved-by-user | Exit 0 with RT-AI-0305; proposals stay Proposed and are not approvable or compilable while blocking findings remain | none |
 | UD-27 | Ledger format and atomic commit | **Recommended-pending** | JSON Lines; journaled two-file commit (§3.8) | User |
 | UD-28 | Numeric bounds | Resolved-by-user | Used throughout | none |
 | UD-29 | Incomplete multi-request run | Resolved-by-user | §3.7.7 | none |
