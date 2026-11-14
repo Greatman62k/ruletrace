@@ -57,6 +57,27 @@ use rt_srcmodel::{CandidateClause, SourceModels};
 use std::collections::{BTreeMap, BTreeSet};
 use walk::{kind_type, Deps, TargetInfo, Targets, Walk};
 
+/// Input identifier that names the Rule_IR input in rulebook-wide
+/// Diagnostics. The Rulebook does not carry the path it was read from, so the
+/// logical name is used, as `ledger` is for ledger records.
+pub const RULEBOOK_INPUT: &str = "rulebook";
+
+/// The whole-input Location of the Rulebook: an Input_Location with no line,
+/// column or field (Req 5.7, 7.14). `code` is the reason of the
+/// No_Location fallback, used only when the identifier is refused.
+#[must_use]
+pub fn rulebook_input_location(code: Code) -> Location {
+    match rt_foundation::InputId::new(RULEBOOK_INPUT) {
+        Ok(input) => Location::Input(rt_foundation::InputLocation {
+            input,
+            line: None,
+            column: None,
+            field: None,
+        }),
+        Err(_) => Location::None(code),
+    }
+}
+
 /// A proposed rule that is checked without a ledger: its identifier and its
 /// content. The Revision_Number is assigned at adoption, and the Origin is not
 /// part of the draft.

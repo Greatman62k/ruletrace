@@ -105,6 +105,22 @@ fn unresolved_revision_gives_apr_0001_at_its_first_span_and_a_failed_result() {
 }
 
 #[test]
+fn apr_0002_points_at_the_whole_rulebook_input() {
+    let rb = rulebook(&[d1("d.a", "a")]);
+    let r = run(&rb, &ApprovalLedger::empty());
+    let d = &r.state().as_slice()[1];
+    assert_eq!(d.code(), Code::ApprovalNoExecutableRules);
+    assert_eq!(
+        d.primary(),
+        &crate::rulebook_input_location(Code::ApprovalNoExecutableRules)
+    );
+    assert!(matches!(
+        d.primary(),
+        Location::Input(i) if i.input.as_str() == "rulebook" && i.line.is_none()
+    ));
+}
+
+#[test]
 fn matching_approval_makes_the_revision_effective_and_the_result_pass() {
     let rb = rulebook(&[d1("d.a", "a")]);
     let l = ledger(&[approve("d.a", 1, hash_of(&rb, 0))]);

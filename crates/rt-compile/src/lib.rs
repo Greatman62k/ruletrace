@@ -26,8 +26,9 @@
 //!   1 to 8 are not repeated; their Diagnostics are returned by step 2 and a
 //!   construct that cannot be lowered is `RT-CMP-0003`. For the same reason a
 //!   Source_Span Location is compared at document level, and the Locations the
-//!   Compiler creates (`RT-CMP-0001`, `RT-APR-0002`) are Document Locations,
-//!   never an unverified span.
+//!   Compiler creates (`RT-CMP-0001`) are Document Locations, never an
+//!   unverified span. `RT-APR-0002` is the whole-input Location of the
+//!   Rulebook, the same value that validation gives it.
 //! * A `ValidationResult` always carries its Rulebook, ledger and state, so
 //!   `RT-CMP-0002` cannot arise from this type.
 //! * The Rulebook content hash is the SHA-256 of the canonical compact Rule_IR
@@ -169,7 +170,7 @@ fn build(
         return Err(vec![Diagnostic::new(
             Code::ApprovalNoExecutableRules,
             "the Rulebook has no Effective_Revision: no Compiled_Rulebook is produced".to_owned(),
-            rulebook_location(rb, Code::ApprovalNoExecutableRules),
+            rt_validate::rulebook_input_location(Code::ApprovalNoExecutableRules),
         )]);
     }
 

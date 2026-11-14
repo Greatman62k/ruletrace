@@ -275,7 +275,7 @@ fn ledger_line(n: u32) -> String {
     format!("input 'ledger' line {n}")
 }
 
-const NO_RULE: &str = "no location (RT-APR-0002)";
+const NO_RULE: &str = "input 'rulebook'";
 
 /// Validation blocks with exit 3 and `compile` refuses with exit 3 and writes
 /// nothing.
@@ -294,8 +294,6 @@ fn unresolved_revision_blocks_with_apr_0001_and_apr_0002() {
     let fs = setup(TEXT, &rulebook(TEXT, "1", &revs), &ledger(&[]));
     let out = blocked(&fs);
     expect(&out, "RT-APR-0001", "error", &span_of(TEXT, 0, 0));
-    // The implementation reports no location here; design §3.6.1 asks for the
-    // Rulebook document.
     expect(&out, "RT-APR-0002", "error", NO_RULE);
 }
 

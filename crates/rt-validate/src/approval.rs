@@ -6,7 +6,8 @@
 //!
 //! * `RT-APR-0001` (Error): one per unresolved revision, at the first span of
 //!   the rule.
-//! * `RT-APR-0002` (Error): no Effective revision exists.
+//! * `RT-APR-0002` (Error): no Effective revision exists. Its Location is the
+//!   whole `rulebook` input.
 //! * `RT-APR-0003` (Warning): one per ledger record that matches no current
 //!   revision or, for an approval, does not match its revision in rule,
 //!   revision, content hash, IR_Version and binding. Such a record never counts
@@ -133,7 +134,7 @@ pub(crate) fn gate(
             Code::ApprovalNoExecutableRules,
             "the Rulebook has no Effective_Revision: no revision is Approved by a matching Approval_Record"
                 .to_owned(),
-            Location::None(Code::ApprovalNoExecutableRules),
+            crate::rulebook_input_location(Code::ApprovalNoExecutableRules),
         ));
     }
 
