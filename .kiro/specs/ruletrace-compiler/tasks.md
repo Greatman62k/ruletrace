@@ -706,7 +706,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 33.6_
     - Design §8.11.8
 
-  - [-] 6.8 Write property tests for Coverage_Statement partition and Proof_Report completeness
+  - [x] 6.8 Write property tests for Coverage_Statement partition and Proof_Report completeness
     - **Property 51: The Coverage_Statement classifies every Candidate_Clause exactly once**
     - **Property 52: The Proof_Report is complete, ordered and replayable**
     - Property 51: for generated clause sets and Rulebooks, each clause gets exactly one class in ascending offset order, the class agrees with the validation run, and an unclassified clause fails the generator. Property 52: every section of Req 33.14 is present in order, built only from trace, ledger and Explainer output, and the replay recomputes each step. Required.
