@@ -762,7 +762,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 26.19, 26.30, 26.31, 25.1, 23.13_
     - Design §3.8.3, §6.2.4
 
-  - [ ] 7.4 Extend `review list`, `approve` and `reject` to adoption
+  - [x] 7.4 Extend `review list`, `approve` and `reject` to adoption
     - `review list` shows pending proposals with the prospective revision, prospective Rule_Content_Hash and source text through the Explainer, and writes nothing. `review approve` and `reject` on a Pending_Proposal use the two-file commit of 7.3. All refusals still exit 3 and leave every file byte-identical.
     - Observable: `review approve` of a proposal changes the Rulebook and the ledger together, and `validate` then reports the rule as approved.
     - Blocked by: 7.3.
