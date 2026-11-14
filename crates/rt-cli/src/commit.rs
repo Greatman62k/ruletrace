@@ -681,6 +681,10 @@ impl Fs for PairFs<'_> {
         }
     }
 
+    fn list_dir(&self, dir: &Path) -> io::Result<Vec<PathBuf>> {
+        self.inner.list_dir(dir)
+    }
+
     fn create_new(&self, path: &Path, bytes: &[u8]) -> io::Result<()> {
         self.inner.create_new(path, bytes)
     }

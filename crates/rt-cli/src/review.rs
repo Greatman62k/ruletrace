@@ -33,8 +33,10 @@ use rt_foundation::{
 use rt_ir::{rule_content_hash, ApprovalStatus, Origin, RuleKey, RuleRevision, Rulebook};
 use rt_json::ParseLimits;
 use rt_ledger::{derive_statuses, parse_ledger, unresolved, AiIdentitySet, ApprovalLedger};
-use rt_proposals::{parse_batch, Batch};
-use rt_review::{plan_review_with_store, ReviewAction, ReviewDecision};
+use rt_proposals::{parse_batch, pending_proposals, Batch, PendingProposal};
+use rt_review::{
+    plan_review_with_store, prospective_adoption, Prospective, ReviewAction, ReviewDecision,
+};
 use rt_srcmodel::SourceModels;
 use rt_trace::{
     DecisionTrace, DocumentHash, Outcome, QuestionKind, TraceParts, TraceQuestion, TraceRule,
@@ -341,6 +343,25 @@ fn list(
     };
     let rb = &loaded.rulebook;
     let statuses = derive_statuses(rb, &loaded.ledger);
+    // Pending_Proposals are derived from the store and the Rulebook only
+    // (Req 26.28). A selection keeps the proposals of that rule, and a
+    // revision selection keeps those whose prospective number matches.
+    let pending: Vec<(PendingProposal<'_>, Result<Prospective, Diagnostic>)> =
+        pending_proposals(&loaded.batches, rb)
+            .into_iter()
+            .filter(|p| {
+                p.proposal
+                    .rule
+                    .as_ref()
+                    .is_some_and(|(d, _)| rule.is_none_or(|id| &d.id == id))
+            })
+            .map(|p| (p, prospective_adoption(rb, &p)))
+            .filter(|(_, r)| match (revision, r) {
+                (Some(n), Ok(prospective)) => prospective.revision == n,
+                (Some(_), Err(_)) => false,
+                (None, _) => true,
+            })
+            .collect();
     let keys: Vec<RuleKey> = match rule {
         // Without a selection: the revisions awaiting a decision.
         None => unresolved(rb, &statuses),
@@ -353,7 +374,7 @@ fn list(
                 .filter(|k| &k.id == id && revision.is_none_or(|n| n == k.revision))
                 .collect();
             found.sort();
-            if found.is_empty() {
+            if found.is_empty() && pending.is_empty() {
                 let which = revision.map_or(String::new(), |n| format!(" revision {n}"));
                 return failed_one(Diagnostic::new(
                     Code::ReviewTargetNotFound,
@@ -369,7 +390,7 @@ fn list(
     };
     let validation = rt_validate::validate(rb, &loaded.ledger, &loaded.sources, None);
     let mut out = String::new();
-    if keys.is_empty() {
+    if keys.is_empty() && pending.is_empty() {
         out.push_str("no revision awaits a decision\n");
     }
     for key in &keys {
@@ -381,10 +402,80 @@ fn list(
             describe(&mut out, rb, rev, status, &validation, &loaded.sources);
         }
     }
+    for (p, prospective) in &pending {
+        describe_pending(&mut out, rb, p, prospective, &loaded.sources);
+    }
     Done {
         stdout: out.into_bytes(),
         state: DiagnosticState::empty(),
         code: ExitCode::Success,
+    }
+}
+
+fn origin_text(origin: &Origin) -> String {
+    match origin {
+        Origin::Manual { author: None } => "manual".to_owned(),
+        Origin::Manual { author: Some(a) } => {
+            format!("manual, author '{}'", escape_controls(a.as_str()))
+        }
+        Origin::AiProposal(o) => format!(
+            "AI proposal '{}' (proposer '{}', provider '{}', model '{}')",
+            escape_controls(&o.proposal_id),
+            escape_controls(o.proposer.as_str()),
+            escape_controls(&o.provider),
+            escape_controls(&o.model)
+        ),
+    }
+}
+
+/// One Pending_Proposal: the revision and hash its adoption would give, the
+/// stored findings, and the source text the Explainer verified for the draft.
+fn describe_pending(
+    out: &mut String,
+    rb: &Rulebook,
+    pending: &PendingProposal<'_>,
+    prospective: &Result<Prospective, Diagnostic>,
+    sources: &SourceModels,
+) {
+    let proposal = pending.proposal;
+    let rule = proposal
+        .rule
+        .as_ref()
+        .map_or_else(String::new, |(d, _)| escape_controls(d.id.as_str()));
+    match prospective {
+        Ok(p) => {
+            let _ = writeln!(
+                out,
+                "pending proposal '{}' for rule '{rule}' prospective revision {}",
+                proposal.proposal_id, p.revision
+            );
+            let _ = writeln!(out, "  origin: {}", origin_text(&p.adopted.origin));
+            let _ = writeln!(out, "  prospective content hash: {}", p.content_hash);
+        }
+        Err(d) => {
+            let _ = writeln!(
+                out,
+                "pending proposal '{}' for rule '{rule}' cannot be adopted",
+                proposal.proposal_id
+            );
+            for line in crate::render::diagnostic(d).lines() {
+                let _ = writeln!(out, "  diagnostic: {line}");
+            }
+        }
+    }
+    for d in &proposal.outcome {
+        let _ = writeln!(
+            out,
+            "  diagnostic: {} {}: {}",
+            crate::render::severity_name(d.code.severity()),
+            d.code.id(),
+            escape_controls(&d.message)
+        );
+    }
+    if let Ok(p) = prospective {
+        for line in span_lines(rb, &p.adopted, sources) {
+            let _ = writeln!(out, "  {line}");
+        }
     }
 }
 
@@ -403,19 +494,7 @@ fn describe(
         rev.key.revision,
         status.name()
     );
-    let origin = match &rev.origin {
-        Origin::Manual { author: None } => "manual".to_owned(),
-        Origin::Manual { author: Some(a) } => {
-            format!("manual, author '{}'", escape_controls(a.as_str()))
-        }
-        Origin::AiProposal(o) => format!(
-            "AI proposal '{}' (proposer '{}', provider '{}', model '{}')",
-            escape_controls(&o.proposal_id),
-            escape_controls(o.proposer.as_str()),
-            escape_controls(&o.provider),
-            escape_controls(&o.model)
-        ),
-    };
+    let origin = origin_text(&rev.origin);
     let _ = writeln!(out, "  origin: {origin}");
     match rule_content_hash(&rb.ir_version, rev, &rb.documents) {
         Ok(hash) => {

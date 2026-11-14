@@ -10,7 +10,7 @@ use rt_foundation::{
 };
 use rt_json::{write_compact, Position, Value};
 
-fn severity_name(severity: Severity) -> &'static str {
+pub(crate) fn severity_name(severity: Severity) -> &'static str {
     match severity {
         Severity::Error => "error",
         Severity::Warning => "warning",

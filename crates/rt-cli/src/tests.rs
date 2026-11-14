@@ -12,6 +12,8 @@ mod lock_required_tests;
 mod pipeline_tests;
 #[path = "tests_reader_window.rs"]
 mod reader_window_tests;
+#[path = "tests_review_adopt.rs"]
+mod review_adopt_tests;
 #[path = "tests_review.rs"]
 mod review_tests;
 #[path = "tests_validate.rs"]

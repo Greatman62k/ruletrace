@@ -37,7 +37,7 @@ pub struct ReviewArgs {
     pub ledger: PathBuf,
     /// The Source_Model files, in the order given.
     pub source_models: Vec<PathBuf>,
-    /// The Proposal_Store directory of `approve` and `reject`, when given.
+    /// The Proposal_Store directory, when given.
     pub proposals: Option<PathBuf>,
     /// The subcommand.
     pub command: ReviewCommand,
@@ -221,12 +221,13 @@ const FLAGS: [&str; 2] = ["--render", "--create-ledger"];
 /// empty value with its own REVIEW Diagnostic (Req 23.14, 23.15).
 const MAY_BE_EMPTY: [&str; 2] = ["--reviewer", "--reason"];
 
-const REVIEW_LIST_OPTIONS: [&str; 5] = [
+const REVIEW_LIST_OPTIONS: [&str; 6] = [
     "--rulebook",
     "--ledger",
     "--source-model",
     "--rule",
     "--revision",
+    "--proposals",
 ];
 
 const REVIEW_APPROVE_OPTIONS: [&str; 10] = [

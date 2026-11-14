@@ -24,9 +24,9 @@ const CLAUSE1: &str = "1. A competitor is eligible if age is at least 16 and hol
 const BATCH_FILE: &str = "store/batches/req.json";
 
 pub(super) struct Fixture {
-    batch: Vec<u8>,
+    pub(super) batch: Vec<u8>,
     pub(super) hash: String,
-    proposal_id: String,
+    pub(super) proposal_id: String,
 }
 
 pub(super) fn fixture() -> Fixture {
