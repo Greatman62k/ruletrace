@@ -714,7 +714,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Blocked by: 6.7, 5.12.
     - **Validates: Requirements 33.6, 33.14, 13.11**
 
-  - [~] 6.9 Write the demonstration acceptance test for the `hand` profile
+  - [-] 6.9 Write the demonstration acceptance test for the `hand` profile
     - Implement the acceptance test of design §8.11.12 for the `hand` profile: manifest checks, runbook execution step by step with exit codes, byte comparison of every produced artifact with its golden file, assertions that every Decision_Trace is Verified, the Proof_Report replays, the data contains the participants of Req 33.13 (the synthetic stand-in satisfies them), the Coverage_Statement matches, and the `ruletrace` dependency tree has no network, provider or AI crate (`check-tree` library function).
     - Add the three mutations M1 (one source byte), M2 (one data value) and M3 (one approved Rule_Content literal) of design §8.11.11 as an early smoke check (`RT-PRV-0002` and not verified; only dependent Outcomes change; `RT-APR-0001`, exit 3, no Compiled_Rulebook). M3 follows the RN-29 record. Print a readable summary (a step table with exit codes, the Outcome table, and the first Proof_Report section) when run with `-- --nocapture`.
     - Observable: `cargo test -p rt-demo --test acceptance hand -- --nocapture` passes and prints the summary.
