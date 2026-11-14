@@ -1,0 +1,17 @@
+[package]
+name = "rt-proposals"
+description = "Proposal_Store batch data model, canonical parse and print, and Pending_Proposal derivation (class core)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rt-foundation = { path = "../rt-foundation" }
+rt-hash = { path = "../rt-hash" }
+rt-json = { path = "../rt-json" }
+rt-ir = { path = "../rt-ir" }

@@ -370,6 +370,16 @@ name = "rt-numeric"
 version = "0.1.0"
 
 [[package]]
+name = "rt-proposals"
+version = "0.1.0"
+dependencies = [
+ "rt-foundation",
+ "rt-hash",
+ "rt-ir",
+ "rt-json",
+]
+
+[[package]]
 name = "rt-review"
 version = "0.1.0"
 dependencies = [
