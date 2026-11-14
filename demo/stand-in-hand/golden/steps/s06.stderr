@@ -1,0 +1,2 @@
+error RT-EXE-0001: rule elig.entry: required input 'age' of participant 'p2' is a Missing_Value
+  at source stand-in-rules.md:161-241 (line 5, column 1)

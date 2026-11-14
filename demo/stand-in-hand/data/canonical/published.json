@@ -1,0 +1,51 @@
+{
+  "format": "ruletrace-published",
+  "version": 1,
+  "entries": [
+    {
+      "participant": "p1",
+      "target": "eligible",
+      "value": true
+    },
+    {
+      "participant": "p3",
+      "target": "eligible",
+      "value": false
+    },
+    {
+      "participant": "p4",
+      "target": "eligible",
+      "value": true
+    },
+    {
+      "participant": "p5",
+      "target": "eligible",
+      "value": true
+    },
+    {
+      "participant": "p1",
+      "target": "score",
+      "value": "7.6"
+    },
+    {
+      "participant": "p2",
+      "target": "score",
+      "value": "7.8"
+    },
+    {
+      "participant": "p3",
+      "target": "score",
+      "value": "6"
+    },
+    {
+      "participant": "p4",
+      "target": "score",
+      "value": "7.8"
+    },
+    {
+      "participant": "p5",
+      "target": "score",
+      "value": "6"
+    }
+  ]
+}

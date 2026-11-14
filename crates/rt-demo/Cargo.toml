@@ -1,0 +1,23 @@
+[package]
+name = "rt-demo"
+description = "Demonstration harness: manifest, runbook runner and golden comparison (class tool, tests only)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rt-foundation = { path = "../rt-foundation" }
+rt-json = { path = "../rt-json" }
+rt-hash = { path = "../rt-hash" }
+rt-srcmodel = { path = "../rt-srcmodel" }
+rt-ir = { path = "../rt-ir" }
+rt-ledger = { path = "../rt-ledger" }
+rt-validate = { path = "../rt-validate" }
+
+[dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }

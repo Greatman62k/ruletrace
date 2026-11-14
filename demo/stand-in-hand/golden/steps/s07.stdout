@@ -1,0 +1,56 @@
+question: value of eligible for p1
+provenance: verified
+span 1: rule elig.entry revision 1, document stand-in-rules.md, bytes 161..241, line 5, column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+  text: 1. An entrant is eligible if age is at least 16 and the entrant holds a licence.
+
+question: value of eligible for p2
+provenance: verified
+span 1: rule elig.entry revision 1, document stand-in-rules.md, bytes 161..241, line 5, column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+  text: 1. An entrant is eligible if age is at least 16 and the entrant holds a licence.
+
+question: value of eligible for p3
+provenance: verified
+span 1: rule elig.entry revision 1, document stand-in-rules.md, bytes 161..241, line 5, column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+  text: 1. An entrant is eligible if age is at least 16 and the entrant holds a licence.
+
+question: value of eligible for p4
+provenance: verified
+span 1: rule elig.entry revision 1, document stand-in-rules.md, bytes 161..241, line 5, column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+  text: 1. An entrant is eligible if age is at least 16 and the entrant holds a licence.
+
+question: value of eligible for p5
+provenance: verified
+span 1: rule elig.entry revision 1, document stand-in-rules.md, bytes 161..241, line 5, column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+  text: 1. An entrant is eligible if age is at least 16 and the entrant holds a licence.
+
+question: value of score for p1
+provenance: verified
+span 1: rule score.weighted revision 1, document stand-in-rules.md, bytes 242..320, line 6, column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+  text: 2. The score is 0.6 times the judges score plus 0.4 times the technical score.
+
+question: value of score for p2
+provenance: verified
+span 1: rule score.weighted revision 1, document stand-in-rules.md, bytes 242..320, line 6, column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+  text: 2. The score is 0.6 times the judges score plus 0.4 times the technical score.
+
+question: value of score for p3
+provenance: verified
+span 1: rule score.weighted revision 1, document stand-in-rules.md, bytes 242..320, line 6, column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+  text: 2. The score is 0.6 times the judges score plus 0.4 times the technical score.
+
+question: value of score for p4
+provenance: verified
+span 1: rule score.weighted revision 1, document stand-in-rules.md, bytes 242..320, line 6, column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+  text: 2. The score is 0.6 times the judges score plus 0.4 times the technical score.
+
+question: value of score for p5
+provenance: verified
+span 1: rule score.weighted revision 1, document stand-in-rules.md, bytes 242..320, line 6, column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+  text: 2. The score is 0.6 times the judges score plus 0.4 times the technical score.
+
+question: rank of standing for (no participant)
+provenance: verified
+span 1: rule rank.standing revision 1, document stand-in-rules.md, bytes 321..426, line 7, column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+  text: 3. Entrants are ranked by score, highest first. Equal scores are separated by the higher technical score.
+span 2: rule score.weighted revision 1, document stand-in-rules.md, bytes 242..320, line 6, column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+  text: 2. The score is 0.6 times the judges score plus 0.4 times the technical score.

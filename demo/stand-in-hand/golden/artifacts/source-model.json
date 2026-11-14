@@ -1,0 +1,66 @@
+{
+  "format": "ruletrace-source-model",
+  "version": 1,
+  "document": "stand-in-rules.md",
+  "kind": "markdown",
+  "sha256": "73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76",
+  "bytes": 427,
+  "content": "# Stand-in Rules for a Synthetic Demonstration Meet\n\nThis text is a stand-in written for the RuleTrace project. It is not the rulebook of any real competition.\n\n1. An entrant is eligible if age is at least 16 and the entrant holds a licence.\n2. The score is 0.6 times the judges score plus 0.4 times the technical score.\n3. Entrants are ranked by score, highest first. Equal scores are separated by the higher technical score.\n",
+  "elements": [
+    {
+      "id": 0,
+      "kind": "heading",
+      "level": 1,
+      "label": null,
+      "start": 0,
+      "end": 51,
+      "line": 1,
+      "column": 1,
+      "parent": null
+    },
+    {
+      "id": 1,
+      "kind": "paragraph",
+      "level": null,
+      "label": null,
+      "start": 53,
+      "end": 159,
+      "line": 3,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 2,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 161,
+      "end": 241,
+      "line": 5,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 3,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 242,
+      "end": 320,
+      "line": 6,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 4,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 321,
+      "end": 426,
+      "line": 7,
+      "column": 1,
+      "parent": 0
+    }
+  ]
+}
