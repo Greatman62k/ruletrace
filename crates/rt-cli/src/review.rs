@@ -6,37 +6,43 @@
 //! is the pure [`rt_review::plan_review`]. This module owns the I/O around it:
 //!
 //! * `approve` and `reject` take the exclusive lock on `<ledger>.lock`
-//!   (`RT-APR-0212`, exit 70), read the Rulebook, the ledger and the
-//!   Source_Models, plan, and replace the ledger with one atomic rename of the
-//!   complete new file ([`commit_files`] with a single file). A refusal is
-//!   exactly one Diagnostic and no file changes. The lock file is a control
-//!   file that holds no data and is not part of the review state.
+//!   (`RT-APR-0212` when held, `RT-APR-0215` when the file system has no
+//!   advisory locks, both exit 70), recover an interrupted commit, read the
+//!   Rulebook, the ledger, the Proposal_Store and the Source_Models, and plan.
+//!   A refusal is exactly one Diagnostic and no file changes. The lock file is
+//!   a control file that holds no data and is not part of the review state.
 //! * A review of a revision that exists in the Rulebook changes the ledger
-//!   only, so one rename is atomic.
+//!   only, so one atomic rename of the complete new file is enough
+//!   ([`commit_files`]).
+//! * The adoption of a Pending_Proposal changes the ledger and the Rulebook,
+//!   which the journaled two-file commit ([`commit_pair`]) replaces together.
 //! * `list` takes no lock and writes nothing. Source text comes from the
 //!   Explainer ([`rt_explain::verify_trace`]) over a trace that holds the spans
 //!   of the revision.
 
 use crate::args::{DecideArgs, ReviewArgs, ReviewCommand};
-use crate::io::{acquire_lock, commit_files, input_location, Fs};
+use crate::commit::{
+    commit_pair, locking_unsupported, read_pair, recover, recovery_notice, retained_warning, Finish,
+};
+use crate::io::{commit_files, input_location, sibling, Fs};
 use crate::validate::{collect, exit_code_of, input_id, load_sources, read_input};
 use rt_foundation::{
     escape_controls, Code, Diagnostic, DiagnosticState, ExitCode, Location, RevisionNumber, RuleId,
-    MAX_CONTAINER_DEPTH, MAX_LEDGER_BYTES, MAX_RULEBOOK_BYTES,
+    MAX_CONTAINER_DEPTH, MAX_LEDGER_BYTES, MAX_PROPOSAL_BATCH_BYTES, MAX_RULEBOOK_BYTES,
 };
 use rt_ir::{rule_content_hash, ApprovalStatus, Origin, RuleKey, RuleRevision, Rulebook};
 use rt_json::ParseLimits;
 use rt_ledger::{derive_statuses, parse_ledger, unresolved, AiIdentitySet, ApprovalLedger};
-use rt_review::{plan_review, ReviewAction, ReviewDecision};
+use rt_proposals::{parse_batch, Batch};
+use rt_review::{plan_review_with_store, ReviewAction, ReviewDecision};
 use rt_srcmodel::SourceModels;
 use rt_trace::{
     DecisionTrace, DocumentHash, Outcome, QuestionKind, TraceParts, TraceQuestion, TraceRule,
     TraceSpan,
 };
-use std::ffi::OsString;
 use std::fmt::Write as _;
 use std::io::ErrorKind;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// What the command produced.
 pub(crate) struct Done {
@@ -76,6 +82,60 @@ struct Loaded {
     rulebook: Rulebook,
     ledger: ApprovalLedger,
     sources: SourceModels,
+    batches: Vec<Batch>,
+}
+
+fn store_invalid(path: &Path, why: String) -> Diagnostic {
+    Diagnostic::new(Code::ReviewProposalStoreInvalid, why, input_location(path))
+}
+
+/// Reads every `batches/*.json` of a Proposal_Store (design §3.7.5). The store
+/// is only read here (D-8).
+fn load_batches(dir: &Path, fs: &dyn Fs, problems: &mut DiagnosticState) -> Vec<Batch> {
+    let batches_dir = dir.join("batches");
+    let shown = escape_controls(&batches_dir.display().to_string());
+    let names = match fs.list_dir(&batches_dir) {
+        Ok(names) => names,
+        Err(e) => {
+            problems.push(store_invalid(
+                &batches_dir,
+                format!("the Proposal_Store directory '{shown}' cannot be read: {e}"),
+            ));
+            return Vec::new();
+        }
+    };
+    let mut batches = Vec::new();
+    for path in names
+        .iter()
+        .filter(|p| p.extension().is_some_and(|x| x == "json"))
+    {
+        let step = || -> Result<Batch, Vec<Diagnostic>> {
+            let input = input_id(path).map_err(|d| vec![*d])?;
+            let bytes = fs
+                .read(path, MAX_PROPOSAL_BATCH_BYTES.saturating_add(1))
+                .map_err(|e| {
+                    vec![store_invalid(
+                        path,
+                        format!(
+                            "the batch '{}' cannot be read: {e}",
+                            escape_controls(&path.display().to_string())
+                        ),
+                    )]
+                })?;
+            parse_batch(&input, &bytes)
+        };
+        match step() {
+            Ok(batch) => batches.push(batch),
+            Err(ds) => {
+                // A batch that does not parse makes the whole store invalid, so
+                // that no proposal is adopted from a store that is not trusted.
+                for d in ds {
+                    problems.push(store_invalid(path, d.message().to_owned()));
+                }
+            }
+        }
+    }
+    batches
 }
 
 fn load_rulebook(path: &Path, fs: &dyn Fs, problems: &mut DiagnosticState) -> Option<Rulebook> {
@@ -122,41 +182,78 @@ fn load(args: &ReviewArgs, create_ledger: bool, fs: &dyn Fs) -> Result<Loaded, D
     let rulebook = load_rulebook(&args.rulebook, fs, &mut problems);
     let ledger = load_ledger(&args.ledger, create_ledger, fs, &mut problems);
     let sources = load_sources(&args.source_models, fs, &mut problems);
+    let batches = args
+        .proposals
+        .as_deref()
+        .map(|dir| load_batches(dir, fs, &mut problems))
+        .unwrap_or_default();
     match (rulebook, ledger, sources) {
         (Some(rulebook), Some(ledger), Some(sources)) if problems.as_slice().is_empty() => {
             Ok(Loaded {
                 rulebook,
                 ledger,
                 sources,
+                batches,
             })
         }
         _ => Err(problems),
     }
 }
 
-fn sibling(path: &Path, suffix: &str) -> PathBuf {
-    let mut name: OsString = path.as_os_str().to_owned();
-    name.push(suffix);
-    PathBuf::from(name)
+fn decide(args: &ReviewArgs, d: &DecideArgs, fs: &dyn Fs) -> Done {
+    // What recovery did stays visible when the decision itself is refused.
+    let mut notices = DiagnosticState::empty();
+    let mut done = decide_locked(args, d, fs, &mut notices);
+    for notice in notices.as_slice() {
+        done.state.push(notice.clone());
+    }
+    done.state = done.state.sorted();
+    done
 }
 
-fn decide(args: &ReviewArgs, d: &DecideArgs, fs: &dyn Fs) -> Done {
+fn decide_locked(
+    args: &ReviewArgs,
+    d: &DecideArgs,
+    fs: &dyn Fs,
+    notices: &mut DiagnosticState,
+) -> Done {
     // Step 1 of design §3.8.3: the exclusive lock, held until this function
     // returns.
     let lock_path = sibling(&args.ledger, ".lock");
-    let _lock = match acquire_lock(fs, &lock_path) {
+    let _lock = match fs.try_lock(&lock_path) {
         Ok(lock) => lock,
+        Err(e) if e.kind() == std::io::ErrorKind::Unsupported => {
+            return failed_one(locking_unsupported(
+                &lock_path,
+                "to change the Rulebook and the ledger",
+            ))
+        }
         Err(e) => {
+            let why = if e.kind() == std::io::ErrorKind::WouldBlock {
+                "another review command holds it".to_owned()
+            } else {
+                e.to_string()
+            };
             return failed_one(Diagnostic::new(
                 Code::ReviewLockUnavailable,
                 format!(
-                    "the lock '{}' could not be taken: {e}",
+                    "the lock '{}' could not be taken: {why}",
                     escape_controls(&lock_path.display().to_string())
                 ),
                 input_location(&lock_path),
-            ))
+            ));
         }
     };
+    // Step 2: an interrupted commit is finished or undone before anything is
+    // read, so every later step sees two consistent files.
+    match recover(fs, &args.ledger, &args.rulebook) {
+        Ok(how) => {
+            if let Some(notice) = recovery_notice(&args.ledger, &how) {
+                notices.push(notice);
+            }
+        }
+        Err(d) => return failed_one(*d),
+    }
     let loaded = match load(args, d.create_ledger, fs) {
         Ok(loaded) => loaded,
         Err(problems) => return failed(problems),
@@ -175,17 +272,38 @@ fn decide(args: &ReviewArgs, d: &DecideArgs, fs: &dyn Fs) -> Done {
         },
         batch_identities: AiIdentitySet::new(Vec::<String>::new()),
     };
-    let plan = match plan_review(&loaded.rulebook, &loaded.ledger, &decision, &loaded.sources) {
+    let plan = match plan_review_with_store(
+        &loaded.rulebook,
+        &loaded.ledger,
+        &decision,
+        &loaded.sources,
+        &loaded.batches,
+    ) {
         Ok(plan) => plan,
         Err(rejected) => return failed(rejected.into_diagnostics()),
     };
-    // One file, one atomic rename of the complete new ledger (Req 26.19).
-    if let Err(e) = commit_files(fs, &[(args.ledger.as_path(), plan.ledger_bytes())]) {
-        return failed_one(Diagnostic::new(
-            Code::ReviewWriteFailed,
-            e.message().to_owned(),
-            e.primary().clone(),
-        ));
+    let committed = match plan.rulebook_bytes() {
+        // An adoption changes both files (Req 26.19).
+        Some(rulebook_bytes) => commit_pair(
+            fs,
+            (args.ledger.as_path(), plan.ledger_bytes()),
+            (args.rulebook.as_path(), rulebook_bytes),
+        ),
+        // One file, one atomic rename of the complete new ledger.
+        None => commit_files(fs, &[(args.ledger.as_path(), plan.ledger_bytes())])
+            .map(|()| Finish::Clean)
+            .map_err(|e| {
+                Box::new(Diagnostic::new(
+                    Code::ReviewWriteFailed,
+                    e.message().to_owned(),
+                    e.primary().clone(),
+                ))
+            }),
+    };
+    match committed {
+        Ok(Finish::Clean) => {}
+        Ok(Finish::JournalRetained) => notices.push(retained_warning(&args.ledger)),
+        Err(d) => return failed_one(*d),
     }
     let verb = if d.reject_reason.is_some() {
         "rejected"
@@ -211,7 +329,13 @@ fn list(
     revision: Option<RevisionNumber>,
     fs: &dyn Fs,
 ) -> Done {
-    let loaded = match load(args, false, fs) {
+    // The Rulebook and the ledger are read once as one pair, or not at all.
+    // Only `approve` and `reject` recover a journal.
+    let pair = match read_pair(fs, &args.ledger, &args.rulebook) {
+        Ok(pair) => pair,
+        Err(blocked) => return failed_one(*blocked),
+    };
+    let loaded = match load(args, false, &pair) {
         Ok(loaded) => loaded,
         Err(problems) => return failed(problems),
     };

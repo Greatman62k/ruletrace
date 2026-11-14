@@ -76,7 +76,21 @@ pub(crate) struct Inputs {
 
 /// Runs the command.
 pub(crate) fn run(args: &ValidateArgs, fs: &dyn Fs) -> Done {
-    let inputs = match load(args, fs) {
+    // The Rulebook and the ledger are read once as one pair, or not at all.
+    let pair = match crate::commit::read_pair(fs, &args.ledger, &args.rulebook) {
+        Ok(pair) => pair,
+        Err(blocked) => {
+            let mut state = DiagnosticState::empty();
+            state.push(*blocked);
+            let code = exit_code_of(&state);
+            return Done {
+                state,
+                code,
+                stored: Vec::new(),
+            };
+        }
+    };
+    let inputs = match load(args, &pair) {
         Ok(inputs) => inputs,
         Err(state) => {
             let state = state.sorted();

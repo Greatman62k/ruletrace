@@ -20,6 +20,22 @@ pub trait Fs {
     /// Any I/O error, including a missing file or a directory.
     fn read(&self, path: &Path, max_bytes: u64) -> io::Result<Vec<u8>>;
 
+    /// Whether a directory entry of this name exists. A symbolic link counts
+    /// as existing even when its target does not.
+    ///
+    /// The default reads one byte, which treats a dangling link as absent;
+    /// `StdFs` asks the directory entry itself.
+    ///
+    /// # Errors
+    /// Any I/O error other than a missing entry.
+    fn exists(&self, path: &Path) -> io::Result<bool> {
+        match self.read(path, 1) {
+            Ok(_) => Ok(true),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(false),
+            Err(e) => Err(e),
+        }
+    }
+
     /// Creates the file, which must not exist, writes all bytes and syncs it to
     /// storage.
     ///
@@ -40,57 +56,65 @@ pub trait Fs {
     /// Any I/O error.
     fn remove(&self, path: &Path) -> io::Result<()>;
 
-    /// Takes an exclusive advisory lock on `path`, creating the file when
-    /// needed. `Ok(None)` means that this file system has no such lock, and the
-    /// caller uses the lock-file fallback of [`acquire_lock`]. The lock is
-    /// released when the returned value is dropped.
+    /// Creates `to` as a hard link of the file `from`.
+    ///
+    /// The default has no hard links, so the commit copies instead.
     ///
     /// # Errors
-    /// `WouldBlock` when another holder has the lock, or any other I/O error.
-    fn try_lock(&self, _path: &Path) -> io::Result<Option<Box<dyn LockHeld>>> {
-        Ok(None)
+    /// Any I/O error, including a file system without hard links.
+    fn hard_link(&self, _from: &Path, _to: &Path) -> io::Result<()> {
+        Err(io::ErrorKind::Unsupported.into())
+    }
+
+    /// Makes the entries of a directory durable. A file system without
+    /// directory sync treats this as a no-op, which is the default.
+    ///
+    /// # Errors
+    /// Any I/O error.
+    fn sync_dir(&self, _dir: &Path) -> io::Result<()> {
+        Ok(())
+    }
+
+    /// The paths of the entries of a directory, in sorted order.
+    ///
+    /// The default cannot list, so a Proposal_Store is unreadable.
+    ///
+    /// # Errors
+    /// Any I/O error, including a missing directory.
+    fn list_dir(&self, _dir: &Path) -> io::Result<Vec<PathBuf>> {
+        Err(io::ErrorKind::Unsupported.into())
+    }
+
+    /// Takes an exclusive advisory lock on `path`, creating the file when
+    /// needed. The lock is released when the returned value is dropped and is
+    /// never waited for. There is no lock-file fallback (Req 26.30).
+    ///
+    /// The default has no advisory locks and reports `Unsupported`.
+    ///
+    /// # Errors
+    /// `WouldBlock` when another holder has the lock, `Unsupported` when the
+    /// file system or platform has no advisory locks (the file this call
+    /// created is removed again), or any other I/O error.
+    fn try_lock(&self, _path: &Path) -> io::Result<Box<dyn LockHeld>> {
+        Err(io::ErrorKind::Unsupported.into())
+    }
+
+    /// Takes a shared advisory lock on an existing `path` without creating it,
+    /// so that a reader never changes the directory and no writer can hold the
+    /// exclusive lock while the reader holds this one. The default has no
+    /// advisory locks and reports `Unsupported`.
+    ///
+    /// # Errors
+    /// `NotFound` when the file does not exist, `WouldBlock` when a writer
+    /// holds the exclusive lock, `Unsupported` when the file system or
+    /// platform has no advisory locks, or any other I/O error.
+    fn try_lock_shared(&self, _path: &Path) -> io::Result<Box<dyn LockHeld>> {
+        Err(io::ErrorKind::Unsupported.into())
     }
 }
 
 /// A held lock. Dropping the value releases it.
 pub trait LockHeld {}
-
-/// An exclusive lock on one file of the file system, released on drop.
-pub struct Lock<'a> {
-    _native: Option<Box<dyn LockHeld>>,
-    fallback: Option<(&'a dyn Fs, PathBuf)>,
-}
-
-impl Drop for Lock<'_> {
-    fn drop(&mut self) {
-        if let Some((fs, path)) = self.fallback.take() {
-            let _ = fs.remove(&path);
-        }
-    }
-}
-
-/// Takes the exclusive lock on `path` (Req 26.19, design §3.8.3 step 1):
-/// `File::try_lock` where the file system has it, otherwise a lock file created
-/// with `create_new` that is removed on release. The lock is never waited for.
-///
-/// # Errors
-/// Any I/O error. `AlreadyExists` (fallback) and `WouldBlock` (native) mean
-/// another holder.
-pub fn acquire_lock<'a>(fs: &'a dyn Fs, path: &Path) -> io::Result<Lock<'a>> {
-    match fs.try_lock(path)? {
-        Some(held) => Ok(Lock {
-            _native: Some(held),
-            fallback: None,
-        }),
-        None => {
-            fs.create_new(path, b"")?;
-            Ok(Lock {
-                _native: None,
-                fallback: Some((fs, path.to_path_buf())),
-            })
-        }
-    }
-}
 
 struct HeldFile {
     _file: std::fs::File,
@@ -110,6 +134,14 @@ impl Fs for StdFs {
         Ok(bytes)
     }
 
+    fn exists(&self, path: &Path) -> io::Result<bool> {
+        match std::fs::symlink_metadata(path) {
+            Ok(_) => Ok(true),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(false),
+            Err(e) => Err(e),
+        }
+    }
+
     fn create_new(&self, path: &Path, bytes: &[u8]) -> io::Result<()> {
         let mut file = std::fs::OpenOptions::new()
             .write(true)
@@ -127,7 +159,34 @@ impl Fs for StdFs {
         std::fs::remove_file(path)
     }
 
-    fn try_lock(&self, path: &Path) -> io::Result<Option<Box<dyn LockHeld>>> {
+    fn hard_link(&self, from: &Path, to: &Path) -> io::Result<()> {
+        std::fs::hard_link(from, to)
+    }
+
+    fn sync_dir(&self, dir: &Path) -> io::Result<()> {
+        // Windows cannot open a directory for sync (design §3.8.3 limits).
+        #[cfg(unix)]
+        {
+            std::fs::File::open(dir)?.sync_all()
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = dir;
+            Ok(())
+        }
+    }
+
+    fn list_dir(&self, dir: &Path) -> io::Result<Vec<PathBuf>> {
+        let mut paths = Vec::new();
+        for entry in std::fs::read_dir(dir)? {
+            paths.push(entry?.path());
+        }
+        paths.sort();
+        Ok(paths)
+    }
+
+    fn try_lock(&self, path: &Path) -> io::Result<Box<dyn LockHeld>> {
+        let existed = self.exists(path)?;
         let file = std::fs::OpenOptions::new()
             .read(true)
             .write(true)
@@ -135,18 +194,35 @@ impl Fs for StdFs {
             .truncate(false)
             .open(path)?;
         match file.try_lock() {
-            Ok(()) => Ok(Some(Box::new(HeldFile { _file: file }))),
+            Ok(()) => Ok(Box::new(HeldFile { _file: file })),
             Err(std::fs::TryLockError::WouldBlock) => Err(io::ErrorKind::WouldBlock.into()),
-            Err(std::fs::TryLockError::Error(e)) if e.kind() == io::ErrorKind::Unsupported => {
-                // No advisory locks here: the caller falls back to a lock file,
-                // which needs a name that does not exist yet.
+            Err(std::fs::TryLockError::Error(e)) => {
                 drop(file);
-                let _ = std::fs::remove_file(path);
-                Ok(None)
+                // A refusal leaves no new file behind.
+                if !existed {
+                    let _ = std::fs::remove_file(path);
+                }
+                Err(e)
             }
+        }
+    }
+
+    fn try_lock_shared(&self, path: &Path) -> io::Result<Box<dyn LockHeld>> {
+        let file = std::fs::File::open(path)?;
+        match file.try_lock_shared() {
+            Ok(()) => Ok(Box::new(HeldFile { _file: file })),
+            Err(std::fs::TryLockError::WouldBlock) => Err(io::ErrorKind::WouldBlock.into()),
             Err(std::fs::TryLockError::Error(e)) => Err(e),
         }
     }
+}
+
+/// The path with `suffix` appended to its final component.
+#[must_use]
+pub(crate) fn sibling(path: &Path, suffix: &str) -> PathBuf {
+    let mut name: OsString = path.as_os_str().to_owned();
+    name.push(suffix);
+    PathBuf::from(name)
 }
 
 /// How many temp names are tried before giving up. A stray temp file of a
@@ -269,5 +345,69 @@ fn restore(fs: &dyn Fs, files: &[(&Path, &[u8])], previous: &[Option<Vec<u8>>], 
                 }
             }
         }
+    }
+}
+
+/// A scratch directory on the real file system, for tests of [`StdFs`]. It
+/// lives here because `io.rs` is the only module that may touch files.
+#[cfg(test)]
+#[cfg(unix)]
+pub(crate) mod scratch {
+    use std::collections::BTreeMap;
+    use std::path::{Path, PathBuf};
+
+    pub(crate) struct Dir(pub(crate) PathBuf);
+
+    impl Drop for Dir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    /// Takes the first free `/tmp/rt-cli-<tag>-<n>`. `create_dir` fails when
+    /// the directory exists, so two test processes never share one.
+    pub(crate) fn dir(tag: &str) -> Dir {
+        for n in 0_u32.. {
+            let path = PathBuf::from(format!("/tmp/rt-cli-{tag}-{n}"));
+            if std::fs::create_dir(&path).is_ok() {
+                return Dir(path);
+            }
+        }
+        unreachable!("the counter does not run out")
+    }
+
+    pub(crate) fn write_tree(dir: &Dir, files: &BTreeMap<PathBuf, Vec<u8>>) {
+        for (path, bytes) in files {
+            let target = dir.0.join(path);
+            if let Some(parent) = target.parent() {
+                std::fs::create_dir_all(parent).expect("a parent can be created");
+            }
+            std::fs::write(target, bytes).expect("a file can be written");
+        }
+    }
+
+    pub(crate) fn read(dir: &Dir, name: &str) -> Vec<u8> {
+        std::fs::read(dir.0.join(name)).expect("the file can be read")
+    }
+
+    pub(crate) fn exists(dir: &Dir, name: &str) -> bool {
+        std::fs::symlink_metadata(dir.0.join(name)).is_ok()
+    }
+
+    /// Creates `name` as a symbolic link to a path that does not exist.
+    pub(crate) fn dangling_link(dir: &Dir, name: &str) -> PathBuf {
+        let aim = dir.0.join("nowhere");
+        std::os::unix::fs::symlink(&aim, dir.0.join(name)).expect("a link can be created");
+        aim
+    }
+
+    /// The target of the symbolic link `name`, or `None` when `name` is not
+    /// one (or is gone).
+    pub(crate) fn link_target(dir: &Dir, name: &str) -> Option<PathBuf> {
+        std::fs::read_link(dir.0.join(name)).ok()
+    }
+
+    pub(crate) fn path(dir: &Dir, name: impl AsRef<Path>) -> std::ffi::OsString {
+        dir.0.join(name).into_os_string()
     }
 }

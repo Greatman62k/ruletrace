@@ -33,6 +33,7 @@ rt-trace = { path = "../rt-trace" }
 rt-engine = { path = "../rt-engine" }
 rt-explain = { path = "../rt-explain" }
 rt-review = { path = "../rt-review" }
+rt-proposals = { path = "../rt-proposals" }
 rt-hash = { path = "../rt-hash" }
 rt-numeric = { path = "../rt-numeric" }
 

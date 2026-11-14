@@ -13,6 +13,7 @@ pub mod args;
 pub mod io;
 pub mod render;
 
+mod commit;
 mod compile;
 mod evaluate;
 mod ingest;

@@ -1,5 +1,17 @@
+#[path = "tests_commit_faults.rs"]
+mod commit_fault_tests;
+#[path = "tests_commit_recovery.rs"]
+mod commit_recovery_tests;
+#[path = "tests_commit.rs"]
+mod commit_tests;
+#[path = "tests_fault.rs"]
+mod fault_tests;
+#[path = "tests_lock_required.rs"]
+mod lock_required_tests;
 #[path = "tests_pipeline.rs"]
 mod pipeline_tests;
+#[path = "tests_reader_window.rs"]
+mod reader_window_tests;
 #[path = "tests_review.rs"]
 mod review_tests;
 #[path = "tests_validate.rs"]
@@ -22,7 +34,14 @@ struct MemFs {
     renames: Cell<u32>,
     /// Fail every `create_new`.
     fail_create: Cell<bool>,
+    /// Another process holds the exclusive review lock.
+    lock_held: Cell<bool>,
 }
+
+/// A lock that holds nothing in memory: `MemFs` has one lock state only.
+struct NoGuard;
+
+impl crate::io::LockHeld for NoGuard {}
 
 impl MemFs {
     fn with(files: &[(&str, &[u8])]) -> Self {
@@ -79,6 +98,42 @@ impl Fs for MemFs {
             .remove(path)
             .map(|_| ())
             .ok_or_else(|| io::ErrorKind::NotFound.into())
+    }
+    fn hard_link(&self, from: &Path, to: &Path) -> io::Result<()> {
+        let mut files = self.files.borrow_mut();
+        let bytes = files.get(from).cloned().ok_or(io::ErrorKind::NotFound)?;
+        if files.contains_key(to) {
+            return Err(io::ErrorKind::AlreadyExists.into());
+        }
+        files.insert(to.to_path_buf(), bytes);
+        Ok(())
+    }
+    fn sync_dir(&self, _dir: &Path) -> io::Result<()> {
+        Ok(())
+    }
+    fn try_lock(&self, _path: &Path) -> io::Result<Box<dyn crate::io::LockHeld>> {
+        if self.lock_held.get() {
+            return Err(io::ErrorKind::WouldBlock.into());
+        }
+        Ok(Box::new(NoGuard))
+    }
+    fn try_lock_shared(&self, path: &Path) -> io::Result<Box<dyn crate::io::LockHeld>> {
+        if !self.files.borrow().contains_key(path) {
+            return Err(io::ErrorKind::NotFound.into());
+        }
+        if self.lock_held.get() {
+            return Err(io::ErrorKind::WouldBlock.into());
+        }
+        Ok(Box::new(NoGuard))
+    }
+    fn list_dir(&self, dir: &Path) -> io::Result<Vec<PathBuf>> {
+        Ok(self
+            .files
+            .borrow()
+            .keys()
+            .filter(|p| p.parent() == Some(dir))
+            .cloned()
+            .collect())
     }
 }
 

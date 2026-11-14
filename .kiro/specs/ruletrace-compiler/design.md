@@ -1047,18 +1047,63 @@ Invalidation: any change to Rule_Content, a span offset, a declared document has
 
 Protocol (all I/O through the `Fs` trait of `rt-cli`; planning is pure in `rt-review`):
 
-1. Parse arguments. Acquire an exclusive advisory lock on `<ledger>.lock` (`File::try_lock`, std, stable since Rust 1.89; the pinned toolchain must be at least that; fallback `create_new` lock file with `RT-APR-0212` if it exists). Lock failure: `RT-APR-0212` exit 70.
+1. Parse arguments. Acquire an exclusive advisory lock on `<ledger>.lock` (`File::try_lock`, std, stable since Rust 1.89; the pinned toolchain must be at least that). There is no lock-file fallback. Another holder: `RT-APR-0212`, exit 70. A file system or platform without advisory locks (`ErrorKind::Unsupported`): `RT-APR-0215`, exit 70, before any file is read or changed (UD-15, user decision of 2026-11-14).
 2. If a commit journal `<ledger>.journal` exists: recover (below), then continue.
 3. Load and verify the ledger (chain), Rulebook, Proposal_Store and Source_Models for every document in the binding (`RT-APR-0209` if missing, exit 2). `--create-ledger` creates a ledger when the file is missing.
 4. `plan_review` (pure): resolve target; reviewer checks (`REVIEW_REVIEWER_INVALID`, `REVIEW_SELF_APPROVAL` against proposer, provider, model and AI identities recorded in the Origin or the batch); refusal checks (stale hash, invalid transition, reason); dry-run validation of the post-state (Rulebook with the adopted revision, ledger with the new record) and refusal with `REVIEW_BLOCKING_DIAGNOSTIC` if any Blocking_Diagnostic names this rule other than its own APPROVAL_UNRESOLVED (this includes a would-be Conflict). The plan holds the exact new bytes of the ledger and of the Rulebook.
 5. Write `<ledger>.new` and `<rulebook>.new` in the same directories, `sync_all` each. Hard-link the current files to `<ledger>.old` and `<rulebook>.old` (copy if linking fails). `sync` directories.
 6. Write the journal (RT-JSON: old and new SHA-256 of each file, temp and backup names, created-at is not recorded), `sync_all`, `sync` directory. From here the decision is durable.
-7. `rename(<ledger>.new, <ledger>)`, sync dir; `rename(<rulebook>.new, <rulebook>)`, sync dir. Ledger first, so the only intermediate state is an orphan record (a Warning), never a Proposed revision without record, and never an unmatched executable.
+7. `rename(<ledger>.new, <ledger>)`, sync dir; `rename(<rulebook>.new, <rulebook>)`, sync dir. Ledger first, so the only intermediate pair is a new ledger with the old Rulebook (an orphan record), never a Rulebook that holds the revision while the ledger lacks its record (Req 26.30). The orphan pair is physically inconsistent and is never consumed: while the journal exists every reader refuses (below).
 8. Remove journal, `.old` files, sync dir. Release lock. Output Diagnostics, exit 0.
 
-*Failure inside the process after step 6.* Roll back: rename `.old` back over any target already replaced, remove temps and journal; every file is byte-identical to its earlier state (Req 26.19, 26.31) and the exit code is 70 (`RT-APR-0208`). A failure before step 6: delete temps only. A rollback that itself fails leaves the journal in place and reports `RT-APR-0208`.
+*Failure inside the process after step 6.* Roll back in the reverse of the forward order: rename `<rulebook>.old` back over the Rulebook when it was replaced, then `<ledger>.old` back over the ledger (or remove a ledger that the commit created), then remove temps and journal. The exit code is 70 (`RT-APR-0208`) and the message states exactly one of three cases (Req 26.19). A failure before step 6 deletes temps only.
 
-*Crash recovery (process killed).* The next `review approve` or `review reject` runs recovery under the lock: read the journal; compare current file hashes with the journal. Both new: finish cleanup. Ledger new, Rulebook old: roll forward by renaming `<rulebook>.new` (the decision was durable). Both old and journal present: roll back cleanup. Anything else: `RT-APR-0208` and no change. Read-only commands (`validate`, `compile`, `evaluate`, `review list`) never write; if a journal is present they add Warning `RT-APR-0211` and proceed. They may see the orphan-record state, which is safe (Warning only).
+- (a) Successful rollback: both files are byte-identical to their earlier state (Req 26.31). The message says they are unchanged.
+- (b) Rollback failure after both new files are in place: the complete new pair is preserved, the journal is retained, and the message says that the decision is committed. The next review command removes the leftovers.
+- (c) Rollback failure in an intermediate state (or one that cannot be inspected): the journal is retained and the message says the files are in an intermediate state and must not be used. Neither file is claimed consistent. The next review command recovers.
+- A rollback that restored both files but failed to clean up is case (a) with a retained journal (or leftover temp files when no journal was published). The message says the files were restored and states what remains.
+
+The message classification reads the file hashes after the failure, never the intended state.
+
+*Crash recovery (process killed) and recovery after a failed rollback.* The next `review approve` or `review reject` runs recovery under the lock and before it loads the Rulebook, the ledger, the Proposal_Store or the Source_Models: read the journal; compare current file hashes with the journal.
+
+| Ledger | Rulebook | Action |
+| --- | --- | --- |
+| new | new | Finish cleanup. |
+| new | old, `<rulebook>.new` present and matching | Roll forward: rename it (the decision was durable). |
+| new | old, `<rulebook>.new` absent | An interrupted rollback consumed it. Restore the ledger from `<ledger>.old` when its hash matches the journal, or remove the ledger when the commit created it. |
+| old | old | Finish cleanup. |
+| anything else, including old ledger with new Rulebook | | `RT-APR-0208`, exit 70, no change. |
+
+A malformed journal, a journal that names other files, a damaged or missing backup and a `<rulebook>.new` that does not match also give `RT-APR-0208` and change nothing. Because the rollback and the forward path both change the ledger side and the Rulebook side in opposite orders, the pair "old ledger, new Rulebook" is never produced; recovery therefore has no arm for it.
+
+*Readers.* `validate`, `review list` and `evaluate` with `--proof-report` (and later the Prize Check and Bracket Check applications) read the Rulebook and the ledger through one function, `read_pair` in `rt-cli`, which returns the two files as one verified pair or refuses (Req 26.32):
+
+1. Take the shared lock on `<ledger>.lock` without creating it (`Fs::try_lock_shared`). `Unsupported` refuses with `RT-APR-0215` (exit 70) before any read. A missing lock file is remembered, and support is then probed with a shared lock on the Rulebook, released at once, so that a file system without locks refuses here too. A lock held by a writer, or any other lock error, refuses with `RT-APR-0214`.
+2. Check `<ledger>.journal`. When it exists, or cannot be inspected, refuse. Nothing else is read.
+3. Read the Rulebook, then the ledger.
+4. Check the journal again.
+5. Read both again, in the same order.
+6. Refuse when either file differs from its first read, or when the lock file was missing at step 1 and exists now.
+7. Hand the bytes of step 5 to the loaders, which read no file of the pair again.
+
+Every refusal other than step 1 `Unsupported` is `RT-APR-0214` (Error, exit 2). Every refusal changes nothing. Only `review approve` and `review reject` recover. `compile` reads only the Validation_Result artifact, never the live files, so it is covered by `validate`. `RT-APR-0211` stays a Warning (exit 0) for the report of a completed recovery and for a commit that completed with a failed cleanup.
+
+*Why the window is closed.* A mixed pair is a new Rulebook with the old ledger, or the reverse, read at two different times. The shared lock excludes every writer during the reads, and a journal left by a crashed writer is found by step 2. The double read and the second journal check are a second line of defence for a writer that does not take the lock, such as a process of an older version. They do not replace the lock.
+
+*Locking is required (user decision of 2026-11-14).* The earlier text allowed a reader without the shared lock on a file system that has none, and recorded a residual case there: a reader suspended across two further complete commits that fail with identical bytes could read the same mixed pair twice. The user decided to fail closed instead. Both the readers and the review commands refuse with `RT-APR-0215` (Error, exit 70) when the lock cannot be taken because the file system or platform has no advisory locks, before any file is read, and change nothing. The `create_new` lock-file fallback is removed for readers and writers. Req 26.30 therefore has no lock-free residual case. Exit 70 follows UD-14, which classifies lock failure as 70. It is an environment failure, not invalid input (2) and not a blocking result (3). One code serves readers and writers, because the failure mode is the same. `RT-APR-0212` (writer, lock held, 70) and `RT-APR-0214` (reader, lock held, 2) keep their meaning, so a held lock and an unsupported lock stay distinguishable. The message names the path and says that the operation refused because advisory locks are required. `StdFs` removes a lock file that its own failed `try_lock` created.
+
+*Decisions recorded at task 7.3.*
+
+- (a) Cleanup removes the temp and backup files first and the journal last, so every state an interrupted cleanup leaves is one that recovery classifies. Steps 5 to 8 list the removals without an order; this is the order.
+- (b) A cleanup failure after both renames returns exit 0 with Warning `RT-APR-0211`, whose text says the commit completed and leftover files remain. The decision is applied, so a rollback or exit 70 would misreport it; the next review command finishes the cleanup.
+- (c) The command refuses with `RT-APR-0208`, exit 70 and no change when `<rulebook>.old`, `<ledger>.old`, either `.new` file or `<ledger>.journal.tmp` exists and no earlier attempt accounts for it. Step 5 first writes the complete journal text to `<ledger>.journal.tmp`; a later attempt that finds a decodable marker for the same two files treats the leftovers as its own and replaces them. A marker torn by a crash cannot be told from a user's file and is refused.
+- (d) Superseded by the user decision of 2026-11-14. The in-process rollback restores the Rulebook first, which makes its intermediate state the same orphan pair as a forward crash. Recovery restores the ledger from `<ledger>.old` when the Rulebook file is old, the ledger is new and `<rulebook>.new` is gone. The earlier ledger-first order had a recovery arm for an old ledger with the new Rulebook, which made the pair that Req 26.30 forbids; that arm is removed. A failed rollback is reported as case (a), (b) or (c) above, never as "one consistent state".
+- (e) The code `RT-APR-0214` (Error, exit 2) is new. Severity is a property of a code, so `RT-APR-0211` cannot be both the Warning of a completed commit with failed cleanup (exit 0, decided at (b)) and the Error of a reader. Exit 2 follows UD-14: the files named on the command line are not usable input. Exit 3 is reserved for Blocking_Diagnostics of the Rulebook and refused review actions, exit 70 for failures that are not invalid input. The catalogue changed with no released baseline, so no renumbering or removal occurred; `check-catalogue` passes.
+- (f) After rollback case (b) or the cleanup failure of decision (b), the journal remains although the files are a complete new pair. Readers still refuse, because the journal is the only record that cleanup is pending and a reader cannot tell the states apart without recovery. This costs a command: the user runs any `review approve` or `review reject`, even one that is then refused, and recovery runs first.
+- (g) Req 26.30 stays absolute. It is closed by the reader protocol of the Readers paragraph, which replaces the earlier journal check alone and the earlier statement that the guarantee covered only states that persist. Two limits remain. A Rulebook that two ledgers share is not protected by the journal or lock of the other ledger, because both are found from the ledger path. The reader protocol needs advisory locks, and a file system without them refuses (RT-APR-0215), so no residual case remains. The sequence of the protocol was tested with a fault-injecting file system that replaces the files between two reads in both directions (commit and rollback) and for one file alone; the shared lock is tested through the file system double and, on `StdFs`, only by `File::try_lock_shared` itself.
+- (h) A torn attempt marker `<ledger>.journal.tmp` (process killed or disk full while it was written) is refused and kept, with a message that names it. Manual removal is safe only when no review command is running and no `<ledger>.journal` exists: delete `<ledger>.journal.tmp`, then remove any `<ledger>.new`, `<ledger>.old`, `<rulebook>.new` and `<rulebook>.old` that you did not create, and run the command again. The user guide `docs/user-guide/review-recovery.md` repeats it (Req 26.36).
+- (i) A dangling symbolic link at a reserved name counts as an existing entry. `claim` asks the directory entry (`Fs::exists`, `symlink_metadata` in `StdFs`), so such a link is refused and kept.
 
 *Comparison.*
 
@@ -1567,9 +1612,11 @@ The catalogue is one file, `catalogue/diagnostics.v1.json` (RT-JSON array of `{c
 | RT-APR-0208 (R) | REVIEW_WRITE_FAILED | Error | Atomic write failed; files unchanged (or journal retained) | 70 | rt review |
 | RT-APR-0209 (R) | REVIEW_SOURCE_MODEL_MISSING | Error | Source_Model for the binding not supplied | 2 | rt review |
 | RT-APR-0210 (N) | REVIEW_REVISION_EXHAUSTED | Error | Next Revision_Number exceeds 4,294,967,295 | 3 | rt review |
-| RT-APR-0211 (N) | REVIEW_COMMIT_JOURNAL_PRESENT | Warning | An interrupted review commit exists | 0 | rt |
+| RT-APR-0211 (N) | REVIEW_COMMIT_JOURNAL_PRESENT | Warning | A review commit was recovered, or a completed commit left its cleanup pending | 0 | rt |
 | RT-APR-0212 (N) | REVIEW_LOCK_UNAVAILABLE | Error | Lock could not be taken | 70 | rt review |
 | RT-APR-0213 (N) | REVIEW_PROPOSAL_STORE_INVALID | Error | Proposal_Store unreadable or malformed | 2 | rt review |
+| RT-APR-0214 (N) | REVIEW_COMMIT_JOURNAL_BLOCKS_READ | Error | The Rulebook and ledger cannot be read as one consistent pair: a commit journal exists, a review command holds the lock, or the pair changed between the two reads | 2 | rt |
+| RT-APR-0215 (N) | REVIEW_LOCKING_UNSUPPORTED | Error | The file system or platform has no advisory locks, so the command refused instead of reading or changing the Rulebook and ledger without a lock | 70 | rt, rt review |
 | RT-AI-0001 (R) | AI_DISABLED | Error | No configuration or AI not enabled | 2 | ai |
 | RT-AI-0002 (R) | AI_CONFIG_INVALID | Error | Invalid TOML, missing, unknown or mistyped field | 2 | ai |
 | RT-AI-0003 (R) | AI_CONFIG_INLINE_SECRET | Error | Credential-looking value, key field, or URL userinfo or query | 2 | ai |
@@ -2008,9 +2055,10 @@ Untrusted: all files, provider responses, Source_Documents, ledger bytes. Truste
 | Output location not writable | `Fs::create_new` or `rename` error | previous output untouched, temp removed | 70 | RT-CLI-0005 |
 | Crash while writing a command output | process killed | previous file untouched; stray `.tmp` file may remain; next run ignores `*.tmp` (never read) | n/a | none |
 | Failure before commit journal (review) | `Fs` error | only temp files, removed | 70 | RT-APR-0208 |
-| Failure after journal, in-process | `Fs` error | rolled back to old files | 70 | RT-APR-0208 |
-| Crash after journal | next review recovers; read commands warn | roll forward or clean up | n/a | RT-APR-0211 Warning on read commands |
+| Failure after journal, in-process | `Fs` error | rolled back to old files (case a); a failed rollback keeps the journal: new pair (b) or intermediate state (c) | 70 | RT-APR-0208 |
+| Crash after journal | next review recovers; every reader refuses with RT-APR-0214 until then | roll forward or clean up | n/a | RT-APR-0214 Error (exit 2) on readers, RT-APR-0211 Warning on the recovering command |
 | Concurrent review commands | lock | serialized | 70 for the second only if the lock is unavailable | RT-APR-0212 |
+| No advisory locks on the file system | `ErrorKind::Unsupported` from the lock call | the command refuses before any read or write, no fallback | 70 | RT-APR-0215 |
 | Torn or edited ledger | chain, sequence, syntax | no status derived | 2 | RT-APR-0101 to 0105 |
 | Proposal batch write fails or loses a race | link or rename error | no partial batch; race loser exits 0 with Warning | 70 or 0 | RT-AI-0303 or RT-AI-0301 |
 | Transmission_Log append fails | write or sync error | nothing sent | 70 | RT-AI-0010 |
@@ -2755,7 +2803,7 @@ Prize allocation, slot-based qualification, seeding, bracket generation, progres
 | R-D1 | OpenAI strict mode limits object nesting to 10 levels; deep expressions may not fit the recursive schema | Expression depth 16 is a local limit; the live job checks; fallback is a flat node table lowered to the same IR |
 | R-D2 | Hand-written 256-bit helper and digit-vector codec contain a bug | Differential tests against `num-bigint`; boundary generators; two independent reviews before Phase 1 exit |
 | R-D3 | Hand-written RT-JSON parser diverges from standard JSON | Differential test against `serde_json` (dev-only oracle) on generated valid and invalid documents; RFC 8259 examples |
-| R-D4 | `File::try_lock` needs a recent toolchain; lock files can go stale | Pin the toolchain at or above the stabilizing version (check at Phase 0); fallback lock file with a clear error |
+| R-D4 | `File::try_lock` needs a recent toolchain; lock files can go stale | Pin the toolchain at or above the stabilizing version (check at Phase 0). No lock-file fallback: a file system without advisory locks is refused with RT-APR-0215 (user decision of 2026-11-14) |
 | R-D5 | Hard links unavailable on some file systems | Fallback to copy and to `create_new` plus rename, covered by the same fault-injection tests |
 | R-D6 | `ureq` proxy and redirect defaults change across versions | Explicit config (no proxy, no redirects), tests with `HTTPS_PROXY` set and a 302 stub; lockfile pin |
 | R-D7 | Authors find JSON AST verbose | Templates in the user guide; AI proposals produce the form; a pretty expression view for review is deferred |

@@ -37,6 +37,8 @@ pub struct ReviewArgs {
     pub ledger: PathBuf,
     /// The Source_Model files, in the order given.
     pub source_models: Vec<PathBuf>,
+    /// The Proposal_Store directory of `approve` and `reject`, when given.
+    pub proposals: Option<PathBuf>,
     /// The subcommand.
     pub command: ReviewCommand,
 }
@@ -227,7 +229,7 @@ const REVIEW_LIST_OPTIONS: [&str; 5] = [
     "--revision",
 ];
 
-const REVIEW_APPROVE_OPTIONS: [&str; 9] = [
+const REVIEW_APPROVE_OPTIONS: [&str; 10] = [
     "--rulebook",
     "--ledger",
     "--source-model",
@@ -237,9 +239,10 @@ const REVIEW_APPROVE_OPTIONS: [&str; 9] = [
     "--reviewer",
     "--time",
     "--create-ledger",
+    "--proposals",
 ];
 
-const REVIEW_REJECT_OPTIONS: [&str; 10] = [
+const REVIEW_REJECT_OPTIONS: [&str; 11] = [
     "--rulebook",
     "--ledger",
     "--source-model",
@@ -249,6 +252,7 @@ const REVIEW_REJECT_OPTIONS: [&str; 10] = [
     "--reviewer",
     "--time",
     "--create-ledger",
+    "--proposals",
     "--reason",
 ];
 
@@ -919,6 +923,7 @@ fn parse_review(text: &[String]) -> Result<Invocation, Vec<Diagnostic>> {
                 rulebook: PathBuf::from(rulebook),
                 ledger: PathBuf::from(ledger),
                 source_models: models.iter().map(|(_, m)| PathBuf::from(m)).collect(),
+                proposals: given.get("--proposals").map(|(_, v)| PathBuf::from(*v)),
                 command,
             }))
         }

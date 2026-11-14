@@ -53,6 +53,12 @@ fn mode_of(i: u8) -> RoundingMode {
     }
 }
 
+/// The next mode after `mode_of(i)`, computed on the reduced index so it
+/// cannot overflow and always differs from the original.
+fn different_mode(i: u8) -> RoundingMode {
+    mode_of(i % 3 + 1)
+}
+
 /// Everything the property varies, so a failing case prints a readable
 /// counterexample.
 #[derive(Clone, Debug)]
@@ -223,7 +229,10 @@ fn mutate(b: &mut Built, c: &Case, which: u8, idx: usize) -> bool {
                 if c.places.is_multiple_of(2) {
                     r.places = Places::new(if c.places == 28 { 27 } else { c.places + 1 }).unwrap();
                 } else {
-                    r.mode = mode_of(c.mode + 1);
+                    let next = different_mode(c.mode);
+                    assert_ne!(next, r.mode, "mutation must pick another mode");
+                    assert_ne!(next, mode_of(c.mode));
+                    r.mode = next;
                 }
             }
             // A ranking has no rounding. Change its tie-breaker operand
@@ -276,5 +285,41 @@ proptest! {
             // The Revision_Number is outside the Draft hash (design §3.8.2).
             prop_assert_eq!(&draft(&changed), &draft_before);
         }
+    }
+}
+
+/// Regression: `mode + 1` overflowed a `u8` for mode 255 (shrunk case in
+/// `proptest-regressions/hash_sensitivity_tests.txt`).
+#[test]
+fn rounding_mode_change_for_mode_255_changes_the_hash() {
+    let c = Case {
+        hashes: [0, 0],
+        revision: 1,
+        weight: 0,
+        value: 0,
+        places: 11,
+        mode: 255,
+        markers: vec![],
+        spans: vec![(0, 0, 0)],
+        ranking: false,
+    };
+    let before = content_hash(&build(&c));
+    let mut changed = build(&c);
+    assert!(mutate(&mut changed, &c, 4, 0));
+    match &changed.revision.content.body {
+        RuleBody::WeightedScore { rounding, .. } => {
+            let r = rounding.as_ref().unwrap();
+            assert_eq!(r.mode, RoundingMode::HalfAwayFromZero);
+            assert_eq!(r.places, Places::new(11).unwrap());
+        }
+        _ => panic!("expected a weighted score"),
+    }
+    assert_ne!(content_hash(&changed), before);
+}
+
+#[test]
+fn different_mode_differs_from_mode_of_for_every_u8() {
+    for i in 0..=u8::MAX {
+        assert_ne!(different_mode(i), mode_of(i), "mode index {i}");
     }
 }

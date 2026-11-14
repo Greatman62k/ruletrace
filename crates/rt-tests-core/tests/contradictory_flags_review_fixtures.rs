@@ -46,6 +46,11 @@ impl Recording {
 }
 
 impl Fs for Recording {
+    fn try_lock(&self, path: &Path) -> io::Result<Box<dyn rt_cli::io::LockHeld>> {
+        self.log("try_lock", path);
+        Err(io::ErrorKind::PermissionDenied.into())
+    }
+
     fn read(&self, path: &Path, _: u64) -> io::Result<Vec<u8>> {
         self.log("read", path);
         Err(io::ErrorKind::NotFound.into())

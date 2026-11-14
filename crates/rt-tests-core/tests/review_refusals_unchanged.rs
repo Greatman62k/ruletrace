@@ -48,7 +48,23 @@ impl MemFs {
     }
 }
 
+struct NoLock;
+
+impl rt_cli::io::LockHeld for NoLock {}
+
 impl Fs for MemFs {
+    fn try_lock(&self, _path: &Path) -> io::Result<Box<dyn rt_cli::io::LockHeld>> {
+        Ok(Box::new(NoLock))
+    }
+
+    fn try_lock_shared(&self, path: &Path) -> io::Result<Box<dyn rt_cli::io::LockHeld>> {
+        if self.exists(path)? {
+            Ok(Box::new(NoLock))
+        } else {
+            Err(io::ErrorKind::NotFound.into())
+        }
+    }
+
     fn read(&self, path: &Path, max: u64) -> io::Result<Vec<u8>> {
         let files = self.0.borrow();
         let bytes = files.get(path).ok_or(io::ErrorKind::NotFound)?;

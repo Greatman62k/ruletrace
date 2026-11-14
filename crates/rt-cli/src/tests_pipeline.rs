@@ -89,7 +89,7 @@ const COMPILE: [&str; 5] = [
     "compiled.json",
 ];
 
-fn evaluate_args<'a>(data: &'a str, extra: &[&'a str]) -> Vec<&'a str> {
+pub(super) fn evaluate_args<'a>(data: &'a str, extra: &[&'a str]) -> Vec<&'a str> {
     let mut args = vec![
         "evaluate",
         "--compiled",
@@ -107,7 +107,7 @@ fn evaluate_args<'a>(data: &'a str, extra: &[&'a str]) -> Vec<&'a str> {
 
 /// Validates and compiles the approved fixture; returns the file system with
 /// `compiled.json`.
-fn compiled_fs() -> MemFs {
+pub(super) fn compiled_fs() -> MemFs {
     let fs = files(&approved_ledger(&rulebook_text(AGE)));
     assert_eq!(run(&os(&VALIDATE), &fs).code.value(), 0);
     let out = run(&os(&COMPILE), &fs);
@@ -115,7 +115,7 @@ fn compiled_fs() -> MemFs {
     fs
 }
 
-const PROOF: [&str; 6] = [
+pub(super) const PROOF: [&str; 6] = [
     "--rulebook",
     "rb.json",
     "--ledger",

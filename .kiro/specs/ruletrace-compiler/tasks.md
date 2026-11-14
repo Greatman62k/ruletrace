@@ -754,7 +754,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 5.8, 5.9, 23.12, 23.14, 23.15, 23.34, 25.1, 26.16, 26.17_
     - Design §3.8.2, §3.8.3 (step 4)
 
-  - [ ] 7.3 Implement the journaled two-file commit, `FaultFs` and recovery
+  - [-] 7.3 Implement the journaled two-file commit, `FaultFs` and recovery
     - In `rt-cli`, implement the protocol of design §3.8.3: exclusive lock, journal recovery, load and verify, plan, write `.new` files and sync, hard-link or copy `.old` backups, write the journal, rename ledger first then Rulebook, remove journal and backups. An in-process failure after the journal rolls back and exits 70 (`RT-APR-0208`); a crash is recovered by the next review command. Read-only commands add the `RT-APR-0211` Warning when a journal exists and never write.
     - Implement `FaultFs` (test only) that fails each numbered operation in turn and simulates a crash after each step.
     - Observable: with a fault injected after the journal write, the next `review` command finishes or rolls back and both files are consistent.

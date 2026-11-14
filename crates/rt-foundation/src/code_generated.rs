@@ -211,12 +211,16 @@ pub enum Code {
     ReviewSourceModelMissing,
     /// `RT-APR-0210`: Next Revision_Number exceeds 4,294,967,295
     ReviewRevisionExhausted,
-    /// `RT-APR-0211`: An interrupted review commit exists
+    /// `RT-APR-0211`: A review commit was recovered, or a completed commit left its cleanup pending
     ReviewCommitJournalPresent,
     /// `RT-APR-0212`: Lock could not be taken
     ReviewLockUnavailable,
     /// `RT-APR-0213`: Proposal_Store unreadable or malformed
     ReviewProposalStoreInvalid,
+    /// `RT-APR-0214`: The Rulebook and ledger cannot be read as one consistent pair: a commit journal exists, a review command holds the lock, or the pair changed between the two reads
+    ReviewCommitJournalBlocksRead,
+    /// `RT-APR-0215`: The file system or platform has no advisory locks, so the command refused instead of reading or changing the Rulebook and ledger without a lock
+    ReviewLockingUnsupported,
     /// `RT-AI-0001`: No configuration or AI not enabled
     AiDisabled,
     /// `RT-AI-0002`: Invalid TOML, missing, unknown or mistyped field
@@ -293,7 +297,7 @@ pub enum Code {
 
 impl Code {
     /// Every code, in catalogue order.
-    pub const ALL: [Code; 141] = [
+    pub const ALL: [Code; 143] = [
         Code::DiagnosticStateContradiction,
         Code::DiagnosticStateBothFlags,
         Code::LifecycleFlagContradiction,
@@ -399,6 +403,8 @@ impl Code {
         Code::ReviewCommitJournalPresent,
         Code::ReviewLockUnavailable,
         Code::ReviewProposalStoreInvalid,
+        Code::ReviewCommitJournalBlocksRead,
+        Code::ReviewLockingUnsupported,
         Code::AiDisabled,
         Code::AiConfigInvalid,
         Code::AiConfigInlineSecret,
@@ -546,6 +552,8 @@ impl Code {
             Self::ReviewCommitJournalPresent => "RT-APR-0211",
             Self::ReviewLockUnavailable => "RT-APR-0212",
             Self::ReviewProposalStoreInvalid => "RT-APR-0213",
+            Self::ReviewCommitJournalBlocksRead => "RT-APR-0214",
+            Self::ReviewLockingUnsupported => "RT-APR-0215",
             Self::AiDisabled => "RT-AI-0001",
             Self::AiConfigInvalid => "RT-AI-0002",
             Self::AiConfigInlineSecret => "RT-AI-0003",
@@ -694,6 +702,8 @@ impl Code {
             Self::ReviewCommitJournalPresent => "REVIEW_COMMIT_JOURNAL_PRESENT",
             Self::ReviewLockUnavailable => "REVIEW_LOCK_UNAVAILABLE",
             Self::ReviewProposalStoreInvalid => "REVIEW_PROPOSAL_STORE_INVALID",
+            Self::ReviewCommitJournalBlocksRead => "REVIEW_COMMIT_JOURNAL_BLOCKS_READ",
+            Self::ReviewLockingUnsupported => "REVIEW_LOCKING_UNSUPPORTED",
             Self::AiDisabled => "AI_DISABLED",
             Self::AiConfigInvalid => "AI_CONFIG_INVALID",
             Self::AiConfigInlineSecret => "AI_CONFIG_INLINE_SECRET",
@@ -842,6 +852,8 @@ impl Code {
             Self::ReviewCommitJournalPresent => Severity::Warning,
             Self::ReviewLockUnavailable => Severity::Error,
             Self::ReviewProposalStoreInvalid => Severity::Error,
+            Self::ReviewCommitJournalBlocksRead => Severity::Error,
+            Self::ReviewLockingUnsupported => Severity::Error,
             Self::AiDisabled => Severity::Error,
             Self::AiConfigInvalid => Severity::Error,
             Self::AiConfigInlineSecret => Severity::Error,
@@ -990,6 +1002,8 @@ impl Code {
             Self::ReviewCommitJournalPresent => ExitCode::Success,
             Self::ReviewLockUnavailable => ExitCode::Internal,
             Self::ReviewProposalStoreInvalid => ExitCode::InvalidInput,
+            Self::ReviewCommitJournalBlocksRead => ExitCode::InvalidInput,
+            Self::ReviewLockingUnsupported => ExitCode::Internal,
             Self::AiDisabled => ExitCode::InvalidInput,
             Self::AiConfigInvalid => ExitCode::InvalidInput,
             Self::AiConfigInlineSecret => ExitCode::InvalidInput,
@@ -1138,6 +1152,8 @@ impl Code {
             "RT-APR-0211" => Some(Self::ReviewCommitJournalPresent),
             "RT-APR-0212" => Some(Self::ReviewLockUnavailable),
             "RT-APR-0213" => Some(Self::ReviewProposalStoreInvalid),
+            "RT-APR-0214" => Some(Self::ReviewCommitJournalBlocksRead),
+            "RT-APR-0215" => Some(Self::ReviewLockingUnsupported),
             "RT-AI-0001" => Some(Self::AiDisabled),
             "RT-AI-0002" => Some(Self::AiConfigInvalid),
             "RT-AI-0003" => Some(Self::AiConfigInlineSecret),
@@ -1287,6 +1303,8 @@ impl Code {
             "REVIEW_COMMIT_JOURNAL_PRESENT" => Some(Self::ReviewCommitJournalPresent),
             "REVIEW_LOCK_UNAVAILABLE" => Some(Self::ReviewLockUnavailable),
             "REVIEW_PROPOSAL_STORE_INVALID" => Some(Self::ReviewProposalStoreInvalid),
+            "REVIEW_COMMIT_JOURNAL_BLOCKS_READ" => Some(Self::ReviewCommitJournalBlocksRead),
+            "REVIEW_LOCKING_UNSUPPORTED" => Some(Self::ReviewLockingUnsupported),
             "AI_DISABLED" => Some(Self::AiDisabled),
             "AI_CONFIG_INVALID" => Some(Self::AiConfigInvalid),
             "AI_CONFIG_INLINE_SECRET" => Some(Self::AiConfigInlineSecret),

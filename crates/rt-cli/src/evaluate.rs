@@ -120,6 +120,17 @@ fn read_with<T>(
 
 fn load_all(args: &EvaluateArgs, fs: &dyn Fs) -> Result<Loaded, DiagnosticState> {
     let mut problems = DiagnosticState::empty();
+    // The Rulebook and the ledger are read once as one pair, or not at all.
+    let pair = match &args.proof {
+        None => None,
+        Some(p) => match crate::commit::read_pair(fs, &p.ledger, &p.rulebook) {
+            Ok(pair) => Some(pair),
+            Err(blocked) => {
+                problems.push(*blocked);
+                return Err(problems);
+            }
+        },
+    };
     let compiled = collect(
         read_with(fs, &args.compiled, MAX_COMPILED_BYTES, |input, bytes| {
             parse_compiled(bytes, input, MAX_COMPILED_BYTES, MAX_CONTAINER_DEPTH)
@@ -176,7 +187,7 @@ fn load_all(args: &EvaluateArgs, fs: &dyn Fs) -> Result<Loaded, DiagnosticState>
                 max_bytes: None,
                 max_depth: None,
             };
-            match load(&as_validate, fs) {
+            match load(&as_validate, pair.as_ref().map_or(fs, |p| p as &dyn Fs)) {
                 Ok(inputs) => (
                     Some(inputs.sources),
                     Some(ProofFiles {

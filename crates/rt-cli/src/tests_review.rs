@@ -221,9 +221,7 @@ fn a_missing_ledger_needs_create_ledger() {
 #[test]
 fn a_held_lock_is_exit_70_and_changes_nothing() {
     let fs = files();
-    fs.files
-        .borrow_mut()
-        .insert(PathBuf::from("ledger.jsonl.lock"), Vec::new());
+    fs.lock_held.set(true);
     let before = fs.snapshot();
     let hash = content_hash();
     let out = run(&os(&decide("approve", &hash, "A. Reviewer")), &fs);
