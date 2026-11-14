@@ -351,3 +351,6 @@ fn refusal_carries_no_bytes_and_leaves_inputs_unchanged() {
     assert_eq!(print_ledger(&ledger), before);
     assert_eq!(rb, basic());
 }
+
+#[path = "tests_adopt.rs"]
+mod adopt_tests;

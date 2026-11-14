@@ -1,5 +1,6 @@
 //! `plan_review`: the pure planning of one approve or reject decision.
 
+use crate::adopt::{adopt, Adopted};
 use crate::line::{record_line, NewRecord};
 use rt_foundation::{
     CliLocation, Code, Diagnostic, DiagnosticState, Location, Rejected, RevisionNumber, RuleId,
@@ -12,6 +13,7 @@ use rt_ledger::{
     derive_statuses, parse_ledger, print_ledger, AiIdentitySet, ApprovalLedger, BindingPair,
     Reviewer, ZERO_HASH,
 };
+use rt_proposals::Batch;
 use rt_srcmodel::SourceModels;
 use rt_validate::validate;
 use std::collections::BTreeSet;
@@ -59,6 +61,7 @@ pub struct ReviewDecision {
 pub struct CommitPlan {
     ledger_bytes: Vec<u8>,
     ledger: ApprovalLedger,
+    rulebook_bytes: Option<Vec<u8>>,
     key: RuleKey,
     record_hash: Sha256Hex,
 }
@@ -75,6 +78,13 @@ impl CommitPlan {
     #[must_use]
     pub fn ledger(&self) -> &ApprovalLedger {
         &self.ledger
+    }
+    /// The complete new Rulebook file when the decision adopts a
+    /// Pending_Proposal, and `None` when the revision already exists and only
+    /// the ledger changes.
+    #[must_use]
+    pub fn rulebook_bytes(&self) -> Option<&[u8]> {
+        self.rulebook_bytes.as_deref()
     }
     /// The decided revision.
     #[must_use]
@@ -149,21 +159,38 @@ fn rule_ref(key: &RuleKey) -> Vec<RuleRef> {
     }]
 }
 
-/// Plans the approval or rejection of a revision that exists in the Rulebook
-/// (design §3.8.3 step 4). `ledger` must be a verified ledger. The Rulebook and
-/// the ledger are not changed.
+/// Plans the approval or rejection of a revision that exists in the Rulebook,
+/// with an empty Proposal_Store. See [`plan_review_with_store`].
 ///
 /// # Errors
-/// Exactly one Error Diagnostic of the REVIEW family (or `RT-CLI-0004` for a
-/// bad time shape), and no bytes. See the crate documentation for the order of
-/// the checks.
+/// As [`plan_review_with_store`].
 pub fn plan_review(
     rulebook: &Rulebook,
     ledger: &ApprovalLedger,
     decision: &ReviewDecision,
     sources: &SourceModels,
 ) -> Result<CommitPlan, Rejected> {
-    plan(rulebook, ledger, decision, sources).map_err(refuse)
+    plan_review_with_store(rulebook, ledger, decision, sources, &[])
+}
+
+/// Plans the approval or rejection of a revision (design §3.8.3 step 4). A
+/// revision that is not in the Rulebook is resolved among the
+/// Pending_Proposals of `batches` and adopted: the plan then also holds the
+/// new Rulebook bytes. `ledger` must be a verified ledger. The Rulebook, the
+/// ledger and the batches are not changed.
+///
+/// # Errors
+/// Exactly one Error Diagnostic of the REVIEW family (or `RT-CLI-0004` for a
+/// bad time shape), and no bytes. See the crate documentation for the order of
+/// the checks.
+pub fn plan_review_with_store(
+    rulebook: &Rulebook,
+    ledger: &ApprovalLedger,
+    decision: &ReviewDecision,
+    sources: &SourceModels,
+    batches: &[Batch],
+) -> Result<CommitPlan, Rejected> {
+    plan(rulebook, ledger, decision, sources, batches).map_err(refuse)
 }
 
 // Diagnostic is the error value of this crate's checks.
@@ -173,12 +200,16 @@ fn plan(
     ledger: &ApprovalLedger,
     d: &ReviewDecision,
     sources: &SourceModels,
+    batches: &[Batch],
 ) -> Result<CommitPlan, Diagnostic> {
-    // 1. Target (Req 5.10, design §3.8.3).
+    // 1. Target (Req 5.10, design §3.8.3). A Pending_Proposal is adopted into
+    //    a copy of the Rulebook, and every later check reads that copy.
     let key = RuleKey {
         id: d.rule.clone(),
         revision: d.revision,
     };
+    let adopted: Option<Adopted> = adopt(rb, &key, &d.content_hash, batches)?;
+    let rb = adopted.as_ref().map_or(rb, |a| &a.rulebook);
     let rev = rb.revision(&key).ok_or_else(|| {
         Diagnostic::new(
             Code::ReviewTargetNotFound,
@@ -354,6 +385,7 @@ fn plan(
     Ok(CommitPlan {
         ledger_bytes: bytes,
         ledger: new_ledger,
+        rulebook_bytes: adopted.map(|a| a.bytes),
         key,
         record_hash,
     })

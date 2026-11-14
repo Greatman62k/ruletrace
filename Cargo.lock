@@ -388,6 +388,7 @@ dependencies = [
  "rt-ir",
  "rt-json",
  "rt-ledger",
+ "rt-proposals",
  "rt-srcmodel",
  "rt-validate",
 ]
@@ -428,6 +429,7 @@ dependencies = [
  "rt-json",
  "rt-ledger",
  "rt-numeric",
+ "rt-proposals",
  "rt-source",
  "rt-srcmodel",
  "rt-trace",

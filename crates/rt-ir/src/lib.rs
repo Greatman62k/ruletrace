@@ -34,7 +34,7 @@ pub use expr::{
 pub use hash::{draft_hash, rule_content_hash, ContentHashError};
 pub use loc::Loc;
 pub use names::{Date, DateError, Identity, IdentityError, Name, NameError, OpaqueName};
-pub use parse::{parse_rulebook, DECODER_DEPTH_CAP};
+pub use parse::{parse_draft, parse_rulebook, DECODER_DEPTH_CAP};
 pub use print::{print_compact, print_pretty};
 pub use rule::{
     AiOrigin, DefaultValue, Direction, Marker, Origin, RuleBody, RuleContent, RuleKey,
@@ -52,6 +52,8 @@ mod hash_invariance_tests;
 mod hash_sensitivity_tests;
 #[cfg(test)]
 mod hash_tests;
+#[cfg(test)]
+mod parse_draft_tests;
 #[cfg(test)]
 mod parse_tests;
 #[cfg(test)]

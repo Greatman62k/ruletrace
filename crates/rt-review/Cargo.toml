@@ -18,5 +18,6 @@ rt-ir = { path = "../rt-ir" }
 rt-ledger = { path = "../rt-ledger" }
 rt-validate = { path = "../rt-validate" }
 rt-srcmodel = { path = "../rt-srcmodel" }
+rt-proposals = { path = "../rt-proposals" }
 
 [dev-dependencies]

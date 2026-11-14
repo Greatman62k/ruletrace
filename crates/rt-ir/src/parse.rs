@@ -123,6 +123,45 @@ pub fn parse_rulebook(
     }
 }
 
+/// Parses a rule draft: a rule object without `revision` and `origin`, as the
+/// Proposal_Store keeps it. The caller supplies the revision and origin, so a
+/// draft that names either member is refused as an unknown field.
+///
+/// # Errors
+/// The parse diagnostics of the draft, in canonical order, with no revision.
+pub fn parse_draft(
+    bytes: &[u8],
+    input: &InputId,
+    revision: RevisionNumber,
+    origin: Origin,
+    max_bytes: u64,
+    max_depth: u32,
+) -> StageResult<RuleRevision> {
+    let limits = ParseLimits::new(max_bytes, max_depth.min(DECODER_DEPTH_CAP));
+    let root = match rt_json::parse(input, bytes, limits) {
+        Ok(root) => root,
+        Err(d) => return Err(reject(vec![*d])),
+    };
+    let mut dec = Dec {
+        input,
+        diags: Vec::new(),
+    };
+    let found = dec.revision_with(&root, "", Some((revision, origin)));
+    match found {
+        Some(found) if dec.diags.is_empty() => stage_result(found, DiagnosticState::empty()),
+        _ => {
+            if dec.diags.is_empty() {
+                dec.diags.push(Diagnostic::new(
+                    Code::InternalError,
+                    "the draft decoder produced no revision and no diagnostic".to_owned(),
+                    Location::None(Code::InternalError),
+                ));
+            }
+            Err(reject(dec.diags))
+        }
+    }
+}
+
 /// Builds the rejection. Every code of this stage is blocking, so the list is
 /// always accepted.
 fn reject(mut diags: Vec<Diagnostic>) -> Rejected {
@@ -835,6 +874,17 @@ impl<'i> Dec<'i> {
     }
 
     fn revision(&mut self, v: &Value<Position>, path: &str) -> Option<RuleRevision> {
+        self.revision_with(v, path, None)
+    }
+
+    // `assigned` supplies the revision and origin of a draft, which carries
+    // neither member.
+    fn revision_with(
+        &mut self,
+        v: &Value<Position>,
+        path: &str,
+        assigned: Option<(RevisionNumber, Origin)>,
+    ) -> Option<RuleRevision> {
         let o = self.open(v, path)?;
         let kind_value = self.req(&o, "kind")?;
         let kind_text = self.str_of(kind_value, &o.child("kind"))?;
@@ -846,18 +896,26 @@ impl<'i> Dec<'i> {
             _ => None,
         };
         if let Some(extra) = extra {
-            let allowed = [RULE_KEYS.as_slice(), extra].concat();
+            let base: Vec<&str> = RULE_KEYS
+                .iter()
+                .copied()
+                .filter(|k| assigned.is_none() || !matches!(*k, "revision" | "origin"))
+                .collect();
+            let allowed = [base.as_slice(), extra].concat();
             self.unknown_in(&o, &allowed);
         }
         let id = self
             .req(&o, "id")
             .and_then(|v| self.rule_id(v, &o.child("id")));
-        let revision = self
-            .req(&o, "revision")
-            .and_then(|v| self.revision_number(v, &o.child("revision")));
-        let origin = self
-            .req(&o, "origin")
-            .and_then(|v| self.origin(v, &o.child("origin")));
+        let (revision, origin) = match assigned {
+            Some((revision, origin)) => (Some(revision), Some(origin)),
+            None => (
+                self.req(&o, "revision")
+                    .and_then(|v| self.revision_number(v, &o.child("revision"))),
+                self.req(&o, "origin")
+                    .and_then(|v| self.origin(v, &o.child("origin"))),
+            ),
+        };
         let target = self
             .req(&o, "target")
             .and_then(|v| self.name_of(v, &o.child("target")));

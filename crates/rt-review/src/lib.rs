@@ -15,7 +15,14 @@
 //!   (`0207`, reject only), transition (`0204`), stale hash (`0203`),
 //!   Source_Models of the binding (`0209`), dry-run validation of the
 //!   post-approval state (`0205`, approve only).
-//! * The plan never changes the Rulebook: it carries the ledger bytes only.
+//! * A Pending_Proposal is adopted by the same call
+//!   ([`plan_review_with_store`]). Its Revision_Number is `1 + max` of the
+//!   rule in the Rulebook at that moment (`RT-APR-0210` on exhaustion), the
+//!   stored draft is decoded and its Draft hash recomputed, and the plan then
+//!   holds the new Rulebook bytes too. A rejection adopts the revision as
+//!   Rejected, so no number is skipped.
+//! * A decision on a revision already in the Rulebook carries ledger bytes
+//!   only.
 //! * A revision whose spans name an undeclared document, or one declared with
 //!   two hashes, has no binding. It is refused with `RT-APR-0205` for both
 //!   decisions.
@@ -24,10 +31,12 @@
 //! authenticated (R-8).
 #![forbid(unsafe_code)]
 
+mod adopt;
 mod line;
 mod plan;
 
-pub use plan::{plan_review, CommitPlan, ReviewAction, ReviewDecision};
+pub use adopt::{prospective_adoption, Prospective};
+pub use plan::{plan_review, plan_review_with_store, CommitPlan, ReviewAction, ReviewDecision};
 
 #[cfg(test)]
 mod tests;
