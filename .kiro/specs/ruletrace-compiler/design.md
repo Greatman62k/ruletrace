@@ -659,7 +659,7 @@ Unresolvable document or span: no text invented. Diagnostic code and exit codes 
 
 1. Re-derive statuses from the rulebook and ledger inside the result. Compare the set of blocking diagnostics of `state()` with a fresh run of passes 9 to 10; any difference gives `RT-APR-0005` and no output (Req 9.12).
 2. If `state().has_errors()` return the blocking Diagnostics unchanged and in order (Req 9.2).
-3. If no Effective revision: `RT-APR-0002` with the Rulebook document Location, no artifact (Req 9.13).
+3. If no Effective revision: `RT-APR-0002` with the whole-input Location (an Input_Location naming the `rulebook` input, no line or column; Req 5.7, 7.14), no artifact (Req 9.13).
 4. Lower each Effective revision to the compiled form (§4.1.6): names resolved to indices, types resolved, spans copied in order, Origin and approval data dropped.
 5. Evaluation order: Kahn's algorithm over value-rule dependencies with a `BTreeSet<RuleId>` ready set, so ties pick the lowest identifier bytewise (Req 9.8). A cycle gives `RT-CMP-0001` (defensive; validation already reports it).
 6. Record IR_Version, Rulebook content hash, compiler version, referenced document hashes (Req 9.5).
@@ -704,7 +704,7 @@ Comparison, arithmetic, membership and aggregation with a `U` operand give `U`. 
 3. Sort by key. Within groups equal on the key, apply tie-breakers in declared order, only to the participants still tied. If a needed criterion value is missing for a member of a tied set, all members of that set are Indeterminate (`RT-EXE-0006`); participants behind the set are unaffected because their rank counts the whole set.
 4. Equal after all criteria gives a `TieGroup`. Members are listed in ascending participant id (bytewise) for serialization only.
 5. Rank_Position = 1 + number of participants strictly ahead. Tie groups of size k at position p are followed by p + k. Every participant gets exactly one of: alone, member of one group, Indeterminate (Property 17, 18).
-6. Trace records of a ranking (Req 12.7, 32.1). Besides the `read` entries of keys and tie-breaker values, the trace of a `rank` Question has one `compare` entry per pair of adjacent entries of the final order, `{"kind":"compare","between":["p3","p7"],"criteria":[{"index":0,"rule":"rank.total","direction":"desc","left":"7/3","right":"2","result":"first"}],"result":"first_ahead"|"tied"}`, which lists the criteria applied in declared order until one decided, and one `tie_group` entry per Tie_Group with its position and its members in ascending identifier order. Bracket_Check copies these entries and computes nothing.
+6. Trace records of a ranking (Req 12.7, 32.1). Besides the `read` entries of keys and tie-breaker values, the trace of a `rank` Question has one `compare` entry per pair of adjacent entries of the final order, `{"seq":5,"kind":"compare","between":["p3","p7"],"criteria":[{"index":0,"rule":"rank.total","direction":"desc","left":{"type":"number","value":"9"},"right":{"type":"number","value":"7"},"result":"first"}],"result":"first_ahead"}` (the entry `result` is `first_ahead` or `tied`, and each criterion `result` is `first`, `second` or `equal`), which lists the criteria applied in declared order until one decided, and one `place` entry per participant that is alone at its position and one `tie_group` entry per Tie_Group, each `{"seq":6,"kind":"tie_group","position":2,"members":["p1","p2"]}` with the members in ascending identifier order. Bracket_Check copies these entries and computes nothing.
 
 *Precedence and conflicts (Req 12.5, 12.10, 12.11).* If a target has several compiled rules and a precedence record, only the first-listed rule's result is used; the others appear in the trace as considered and not applied with the precedence id as the reason; if the first is Indeterminate the Outcome is Indeterminate. If a target has several rules and no precedence (reachable only through test-only compiled rulebooks or a compiler defect) and their Known results are not equal, the subject is Indeterminate with one `RT-DGN-0004` whose primary Location is the first span of the lowest rule id, other spans related; no result is selected. The CLI exit code is 4 (Req 16.23).
 
@@ -716,20 +716,82 @@ Comparison, arithmetic, membership and aggregation with a `U` operand give `U`. 
 
 *Rank reference (only where UD-32 selects Rank_Reference).* The expression node `rank_reference` reads a Rank_Position from a table that is computed by the ranking algorithm above over all participants of the Competition_Data. Evaluation order, trace entries and the tie-group rule are in §8.9.
 
-*Decision_Trace.* One per Outcome (Req 13.1), canonical RT-JSON:
+*Decision_Trace.* One per Outcome (Req 13.1), canonical RT-JSON written by `rt-trace` (`DecisionTrace::to_value`). The schema below is the implemented canonical schema, and the golden files `crates/rt-trace/tests/golden/trace_decided.json` and `trace_indeterminate.json` are checked against both the writer and the examples of this section. Keys appear in the order shown, every key is always present, and numbers are written as the canonical text of `rt-numeric`; the examples use integers so that they hold under both UD-3 options.
 
-```text
-{ "question": {...},
-  "outcome": {"state":"decided","value":"7/3"} | {"state":"indeterminate","reasons":[...]},
-  "rules": [ {"rule":"score.total","revision":1,
-              "spans":[{"document":"rules.md","sha256":"..","start":120,"end":180,"line":4,"column":1}]} ],
-  "entries": [ {"seq":1,"kind":"read","name":"judges","participant":"p1","value":"8.5","rule":"score.total"},
-               {"seq":2,"kind":"step","op":"mul","operands":["0.6","8.5"],"result":"5.1","rule":"score.total"},
-               {"seq":3,"kind":"decision","rule":"elig.age","value":"true","from":[1,2]} ],
-  "not_applied": [ {"rule":"..","spans":[..],"reason":{"kind":"precedence","id":"prec.score"}} ],
-  "missing": [ {"participant":"p3","field":"age"} ],
-  "diagnostics": [...] }
+Every value is a typed object, so that a text value that looks like a number is never confused with a number: `{"type":"number","value":"24"}`, `{"type":"bool","value":true}`, `{"type":"text","value":".."}`, `{"type":"date","value":".."}`, `{"type":"enum","value":".."}`, `{"type":"rank","position":2,"group":["p1","p2"]}` and `{"type":"standings","places":[{"position":1,"members":["p1"]}]}`. A step result may also be `{"type":"undefined"}` (`min` or `max` of an empty collection) or `{"type":"fault","code":"RT-EXE-0002"}`, and a decision value may be `{"type":"unknown"}`.
+
+| Field | Content | Requirement |
+| --- | --- | --- |
+| `question` | `kind` (`value` or `rank`), `target`, `participant` (text or `null`) | 13.1 |
+| `outcome` | `{"state":"decided","value":<value>}` or `{"state":"indeterminate","reasons":[..]}`. A reason is `{"kind":"missing_input","participant":..,"field":..}`, `{"kind":"empty_aggregate","field":..}` or `{"kind":"diagnostic","code":..}`, sorted and without repeats | 13.1, 13.5 |
+| `rules` | One object per rule involved, ascending by (`rule`, `revision`): `rule`, `revision`, `spans`. `spans` lists every span the Compiled_Rulebook retains for the rule, in its order, each with `document`, `sha256` (the recorded document hash), `start`, `end`, `line`, `column`, and no text | 13.2 |
+| `entries` | Entries in evaluation order, each with `seq` (1, 2, 3, .. without gaps) and `kind`; see below | 13.3 |
+| `not_applied` | One object per considered rule that did not apply, ascending by (`rule`, `revision`): `rule`, `revision`, `spans`, and `reason`, exactly one of `{"kind":"condition_not_satisfied","condition":..}`, `{"kind":"missing_input","input":..}`, `{"kind":"precedence","id":..}` | 13.4, 13.21 |
+| `missing` | Missing values the Outcome depends on, ascending: `participant`, `field`. No `read` entry carries a value for a listed value | 13.5 |
+| `diagnostics` | The Diagnostics of the Outcome in the canonical order of Req 7.10: `code`, `severity`, `message`, `primary`, `related`, `rules`. A conflict (`RT-DGN-0004`) lists each conflicting rule in `rules` and in the Diagnostic, with no entry that marks a rule as applied or as the winner | 13.6 |
+
+Entry kinds: `read` (`name`, `participant`, `value`, `rule`, `default_spans`; the default spans are not empty when the value came from a declared default, Req 11.2); `step` (`op`, for `round` also `places` and `mode`, then `operands`, `result`, `rule`, `field`); `decision` (`rule`, `op` of `pass`, `and`, `or`, `not` or `recorded`, `value`, `from`, the sequence numbers of earlier entries); `compare`, `place` and `tie_group` (ranking, see Ranking 6). Replay re-derives each `step` from `op` and `operands` and each `decision` from the entries in `from`; the Outcome is that of the last decision entry (Req 13.11).
+
+Canonical example, decided:
+
+```json
+{
+  "question": {"kind": "value", "target": "score.total", "participant": "p1"},
+  "outcome": {"state": "decided", "value": {"type": "number", "value": "24"}},
+  "rules": [
+    {
+      "rule": "score.total", "revision": 1,
+      "spans": [{"document": "rules.md", "sha256": "abababababababababababababababababababababababababababababababab", "start": 120, "end": 180, "line": 4, "column": 1}]
+    }
+  ],
+  "entries": [
+    {"seq": 1, "kind": "read", "name": "judges", "participant": "p1", "value": {"type": "number", "value": "8"}, "rule": "score.total", "default_spans": []},
+    {"seq": 2, "kind": "read", "name": "weight", "participant": "p1", "value": {"type": "number", "value": "3"}, "rule": "score.total", "default_spans": []},
+    {"seq": 3, "kind": "step", "op": "mul", "operands": [{"type": "number", "value": "8"}, {"type": "number", "value": "3"}], "result": {"type": "number", "value": "24"}, "rule": "score.total", "field": null},
+    {"seq": 4, "kind": "decision", "rule": "score.total", "op": "pass", "value": {"type": "number", "value": "24"}, "from": [3]}
+  ],
+  "not_applied": [
+    {
+      "rule": "score.alt", "revision": 1,
+      "spans": [{"document": "rules.md", "sha256": "abababababababababababababababababababababababababababababababab", "start": 200, "end": 260, "line": 6, "column": 1}],
+      "reason": {"kind": "precedence", "id": "prec.score"}
+    }
+  ],
+  "missing": [],
+  "diagnostics": []
+}
 ```
+
+Canonical example, indeterminate:
+
+```json
+{
+  "question": {"kind": "value", "target": "elig.age", "participant": "p3"},
+  "outcome": {"state": "indeterminate", "reasons": [{"kind": "missing_input", "participant": "p3", "field": "age"}]},
+  "rules": [
+    {
+      "rule": "elig.age", "revision": 1,
+      "spans": [{"document": "rules.md", "sha256": "abababababababababababababababababababababababababababababababab", "start": 120, "end": 180, "line": 4, "column": 1}]
+    }
+  ],
+  "entries": [
+    {"seq": 1, "kind": "decision", "rule": "elig.age", "op": "recorded", "value": {"type": "unknown"}, "from": []}
+  ],
+  "not_applied": [],
+  "missing": [{"participant": "p3", "field": "age"}],
+  "diagnostics": [
+    {
+      "code": "RT-EXE-0001", "severity": "error",
+      "message": "rule elig.age: required input 'age' of participant 'p3' is a Missing_Value",
+      "primary": {"kind": "document", "document": "rules.md"},
+      "related": [],
+      "rules": [{"rule": "elig.age", "revision": 1}]
+    }
+  ]
+}
+```
+
+The conformance test `crates/rt-trace/tests/canonical_schema.rs` builds both traces by hand, compares their canonical text with the golden files, replays them, and checks that these two examples equal the golden files after canonical re-printing.
 
 Trace entries hold Locations and hashes only, no source text (Req 10.11). Replay (`rt_trace::replay`) re-derives each step's result from `op` and `operands` using `rt-numeric` and recomputes decisions from the recorded entries; Outcome equality is exact (Property 21).
 

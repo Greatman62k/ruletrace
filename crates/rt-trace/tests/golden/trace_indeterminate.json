@@ -1,0 +1,70 @@
+{
+  "question": {
+    "kind": "value",
+    "target": "elig.age",
+    "participant": "p3"
+  },
+  "outcome": {
+    "state": "indeterminate",
+    "reasons": [
+      {
+        "kind": "missing_input",
+        "participant": "p3",
+        "field": "age"
+      }
+    ]
+  },
+  "rules": [
+    {
+      "rule": "elig.age",
+      "revision": 1,
+      "spans": [
+        {
+          "document": "rules.md",
+          "sha256": "abababababababababababababababababababababababababababababababab",
+          "start": 120,
+          "end": 180,
+          "line": 4,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "seq": 1,
+      "kind": "decision",
+      "rule": "elig.age",
+      "op": "recorded",
+      "value": {
+        "type": "unknown"
+      },
+      "from": []
+    }
+  ],
+  "not_applied": [],
+  "missing": [
+    {
+      "participant": "p3",
+      "field": "age"
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "RT-EXE-0001",
+      "severity": "error",
+      "message": "rule elig.age: required input 'age' of participant 'p3' is a Missing_Value",
+      "primary": {
+        "kind": "document",
+        "document": "rules.md"
+      },
+      "related": [],
+      "rules": [
+        {
+          "rule": "elig.age",
+          "revision": 1
+        }
+      ]
+    }
+  ]
+}

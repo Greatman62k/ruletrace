@@ -1,0 +1,112 @@
+{
+  "question": {
+    "kind": "value",
+    "target": "score.total",
+    "participant": "p1"
+  },
+  "outcome": {
+    "state": "decided",
+    "value": {
+      "type": "number",
+      "value": "24"
+    }
+  },
+  "rules": [
+    {
+      "rule": "score.total",
+      "revision": 1,
+      "spans": [
+        {
+          "document": "rules.md",
+          "sha256": "abababababababababababababababababababababababababababababababab",
+          "start": 120,
+          "end": 180,
+          "line": 4,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "seq": 1,
+      "kind": "read",
+      "name": "judges",
+      "participant": "p1",
+      "value": {
+        "type": "number",
+        "value": "8"
+      },
+      "rule": "score.total",
+      "default_spans": []
+    },
+    {
+      "seq": 2,
+      "kind": "read",
+      "name": "weight",
+      "participant": "p1",
+      "value": {
+        "type": "number",
+        "value": "3"
+      },
+      "rule": "score.total",
+      "default_spans": []
+    },
+    {
+      "seq": 3,
+      "kind": "step",
+      "op": "mul",
+      "operands": [
+        {
+          "type": "number",
+          "value": "8"
+        },
+        {
+          "type": "number",
+          "value": "3"
+        }
+      ],
+      "result": {
+        "type": "number",
+        "value": "24"
+      },
+      "rule": "score.total",
+      "field": null
+    },
+    {
+      "seq": 4,
+      "kind": "decision",
+      "rule": "score.total",
+      "op": "pass",
+      "value": {
+        "type": "number",
+        "value": "24"
+      },
+      "from": [
+        3
+      ]
+    }
+  ],
+  "not_applied": [
+    {
+      "rule": "score.alt",
+      "revision": 1,
+      "spans": [
+        {
+          "document": "rules.md",
+          "sha256": "abababababababababababababababababababababababababababababababab",
+          "start": 200,
+          "end": 260,
+          "line": 6,
+          "column": 1
+        }
+      ],
+      "reason": {
+        "kind": "precedence",
+        "id": "prec.score"
+      }
+    }
+  ],
+  "missing": [],
+  "diagnostics": []
+}
