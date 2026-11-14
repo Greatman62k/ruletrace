@@ -1,0 +1,4 @@
+error RT-APR-0001: revision 1 of rule 'bonus.unknown' is Proposed and has no Approval_Record or rejection; approve or reject it with `ruletrace review`
+  at source rules.md:92-170 (line 4, column 1)
+unsupported RT-VAL-0003: unsupported rule kind 'bonus_points': unrecognized construct 'bonus_points'
+  at source rules.md:92-170 (line 4, column 1)

@@ -1,0 +1,35 @@
+[package]
+name = "rt-tests-core"
+description = "Cross-crate property, golden, isolation and dependency tests (class test)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+
+[dependencies]
+rt-numeric = { path = "../rt-numeric" }
+
+[dev-dependencies]
+rt-foundation = { path = "../rt-foundation" }
+rt-srcmodel = { path = "../rt-srcmodel" }
+rt-source = { path = "../rt-source" }
+rt-trace = { path = "../rt-trace" }
+rt-explain = { path = "../rt-explain" }
+rt-engine = { path = "../rt-engine" }
+rt-compiled = { path = "../rt-compiled" }
+rt-data = { path = "../rt-data" }
+rt-ir = { path = "../rt-ir" }
+rt-hash = { path = "../rt-hash" }
+rt-json = { path = "../rt-json" }
+rt-ledger = { path = "../rt-ledger" }
+rt-validate = { path = "../rt-validate" }
+rt-compile = { path = "../rt-compile" }
+rt-cli = { path = "../rt-cli" }
+proptest = { version = "1", default-features = false, features = ["std"] }
+# Independent arbitrary-precision oracle for the differential numeric test (Req 20.22). Test code only.
+num-bigint = { version = "0.4", default-features = false, features = ["std"] }

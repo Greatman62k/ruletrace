@@ -1,0 +1,44 @@
+{
+  "format": "ruletrace-source-model",
+  "version": 1,
+  "document": "rules.md",
+  "kind": "markdown",
+  "sha256": "eb4d68f2de94881529749748a8de99f39505ae89a2ae4fa9d88a6d7b07de788a",
+  "bytes": 171,
+  "content": "# Spring Open Rules\n\n1. A competitor is eligible if age is at least 16 and holds a licence.\n2. The score is 0.6 times the judges score plus 0.4 times the technical score.\n",
+  "elements": [
+    {
+      "id": 0,
+      "kind": "heading",
+      "level": 1,
+      "label": null,
+      "start": 0,
+      "end": 19,
+      "line": 1,
+      "column": 1,
+      "parent": null
+    },
+    {
+      "id": 1,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 21,
+      "end": 91,
+      "line": 3,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 2,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 92,
+      "end": 170,
+      "line": 4,
+      "column": 1,
+      "parent": 0
+    }
+  ]
+}

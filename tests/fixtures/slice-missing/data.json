@@ -1,0 +1,25 @@
+{
+  "format": "ruletrace-data",
+  "version": 1,
+  "participants": [
+    {
+      "id": "p1",
+      "fields": {
+        "age": "17",
+        "licence": true,
+        "judges": "8",
+        "technical": "7"
+      },
+      "collections": {}
+    },
+    {
+      "id": "p2",
+      "fields": {
+        "licence": true,
+        "judges": "7",
+        "technical": "9"
+      },
+      "collections": {}
+    }
+  ]
+}

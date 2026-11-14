@@ -1,0 +1,2 @@
+error RT-EXE-0001: rule elig.basic: required input 'age' of participant 'p2' is a Missing_Value
+  at source rules.md:21-91 (line 3, column 1)

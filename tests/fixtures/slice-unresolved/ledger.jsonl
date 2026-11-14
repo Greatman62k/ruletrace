@@ -1,0 +1,2 @@
+{"format":"ruletrace-ledger","version":1}
+{"seq":1,"kind":"approval","rule":"elig.basic","revision":1,"content_hash":"d1b4158c4852a5cd3d15a8d1226143461defc7c238eea3f84fef425a5d94fe34","ir_version":"1","binding":[{"document":"rules.md","sha256":"eb4d68f2de94881529749748a8de99f39505ae89a2ae4fa9d88a6d7b07de788a"}],"reviewer":"A. Reviewer","time":"2026-01-15T10:00:00Z","reason":null,"prev":"0000000000000000000000000000000000000000000000000000000000000000","hash":"b160e91c9df380fd585e50012d27893b998d71c1a6952899fd91bf6b7667ea61"}

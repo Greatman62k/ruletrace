@@ -1,0 +1,115 @@
+{
+  "format": "ruletrace-rulebook",
+  "ir_version": "1",
+  "name": "spring-open-tie",
+  "version": "2026.1",
+  "documents": [
+    {
+      "id": "rules.md",
+      "sha256": "eb4d68f2de94881529749748a8de99f39505ae89a2ae4fa9d88a6d7b07de788a"
+    }
+  ],
+  "types": {
+    "inputs": [
+      {
+        "name": "age",
+        "type": "number"
+      },
+      {
+        "name": "licence",
+        "type": "boolean"
+      },
+      {
+        "name": "judges",
+        "type": "number"
+      },
+      {
+        "name": "technical",
+        "type": "number"
+      }
+    ],
+    "enums": [],
+    "sets": [],
+    "collections": []
+  },
+  "rules": [
+    {
+      "id": "score.weighted",
+      "revision": 1,
+      "origin": {
+        "kind": "manual",
+        "author": null
+      },
+      "kind": "weighted_score",
+      "target": "score",
+      "type": "number",
+      "terms": [
+        {
+          "weight": {
+            "node": "num",
+            "t": "number",
+            "value": "0.6"
+          },
+          "value": {
+            "node": "field",
+            "t": "number",
+            "name": "judges"
+          }
+        },
+        {
+          "weight": {
+            "node": "num",
+            "t": "number",
+            "value": "0.4"
+          },
+          "value": {
+            "node": "field",
+            "t": "number",
+            "name": "technical"
+          }
+        }
+      ],
+      "rounding": null,
+      "markers": [],
+      "spans": [
+        {
+          "document": "rules.md",
+          "start": 92,
+          "end": 170,
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "id": "rank.standing",
+      "revision": 1,
+      "origin": {
+        "kind": "manual",
+        "author": null
+      },
+      "kind": "ranking",
+      "target": "standing",
+      "type": "ranking",
+      "key": {
+        "node": "ref",
+        "t": "number",
+        "target": "score"
+      },
+      "direction": "desc",
+      "tie_breakers": [],
+      "ties": "group",
+      "markers": [],
+      "spans": [
+        {
+          "document": "rules.md",
+          "start": 92,
+          "end": 170,
+          "line": 4,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "precedence": []
+}
