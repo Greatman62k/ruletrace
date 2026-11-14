@@ -1,11 +1,12 @@
-//! Declared types and the `types` section of a Rulebook (design §4.1.2, §4.1.5).
+//! Declared types and the `types` section of a Rulebook (design §4.1.2,
+//! §4.1.5).
 
 use crate::expr::Literal;
 use crate::loc::Loc;
 use crate::names::Name;
 
-/// A declared type (Req 14.3). `Ranking` is the type of a ranking rule. `Error` is internal to
-/// the Validator: it is never produced from data.
+/// A declared type (Req 14.3). `Ranking` is the type of a ranking rule. `Error`
+/// is internal to the Validator: it is never produced from data.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type {
     /// An Exact_Number.
@@ -25,8 +26,8 @@ pub enum Type {
 }
 
 impl Type {
-    /// Parses a declared type text: `number`, `boolean`, `text`, `date`, `ranking` or
-    /// `enum:<Name>`. The internal `error` type is never accepted.
+    /// Parses a declared type text: `number`, `boolean`, `text`, `date`,
+    /// `ranking` or `enum:<Name>`. The internal `error` type is never accepted.
     #[must_use]
     pub fn parse_declared(text: &str) -> Option<Type> {
         match text {
@@ -42,7 +43,8 @@ impl Type {
         }
     }
 
-    /// The declared text, the inverse of [`Type::parse_declared`] (`error` for the internal type).
+    /// The declared text, the inverse of [`Type::parse_declared`] (`error` for
+    /// the internal type).
     #[must_use]
     pub fn text(&self) -> String {
         match self {

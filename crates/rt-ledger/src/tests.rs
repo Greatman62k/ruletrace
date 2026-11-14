@@ -16,8 +16,8 @@ fn h(seed: &str) -> String {
     sha256(seed.as_bytes()).as_str().to_owned()
 }
 
-/// Everything a test needs to say about one record. The hash is computed, as the append
-/// operation of `rt-review` will do.
+/// Everything a test needs to say about one record. The hash is computed, as
+/// the append operation of `rt-review` will do.
 struct Spec<'a> {
     seq: u32,
     kind: RecordKind,
@@ -434,8 +434,8 @@ fn stops_at_the_first_failing_record() {
     assert_eq!(line_of(&errs[0]), Some(3));
 }
 
-/// Observable of task 4.7: one changed byte fails, at the record that holds the byte, with a
-/// code of the ledger family or malformed.
+/// Observable of task 4.7: one changed byte fails, at the record that holds the
+/// byte, with a code of the ledger family or malformed.
 #[test]
 fn every_single_byte_change_is_detected_at_its_own_line() {
     let (bytes, _, _) = two_records();
@@ -479,7 +479,7 @@ fn diagnostic_messages_escape_control_characters_of_keys() {
     assert!(!d.message().contains('\u{1b}'));
 }
 
-// ---- Source scan: the crate has no function that appends or writes a record ----
+// ---- Source scan: no function appends or writes a record ----
 
 fn production(src: &str) -> String {
     let cut = src.find("#[cfg(test)]").unwrap_or(src.len());
@@ -501,8 +501,8 @@ fn sources() -> Vec<(&'static str, String)> {
 
 #[test]
 fn no_public_function_creates_a_record_or_a_ledger_from_parts() {
-    // The only public functions that return a record type or a ledger are `parse_ledger` and
-    // `ApprovalLedger::empty`. Accessors return references.
+    // The only public functions that return a record type or a ledger are
+    // `parse_ledger` and `ApprovalLedger::empty`. Accessors return references.
     let allowed = ["parse_ledger", "empty"];
     for (file, src) in sources() {
         for (n, line) in src.lines().enumerate() {

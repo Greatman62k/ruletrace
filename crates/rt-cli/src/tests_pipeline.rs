@@ -1,4 +1,4 @@
-//! Tests of `ruletrace compile` and `ruletrace evaluate` (task 5.13).
+//! Tests of `ruletrace compile` and `ruletrace evaluate`.
 
 use super::*;
 use rt_foundation::{DocumentId, InputId};
@@ -105,7 +105,8 @@ fn evaluate_args<'a>(data: &'a str, extra: &[&'a str]) -> Vec<&'a str> {
     args
 }
 
-/// Validates and compiles the approved fixture; returns the file system with `compiled.json`.
+/// Validates and compiles the approved fixture; returns the file system with
+/// `compiled.json`.
 fn compiled_fs() -> MemFs {
     let fs = files(&approved_ledger(&rulebook_text(AGE)));
     assert_eq!(run(&os(&VALIDATE), &fs).code.value(), 0);
@@ -122,8 +123,6 @@ const PROOF: [&str; 6] = [
     "--proof-report",
     "proof.txt",
 ];
-
-// compile
 
 #[test]
 fn compile_refuses_an_artifact_with_blocking_diagnostics_with_exit_3() {
@@ -243,8 +242,6 @@ fn compile_arguments_are_checked() {
     );
 }
 
-// evaluate
-
 #[test]
 fn evaluate_exits_0_and_writes_outcomes_traces_and_verification() {
     let fs = compiled_fs();
@@ -330,7 +327,8 @@ fn a_provenance_error_gives_exit_2_with_complete_results_marked_not_verified() {
         let text = String::from_utf8(bytes).unwrap();
         text[..text.find(r#""verification":"#).unwrap()].to_owned()
     };
-    // Only the diagnostics of the evaluation precede the verification section, and they are equal.
+    // Only the diagnostics of the evaluation precede the verification section,
+    // and they are equal.
     assert_eq!(
         before(fs.get("results.json").unwrap()),
         before(reference.get("results.json").unwrap())
@@ -503,8 +501,8 @@ fn evaluate_arguments_are_checked() {
     );
 }
 
-/// Every command line built from these words exits with 0, 2, 3, 4 or 70, and a nonzero exit
-/// code other than 4 changes no file (Req 16.15, 17.13).
+/// Every command line built from these words exits with 0, 2, 3, 4 or 70, and a
+/// nonzero exit code other than 4 changes no file (Req 16.15, 17.13).
 #[test]
 fn exit_codes_are_closed_for_compile_and_evaluate() {
     let words = [

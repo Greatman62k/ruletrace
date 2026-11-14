@@ -1,7 +1,8 @@
 //! Private 256-bit unsigned helper and binary gcd (design §4.2.3).
 //!
-//! Only the operations the checked arithmetic needs. Nothing here allocates or panics:
-//! every operation is total, or documents the precondition the caller upholds.
+//! Only the operations the checked arithmetic needs. Nothing here allocates or
+//! panics: every operation is total, or documents the precondition the caller
+//! upholds.
 
 use std::cmp::Ordering;
 
@@ -63,9 +64,9 @@ impl U256 {
         Some(U256 { hi, lo })
     }
 
-    /// Quotient and remainder of `self / d`. Requires `0 < d < 2^127`, so the running
-    /// remainder (below `d`) can be doubled without leaving 128 bits. Any other `d`
-    /// gives `None`.
+    /// Quotient and remainder of `self / d`. Requires `0 < d < 2^127`, so the
+    /// running remainder (below `d`) can be doubled without leaving 128 bits.
+    /// Any other `d` gives `None`.
     pub(crate) fn div_rem_u128(self, d: u128) -> Option<(U256, u128)> {
         if d == 0 || d >= (1u128 << 127) {
             return None;

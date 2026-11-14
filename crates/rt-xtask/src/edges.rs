@@ -1,7 +1,8 @@
 //! Reader for `tools/allowed-edges.v1` (design §3.3).
 //!
-//! The file is parsed strictly: an unknown line, a missing field, a duplicate crate or a
-//! dependency on a crate that has no `crate` line makes the whole list malformed.
+//! The file is parsed strictly: an unknown line, a missing field, a duplicate
+//! crate or a dependency on a crate that has no `crate` line makes the whole
+//! list malformed.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -96,7 +97,8 @@ pub struct EdgeList {
     pub external: BTreeMap<String, BTreeSet<String>>,
 }
 
-/// Whether `name` matches `pattern` (exact, or prefix when the pattern ends in `*`).
+/// Whether `name` matches `pattern` (exact, or prefix when the pattern ends in
+/// `*`).
 #[must_use]
 pub fn matches(pattern: &str, name: &str) -> bool {
     match pattern.strip_suffix('*') {
@@ -121,7 +123,8 @@ impl EdgeList {
     }
 }
 
-/// Reads and parses the list at `path`. Errors say whether the file is missing or malformed.
+/// Reads and parses the list at `path`. Errors say whether the file is missing
+/// or malformed.
 ///
 /// # Errors
 /// A message naming the file when it cannot be read or does not parse.

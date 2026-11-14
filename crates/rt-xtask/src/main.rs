@@ -1,4 +1,5 @@
-//! Development binary for repository checks. Not a delivered executable (RN-25).
+//! Development binary for repository checks. Not a delivered executable
+//! (RN-25).
 #![forbid(unsafe_code)]
 
 use rt_xtask::GraphCheck;
@@ -99,7 +100,8 @@ fn run(args: &[String]) -> Result<(), String> {
     }
 }
 
-/// Output of `git tag --list`. A directory that is not a git work tree has no release tag.
+/// Output of `git tag --list`. A directory that is not a git work tree has no
+/// release tag.
 fn git_tags(root: &Path) -> Result<String, String> {
     let output = Command::new("git")
         .arg("-C")

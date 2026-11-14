@@ -1,8 +1,8 @@
 //! Canonical serialization of Outcomes and Decision_Traces (design §3.6.3).
 //!
-//! The key order of each object is fixed by the code below. Numbers are written as the canonical
-//! exact text of `rt-numeric`. The writers of `rt-json` give compact and pretty forms. No
-//! timestamp, path or source text is written.
+//! The key order of each object is fixed by the code below. Numbers are written
+//! as the canonical exact text of `rt-numeric`. The writers of `rt-json` give
+//! compact and pretty forms. No timestamp, path or source text is written.
 
 use crate::outcome::{normalise, Outcome, Place, RankPlace, Reason, TraceValue};
 use crate::trace::{
@@ -15,8 +15,9 @@ use rt_json::Value;
 
 type Json = Value<()>;
 
-/// Builds an object. Every call site uses distinct literal keys, so the duplicate-key error
-/// cannot occur; the unit tests would show a `null` if it did.
+/// Builds an object. Every call site uses distinct literal keys, so the
+/// duplicate-key error cannot occur; the unit tests would show a `null` if it
+/// did.
 fn obj(members: Vec<(&str, Json)>) -> Json {
     Value::object(
         members

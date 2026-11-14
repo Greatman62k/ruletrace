@@ -4,8 +4,8 @@ use crate::ctx::{Decls, DocState, Site};
 use rt_foundation::{Code, DiagnosticState, Location, SpanError, MAX_SPANS_PER_RULE};
 use rt_ir::Span;
 
-/// Pass 1, structure: at least one span, at most 64, every span names a declared document and
-/// has `start < end`. Needs no Source_Model.
+/// Pass 1, structure: at least one span, at most 64, every span names a
+/// declared document and has `start < end`. Needs no Source_Model.
 pub(crate) fn check_span_structure(
     spans: &[Span],
     site: &Site,
@@ -66,9 +66,10 @@ pub(crate) fn check_span_structure(
         .collect()
 }
 
-/// Pass 2, spans against the Source_Model: bounds (`RT-VAL-0019`), character boundaries
-/// (`RT-VAL-0016`) and line and column (`RT-VAL-0022`). `structural_ok[i]` is false for a span
-/// that pass 1 already reported, which is then skipped so one defect gives one Diagnostic.
+/// Pass 2, spans against the Source_Model: bounds (`RT-VAL-0019`), character
+/// boundaries (`RT-VAL-0016`) and line and column (`RT-VAL-0022`).
+/// `structural_ok[i]` is false for a span that pass 1 already reported, which
+/// is then skipped so one defect gives one Diagnostic.
 pub(crate) fn check_span_sources(
     spans: &[Span],
     structural_ok: &[bool],

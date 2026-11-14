@@ -5,7 +5,8 @@ use std::fmt;
 /// A harness failure. `Display` gives the one-line report.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DemoError {
-    /// A manifest check failed for one subject (a document id or a data or script path).
+    /// A manifest check failed for one subject (a document id or a data or
+    /// script path).
     Manifest {
         /// The document identifier, or the path of the data file or script.
         subject: String,

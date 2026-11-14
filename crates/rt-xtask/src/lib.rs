@@ -1,4 +1,5 @@
-//! Repository checks and generators (development tooling, not a delivered executable).
+//! Repository checks and generators (development tooling, not a delivered
+//! executable).
 #![forbid(unsafe_code)]
 
 pub mod api;
@@ -22,8 +23,8 @@ pub enum GraphCheck {
     Tree,
 }
 
-/// Runs a graph check on the repository at `root`, given the bytes of `cargo metadata`.
-/// Returns the number of workspace crates checked.
+/// Runs a graph check on the repository at `root`, given the bytes of
+/// `cargo metadata`. Returns the number of workspace crates checked.
 ///
 /// # Errors
 /// One line per finding.
@@ -58,8 +59,8 @@ pub fn run_graph_check(
     }
 }
 
-/// Runs `check-decisions` given the bytes of `cargo metadata`. Returns the number of gated
-/// crates that are workspace members.
+/// Runs `check-decisions` given the bytes of `cargo metadata`. Returns the
+/// number of gated crates that are workspace members.
 ///
 /// # Errors
 /// One line per finding.

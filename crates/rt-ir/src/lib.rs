@@ -1,16 +1,20 @@
 //! The Rule_IR data model (design §3.4.4, §4.1.2 to §4.1.5).
 //!
-//! The types come first. [`parse_rulebook`] reads a Rulebook file, [`print_pretty`] and
-//! [`print_compact`] write the canonical forms, and the content hash (task 4.6) is added on top.
+//! [`parse_rulebook`] reads a Rulebook file, [`print_pretty`] and
+//! [`print_compact`] write the canonical forms, and the content hash
+//! functions bind a revision to its sources.
 //!
-//! * Numbers are [`rt_numeric::ExactNumber`]. There is no float type in the crate.
-//! * Every expression node carries a declared [`Type`] (`None` only when the input omitted it,
-//!   which the Validator reports). Nothing is inferred.
-//! * A well-formed but unrecognized rule kind or expression node is carried as an
-//!   [`OpaqueConstruct`] for the Validator (Req 4.9, `RT-VAL-0003`).
-//! * Input positions ([`Loc`]) are kept for diagnostics and never take part in equality.
-//! * [`ApprovalStatus`] is derived elsewhere from a Rulebook and a verified ledger. No type in
-//!   this crate stores one, and no function here builds one from data (Req 3.14, 5.1).
+//! * Numbers are [`rt_numeric::ExactNumber`]. There is no float type in the
+//!   crate.
+//! * Every expression node carries a declared [`Type`] (`None` only when the
+//!   input omitted it, which the Validator reports). Nothing is inferred.
+//! * A well-formed but unrecognized rule kind or expression node is carried as
+//!   an [`OpaqueConstruct`] for the Validator (Req 4.9, `RT-VAL-0003`).
+//! * Input positions ([`Loc`]) are kept for diagnostics and never take part in
+//!   equality.
+//! * [`ApprovalStatus`] is derived elsewhere from a Rulebook and a verified
+//!   ledger. No type in this crate stores one, and no function here builds one
+//!   from data (Req 3.14, 5.1).
 #![forbid(unsafe_code)]
 
 mod expr;

@@ -1,5 +1,6 @@
-//! The `ruletrace` executable. It reads the process arguments, runs the command against the real
-//! file system and exits with the command's code. All logic is in the `rt_cli` library.
+//! The `ruletrace` executable. It reads the process arguments, runs the command
+//! against the real file system and exits with the command's code. All logic is
+//! in the `rt_cli` library.
 #![forbid(unsafe_code)]
 
 use rt_cli::{run, StdFs};

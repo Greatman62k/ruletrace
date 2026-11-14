@@ -1,6 +1,6 @@
-//! Fixture-based isolation and trace-verification tests (task 5.27; Req 16.2 to 16.7, 20.4 to
-//! 20.6, 9.7, 13.15 to 13.18). They run in one process on the committed Slice 0 fixtures, with
-//! every Source_Model loaded before the Explainer runs.
+//! Fixture-based isolation and trace-verification tests (Req 16.2 to 16.7, 20.4
+//! to 20.6, 9.7, 13.15 to 13.18). They run in one process on the committed
+//! Slice 0 fixtures, with every Source_Model loaded before the Explainer runs.
 #![forbid(unsafe_code)]
 #![allow(
     clippy::unwrap_used,

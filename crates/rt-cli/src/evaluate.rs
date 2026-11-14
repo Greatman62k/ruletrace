@@ -1,22 +1,28 @@
-//! `ruletrace evaluate`: stages 6 and 7 (Req 10 to 13, 16.1, 16.9, 16.11, 16.23, 17.1).
+//! `ruletrace evaluate`: stages 6 and 7 (Req 10 to 13, 16.1, 16.9, 16.11,
+//! 16.23, 17.1).
 //!
-//! The command loads every input (all invalid input is exit 2 and writes nothing), runs the
-//! engine on in-memory values, lets the Explainer verify each Decision_Trace against the
-//! Source_Models, and writes the results file with `rt_explain::results::serialize_results`.
-//! `--render` and `--proof-report` add output and never change a byte of the results file
-//! (Req 13.19): the results come from the engine and the Explainer only.
+//! The command loads every input (all invalid input is exit 2 and writes
+//! nothing), runs the engine on in-memory values, lets the Explainer verify
+//! each Decision_Trace against the Source_Models, and writes the results file
+//! with `rt_explain::results::serialize_results`. `--render` and
+//! `--proof-report` add output and never change a byte of the results file (Req
+//! 13.19): the results come from the engine and the Explainer only.
 //!
 //! The exit code follows the earliest failing stage (Req 16.14, 16.17):
 //!
-//! 1. Invalid input, including a Question that names something the inputs do not have
-//!    (`RT-EXE-0010`) and a Rulebook whose Effective revisions do not hash to the
-//!    `rulebook_hash` of the Compiled_Rulebook (`RT-PRV-0008`): exit 2, nothing is written.
-//! 2. Stage 6: any Indeterminate Outcome, including `RT-DGN-0004` and `RT-DGN-0005`, is exit 4
-//!    and never 3 (Req 16.23). The complete results are written.
-//! 3. Stage 7: a provenance Error row of Req 13.16 is exit 2. The complete Outcomes and
-//!    Decision_Traces are written, each affected trace marked as not verified (Req 13.18).
+//! 1. Invalid input, including a Question that names something the inputs do
+//!    not have (`RT-EXE-0010`) and a Rulebook whose Effective revisions do not
+//!    hash to the `rulebook_hash` of the Compiled_Rulebook (`RT-PRV-0008`):
+//!    exit 2, nothing is written.
+//! 2. Stage 6: any Indeterminate Outcome, including `RT-DGN-0004` and
+//!    `RT-DGN-0005`, is exit 4 and never 3 (Req 16.23). The complete results
+//!    are written.
+//! 3. Stage 7: a provenance Error row of Req 13.16 is exit 2. The complete
+//!    Outcomes and Decision_Traces are written, each affected trace marked as
+//!    not verified (Req 13.18).
 //!
-//! Warnings (a missing Source_Model set, a published value that differs) never decide.
+//! Warnings (a missing Source_Model set, a published value that differs) never
+//! decide.
 
 use crate::args::EvaluateArgs;
 use crate::io::{commit_files, input_location, Fs};
@@ -154,8 +160,9 @@ fn load_all(args: &EvaluateArgs, fs: &dyn Fs) -> Result<Loaded, DiagnosticState>
         .published
         .as_deref()
         .and_then(|path| input_id(path).ok());
-    // With a proof report the Rulebook and ledger are read with the Source_Models, by the code
-    // that `validate` uses, so both commands accept the same files.
+    // With a proof report the Rulebook and ledger are read with the
+    // Source_Models, by the code that `validate` uses, so both commands accept
+    // the same files.
     let (sources, proof) = match &args.proof {
         None => (load_sources(&args.source_models, fs, &mut problems), None),
         Some(proof) => {
@@ -229,8 +236,9 @@ fn targets(
     Ok((values, rankings))
 }
 
-/// Checks that the Rulebook's Effective revisions are the ones the Compiled_Rulebook was made
-/// from, and reads the Approval_Record of each of them (design §3.9.1).
+/// Checks that the Rulebook's Effective revisions are the ones the
+/// Compiled_Rulebook was made from, and reads the Approval_Record of each of
+/// them (design §3.9.1).
 fn approval_facts(
     compiled: &CompiledRulebook,
     proof: &ProofFiles,
@@ -293,9 +301,9 @@ fn computed_text(v: &Computed) -> String {
     }
 }
 
-/// The published-result comparison of each Question, rendered as text (design §8.11.9). The
-/// first Question that answers a (participant, Target) pair owns the comparison of that pair,
-/// as in the engine.
+/// The published-result comparison of each Question, rendered as text (design
+/// §8.11.9). The first Question that answers a (participant, Target) pair owns
+/// the comparison of that pair, as in the engine.
 fn published_facts(
     questions: &[Question],
     data: &CompetitionData,
@@ -411,7 +419,8 @@ pub(crate) fn run(args: &EvaluateArgs, fs: &dyn Fs) -> Finished {
         .collect();
     let (state, code) = classify(&evaluation, &verifications, &loaded);
     if code == ExitCode::InvalidInput && state.as_slice().iter().any(is_question_fault) {
-        // A Question the inputs cannot answer is invalid input: nothing is written.
+        // A Question the inputs cannot answer is invalid input: nothing is
+        // written.
         return Finished {
             stdout: Vec::new(),
             state,

@@ -1,14 +1,16 @@
 //! Locations attached to diagnostics.
 //!
-//! A [`SourceSpan`] has private fields and one constructor, which verifies the span against a
-//! [`SpanSource`] (implemented by the Source_Model). A span from untrusted input is therefore plain
-//! data elsewhere and never becomes a `Location::Source` without that check (Req 7.14, 7.15).
+//! A [`SourceSpan`] has private fields and one constructor, which verifies the
+//! span against a [`SpanSource`] (implemented by the Source_Model). A span from
+//! untrusted input is therefore plain data elsewhere and never becomes a
+//! `Location::Source` without that check (Req 7.14, 7.15).
 
 use crate::ids::{DocumentId, InputId};
 use crate::Code;
 use std::fmt;
 
-/// Byte offset into a Source_Document (documents are limited to 16 MiB by default).
+/// Byte offset into a Source_Document (documents are limited to 16 MiB by
+/// default).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ByteOffset(u32);
 
@@ -34,7 +36,8 @@ pub trait SpanSource {
     fn len_bytes(&self) -> u64;
     /// True when `offset` is on a UTF-8 character boundary of the document.
     fn is_char_boundary(&self, offset: u32) -> bool;
-    /// 1-based `(line, column)` of the byte offset, or `None` when it is outside the document.
+    /// 1-based `(line, column)` of the byte offset, or `None` when it is
+    /// outside the document.
     fn line_column(&self, offset: u32) -> Option<(u32, u32)>;
 }
 
@@ -76,9 +79,9 @@ pub struct SourceSpan {
 }
 
 impl SourceSpan {
-    /// Builds a span after checking it against the document: `start < end <= length`, both
-    /// offsets on character boundaries, and `line`/`column` equal to the 1-based position of
-    /// `start`.
+    /// Builds a span after checking it against the document:
+    /// `start < end <= length`, both offsets on character boundaries, and
+    /// `line`/`column` equal to the 1-based position of `start`.
     ///
     /// # Errors
     /// Returns the first failed condition as a [`SpanError`].

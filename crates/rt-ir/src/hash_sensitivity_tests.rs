@@ -1,19 +1,23 @@
-//! Property 12: Rule_Content_Hash sensitivity (task 4.13, design §3.8.2, §4.1.7).
+//! Property 12: Rule_Content_Hash sensitivity (task 4.13, design §3.8.2,
+//! §4.1.7).
 //!
-//! A revision and its declared documents are generated, then exactly one part of the
-//! Rule_Content is changed: a span offset (start or end), a declared document hash, an operand,
-//! a rounding declaration (places or mode), a marker, the Revision_Number or the Target. The
-//! Rule_Content_Hash must change every time, and the Draft hash must change for every change
-//! except the Revision_Number (which the Draft hash excludes by design).
+//! A revision and its declared documents are generated, then exactly one part
+//! of the Rule_Content is changed: a span offset (start or end), a declared
+//! document hash, an operand, a rounding declaration (places or mode), a
+//! marker, the Revision_Number or the Target. The Rule_Content_Hash must change
+//! every time, and the Draft hash must change for every change except the
+//! Revision_Number (which the Draft hash excludes by design).
 //!
-//! The IR_Version is not mutated: `IrVersion` has the single variant `V1` in this build, so no
-//! second version can be constructed. The hash input writes `ir_version` first (see `hash.rs`),
-//! and the property over the other parts is the one the approval gate relies on today.
-//! The "existing approval record becomes non-matching" half of Property 12 belongs to the
-//! ledger and status derivation (later tasks); a record binds this hash, so a changed hash is
-//! the precondition it needs.
+//! The IR_Version is not mutated: `IrVersion` has the single variant `V1` in
+//! this build, so no second version can be constructed. The hash input writes
+//! `ir_version` first (see `hash.rs`), and the property over the other parts is
+//! the one the approval gate relies on today. The "existing approval record
+//! becomes non-matching" half of Property 12 belongs to the ledger and status
+//! derivation (`rt-ledger`); a record binds this hash, so a changed hash is the
+//! precondition it needs.
 //!
-//! **Validates: Requirements 20.15, 25.4, 25.5, 25.6, 25.8, 25.22, 26.9, 5.6, 5.15**
+//! **Validates: Requirements 20.15, 25.4, 25.5, 25.6, 25.8, 25.22, 26.9, 5.6,
+//! 5.15**
 
 use super::*;
 use proptest::collection::vec;
@@ -49,7 +53,8 @@ fn mode_of(i: u8) -> RoundingMode {
     }
 }
 
-/// Everything the property varies, so a failing case prints a readable counterexample.
+/// Everything the property varies, so a failing case prints a readable
+/// counterexample.
 #[derive(Clone, Debug)]
 struct Case {
     hashes: [u8; 2],
@@ -189,8 +194,9 @@ fn bump(n: i32) -> i32 {
     }
 }
 
-/// Changes exactly one part. `which` selects it; `idx` picks a span or term where relevant.
-/// Returns whether the change is expected to alter the Draft hash too.
+/// Changes exactly one part. `which` selects it; `idx` picks a span or term
+/// where relevant. Returns whether the change is expected to alter the Draft
+/// hash too.
 fn mutate(b: &mut Built, c: &Case, which: u8, idx: usize) -> bool {
     let content = &mut b.revision.content;
     let span_i = idx % content.spans.len();
@@ -220,7 +226,8 @@ fn mutate(b: &mut Built, c: &Case, which: u8, idx: usize) -> bool {
                     r.mode = mode_of(c.mode + 1);
                 }
             }
-            // A ranking has no rounding. Change its tie-breaker operand instead.
+            // A ranking has no rounding. Change its tie-breaker operand
+            // instead.
             RuleBody::Ranking { tie_breakers, .. } => {
                 tie_breakers[0].expr = num(bump(c.weight));
             }
@@ -246,7 +253,8 @@ fn mutate(b: &mut Built, c: &Case, which: u8, idx: usize) -> bool {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
-    /// **Validates: Requirements 20.15, 25.4, 25.5, 25.6, 25.8, 25.22, 26.9, 5.6, 5.15**
+    /// **Validates: Requirements 20.15, 25.4, 25.5, 25.6, 25.8, 25.22, 26.9,
+    /// 5.6, 5.15**
     #[test]
     fn changing_one_part_changes_the_rule_content_hash(
         c in case(),

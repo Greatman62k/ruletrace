@@ -1,7 +1,8 @@
-//! Runs the stand-in demonstration, `hand` profile, against its golden files (task 6.6).
+//! Runs the stand-in demonstration, `hand` profile, against its golden files.
 //!
-//! The binaries come from `RT_BIN_DIR` or, when it is unset, from a `cargo build` of `rt-cli`
-//! into the profile directory of this test. Bless with `RT_DEMO_BLESS=1` (refused when `CI` is set).
+//! The binaries come from `RT_BIN_DIR` or, when it is unset, from a
+//! `cargo build` of `rt-cli` into the profile directory of this test. Bless
+//! with `RT_DEMO_BLESS=1` (refused when `CI` is set).
 
 use rt_demo::{check_manifest, parse_runbook, run_runbook, Mode};
 use std::path::{Path, PathBuf};

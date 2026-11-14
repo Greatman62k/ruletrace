@@ -1,13 +1,14 @@
-//! Pure status derivation over a Rulebook and a verified ledger (design §3.4.4, §3.8.2).
+//! Pure status derivation over a Rulebook and a verified ledger (design §3.4.4,
+//! §3.8.2).
 
 use crate::record::{ApprovalLedger, BindingPair, LedgerRecord, RecordKind};
 use rt_foundation::RuleId;
 use rt_ir::{rule_content_hash, ApprovalStatus, RuleKey, RuleRevision, Rulebook};
 use std::collections::{BTreeMap, BTreeSet};
 
-/// The binding of a revision: sorted, de-duplicated (document, declared hash) pairs for the
-/// documents its spans reference. `None` when a span names an undeclared document or one
-/// declared with two different hashes.
+/// The binding of a revision: sorted, de-duplicated (document, declared hash)
+/// pairs for the documents its spans reference. `None` when a span names an
+/// undeclared document or one declared with two different hashes.
 fn current_binding(rb: &Rulebook, rev: &RuleRevision) -> Option<Vec<BindingPair>> {
     let mut pairs: BTreeSet<BindingPair> = BTreeSet::new();
     for span in &rev.content.spans {
@@ -26,8 +27,8 @@ fn current_binding(rb: &Rulebook, rev: &RuleRevision) -> Option<Vec<BindingPair>
     Some(pairs.into_iter().collect())
 }
 
-/// True when `record` is an approval that matches the current revision in rule, revision,
-/// recomputed content hash, IR_Version and every binding pair.
+/// True when `record` is an approval that matches the current revision in rule,
+/// revision, recomputed content hash, IR_Version and every binding pair.
 fn approval_matches(rb: &Rulebook, rev: &RuleRevision, record: &LedgerRecord) -> bool {
     if record.kind() != RecordKind::Approval
         || record.rule() != &rev.key.id
@@ -48,9 +49,10 @@ fn approval_matches(rb: &Rulebook, rev: &RuleRevision, record: &LedgerRecord) ->
     }
 }
 
-/// Derives the status of every revision of the Rulebook (Req 26.10): `Rejected` if a rejection
-/// record names the key, else `Approved` if some approval record matches, else `Proposed`.
-/// The ledger must have been verified by [`parse_ledger`](crate::parse_ledger).
+/// Derives the status of every revision of the Rulebook (Req 26.10): `Rejected`
+/// if a rejection record names the key, else `Approved` if some approval record
+/// matches, else `Proposed`. The ledger must have been verified by
+/// [`parse_ledger`](crate::parse_ledger).
 #[must_use]
 pub fn derive_statuses(
     rb: &Rulebook,
@@ -80,9 +82,10 @@ pub fn derive_statuses(
         .collect()
 }
 
-/// The Effective revision of each rule: its highest-numbered Approved revision. A rule with no
-/// Approved revision is absent. A higher Proposed revision never causes a fallback to a lower
-/// one to be hidden or invented: that case is reported by [`unresolved`] (Req 25.11).
+/// The Effective revision of each rule: its highest-numbered Approved revision.
+/// A rule with no Approved revision is absent. A higher Proposed revision never
+/// causes a fallback to a lower one to be hidden or invented: that case is
+/// reported by [`unresolved`] (Req 25.11).
 #[must_use]
 pub fn effective_revisions(
     rb: &Rulebook,
@@ -102,8 +105,8 @@ pub fn effective_revisions(
     out
 }
 
-/// The unresolved revisions: Proposed, with no higher revision of the same rule that is
-/// Approved or Rejected. Ascending key order.
+/// The unresolved revisions: Proposed, with no higher revision of the same rule
+/// that is Approved or Rejected. Ascending key order.
 #[must_use]
 pub fn unresolved(rb: &Rulebook, statuses: &BTreeMap<RuleKey, ApprovalStatus>) -> Vec<RuleKey> {
     let mut keys: Vec<RuleKey> = rb

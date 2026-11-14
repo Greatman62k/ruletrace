@@ -1,4 +1,5 @@
-//! Shared decoding helpers: positioned diagnostics, header checks and the file loader.
+//! Shared decoding helpers: positioned diagnostics, header checks and the file
+//! loader.
 
 use rt_foundation::{
     escape_controls, Code, Diagnostic, DiagnosticState, InputId, InputLocation, Location,
@@ -6,7 +7,8 @@ use rt_foundation::{
 };
 use rt_json::{check_flag_keys, parse, Kind, Member, ParseLimits, Position, Value};
 
-/// The default limits for loading one of the three files: 32 MiB and container depth 64.
+/// The default limits for loading one of the three files: 32 MiB and container
+/// depth 64.
 #[must_use]
 pub fn default_parse_limits() -> ParseLimits {
     ParseLimits::new(MAX_COMPETITION_DATA_BYTES, MAX_CONTAINER_DEPTH)
@@ -14,7 +16,8 @@ pub fn default_parse_limits() -> ParseLimits {
 
 pub(crate) const VERSION: u32 = 1;
 
-/// Collects the diagnostics of one decode so that every fault of a file is reported.
+/// Collects the diagnostics of one decode so that every fault of a file is
+/// reported.
 pub(crate) struct Ctx<'a> {
     pub(crate) input: &'a InputId,
     pub(crate) diags: Vec<Diagnostic>,
@@ -49,8 +52,9 @@ impl<'a> Ctx<'a> {
         self.push(Code::DataMalformed, at, field, msg);
     }
 
-    /// An object whose keys are all in `allowed`; each key of `required` must be present.
-    /// Faults are recorded and the members are still returned so that decoding continues.
+    /// An object whose keys are all in `allowed`; each key of `required` must
+    /// be present. Faults are recorded and the members are still returned so
+    /// that decoding continues.
     pub(crate) fn object<'v>(
         &mut self,
         value: &'v Value<Position>,
@@ -141,9 +145,10 @@ pub(crate) fn into_state(diags: Vec<Diagnostic>) -> DiagnosticState {
     state.sorted()
 }
 
-/// Reads and parses one file. Size and depth faults keep their own codes (`RT-LIM-0001`,
-/// `RT-LIM-0002`); any other syntax fault becomes `RT-EXE-0009`. Flag and lifecycle keys are
-/// rejected under Req 22.22 before anything else is read.
+/// Reads and parses one file. Size and depth faults keep their own codes
+/// (`RT-LIM-0001`, `RT-LIM-0002`); any other syntax fault becomes
+/// `RT-EXE-0009`. Flag and lifecycle keys are rejected under Req 22.22 before
+/// anything else is read.
 pub(crate) fn load(
     input: &InputId,
     bytes: &[u8],

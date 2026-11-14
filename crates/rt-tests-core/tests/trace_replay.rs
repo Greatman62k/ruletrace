@@ -1,14 +1,17 @@
-//! Property 25: Trace completeness and replay (task 5.23).
+//! Property 25: Trace completeness and replay.
 //!
 //! Feature: ruletrace-compiler, Property 25: Trace completeness and replay
 //!
-//! **Validates: Requirements 13.1, 13.2, 13.3, 13.4, 13.6, 13.11, 13.21, 10.11, 12.7**
+//! **Validates: Requirements 13.1, 13.2, 13.3, 13.4, 13.6, 13.11, 13.21, 10.11,
+//! 12.7**
 //!
-//! A Compiled_Rulebook is built with `CompiledRulebook::from_parts` (the Compiler is not used).
-//! It has derived, eligibility, weighted-score, rounding, aggregate, ranking, conflicting and
-//! precedence-ordered rules. For generated Competition_Data (missing values, zero divisors,
-//! empty and unsupplied collections included) every Question is evaluated and the expectations
-//! below are computed from the generated integers (cents) by this file, not by the engine.
+//! A Compiled_Rulebook is built with `CompiledRulebook::from_parts` (the
+//! Compiler is not used). It has derived, eligibility, weighted-score,
+//! rounding, aggregate, ranking, conflicting and precedence-ordered rules. For
+//! generated Competition_Data (missing values, zero divisors, empty and
+//! unsupplied collections included) every Question is evaluated and the
+//! expectations below are computed from the generated integers (cents) by this
+//! file, not by the engine.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -280,8 +283,6 @@ fn rulebook() -> CompiledRulebook {
     .unwrap()
 }
 
-// ----- generated data -----
-
 /// Cents as a canonical decimal literal, for example `-1234` is `-12.34`.
 fn cents(v: i64) -> String {
     let sign = if v < 0 { "-" } else { "" };
@@ -369,15 +370,14 @@ fn questions(count: usize) -> Vec<Question> {
     out
 }
 
-// ----- checks -----
-
 fn same_span(c: &CompiledSpan, t: &TraceSpan) -> bool {
     c.document == t.document
         && c.sha256.as_str() == t.sha256.as_str()
         && (c.start, c.end, c.line, c.column) == (t.start, t.end, t.line, t.column)
 }
 
-/// Req 13.2: the trace lists each rule with exactly the spans and hash the rulebook retains.
+/// Req 13.2: the trace lists each rule with exactly the spans and hash the
+/// rulebook retains.
 fn check_rules(rb: &CompiledRulebook, trace: &DecisionTrace, target: &str) {
     let rules = trace.rules();
     assert!(!rules.is_empty(), "trace names no rule");
@@ -446,7 +446,8 @@ fn check_value_question(
     let part = pid(who);
     check_rules(rb, trace, target);
     check_not_applied(rb, trace);
-    // Req 13.3: every read names a declared input and carries the exact data value.
+    // Req 13.3: every read names a declared input and carries the exact data
+    // value.
     for e in trace.entries() {
         match e {
             Entry::Read(r) => {
@@ -465,7 +466,8 @@ fn check_value_question(
             Entry::Compare(_) | Entry::Place(_) => panic!("ranking entry in a value trace"),
         }
     }
-    // The last entry is a decision, and an Indeterminate Outcome has an Unknown decision.
+    // The last entry is a decision, and an Indeterminate Outcome has an Unknown
+    // decision.
     let Some(Entry::Decision(last)) = trace.entries().last() else {
         panic!("no final decision");
     };
@@ -473,7 +475,8 @@ fn check_value_question(
         matches!(outcome, Outcome::Decided(_)),
         matches!(last.value, DecisionValue::Known(_))
     );
-    // Req 13.5: missing inputs are recorded by name, never read, never defaulted.
+    // Req 13.5: missing inputs are recorded by name, never read, never
+    // defaulted.
     for m in trace.missing() {
         assert_eq!(m.participant, part);
         assert!(!trace.entries().iter().any(|e| matches!(e,
@@ -491,7 +494,8 @@ fn check_value_question(
             match (p.a, p.b) {
                 (Some(a), Some(b)) => {
                     assert_eq!(outcome, &Outcome::Decided(number(a + b)));
-                    // Req 13.3: the step has the read values as operands and the exact result.
+                    // Req 13.3: the step has the read values as operands and
+                    // the exact result.
                     assert!(trace.entries().iter().any(|e| matches!(e,
                         Entry::Step(s) if s.operands == vec![number(a), number(b)]
                             && s.result == rt_trace::StepResult::Value(number(a + b)))));
@@ -509,7 +513,8 @@ fn check_value_question(
         }
         "clash" => {
             if p.a.is_some() {
-                // Req 13.6: conflict recorded, both rules listed, no winner selected.
+                // Req 13.6: conflict recorded, both rules listed, no winner
+                // selected.
                 let Outcome::Indeterminate(reasons) = outcome else {
                     panic!("conflict gave a value");
                 };
@@ -581,7 +586,8 @@ fn check_rank_question(people: &[Person], outcome: &Outcome, trace: &DecisionTra
                 .a
                 .unwrap(),
         );
-        // Descending: the participant that is ahead has the larger value; tied means equal.
+        // Descending: the participant that is ahead has the larger value; tied
+        // means equal.
         assert_eq!(c.first_ahead, l > r);
         assert!(c.first_ahead || l == r);
     }
@@ -599,8 +605,9 @@ fn check_all(people: &[Person]) {
     assert_eq!(evaluate(&rb, &data, &qs, None), eval);
     for ((q, outcome), trace) in qs.iter().zip(&eval.outcomes).zip(&eval.traces) {
         assert_eq!(trace.outcome(), outcome);
-        // Req 13.1: entries are in evaluation order, entry n has sequence number n, and each
-        // decision refers only to earlier entries (contiguous, 1-based, no forward reference).
+        // Req 13.1: entries are in evaluation order, entry n has sequence
+        // number n, and each decision refers only to earlier entries
+        // (contiguous, 1-based, no forward reference).
         for (i, e) in trace.entries().iter().enumerate() {
             if let Entry::Decision(d) = e {
                 let seq = u32::try_from(i + 1).unwrap();

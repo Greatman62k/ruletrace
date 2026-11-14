@@ -1,4 +1,5 @@
-//! The subprocess runner and the runbook driver (design §8.11.12 steps 3 and 4).
+//! The subprocess runner and the runbook driver (design §8.11.12 steps 3 and
+//! 4).
 
 use crate::error::DemoError;
 use crate::golden::{check_golden, Mode};
@@ -25,7 +26,8 @@ fn io_error(path: &Path, e: &std::io::Error) -> DemoError {
     }
 }
 
-/// Maps a logical executable name to the built binary in `bin_dir` (the value of `RT_BIN_DIR`).
+/// Maps a logical executable name to the built binary in `bin_dir` (the value
+/// of `RT_BIN_DIR`).
 #[must_use]
 pub fn binary_path(bin_dir: &Path, logical: &str) -> PathBuf {
     bin_dir.join(format!("{logical}{}", std::env::consts::EXE_SUFFIX))
@@ -34,7 +36,8 @@ pub fn binary_path(bin_dir: &Path, logical: &str) -> PathBuf {
 /// Runs one step in `work_dir` with an empty environment and no standard input.
 ///
 /// # Errors
-/// [`DemoError::Step`] when the process cannot start or ends without an exit code.
+/// [`DemoError::Step`] when the process cannot start or ends without an exit
+/// code.
 pub fn run_step(step: &Step, bin_dir: &Path, work_dir: &Path) -> Result<Captured, DemoError> {
     let fail = |problem: String| DemoError::Step {
         step: step.id.clone(),
@@ -63,7 +66,8 @@ pub fn run_step(step: &Step, bin_dir: &Path, work_dir: &Path) -> Result<Captured
     })
 }
 
-/// Copies the demonstration into `work_dir`, leaving out the `golden` directory.
+/// Copies the demonstration into `work_dir`, leaving out the `golden`
+/// directory.
 ///
 /// # Errors
 /// [`DemoError::Io`] on the first failed file operation.
@@ -90,16 +94,17 @@ pub fn copy_demo(demo_dir: &Path, work_dir: &Path) -> Result<(), DemoError> {
     Ok(())
 }
 
-/// Runs the steps of `profile` in order and compares each with its golden files.
-/// Stops at the first failure.
+/// Runs the steps of `profile` in order and compares each with its golden
+/// files. Stops at the first failure.
 ///
-/// Per step the order is: exit code, standard output, standard error, then each listed output
-/// file. `demo_dir` holds the committed demonstration and its golden files. `work_dir` receives
-/// a copy and must not exist or must be empty.
+/// Per step the order is: exit code, standard output, standard error, then each
+/// listed output file. `demo_dir` holds the committed demonstration and its
+/// golden files. `work_dir` receives a copy and must not exist or must be
+/// empty.
 ///
 /// # Errors
-/// The first failure: [`DemoError::Step`] for a wrong exit code or a missing output file,
-/// [`DemoError::Golden`] for a difference.
+/// The first failure: [`DemoError::Step`] for a wrong exit code or a missing
+/// output file, [`DemoError::Golden`] for a difference.
 pub fn run_runbook(
     runbook: &Runbook,
     profile: &str,

@@ -1,13 +1,17 @@
-//! Task 5.14: negative tests for approval gating, driven through the `ruletrace` CLI library.
+//! Negative tests for approval gating, driven through the `ruletrace` CLI
+//! library.
 //!
-//! Each case runs `validate` (and `compile` where the artifact decides) on an in-memory file
-//! system and asserts the exact code, Severity, primary location and exit code from the rendered
-//! Diagnostics. The channel tests cover Req 26.18 and 26.26: no flag, configuration file, environment
-//! variable, Rulebook field, Proposal_Store file or Provider_Response content approves a revision.
-//! The AI crates are not available to this test crate, so the last two channels are covered by the
-//! files such crates would write and by an `ai_proposal` origin inside the Rulebook.
+//! Each case runs `validate` (and `compile` where the artifact decides) on an
+//! in-memory file system and asserts the exact code, Severity, primary location
+//! and exit code from the rendered Diagnostics. The channel tests cover Req
+//! 26.18 and 26.26: no flag, configuration file, environment variable, Rulebook
+//! field, Proposal_Store file or Provider_Response content approves a revision.
+//! The AI crates are not available to this test crate, so the last two channels
+//! are covered by the files such crates would write and by an `ai_proposal`
+//! origin inside the Rulebook.
 //!
-//! **Validates: Requirements 5.4, 5.5, 5.6, 5.7, 5.14, 25.11, 25.13, 25.19, 26.12, 26.13, 26.18, 26.26, 20.3**
+//! **Validates: Requirements 5.4, 5.5, 5.6, 5.7, 5.14, 25.11, 25.13, 25.19,
+//! 26.12, 26.13, 26.18, 26.26, 20.3**
 
 #![allow(clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
 
@@ -76,8 +80,8 @@ impl Fs for MemFs {
     }
 }
 
-/// One rule revision of a generated Rulebook: id, revision number, constant value, clause index
-/// and a shift of the span start.
+/// One rule revision of a generated Rulebook: id, revision number, constant
+/// value, clause index and a shift of the span start.
 #[derive(Clone)]
 struct Rev {
     id: &'static str,
@@ -136,7 +140,8 @@ fn content_hash(text: &str, revs: &[Rev], index: usize) -> String {
         .to_string()
 }
 
-/// A ledger record: kind, rule, revision, content hash, IR_Version, bound document hash.
+/// A ledger record: kind, rule, revision, content hash, IR_Version, bound
+/// document hash.
 struct Rec(
     &'static str,
     &'static str,
@@ -230,7 +235,8 @@ fn compile(fs: &MemFs) -> Outcome {
     )
 }
 
-/// The `(header, location)` line pairs of the rendered Diagnostics, filtered by code.
+/// The `(header, location)` line pairs of the rendered Diagnostics, filtered by
+/// code.
 fn diags(out: &Outcome, code: &str) -> Vec<(String, String)> {
     let lines: Vec<&str> = out.stderr.lines().collect();
     lines
@@ -241,7 +247,8 @@ fn diags(out: &Outcome, code: &str) -> Vec<(String, String)> {
         .collect()
 }
 
-/// Asserts exactly one Diagnostic of `code` with the severity prefix and the location text.
+/// Asserts exactly one Diagnostic of `code` with the severity prefix and the
+/// location text.
 fn expect(out: &Outcome, code: &str, severity: &str, at: &str) {
     let found = diags(out, code);
     assert_eq!(found.len(), 1, "{code} in\n{}", out.stderr);
@@ -270,7 +277,8 @@ fn ledger_line(n: u32) -> String {
 
 const NO_RULE: &str = "no location (RT-APR-0002)";
 
-/// Validation blocks with exit 3 and `compile` refuses with exit 3 and writes nothing.
+/// Validation blocks with exit 3 and `compile` refuses with exit 3 and writes
+/// nothing.
 fn blocked(fs: &MemFs) -> Outcome {
     let out = validate(fs);
     assert_eq!(out.code.value(), 3, "{}", out.stderr);
@@ -286,7 +294,8 @@ fn unresolved_revision_blocks_with_apr_0001_and_apr_0002() {
     let fs = setup(TEXT, &rulebook(TEXT, "1", &revs), &ledger(&[]));
     let out = blocked(&fs);
     expect(&out, "RT-APR-0001", "error", &span_of(TEXT, 0, 0));
-    // The implementation reports no location here; design §3.6.1 asks for the Rulebook document.
+    // The implementation reports no location here; design §3.6.1 asks for the
+    // Rulebook document.
     expect(&out, "RT-APR-0002", "error", NO_RULE);
 }
 
@@ -406,8 +415,9 @@ fn ledger_contradiction_is_rejected_as_invalid_input_with_exit_2() {
     assert!(fs.get("validation.json").is_none());
 }
 
-/// A Pending_Proposal is held outside the Rulebook: whatever a store file holds, validate and
-/// compile give the same Diagnostics, exit codes and bytes (Req 26.28, 26.31).
+/// A Pending_Proposal is held outside the Rulebook: whatever a store file
+/// holds, validate and compile give the same Diagnostics, exit codes and bytes
+/// (Req 26.28, 26.31).
 #[test]
 fn pending_proposal_never_blocks() {
     let revs = [rev("d.a", 1, 1, 0)];
@@ -428,10 +438,9 @@ fn pending_proposal_never_blocks() {
     assert_eq!(results[0].1.code.value(), 0);
 }
 
-// ---- Channels that must not approve (Req 26.18, 26.26) ----
-
-/// The state after a channel attempt: no compiled file, the ledger unchanged, `RT-APR-0001` for
-/// the revision and exit 3 (a Proposed revision whatever its source).
+/// The state after a channel attempt: no compiled file, the ledger unchanged,
+/// `RT-APR-0001` for the revision and exit 3 (a Proposed revision whatever its
+/// source).
 fn assert_proposed_and_unapproved(fs: &MemFs, ledger_before: &[u8]) {
     assert_eq!(fs.get("ledger.jsonl").as_deref(), Some(ledger_before));
     let out = blocked(fs);
@@ -488,8 +497,9 @@ fn command_options_cannot_approve() {
 #[test]
 fn configuration_file_and_environment_variable_cannot_approve() {
     let (fs, before) = proposed();
-    // The CLI names no configuration file and reads no environment: files that sit next to the
-    // inputs and variables with approval-looking names change nothing.
+    // The CLI names no configuration file and reads no environment: files that
+    // sit next to the inputs and variables with approval-looking names change
+    // nothing.
     for name in [
         "ruletrace.toml",
         "ruletrace.json",
@@ -544,7 +554,8 @@ fn rulebook_fields_cannot_approve() {
 
 #[test]
 fn proposal_store_and_provider_response_content_cannot_approve() {
-    // Files that the AI tool would write, claiming approval, are read by no command.
+    // Files that the AI tool would write, claiming approval, are read by no
+    // command.
     let (fs, before) = proposed();
     fs.put(
         "proposals.json",
@@ -556,8 +567,9 @@ fn proposal_store_and_provider_response_content_cannot_approve() {
     );
     assert_proposed_and_unapproved(&fs, &before);
 
-    // A Provider_Response adopted into the Rulebook arrives as an `ai_proposal` origin. It claims
-    // its own approval through its proposer identity, and is still Proposed and unresolved.
+    // A Provider_Response adopted into the Rulebook arrives as an `ai_proposal`
+    // origin. It claims its own approval through its proposer identity, and is
+    // still Proposed and unresolved.
     let hash = sha256(b"x");
     let origin = Box::leak(
         format!(

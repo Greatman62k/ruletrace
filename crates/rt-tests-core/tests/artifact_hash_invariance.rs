@@ -1,10 +1,11 @@
-//! Property 13 extended to compiled-artifact bytes (task 5.18).
+//! Property 13 extended to compiled-artifact bytes.
 //!
 //! **Validates: Requirements 9.5, 16.18, 18.5**
 //!
-//! Two Rulebooks with equal Rule_Content that differ only in Origin (manual with or without an
-//! author, or AI proposal) and in the ledger's Reviewer, time and rejection reason of an
-//! unrelated rejected revision compile to byte-identical canonical artifacts.
+//! Two Rulebooks with equal Rule_Content that differ only in Origin (manual
+//! with or without an author, or AI proposal) and in the ledger's Reviewer,
+//! time and rejection reason of an unrelated rejected revision compile to
+//! byte-identical canonical artifacts.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -34,7 +35,8 @@ fn origin() -> impl Strategy<Value = String> {
     ]
 }
 
-/// Revision 1 is approved. Revision 2 of `r.other` is rejected, with its own content.
+/// Revision 1 is approved. Revision 2 of `r.other` is rejected, with its own
+/// content.
 fn rulebook(origin: &str, value: &str) -> Rulebook {
     let start = TEXT.find(CLAUSE).expect("clause");
     let span = format!(
@@ -104,7 +106,8 @@ fn sources() -> SourceModels {
     s
 }
 
-/// Compiles and returns the canonical bytes in both forms, plus the Rulebook hash.
+/// Compiles and returns the canonical bytes in both forms, plus the Rulebook
+/// hash.
 fn artifact(book: &Rulebook, ledger: &ApprovalLedger) -> (String, String, String) {
     let result = validate(book, ledger, &sources(), None);
     let (compiled, _) = compile(&result)

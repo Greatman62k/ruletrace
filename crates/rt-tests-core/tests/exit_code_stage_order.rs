@@ -1,13 +1,15 @@
-//! Property 30 (task 5.26): the exit code follows the earliest failing stage.
+//! Property 30: the exit code follows the earliest failing stage.
 //!
-//! For each of the four pipeline commands, any subset of that command's failure causes is
-//! injected at once (through the real `rt_cli::run` over an in-memory file system). The exit
-//! code must be the code of the earliest stage that fails: invalid arguments or unreadable
-//! input (2), then the blocking validation, compilation or Indeterminate result (3 or 4), then
-//! a failed write (70). A Warning (`ingest` of a document without clauses) never changes it. No
-//! value outside {0, 2, 3, 4} and 70 occurs.
+//! For each of the four pipeline commands, any subset of that command's failure
+//! causes is injected at once (through the real `rt_cli::run` over an in-memory
+//! file system). The exit code must be the code of the earliest stage that
+//! fails: invalid arguments or unreadable input (2), then the blocking
+//! validation, compilation or Indeterminate result (3 or 4), then a failed
+//! write (70). A Warning (`ingest` of a document without clauses) never changes
+//! it. No value outside {0, 2, 3, 4} and 70 occurs.
 //!
-//! **Validates: Requirements 16.8, 16.10, 16.11, 16.12, 16.13, 16.14, 16.15, 16.16, 16.17, 7.19, 27.10**
+//! **Validates: Requirements 16.8, 16.10, 16.11, 16.12, 16.13, 16.14, 16.15,
+//! 16.16, 16.17, 7.19, 27.10**
 
 #![allow(clippy::expect_used, clippy::indexing_slicing)]
 
@@ -168,8 +170,9 @@ const INGEST: [&str; 7] = [
     "c.json",
 ];
 
-/// The four failure causes of one command in stage order: arguments, input, result, write. For
-/// `ingest` the third cause is the Warning "no clause", which has exit code 0.
+/// The four failure causes of one command in stage order: arguments, input,
+/// result, write. For `ingest` the third cause is the Warning "no clause",
+/// which has exit code 0.
 type Toggles = [bool; 4];
 
 /// The code of the earliest active stage that has a failing code, else 0.
@@ -189,7 +192,8 @@ fn command(base: &[&str], bad_argument: bool) -> Vec<OsString> {
     os(&args)
 }
 
-/// Runs `which` (0 validate, 1 compile, 2 evaluate, 3 ingest) and returns the exit code.
+/// Runs `which` (0 validate, 1 compile, 2 evaluate, 3 ingest) and returns the
+/// exit code.
 fn exit_of(which: usize, t: Toggles) -> u8 {
     let rulebook = rulebook_text();
     let fs = MemFs::default();
@@ -211,7 +215,8 @@ fn exit_of(which: usize, t: Toggles) -> u8 {
             command(&VALIDATE, bad_argument)
         }
         1 => {
-            // The earlier stage runs without faults and leaves its artifact behind.
+            // The earlier stage runs without faults and leaves its artifact
+            // behind.
             let first = run(&os(&VALIDATE), &fs);
             assert!(matches!(first.code.value(), 0 | 3), "{}", first.stderr);
             if bad_input {

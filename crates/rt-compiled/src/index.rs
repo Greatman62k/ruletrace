@@ -1,5 +1,5 @@
-//! Index newtypes. A compiled name is an index into one table, and each table has its own type,
-//! so an input index cannot be used as a rule index.
+//! Index newtypes. A compiled name is an index into one table, and each table
+//! has its own type, so an input index cannot be used as a rule index.
 
 macro_rules! index_type {
     ($(#[$doc:meta])* $name:ident) => {
@@ -8,8 +8,8 @@ macro_rules! index_type {
         pub struct $name(u32);
 
         impl $name {
-            /// Wraps an index. Whether it is in range is checked when the Compiled_Rulebook
-            /// is built.
+            /// Wraps an index. Whether it is in range is checked when the
+            /// Compiled_Rulebook is built.
             #[must_use]
             pub fn new(value: u32) -> Self {
                 Self(value)
@@ -65,7 +65,8 @@ index_type!(
     RuleIdx
 );
 index_type!(
-    /// Position in [`CompiledRulebook::targets`](crate::CompiledRulebook::targets): the
+    /// Position in
+    /// [`CompiledRulebook::targets`](crate::CompiledRulebook::targets): the
     /// distinct Target names of the rules in ascending byte order.
     TargetIdx
 );

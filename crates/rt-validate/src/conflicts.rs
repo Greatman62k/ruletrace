@@ -1,23 +1,24 @@
-//! Pass 9: conflict detection and precedence validation (design §3.6.1, Req 6.7, 6.8, 6.16 to
-//! 6.21, 6.23).
+//! Pass 9: conflict detection and precedence validation (design §3.6.1, Req
+//! 6.7, 6.8, 6.16 to 6.21, 6.23).
 //!
-//! Only Effective revisions take part. No Diagnostic or result field designates a winner: a
-//! conflict names every rule in ascending identifier order. A Precedence_Declaration that lists
-//! every rule of a `DuplicateTarget`, `DuplicateRankKey` or `ContradictoryDefault` conflict, and
-//! is itself valid, turns the Error into the Warning `RT-VAL-0010`. `InputShadowing` is never
-//! resolved. A declaration that is part of a cycle or lists a rule that is not Effective gives
-//! `RT-VAL-0012` and resolves nothing.
+//! Only Effective revisions take part. No Diagnostic or result field designates
+//! a winner: a conflict names every rule in ascending identifier order. A
+//! Precedence_Declaration that lists every rule of a `DuplicateTarget`,
+//! `DuplicateRankKey` or `ContradictoryDefault` conflict, and is itself valid,
+//! turns the Error into the Warning `RT-VAL-0010`. `InputShadowing` is never
+//! resolved. A declaration that is part of a cycle or lists a rule that is not
+//! Effective gives `RT-VAL-0012` and resolves nothing.
 //!
 //! Choices the design leaves open:
 //!
-//! * A declaration whose order lists one rule twice is not a total order. It is a cycle of one
-//!   rule and gives `RT-VAL-0012`.
-//! * Cycles are searched over the pairwise "listed before" edges of all declarations together,
-//!   whatever their Target.
-//! * A declaration resolves a conflict only when its Target equals the Target of the conflict.
-//!   Extra listed rules are allowed when they are Effective.
-//! * Default rules on one input field with all literals equal are `DuplicateTarget`, otherwise
-//!   `ContradictoryDefault` (Req 6.18).
+//! * A declaration whose order lists one rule twice is not a total order. It is
+//!   a cycle of one rule and gives `RT-VAL-0012`.
+//! * Cycles are searched over the pairwise "listed before" edges of all
+//!   declarations together, whatever their Target.
+//! * A declaration resolves a conflict only when its Target equals the Target
+//!   of the conflict. Extra listed rules are allowed when they are Effective.
+//! * Default rules on one input field with all literals equal are
+//!   `DuplicateTarget`, otherwise `ContradictoryDefault` (Req 6.18).
 
 use crate::ctx::{Decls, Site};
 use crate::{graph, ConflictClass};
@@ -67,7 +68,8 @@ fn rule_ref(m: &Member<'_>) -> RuleRef {
     }
 }
 
-/// Runs pass 9 over the Effective revisions of `rb` and returns the checked classes.
+/// Runs pass 9 over the Effective revisions of `rb` and returns the checked
+/// classes.
 pub(crate) fn check(
     rb: &Rulebook,
     effective: &BTreeMap<RuleId, RuleKey>,
@@ -228,8 +230,8 @@ struct Valid<'a> {
     primary: Location,
 }
 
-/// Validates the Precedence_Declarations, emits `RT-VAL-0012` per offending one and returns the
-/// valid ones in ascending declaration identifier order.
+/// Validates the Precedence_Declarations, emits `RT-VAL-0012` per offending one
+/// and returns the valid ones in ascending declaration identifier order.
 fn precedence<'a>(
     rb: &'a Rulebook,
     effective: &BTreeMap<RuleId, RuleKey>,

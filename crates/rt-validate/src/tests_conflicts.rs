@@ -1,7 +1,7 @@
-//! Tests of pass 9: conflict detection and precedence validation (task 5.2).
+//! Tests of pass 9: conflict detection and precedence validation.
 //!
-//! The ledger has no append function, so these tests give every revision of a Rulebook as
-//! Effective to `conflicts::check` directly.
+//! The ledger has no append function, so these tests give every revision of a
+//! Rulebook as Effective to `conflicts::check` directly.
 
 use super::*;
 use rt_foundation::Severity;
@@ -190,7 +190,8 @@ fn precedence_cycle_and_non_effective_rule_give_0012_and_resolve_nothing() {
         .iter()
         .any(|x| x.code() == Code::ValConflictDuplicateTarget));
 
-    // A rule that is not Effective (here: absent), listed in ascending order of identifier.
+    // A rule that is not Effective (here: absent), listed in ascending order of
+    // identifier.
     let mut rb = rulebook(&[d("d.a", "score"), d("d.b", "score")]);
     rb.precedence
         .push(decl("p.3", "score", &["d.b", "zz.gone", "d.a", "aa.gone"]));
@@ -221,8 +222,8 @@ fn duplicate_rule_in_one_order_is_invalid() {
 
 #[test]
 fn non_effective_revisions_do_not_conflict_and_all_classes_are_recorded() {
-    // With an empty ledger nothing is Effective, so two same-Target rules give no conflict, and
-    // the checked classes are still recorded.
+    // With an empty ledger nothing is Effective, so two same-Target rules give
+    // no conflict, and the checked classes are still recorded.
     let r = check(&[d("d.a", "score"), d("d.b", "score")]);
     assert!(!codes(&r).contains(&Code::ValConflictDuplicateTarget));
     assert_eq!(r.checked_conflict_classes().len(), 4);

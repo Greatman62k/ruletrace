@@ -1,5 +1,5 @@
-//! Unit tests of the RT-JSON dialect: RFC 8259 examples, each restriction, the position of the
-//! first error, and limits at and one above the bound.
+//! Unit tests of the RT-JSON dialect: RFC 8259 examples, each restriction, the
+//! position of the first error, and limits at and one above the bound.
 #![allow(
     missing_docs,
     clippy::unwrap_used,
@@ -129,7 +129,8 @@ fn whitespace_is_exactly_the_four_rfc_characters() {
 
 #[test]
 fn restriction_utf8_only() {
-    // Invalid byte in a string: position is the byte (line, column counted in scalars).
+    // Invalid byte in a string: position is the byte (line, column counted in
+    // scalars).
     let d = fail(b"[\"a\xFF\"]");
     assert_eq!((d.code(), at(&d)), (Code::IrSyntaxError, (1, 4)));
     assert!(d.message().contains("byte 3") && d.message().contains("UTF-8"));
@@ -213,7 +214,8 @@ fn restriction_strings_escapes_surrogates_and_controls() {
     syntax_at(br#""\u12G4""#, 1, 6);
     syntax_at(br#""\U0041""#, 1, 3);
     syntax_at(b"\"\\", 1, 3);
-    // Unpaired surrogates: position is the backslash of the escape that starts the problem.
+    // Unpaired surrogates: position is the backslash of the escape that starts
+    // the problem.
     syntax_at(br#""a\ud800""#, 1, 3);
     syntax_at(br#""a\udc00""#, 1, 3);
     syntax_at(br#""a\ud800x""#, 1, 3);
@@ -249,7 +251,8 @@ fn restriction_literals_and_structure() {
 
 #[test]
 fn first_error_position_uses_lines_and_scalar_columns() {
-    // Only LF ends a line: CR alone and CRLF count as one column and one line respectively.
+    // Only LF ends a line: CR alone and CRLF count as one column and one line
+    // respectively.
     syntax_at(b"[\r1\r,]", 1, 6);
     syntax_at(b"[\r\n1\r\n,]", 3, 2);
     // Columns count scalar values, not bytes.
@@ -257,7 +260,8 @@ fn first_error_position_uses_lines_and_scalar_columns() {
     // The error is the first one: later problems are not reported.
     let d = fail(b"[1,\n  x,\n  y]");
     assert_eq!(at(&d), (2, 3));
-    // Value and key positions are reported for a good parse, in byte, line, column.
+    // Value and key positions are reported for a good parse, in byte, line,
+    // column.
     let v = ok("{\n\t\"k\":\n\t [ \"😀\" , 7 ]}");
     let k = v.get("k").unwrap();
     assert_eq!(
@@ -302,7 +306,8 @@ fn size_limit_at_and_one_above() {
         Location::Input(l) => assert_eq!((l.line, l.column), (None, None)),
         other => panic!("unexpected location {other:?}"),
     }
-    // Empty input against a zero limit passes the size check and fails the grammar.
+    // Empty input against a zero limit passes the size check and fails the
+    // grammar.
     let d = *parse(&id(), b"", ParseLimits::new(0, 8)).unwrap_err();
     assert_eq!(d.code(), Code::IrSyntaxError);
     // The size check precedes the BOM and UTF-8 checks.
@@ -321,7 +326,8 @@ fn depth_limit_at_and_one_above_for_arrays_and_objects() {
         let over_arrays = format!("[{arrays}]");
         let d = *parse(&id(), over_arrays.as_bytes(), l).unwrap_err();
         assert_eq!(d.code(), Code::LimitNestingTooDeep, "{depth}");
-        // The container that exceeded the limit is the one after `depth` openers.
+        // The container that exceeded the limit is the one after `depth`
+        // openers.
         assert_eq!(at(&d), (1, u32::try_from(depth).unwrap() + 1));
         assert!(d.message().contains(&format!("limit of {depth}")));
         assert!(d.message().contains(&format!("{} deep", depth + 1)));
@@ -361,7 +367,8 @@ fn writers_are_canonical_and_reparse() {
         write_compact(&Value::string("\u{7f}\u{85}")),
         "\"\\u007f\\u0085\""
     );
-    // Escapes: only the short forms for quote, backslash, LF, CR, TAB; \u00XX for other controls.
+    // Escapes: only the short forms for quote, backslash, LF, CR, TAB; \u00XX
+    // for other controls.
     let s = Value::string("\"\\\n\r\t\u{8}\u{c}\u{1f}");
     assert_eq!(
         write_compact(&s),

@@ -2,7 +2,8 @@
 
 use std::ops::Not;
 
-/// True, False or Unknown. Faults are outside this type; the engine merges them separately.
+/// True, False or Unknown. Faults are outside this type; the engine merges them
+/// separately.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Tri {
     /// Known true.
@@ -34,7 +35,8 @@ impl Tri {
         }
     }
 
-    /// Kleene AND: false if either side is false, true only if both are true, else Unknown.
+    /// Kleene AND: false if either side is false, true only if both are true,
+    /// else Unknown.
     #[must_use]
     pub fn and(self, other: Tri) -> Tri {
         match (self, other) {
@@ -44,7 +46,8 @@ impl Tri {
         }
     }
 
-    /// Kleene OR: true if either side is true, false only if both are false, else Unknown.
+    /// Kleene OR: true if either side is true, false only if both are false,
+    /// else Unknown.
     #[must_use]
     pub fn or(self, other: Tri) -> Tri {
         match (self, other) {

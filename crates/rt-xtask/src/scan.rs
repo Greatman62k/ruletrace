@@ -1,8 +1,9 @@
 //! `scan-sources` (design §3.3 item 3, Req 15.1, 19.7, 20.17, 24.6).
 //!
-//! A token scan of the source of core crates (and of application crates, whose library files
-//! follow the same rules). Test-only items are not scanned. A finding names the crate, the file,
-//! the line and the token. Allowlist entries come from `tools/scan-allow.v1`; each needs a reason.
+//! A token scan of the source of core crates (and of application crates, whose
+//! library files follow the same rules). Test-only items are not scanned. A
+//! finding names the crate, the file, the line and the token. Allowlist entries
+//! come from `tools/scan-allow.v1`; each needs a reason.
 
 use crate::edges::{self, Class, EdgeList};
 use crate::tokens::{production_tokens, Token};
@@ -55,7 +56,8 @@ pub struct Hit {
     pub line: usize,
 }
 
-/// Scans production tokens. `engine` adds the application-term check (Req 15.1).
+/// Scans production tokens. `engine` adds the application-term check (Req
+/// 15.1).
 #[must_use]
 pub fn scan_tokens(tokens: &[Token], engine: bool) -> Vec<Hit> {
     let mut hits = Vec::new();
@@ -71,8 +73,9 @@ pub fn scan_tokens(tokens: &[Token], engine: bool) -> Vec<Hit> {
             if let Some((_, reported)) = FORBIDDEN_IDENTS.iter().find(|(id, _)| *id == name) {
                 push(reported, t.line);
             }
-            // `Command` is flagged as a process builder (`process::Command`, `Command::new`), not
-            // when it is a name of an enum variant such as `Location::Command`.
+            // `Command` is flagged as a process builder (`process::Command`,
+            // `Command::new`), not when it is a name of an enum variant such as
+            // `Location::Command`.
             let prev = i.checked_sub(1).and_then(|p| tokens.get(p));
             let before_prev = i.checked_sub(2).and_then(|p| tokens.get(p));
             let after_path = prev.is_some_and(|p| p.is_punct("::"));
@@ -135,11 +138,12 @@ pub struct Allow {
     pub reason: String,
 }
 
-/// Parses `tools/scan-allow.v1`. The first field after `allow` is `<crate>/<file>`, optionally
-/// followed by `:<line>`.
+/// Parses `tools/scan-allow.v1`. The first field after `allow` is
+/// `<crate>/<file>`, optionally followed by `:<line>`.
 ///
 /// # Errors
-/// A message naming the line when the header is missing or an entry is malformed.
+/// A message naming the line when the header is missing or an entry is
+/// malformed.
 pub fn parse_allow(text: &str) -> Result<Vec<Allow>, String> {
     let mut lines = text
         .lines()
@@ -202,8 +206,8 @@ pub fn parse_allow(text: &str) -> Result<Vec<Allow>, String> {
     Ok(out)
 }
 
-/// Checks that each entry names a crate that may carry one: `rt-cli`, an auxiliary crate, or an
-/// application crate in `src/io.rs` or `src/main.rs`.
+/// Checks that each entry names a crate that may carry one: `rt-cli`, an
+/// auxiliary crate, or an application crate in `src/io.rs` or `src/main.rs`.
 ///
 /// # Errors
 /// One line per entry that is not allowed.
@@ -255,8 +259,9 @@ fn forbids_unsafe(tokens: &[Token]) -> bool {
     })
 }
 
-/// Scans the files of one crate. `files` are `(path relative to the crate directory, text)`.
-/// Returns one line per finding.
+/// Scans the files of one crate. `files` are
+/// `(path relative to the crate directory, text)`. Returns one line per
+/// finding.
 #[must_use]
 pub fn scan_crate(krate: &str, files: &[(String, String)], allow: &[Allow]) -> Vec<String> {
     let parsed: Vec<(&String, Vec<Token>, BTreeSet<String>)> = files
@@ -279,7 +284,8 @@ pub fn scan_crate(krate: &str, files: &[(String, String)], allow: &[Allow]) -> V
         }
         if is_crate_root(path) {
             roots += 1;
-            // The attribute is checked on the raw file, because it is not test code.
+            // The attribute is checked on the raw file, because it is not test
+            // code.
             let raw = crate::tokens::tokenize(
                 files
                     .iter()
@@ -309,7 +315,8 @@ pub fn scan_crate(krate: &str, files: &[(String, String)], allow: &[Allow]) -> V
     findings
 }
 
-/// Reads every `.rs` file under `dir/src`, sorted, with paths relative to `dir`.
+/// Reads every `.rs` file under `dir/src`, sorted, with paths relative to
+/// `dir`.
 ///
 /// # Errors
 /// A message when a directory or file cannot be read.
@@ -340,7 +347,8 @@ pub fn read_crate_files(dir: &Path) -> Result<Vec<(String, String)>, String> {
     Ok(out)
 }
 
-/// Names of the crates whose source the scans read: classes core and app that exist on disk.
+/// Names of the crates whose source the scans read: classes core and app that
+/// exist on disk.
 #[must_use]
 pub fn scanned_crates(root: &Path, list: &EdgeList) -> Vec<String> {
     list.crates
@@ -363,7 +371,8 @@ pub fn load_edges(root: &Path) -> Result<EdgeList, String> {
     })
 }
 
-/// Runs `scan-sources` on the repository at `root`. Returns `(crates, files)` scanned.
+/// Runs `scan-sources` on the repository at `root`. Returns `(crates, files)`
+/// scanned.
 ///
 /// # Errors
 /// One line per finding, or the load failure.

@@ -1,22 +1,24 @@
 //! `ruletrace compile`: stage 5 (Req 9, 16.10, 16.21, 17.1, 17.9).
 //!
-//! The command reads the Validation_Result artifact that `validate` wrote (see the module
-//! documentation of `validate.rs` for its format) and writes the Compiled_Rulebook only on
-//! success.
+//! The command reads the Validation_Result artifact that `validate` wrote (see
+//! the module documentation of `validate.rs` for its format) and writes the
+//! Compiled_Rulebook only on success.
 //!
-//! The verdict is derived from the stored Diagnostics, never from a stored flag (Req 22):
+//! The verdict is derived from the stored Diagnostics, never from a stored flag
+//! (Req 22):
 //!
-//! * A Diagnostic of Severity Error, Ambiguity or Unsupported in the artifact makes the artifact
-//!   not executable. `compile` writes those Diagnostics unchanged (code, Severity, message and
-//!   Locations as stored) and exits with 3. No file is written (RN-29, Req 9.2, 17.9, 16.21).
-//! * Otherwise the Rulebook, the ledger and the Diagnostics are read back into a
-//!   `ValidationResult` and the Compiler runs. It derives every Approval_Status again from the
-//!   Rulebook and the ledger and refuses an artifact whose gate Diagnostics disagree
-//!   (`RT-APR-0005`, Req 9.12).
+//! * A Diagnostic of Severity Error, Ambiguity or Unsupported in the artifact
+//!   makes the artifact not executable. `compile` writes those Diagnostics
+//!   unchanged (code, Severity, message and Locations as stored) and exits
+//!   with 3. No file is written (RN-29, Req 9.2, 17.9, 16.21).
+//! * Otherwise the Rulebook, the ledger and the Diagnostics are read back into
+//!   a `ValidationResult` and the Compiler runs. It derives every
+//!   Approval_Status again from the Rulebook and the ledger and refuses an
+//!   artifact whose gate Diagnostics disagree (`RT-APR-0005`, Req 9.12).
 //!
-//! A stored Warning with a Source_Span Location is read back at document level, because a
-//! verified span exists only next to its Source_Model, which `compile` is not given. A Warning
-//! never changes compilability.
+//! A stored Warning with a Source_Span Location is read back at document level,
+//! because a verified span exists only next to its Source_Model, which
+//! `compile` is not given. A Warning never changes compilability.
 
 use crate::args::CompileArgs;
 use crate::io::{commit_files, Fs};
@@ -32,7 +34,8 @@ use std::collections::BTreeMap;
 
 type Json = Value<Position>;
 
-/// The largest Validation_Result artifact read: a Rulebook, a ledger and their Diagnostics.
+/// The largest Validation_Result artifact read: a Rulebook, a ledger and their
+/// Diagnostics.
 const MAX_ARTIFACT_BYTES: u64 = 64 * 1024 * 1024;
 
 const TOP_KEYS: [&str; 8] = [
@@ -108,7 +111,8 @@ pub(crate) fn run(args: &CompileArgs, fs: &dyn Fs) -> Done {
     }
 }
 
-/// A failed command: the exit code is the lowest catalogue code among the blocking Diagnostics.
+/// A failed command: the exit code is the lowest catalogue code among the
+/// blocking Diagnostics.
 fn fail(found: Vec<Diagnostic>) -> Done {
     let mut state = DiagnosticState::empty();
     for d in found {
@@ -126,7 +130,8 @@ fn fail(found: Vec<Diagnostic>) -> Done {
     }
 }
 
-/// One Diagnostic of the artifact: its text form for standard error and its verdict.
+/// One Diagnostic of the artifact: its text form for standard error and its
+/// verdict.
 struct Stored {
     blocking: bool,
     text: String,
@@ -324,8 +329,8 @@ fn opt_text(v: Option<&Json>) -> Option<Option<String>> {
     }
 }
 
-/// A stored Location, read back. A Source_Span becomes its document (see the module
-/// documentation).
+/// A stored Location, read back. A Source_Span becomes its document (see the
+/// module documentation).
 fn location(v: &Json) -> Option<Location> {
     let text = |key: &str| member(v, key).and_then(Json::as_str);
     match text("kind")? {
@@ -361,7 +366,8 @@ fn rule_ref(v: &Json) -> Option<RuleRef> {
 fn stored_diagnostic(v: &Json) -> Option<Stored> {
     let code = Code::from_id(member(v, "code")?.as_str()?)?;
     let blocking = severity_blocking(member(v, "severity")?.as_str()?)?;
-    // The catalogue fixes the Severity of a code, so a stored Severity must agree with it.
+    // The catalogue fixes the Severity of a code, so a stored Severity must
+    // agree with it.
     if blocking != code.severity().is_blocking() {
         return None;
     }
@@ -388,7 +394,8 @@ fn stored_diagnostic(v: &Json) -> Option<Stored> {
 }
 
 impl Artifact {
-    /// Reads the Rulebook and the ledger back and builds the `ValidationResult`.
+    /// Reads the Rulebook and the ledger back and builds the
+    /// `ValidationResult`.
     fn into_result(self, input: &InputId) -> Result<ValidationResult, Vec<Diagnostic>> {
         let mut problems = DiagnosticState::empty();
         let rulebook_bytes = write_compact(&self.rulebook);

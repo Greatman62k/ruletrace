@@ -1,13 +1,16 @@
 //! Property 10: unresolved approvals block compilation.
 //!
-//! **Validates: Requirements 5.4, 5.5, 5.7, 5.14, 9.13, 25.13, 25.21, 26.12, 26.13, 26.28, 26.29**
+//! **Validates: Requirements 5.4, 5.5, 5.7, 5.14, 9.13, 25.13, 25.21, 26.12,
+//! 26.13, 26.28, 26.29**
 //!
-//! A Rulebook of derived rules with one or two revisions each is generated, together with a
-//! ledger plan per revision (no record, a matching approval or a matching rejection). An oracle
-//! computes from the plan alone which revisions are unresolved (Proposed with no higher
-//! Approved or Rejected revision) and which rules have an Effective revision. Validation must
-//! give one `RT-APR-0001` per unresolved revision and a failed result, `RT-APR-0002` when no
-//! revision is Effective, and compilation must return no artifact in either case.
+//! A Rulebook of derived rules with one or two revisions each is generated,
+//! together with a ledger plan per revision (no record, a matching approval or
+//! a matching rejection). An oracle computes from the plan alone which
+//! revisions are unresolved (Proposed with no higher Approved or Rejected
+//! revision) and which rules have an Effective revision. Validation must give
+//! one `RT-APR-0001` per unresolved revision and a failed result, `RT-APR-0002`
+//! when no revision is Effective, and compilation must return no artifact in
+//! either case.
 
 #![allow(clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
 
@@ -122,7 +125,8 @@ fn sources() -> SourceModels {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(64))]
 
-    /// **Validates: Requirements 5.4, 5.5, 5.7, 5.14, 9.13, 25.13, 25.21, 26.12, 26.13, 26.28, 26.29**
+    /// **Validates: Requirements 5.4, 5.5, 5.7, 5.14, 9.13, 25.13, 25.21,
+    /// 26.12, 26.13, 26.28, 26.29**
     #[test]
     fn unresolved_or_missing_effective_revisions_block_compilation(p in plan()) {
         let rb = book(&p);

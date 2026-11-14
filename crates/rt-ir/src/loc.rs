@@ -2,10 +2,12 @@
 
 use rt_json::Position;
 
-/// Where a node started in the parsed Rule_IR input, or nothing for a node built in memory.
+/// Where a node started in the parsed Rule_IR input, or nothing for a node
+/// built in memory.
 ///
-/// Positions never take part in equality, ordering or hashing: two Rulebooks that differ only
-/// in layout are equal, which is what the round-trip property of Req 3.10 and 4.6 compares.
+/// Positions never take part in equality, ordering or hashing: two Rulebooks
+/// that differ only in layout are equal, which is what the round-trip property
+/// of Req 3.10 and 4.6 compares.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Loc(Option<Position>);
 

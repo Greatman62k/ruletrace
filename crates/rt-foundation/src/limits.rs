@@ -1,5 +1,6 @@
-//! Default limits of design §4.1.5. A value equal to a limit is accepted; only a strictly
-//! greater value is rejected (Req 19.9). The CLI may override the byte and depth limits.
+//! Default limits of design §4.1.5. A value equal to a limit is accepted; only
+//! a strictly greater value is rejected (Req 19.9). The CLI may override the
+//! byte and depth limits.
 
 /// Source_Document size in bytes (16 MiB).
 pub const MAX_SOURCE_DOCUMENT_BYTES: u64 = 16_777_216;

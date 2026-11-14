@@ -16,7 +16,8 @@ use rt_srcmodel::SourceModels;
 use rt_validate::validate;
 use std::collections::BTreeSet;
 
-/// Longest rejection reason, in Unicode scalar values (design §3.8.1, Req 23.14).
+/// Longest rejection reason, in Unicode scalar values (design §3.8.1, Req
+/// 23.14).
 const MAX_REASON_CHARS: usize = 2000;
 
 /// What the Reviewer decides.
@@ -31,8 +32,8 @@ pub enum ReviewAction {
     },
 }
 
-/// One Review_Decision, as the command line states it. Nothing here is read from the
-/// environment, and `time` is the caller-supplied text (Req 5.11).
+/// One Review_Decision, as the command line states it. Nothing here is read
+/// from the environment, and `time` is the caller-supplied text (Req 5.11).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReviewDecision {
     /// The rule to decide.
@@ -47,11 +48,13 @@ pub struct ReviewDecision {
     pub time: String,
     /// Approve or reject.
     pub action: ReviewAction,
-    /// AI identities recorded outside the Origin, for example in a Proposal_Store batch.
+    /// AI identities recorded outside the Origin, for example in a
+    /// Proposal_Store batch.
     pub batch_identities: AiIdentitySet,
 }
 
-/// The result of planning: the exact new bytes of the ledger. Nothing has been written.
+/// The result of planning: the exact new bytes of the ledger. Nothing has been
+/// written.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CommitPlan {
     ledger_bytes: Vec<u8>,
@@ -61,12 +64,14 @@ pub struct CommitPlan {
 }
 
 impl CommitPlan {
-    /// The complete new ledger file: the old bytes, then exactly one more record line.
+    /// The complete new ledger file: the old bytes, then exactly one more
+    /// record line.
     #[must_use]
     pub fn ledger_bytes(&self) -> &[u8] {
         &self.ledger_bytes
     }
-    /// The new ledger, parsed back and verified from [`CommitPlan::ledger_bytes`].
+    /// The new ledger, parsed back and verified from
+    /// [`CommitPlan::ledger_bytes`].
     #[must_use]
     pub fn ledger(&self) -> &ApprovalLedger {
         &self.ledger
@@ -95,8 +100,8 @@ fn refuse(d: Diagnostic) -> Rejected {
     state.push(d);
     match Rejected::new(state) {
         Ok(r) => r,
-        // Every code used here is an Error, so this arm is not reached. The internal-error code
-        // is an Error too, so the recursion ends at once.
+        // Every code used here is an Error, so this arm is not reached. The
+        // internal-error code is an Error too, so the recursion ends at once.
         Err(_) => refuse(Diagnostic::new(
             Code::InternalError,
             "a review refusal carried a non-blocking code".to_owned(),
@@ -117,7 +122,8 @@ fn time_shape_ok(text: &str) -> bool {
         })
 }
 
-/// The binding of a revision: sorted, de-duplicated (document, declared hash) pairs.
+/// The binding of a revision: sorted, de-duplicated (document, declared hash)
+/// pairs.
 fn binding_of(rb: &Rulebook, rev: &RuleRevision) -> Option<Vec<BindingPair>> {
     let mut pairs: BTreeSet<BindingPair> = BTreeSet::new();
     for span in &rev.content.spans {
@@ -143,12 +149,14 @@ fn rule_ref(key: &RuleKey) -> Vec<RuleRef> {
     }]
 }
 
-/// Plans the approval or rejection of a revision that exists in the Rulebook (design §3.8.3
-/// step 4). `ledger` must be a verified ledger. The Rulebook and the ledger are not changed.
+/// Plans the approval or rejection of a revision that exists in the Rulebook
+/// (design §3.8.3 step 4). `ledger` must be a verified ledger. The Rulebook and
+/// the ledger are not changed.
 ///
 /// # Errors
-/// Exactly one Error Diagnostic of the REVIEW family (or `RT-CLI-0004` for a bad time shape),
-/// and no bytes. See the crate documentation for the order of the checks.
+/// Exactly one Error Diagnostic of the REVIEW family (or `RT-CLI-0004` for a
+/// bad time shape), and no bytes. See the crate documentation for the order of
+/// the checks.
 pub fn plan_review(
     rulebook: &Rulebook,
     ledger: &ApprovalLedger,
@@ -158,7 +166,8 @@ pub fn plan_review(
     plan(rulebook, ledger, decision, sources).map_err(refuse)
 }
 
-#[allow(clippy::result_large_err)] // Diagnostic is the error value of this crate's checks.
+// Diagnostic is the error value of this crate's checks.
+#[allow(clippy::result_large_err)]
 fn plan(
     rb: &Rulebook,
     ledger: &ApprovalLedger,
@@ -184,7 +193,8 @@ fn plan(
     let known = AiIdentitySet::from_origin(&rev.origin).union(&d.batch_identities);
     reviewer.check_not_ai(&known)?;
 
-    // 3. Time shape (Req 5.11). The time is stored verbatim and no clock is read.
+    // 3. Time shape (Req 5.11). The time is stored verbatim and no clock is
+    //    read.
     if !time_shape_ok(&d.time) {
         return Err(Diagnostic::new(
             Code::CliArgumentInvalid,
@@ -222,7 +232,8 @@ fn plan(
         .with_rules(rule_ref(&key)));
     }
 
-    // 6. Stale hash (Req 5.10, 26.24). A revision with no binding has no hash either.
+    // 6. Stale hash (Req 5.10, 26.24). A revision with no binding has no hash
+    //    either.
     let binding = binding_of(rb, rev);
     let current = rule_content_hash(&rb.ir_version, rev, &rb.documents).ok();
     let (Some(binding), Some(current)) = (binding, current) else {

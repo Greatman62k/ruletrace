@@ -1,13 +1,15 @@
-//! Property 51: The Coverage_Statement classifies every Candidate_Clause exactly once (task 6.8).
+//! Property 51: The Coverage_Statement classifies every Candidate_Clause
+//! exactly once.
 //!
-//! Feature: ruletrace-compiler, Property 51: The Coverage_Statement classifies every
-//! Candidate_Clause exactly once
+//! Feature: ruletrace-compiler, Property 51: The Coverage_Statement classifies
+//! every Candidate_Clause exactly once
 //!
 //! **Validates: Requirements 33.6, 34.6**
 //!
-//! The clauses, Rulebook and ledger are those of the stand-in demonstration. A generated subset
-//! of the clauses, in a generated order, gets generated store findings and notes. The expected
-//! class is computed here from the generated choice, by the order of design §8.11.8.
+//! The clauses, Rulebook and ledger are those of the stand-in demonstration. A
+//! generated subset of the clauses, in a generated order, gets generated store
+//! findings and notes. The expected class is computed here from the generated
+//! choice, by the order of design §8.11.8.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -82,7 +84,8 @@ fn world() -> World {
     }
 }
 
-/// Per clause: whether it is present, a sort key for the input order, and a finding choice.
+/// Per clause: whether it is present, a sort key for the input order, and a
+/// finding choice.
 type Pick = (bool, u32, u8);
 
 fn exact(c: &CandidateClause) -> (rt_foundation::DocumentId, u32, u32) {

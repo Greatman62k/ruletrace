@@ -1,4 +1,4 @@
-//! Tests of `ruletrace validate` (task 5.4).
+//! Tests of `ruletrace validate`.
 
 use super::*;
 use rt_foundation::{DocumentId, InputId};
@@ -30,7 +30,8 @@ pub(super) fn model_text(text: &str) -> String {
     .print()
 }
 
-/// A ledger with one approval of `d.a` revision 1, written by hand with its hash chain.
+/// A ledger with one approval of `d.a` revision 1, written by hand with its
+/// hash chain.
 fn approved_ledger() -> String {
     let rb = parse_rulebook(
         rulebook_text().as_bytes(),

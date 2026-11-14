@@ -11,10 +11,10 @@ pub struct RankPlace {
 }
 
 impl RankPlace {
-    /// A Rank_Position (1 or more). `group` lists the members of the Tie_Group, empty when the
-    /// participant is alone at the position. Members are stored in ascending byte order without
-    /// repeats, which is a serialization order only and carries no ranking meaning (Req 12.2).
-    /// Position 0 gives `None`.
+    /// A Rank_Position (1 or more). `group` lists the members of the Tie_Group,
+    /// empty when the participant is alone at the position. Members are stored
+    /// in ascending byte order without repeats, which is a serialization order
+    /// only and carries no ranking meaning (Req 12.2). Position 0 gives `None`.
     #[must_use]
     pub fn new(position: u32, mut group: Vec<String>) -> Option<Self> {
         if position == 0 {
@@ -31,7 +31,8 @@ impl RankPlace {
         self.position
     }
 
-    /// Members of the Tie_Group in ascending order; empty when the position is not shared.
+    /// Members of the Tie_Group in ascending order; empty when the position is
+    /// not shared.
     #[must_use]
     pub fn group(&self) -> &[String] {
         &self.group
@@ -40,9 +41,10 @@ impl RankPlace {
 
 /// One entry of Standings: a position and the participants that hold it.
 ///
-/// One member means the participant is alone at the position. Several members are one
-/// Tie_Group. Members are stored in ascending byte order without repeats, which is a
-/// serialization order only and carries no ranking meaning (Req 12.2).
+/// One member means the participant is alone at the position. Several members
+/// are one Tie_Group. Members are stored in ascending byte order without
+/// repeats, which is a serialization order only and carries no ranking meaning
+/// (Req 12.2).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Place {
     position: u32,
@@ -64,7 +66,8 @@ impl Place {
         self.position
     }
 
-    /// The participants at the position, ascending. More than one means a Tie_Group.
+    /// The participants at the position, ascending. More than one means a
+    /// Tie_Group.
     #[must_use]
     pub fn members(&self) -> &[String] {
         &self.members
@@ -92,7 +95,8 @@ pub enum TraceValue {
     Enum(String),
     /// A Rank_Position.
     Rank(RankPlace),
-    /// The Standings of a ranking question: every participant exactly once, in position order.
+    /// The Standings of a ranking question: every participant exactly once, in
+    /// position order.
     Standings(Vec<Place>),
 }
 
@@ -111,8 +115,8 @@ pub enum Reason {
         /// Collection or field name.
         field: String,
     },
-    /// A blocking Diagnostic recorded in the trace (fault, execution conflict, missing rank
-    /// value).
+    /// A blocking Diagnostic recorded in the trace (fault, execution conflict,
+    /// missing rank value).
     Diagnosed(Code),
 }
 
@@ -132,18 +136,21 @@ impl Reason {
 pub enum Outcome {
     /// A definite value.
     Decided(TraceValue),
-    /// No definite value can be given. Use [`Outcome::indeterminate`] to normalise the reasons.
+    /// No definite value can be given. Use [`Outcome::indeterminate`] to
+    /// normalise the reasons.
     Indeterminate(Vec<Reason>),
 }
 
 impl Outcome {
-    /// An Indeterminate Outcome with reasons in canonical order and without repeats.
+    /// An Indeterminate Outcome with reasons in canonical order and without
+    /// repeats.
     #[must_use]
     pub fn indeterminate(reasons: Vec<Reason>) -> Self {
         Outcome::Indeterminate(normalise(reasons))
     }
 
-    /// The same Outcome with Indeterminate reasons in canonical order and without repeats.
+    /// The same Outcome with Indeterminate reasons in canonical order and
+    /// without repeats.
     #[must_use]
     pub fn normalised(&self) -> Outcome {
         match self {

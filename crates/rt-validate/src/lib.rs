@@ -1,34 +1,40 @@
 //! Semantic validation of a Rulebook (design §3.6.1, Req 6, 14.6, 14.7, 18.5).
 //!
-//! This crate implements passes 1 to 11: structure, sources, names, types, numeric declarations,
-//! boundary, markers, the reference graph, conflicts, the approval gate and the Candidate_Clause
-//! check. [`validate`] is the stage function and [`validate_content`] the content-only entry
-//! point (passes 1 to 8).
+//! This crate implements passes 1 to 11: structure, sources, names, types,
+//! numeric declarations, boundary, markers, the reference graph, conflicts, the
+//! approval gate and the Candidate_Clause check. [`validate`] is the stage
+//! function and [`validate_content`] the content-only entry point (passes 1 to
+//! 8).
 //!
 //! * Every finding is collected. Nothing short-circuits (Req 6.11).
-//! * A name that does not resolve gets the internal type `Error`, which suppresses downstream
-//!   type findings on that node, so one defect gives one Diagnostic.
-//! * `Origin` is not an argument of any check. A manual and an AI-origin revision with equal
-//!   content get equal findings (Req 18.5).
-//! * A missing or mismatched Source_Model is `RT-VAL-0017` or `RT-VAL-0018`, which the catalogue
-//!   classes as exit 2 (UD-14).
-//! * Spans become `Location::Source` only after `SourceSpan::new` verified them against the
-//!   Source_Model. Otherwise the Diagnostic points at the Document_Location (Req 6.24, 7.15).
+//! * A name that does not resolve gets the internal type `Error`, which
+//!   suppresses downstream type findings on that node, so one defect gives one
+//!   Diagnostic.
+//! * `Origin` is not an argument of any check. A manual and an AI-origin
+//!   revision with equal content get equal findings (Req 18.5).
+//! * A missing or mismatched Source_Model is `RT-VAL-0017` or `RT-VAL-0018`,
+//!   which the catalogue classes as exit 2 (UD-14).
+//! * Spans become `Location::Source` only after `SourceSpan::new` verified them
+//!   against the Source_Model. Otherwise the Diagnostic points at the
+//!   Document_Location (Req 6.24, 7.15).
 //! * The crate executes no rule and reads no data (Req 6.15).
 //!
-//! Which revisions are validated in full: the Effective revisions and the unresolved (Proposed)
-//! ones. Rejected revisions, superseded Approved revisions and Proposed revisions that a higher
-//! decided revision supersedes get only the structural checks of pass 1 (Req 6.25, 25.12). A
-//! `ref` resolves to the Effective revision of a rule or, when the rule has none, to its highest
-//! unresolved revision, so that a Proposed rule that refers to another Proposed rule is not
-//! blocked by a second Diagnostic besides `RT-APR-0001` (Req 26.12). It never resolves to a
-//! Rejected or superseded revision.
+//! Which revisions are validated in full: the Effective revisions and the
+//! unresolved (Proposed) ones. Rejected revisions, superseded Approved
+//! revisions and Proposed revisions that a higher decided revision supersedes
+//! get only the structural checks of pass 1 (Req 6.25, 25.12). A `ref` resolves
+//! to the Effective revision of a rule or, when the rule has none, to its
+//! highest unresolved revision, so that a Proposed rule that refers to another
+//! Proposed rule is not blocked by a second Diagnostic besides `RT-APR-0001`
+//! (Req 26.12). It never resolves to a Rejected or superseded revision.
 //!
 //! Choices the design leaves open:
 //!
-//! * `and` or `or` with fewer than 2 or more than 64 arguments, and a marker outside its
-//!   supported shape, are `RT-VAL-0003` (outside the supported boundary).
-//! * `rank_reference` is `RT-VAL-0003` ("rank reference") until UD-32 selects Rank_Reference.
+//! * `and` or `or` with fewer than 2 or more than 64 arguments, and a marker
+//!   outside its supported shape, are `RT-VAL-0003` (outside the supported
+//!   boundary).
+//! * `rank_reference` is `RT-VAL-0003` ("rank reference") until UD-32 selects
+//!   Rank_Reference.
 //! * A `sum`, `min` or `max` without an element field is `RT-VAL-0002`.
 #![forbid(unsafe_code)]
 
@@ -51,8 +57,9 @@ use rt_srcmodel::{CandidateClause, SourceModels};
 use std::collections::{BTreeMap, BTreeSet};
 use walk::{kind_type, Deps, TargetInfo, Targets, Walk};
 
-/// A proposed rule that is checked without a ledger: its identifier and its content. The
-/// Revision_Number is assigned at adoption, and the Origin is not part of the draft.
+/// A proposed rule that is checked without a ledger: its identifier and its
+/// content. The Revision_Number is assigned at adoption, and the Origin is not
+/// part of the draft.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuleDraft {
     /// The rule identifier.
@@ -61,7 +68,8 @@ pub struct RuleDraft {
     pub content: RuleContent,
 }
 
-/// A conflict class that pass 9 checks (design §3.6.1). Ordered as the classes are recorded.
+/// A conflict class that pass 9 checks (design §3.6.1). Ordered as the classes
+/// are recorded.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ConflictClass {
     /// `default` rules on one input with unequal literals or different types.
@@ -87,8 +95,9 @@ impl ConflictClass {
     }
 }
 
-/// What a rule depends on (Req 6.10): the input fields it reads directly or through referenced
-/// rules, and the collections it aggregates, each once, in ascending name order.
+/// What a rule depends on (Req 6.10): the input fields it reads directly or
+/// through referenced rules, and the collections it aggregates, each once, in
+/// ascending name order.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuleMetadata {
     input_fields: Vec<Name>,
@@ -96,8 +105,8 @@ pub struct RuleMetadata {
 }
 
 impl RuleMetadata {
-    /// Metadata read back from a stored Validation_Result. Both lists are sorted and made
-    /// distinct.
+    /// Metadata read back from a stored Validation_Result. Both lists are
+    /// sorted and made distinct.
     #[must_use]
     pub fn new(mut input_fields: Vec<Name>, mut collections: Vec<Name>) -> Self {
         input_fields.sort();
@@ -123,8 +132,8 @@ impl RuleMetadata {
     }
 }
 
-/// The result of validating a Rulebook against a ledger. Fields are private; the pass or fail
-/// marking is derived from the Diagnostic_State only (Req 22).
+/// The result of validating a Rulebook against a ledger. Fields are private;
+/// the pass or fail marking is derived from the Diagnostic_State only (Req 22).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ValidationResult {
     rulebook: Rulebook,
@@ -135,10 +144,11 @@ pub struct ValidationResult {
 }
 
 impl ValidationResult {
-    /// Rebuilds a result from the parts of a stored Validation_Result artifact (RN-29), so that
-    /// `compile` can run in another process than `validate`. Nothing is re-checked here and no
-    /// validity flag exists: the Compiler derives its verdict again from the Rulebook, the
-    /// ledger and the state (Req 9.2, 9.12). `classes` are sorted and made distinct.
+    /// Rebuilds a result from the parts of a stored Validation_Result artifact
+    /// (RN-29), so that `compile` can run in another process than `validate`.
+    /// Nothing is re-checked here and no validity flag exists: the Compiler
+    /// derives its verdict again from the Rulebook, the ledger and the state
+    /// (Req 9.2, 9.12). `classes` are sorted and made distinct.
     #[must_use]
     pub fn from_parts(
         rulebook: Rulebook,
@@ -176,8 +186,8 @@ impl ValidationResult {
         &self.state
     }
 
-    /// The conflict classes that were checked, ascending, without repetition (Req 6.23). All four
-    /// classes once pass 9 has run.
+    /// The conflict classes that were checked, ascending, without repetition
+    /// (Req 6.23). All four classes once pass 9 has run.
     #[must_use]
     pub fn checked_conflict_classes(&self) -> &[ConflictClass] {
         &self.classes
@@ -252,7 +262,6 @@ fn run(
         let mut w = Walk::new(&decls, &targets, &site, sink, it.full);
         w.body(it.content);
         let deps = std::mem::take(&mut w.deps);
-        // Pass 7.
         if it.full {
             markers::check(&it.content.markers, &site, sink);
         }
@@ -377,8 +386,9 @@ fn graph_pass(
         );
     }
 
-    // Dependencies including those reached through referenced rules. `comps` lists a component
-    // after every component it points to, so successors are final when a component is reached.
+    // Dependencies including those reached through referenced rules. `comps`
+    // lists a component after every component it points to, so successors are
+    // final when a component is reached.
     let mut fields: Vec<BTreeSet<Name>> = deps.values().map(|d| d.fields.clone()).collect();
     let mut colls: Vec<BTreeSet<Name>> = deps.values().map(|d| d.collections.clone()).collect();
     for comp in &comps {
@@ -413,11 +423,13 @@ fn graph_pass(
         .collect()
 }
 
-/// Checks a proposed rule against the declarations of a Rulebook with passes 1 to 8, without a
-/// ledger and without approval gating (the content-only pass of `ruletrace-ai`).
+/// Checks a proposed rule against the declarations of a Rulebook with passes 1
+/// to 8, without a ledger and without approval gating (the content-only pass of
+/// `ruletrace-ai`).
 ///
-/// The other rules of `declarations` (their highest revisions) are in scope for names and
-/// reference cycles, but only findings about the draft are returned. Origin is not an argument.
+/// The other rules of `declarations` (their highest revisions) are in scope for
+/// names and reference cycles, but only findings about the draft are returned.
+/// Origin is not an argument.
 #[must_use]
 pub fn validate_content(
     declarations: &Rulebook,
@@ -461,12 +473,15 @@ pub fn validate_content(
     run(declarations, sources, &items, &scope).0.sorted()
 }
 
-/// Validates a Rulebook against a verified ledger and the Source_Models (stage 4).
+/// Validates a Rulebook against a verified ledger and the Source_Models (stage
+/// 4).
 ///
-/// Runs passes 1 to 11 and collects every finding. Statuses are derived from `ledger` and are
-/// never stored. The result passes when its Diagnostic_State has no Error, Ambiguity or
-/// Unsupported Diagnostic (`result.state().no_errors()`). `candidates`, when given, enables the
-/// unreferenced Candidate_Clause Warning. Origin is not an argument of any check.
+/// Runs passes 1 to 11 and collects every finding. Statuses are derived from
+/// `ledger` and are never stored. The result passes when its Diagnostic_State
+/// has no Error, Ambiguity or Unsupported Diagnostic
+/// (`result.state().no_errors()`). `candidates`, when given, enables the
+/// unreferenced Candidate_Clause Warning. Origin is not an argument of any
+/// check.
 #[must_use]
 pub fn validate(
     rulebook: &Rulebook,
@@ -482,7 +497,6 @@ pub fn validate(
         let decls = Decls::new(rulebook, sources, &BTreeSet::new(), &mut scratch);
         approval::gate(rulebook, ledger, &decls, &mut state);
     }
-    // Pass 11.
     if let Some(clauses) = candidates {
         approval::candidates(rulebook, clauses, &mut state);
     }
@@ -490,7 +504,8 @@ pub fn validate(
     result
 }
 
-/// Passes 1 to 9 over every revision of a Rulebook, with statuses derived from the ledger.
+/// Passes 1 to 9 over every revision of a Rulebook, with statuses derived from
+/// the ledger.
 pub(crate) fn validate_passes_1_to_9(
     rulebook: &Rulebook,
     ledger: &ApprovalLedger,
@@ -502,8 +517,8 @@ pub(crate) fn validate_passes_1_to_9(
     let unresolved_keys = unresolved(rulebook, &statuses);
     let mut validated: BTreeSet<RuleKey> = effective.values().cloned().collect();
     validated.extend(unresolved_keys.iter().cloned());
-    // The revision of each rule that is in scope for names and the graph: the Effective one,
-    // else the highest unresolved one.
+    // The revision of each rule that is in scope for names and the graph: the
+    // Effective one, else the highest unresolved one.
     let mut current: BTreeMap<RuleId, RuleKey> = BTreeMap::new();
     for key in &unresolved_keys {
         current.insert(key.id.clone(), key.clone());
@@ -532,8 +547,9 @@ pub(crate) fn validate_passes_1_to_9(
         cycles_through: None,
     };
     let (mut state, metadata) = run(rulebook, sources, &items, &scope);
-    // Pass 9. Its Decls is rebuilt with no reported documents, so the Source_Model findings of
-    // pass 2 are not repeated; spans still verify against the same models.
+    // Pass 9. Its Decls is rebuilt with no reported documents, so the
+    // Source_Model findings of pass 2 are not repeated; spans still verify
+    // against the same models.
     let classes = {
         let mut scratch = DiagnosticState::empty();
         let decls = Decls::new(rulebook, sources, &BTreeSet::new(), &mut scratch);

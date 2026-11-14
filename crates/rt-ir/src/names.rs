@@ -25,8 +25,8 @@ impl fmt::Display for NameError {
 
 impl std::error::Error for NameError {}
 
-/// A declared name (input, field, enum, set, collection, Target). Non-empty, no control
-/// character. Ordered bytewise.
+/// A declared name (input, field, enum, set, collection, Target). Non-empty, no
+/// control character. Ordered bytewise.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Name(String);
 
@@ -59,8 +59,8 @@ impl fmt::Display for Name {
     }
 }
 
-/// The name of a well-formed construct kind or node that this version does not define:
-/// `[a-z][a-z0-9_]*` (design §4.1.3).
+/// The name of a well-formed construct kind or node that this version does not
+/// define: `[a-z][a-z0-9_]*` (design §4.1.3).
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct OpaqueName(String);
 
@@ -68,7 +68,8 @@ impl OpaqueName {
     /// Builds the name.
     ///
     /// # Errors
-    /// Returns [`NameError::NotWellFormed`] unless the text matches `[a-z][a-z0-9_]*`.
+    /// Returns [`NameError::NotWellFormed`] unless the text matches
+    /// `[a-z][a-z0-9_]*`.
     pub fn new(text: impl Into<String>) -> Result<Self, NameError> {
         let text = text.into();
         let mut bytes = text.bytes();
@@ -108,7 +109,8 @@ impl fmt::Display for IdentityError {
 
 impl std::error::Error for IdentityError {}
 
-/// An author, proposer or AI identity: 1 to 200 Unicode scalar values (Req 25.2).
+/// An author, proposer or AI identity: 1 to 200 Unicode scalar values (Req
+/// 25.2).
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Identity(String);
 
@@ -164,8 +166,8 @@ impl fmt::Display for DateError {
 
 impl std::error::Error for DateError {}
 
-/// A calendar date without time (proleptic Gregorian), `0001-01-01` to `9999-12-31`.
-/// Ordered chronologically.
+/// A calendar date without time (proleptic Gregorian), `0001-01-01` to
+/// `9999-12-31`. Ordered chronologically.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Date {
     year: u16,
@@ -204,7 +206,8 @@ impl Date {
     /// Parses exactly `YYYY-MM-DD`.
     ///
     /// # Errors
-    /// Returns [`DateError::BadShape`] for any other shape, else the range error.
+    /// Returns [`DateError::BadShape`] for any other shape, else the range
+    /// error.
     pub fn parse(text: &str) -> Result<Self, DateError> {
         let b = text.as_bytes();
         let digits = |range: std::ops::Range<usize>| -> Option<u32> {

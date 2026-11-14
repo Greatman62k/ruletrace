@@ -1,13 +1,15 @@
 //! Process exit codes of the executables (Req 16).
 
-/// An exit code of `ruletrace` or `ruletrace-ai`. The catalogue gives each code exactly one.
+/// An exit code of `ruletrace` or `ruletrace-ai`. The catalogue gives each code
+/// exactly one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ExitCode {
     /// 0: every stage succeeded. Warnings never change it.
     Success,
     /// 2: invalid input (file, command line, ledger, configuration, store).
     InvalidInput,
-    /// 3: a validation, compilation, review or proposal check found a blocking Diagnostic.
+    /// 3: a validation, compilation, review or proposal check found a blocking
+    /// Diagnostic.
     Blocked,
     /// 4: evaluation produced an Indeterminate Outcome or an execution error.
     Indeterminate,

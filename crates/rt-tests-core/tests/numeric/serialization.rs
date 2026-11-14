@@ -1,16 +1,18 @@
-//! Property 18: numeric serialization round trip and literal limits (task 3.7).
+//! Property 18: numeric serialization round trip and literal limits.
 //!
 //! **Validates: Requirements 8.16, 8.24, 8.25, 8.27, 3.6, 4.4, 8.7**
 //!
-//! Same deterministic corpus style as the other numeric modules: a fixed seed, 256 random
-//! cases per property plus the edge values, compared with the independent reference model.
+//! Same deterministic corpus style as the other numeric modules: a fixed seed,
+//! 256 random cases per property plus the edge values, compared with the
+//! independent reference model.
 //!
-//! Decision on unreduced canonical fractions (open point of task 3.6): `parse_canonical`
-//! reduces to lowest terms first and applies the bound to the reduced value, matching the
-//! reference. The codec holds each part of a fraction in a `u128`, so a text part wider
-//! than `u128` is `Overflow` even if the reduced value would be in range. That width limit
-//! (39 digits) is part of the codec's bounded text domain; canonical text never needs it,
-//! because every in-range value in lowest terms has parts below 2^127.
+//! Decision on unreduced canonical fractions: `parse_canonical` reduces to
+//! lowest terms first and applies the bound to the reduced value, matching the
+//! reference. The codec holds each part of a fraction in a `u128`, so a text
+//! part wider than `u128` is `Overflow` even if the reduced value would be in
+//! range. That width limit (39 digits) is part of the codec's bounded text
+//! domain; canonical text never needs it, because every in-range value in
+//! lowest terms has parts below 2^127.
 
 use crate::harness::{to_rt, Rng, CASES, SEED};
 use crate::reference::{self, bound, Kind, Rat};
@@ -29,7 +31,8 @@ fn digits(r: &mut Rng, n: usize) -> String {
         .collect()
 }
 
-/// Req 8.16, 8.24: serialize then parse returns the same value, and the text is unique.
+/// Req 8.16, 8.24: serialize then parse returns the same value, and the text is
+/// unique.
 #[test]
 fn canonical_text_round_trips_and_is_unique() {
     let values = corpus(SEED ^ 0x31);
@@ -39,7 +42,8 @@ fn canonical_text_round_trips_and_is_unique() {
         let text = rn::to_canonical(&n);
         assert_eq!(text, v.canonical());
         assert_eq!(rn::parse_canonical(&text).unwrap(), n, "{text}");
-        // The text is unique: equal text means equal value (and the reverse by `canonical`).
+        // The text is unique: equal text means equal value (and the reverse by
+        // `canonical`).
         if let Some(prev) = seen.insert(text.clone(), v.clone()) {
             assert_eq!(&prev, v, "two values share the text {text}");
         }
@@ -52,7 +56,8 @@ fn canonical_text_round_trips_and_is_unique() {
     }
 }
 
-/// Req 8.16: non-canonical spellings of a value parse to it and print canonically.
+/// Req 8.16: non-canonical spellings of a value parse to it and print
+/// canonically.
 #[test]
 fn non_canonical_spellings_normalize() {
     let mut r = Rng::new(SEED ^ 0x32);
@@ -94,7 +99,8 @@ fn non_canonical_spellings_normalize() {
     }
 }
 
-/// Unreduced fractions whose parts exceed the bound before reduction, but not `u128`.
+/// Unreduced fractions whose parts exceed the bound before reduction, but not
+/// `u128`.
 #[test]
 fn unreduced_fractions_reduce_before_the_bound() {
     let mut r = Rng::new(SEED ^ 0x34);
@@ -146,8 +152,9 @@ fn fraction_parts_wider_than_u128_are_overflow() {
     }
 }
 
-/// Req 8.27, 3.6, 4.4, 8.7: a literal is accepted exactly when it is an optionally
-/// negative decimal with at most 38 significant digits and 28 fractional digits.
+/// Req 8.27, 3.6, 4.4, 8.7: a literal is accepted exactly when it is an
+/// optionally negative decimal with at most 38 significant digits and 28
+/// fractional digits.
 #[test]
 fn literals_are_accepted_exactly_within_the_limits() {
     let mut r = Rng::new(SEED ^ 0x36);
@@ -207,8 +214,8 @@ fn literal_limit_boundaries() {
     assert!(rn::parse_literal(&format!("-{both}")).is_ok());
 }
 
-/// Req 8.25, 8.27: no fraction, exponent, plus, `NaN` or `Infinity` in a literal, while
-/// the canonical parser accepts the fraction form.
+/// Req 8.25, 8.27: no fraction, exponent, plus, `NaN` or `Infinity` in a
+/// literal, while the canonical parser accepts the fraction form.
 #[test]
 fn literals_reject_other_forms_and_canonical_accepts_fractions() {
     let mut r = Rng::new(SEED ^ 0x37);
@@ -234,7 +241,8 @@ fn literals_reject_other_forms_and_canonical_accepts_fractions() {
     }
 }
 
-/// Req 8.24: serialized decimals carry at most 126 fractional digits; one more is rejected.
+/// Req 8.24: serialized decimals carry at most 126 fractional digits; one more
+/// is rejected.
 #[test]
 fn serialized_decimal_fraction_limit() {
     let at = format!("0.{}1", "0".repeat(125));

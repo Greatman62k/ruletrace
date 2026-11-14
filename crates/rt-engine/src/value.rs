@@ -1,4 +1,5 @@
-//! Values, the three-way intermediate result `Eval` and the conversion of data values.
+//! Values, the three-way intermediate result `Eval` and the conversion of data
+//! values.
 
 use rt_compiled::{CType, CompiledLiteral, CompiledRulebook, EnumIdx, MemberIdx, RuleIdx};
 use rt_data::DataValue;
@@ -86,7 +87,8 @@ pub(crate) fn normalise_unks(mut unks: Vec<Unk>) -> Vec<Unk> {
     unks
 }
 
-/// `Eval = Known | Unknown | Fault` (design §3.6.3). A fault is outside the three-valued logic.
+/// `Eval = Known | Unknown | Fault` (design §3.6.3). A fault is outside the
+/// three-valued logic.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Eval {
     Known(Value),
@@ -94,7 +96,8 @@ pub(crate) enum Eval {
     Fault(Vec<Diagnostic>),
 }
 
-/// An `Eval` and the sequence number of the trace entry that holds its value, if one exists.
+/// An `Eval` and the sequence number of the trace entry that holds its value,
+/// if one exists.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Val {
     pub(crate) eval: Eval,
@@ -110,7 +113,8 @@ impl Val {
     }
 }
 
-/// Faults of the operands in operand order, or `None` when no operand is a fault.
+/// Faults of the operands in operand order, or `None` when no operand is a
+/// fault.
 pub(crate) fn faults_of(operands: &[Val]) -> Option<Vec<Diagnostic>> {
     let mut out: Vec<Diagnostic> = Vec::new();
     let mut any = false;
@@ -127,7 +131,8 @@ pub(crate) fn faults_of(operands: &[Val]) -> Option<Vec<Diagnostic>> {
     any.then_some(out)
 }
 
-/// The union of the reasons of the Unknown operands, or `None` when no operand is Unknown.
+/// The union of the reasons of the Unknown operands, or `None` when no operand
+/// is Unknown.
 pub(crate) fn unknowns_of(operands: &[Val]) -> Option<Vec<Unk>> {
     let mut out: Vec<Unk> = Vec::new();
     let mut any = false;
@@ -166,7 +171,8 @@ fn expected(ty: CType) -> &'static str {
     }
 }
 
-/// Applies the declared type to a data value (Req 10.6, 8.7). Nothing is rounded or repaired.
+/// Applies the declared type to a data value (Req 10.6, 8.7). Nothing is
+/// rounded or repaired.
 pub(crate) fn convert(
     rulebook: &CompiledRulebook,
     ty: CType,

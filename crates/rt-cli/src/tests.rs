@@ -363,7 +363,8 @@ fn create_failure_exits_70_and_keeps_the_old_output() {
 
 #[test]
 fn rename_failure_restores_earlier_outputs() {
-    // Existing model, no candidates file: the second rename fails after the first succeeded.
+    // Existing model, no candidates file: the second rename fails after the
+    // first succeeded.
     let fs = MemFs::with(&[("rules.txt", DOC), ("model.json", b"old model")]);
     fs.fail_rename.set(Some(2));
     let before = fs.snapshot();
@@ -376,7 +377,8 @@ fn rename_failure_restores_earlier_outputs() {
     );
     assert_eq!(fs.snapshot(), before);
 
-    // First rename fails: nothing changed, and when no earlier file existed none is created.
+    // First rename fails: nothing changed, and when no earlier file existed
+    // none is created.
     let fs = MemFs::with(&[("rules.txt", DOC)]);
     fs.fail_rename.set(Some(1));
     let before = fs.snapshot();
@@ -384,7 +386,8 @@ fn rename_failure_restores_earlier_outputs() {
     assert_eq!(out.code, ExitCode::Internal);
     assert_eq!(fs.snapshot(), before);
 
-    // Second rename fails with no earlier files: the first output is removed again.
+    // Second rename fails with no earlier files: the first output is removed
+    // again.
     let fs = MemFs::with(&[("rules.txt", DOC)]);
     fs.fail_rename.set(Some(2));
     let before = fs.snapshot();
@@ -402,8 +405,8 @@ fn a_stray_temp_file_is_ignored_and_kept() {
     assert!(fs.get("model.json").is_some());
 }
 
-/// Every command line built from these words has exit code 0, 2 or 70, and a nonzero exit code
-/// never changes any file (Req 16.15, 17.4, 17.13).
+/// Every command line built from these words has exit code 0, 2 or 70, and a
+/// nonzero exit code never changes any file (Req 16.15, 17.4, 17.13).
 #[test]
 fn exit_codes_are_closed_and_failures_change_nothing() {
     let words = [

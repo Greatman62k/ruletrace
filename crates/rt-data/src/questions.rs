@@ -1,4 +1,5 @@
-//! Questions: types, parser, canonical serializer and default-question generation.
+//! Questions: types, parser, canonical serializer and default-question
+//! generation.
 
 use crate::common::{join, load, Ctx, VERSION};
 use crate::data::CompetitionData;
@@ -28,9 +29,9 @@ pub enum Question {
     },
 }
 
-/// The default questions (RN-6): one `value` Question per participant (ascending id) and per
-/// value Target (ascending name), then one `rank` Question per ranking Target over all
-/// participants (ascending name).
+/// The default questions (RN-6): one `value` Question per participant
+/// (ascending id) and per value Target (ascending name), then one `rank`
+/// Question per ranking Target over all participants (ascending name).
 #[must_use]
 pub fn default_questions(
     data: &CompetitionData,
@@ -55,13 +56,13 @@ pub fn default_questions(
     out
 }
 
-/// Parses a Questions file. Order is kept as written. Whether a Target or participant exists
-/// is checked by the engine (`RT-EXE-0010`).
+/// Parses a Questions file. Order is kept as written. Whether a Target or
+/// participant exists is checked by the engine (`RT-EXE-0010`).
 ///
-/// # Errors
-/// `RT-LIM-0001`, `RT-LIM-0002`, `RT-DGN-0001` to `0003` as for Competition_Data, and
-/// `RT-EXE-0009` for any other fault (unknown kind, unknown or missing key, repeated
-/// participant in a `rank` Question, invalid name).
+/// # Errors `RT-LIM-0001`, `RT-LIM-0002`, `RT-DGN-0001` to `0003` as for
+/// Competition_Data, and `RT-EXE-0009` for any other fault (unknown kind,
+/// unknown or missing key, repeated participant in a `rank` Question, invalid
+/// name).
 pub fn parse_questions(
     input: &InputId,
     bytes: &[u8],
@@ -189,8 +190,9 @@ fn object(members: Vec<(&str, Value<()>)>) -> Value<()> {
     .unwrap_or_else(|_| Value::null())
 }
 
-/// The canonical bytes of a Questions list: RT-JSON pretty, fixed key order, the given order
-/// of Questions, participants of a `rank` Question in ascending order.
+/// The canonical bytes of a Questions list: RT-JSON pretty, fixed key order,
+/// the given order of Questions, participants of a `rank` Question in ascending
+/// order.
 #[must_use]
 pub fn serialize_questions(questions: &[Question]) -> Vec<u8> {
     let items = questions

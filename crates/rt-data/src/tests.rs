@@ -299,8 +299,8 @@ fn published_rejects_bad_numbers_and_repeats() {
     );
 }
 
-// Property 20 (parse side): distinct present values stay distinct, and canonical bytes are
-// stable under participant and element order.
+// Property 20 (parse side): distinct present values stay distinct, and
+// canonical bytes are stable under participant and element order.
 fn value_strategy() -> impl Strategy<Value = Option<DataValue>> {
     prop_oneof![
         Just(None),

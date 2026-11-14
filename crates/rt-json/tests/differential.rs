@@ -1,15 +1,17 @@
-//! Differential test of the RT-JSON parser against `serde_json` as a dev-only oracle
-//! (design §4.1.1, risk R-D3).
+//! Differential test of the RT-JSON parser against `serde_json` as a dev-only
+//! oracle (design §4.1.1, risk R-D3).
 //!
-//! Valid and invalid documents are generated. For every document, RT-JSON and `serde_json`
-//! must agree on accept or reject, and on the decoded value when both accept. The dialect is
-//! stricter than RFC 8259 in exactly one way that `serde_json` does not share, duplicate object
-//! keys, so a rejection whose message says "duplicate object key" is the only permitted
-//! disagreement (and then `serde_json` must accept). The oracle also rejects floats outside the
-//! `f64` range ("number out of range"), which RT-JSON keeps as a lexeme; those documents are
-//! skipped.
+//! Valid and invalid documents are generated. For every document, RT-JSON and
+//! `serde_json` must agree on accept or reject, and on the decoded value when
+//! both accept. The dialect is stricter than RFC 8259 in exactly one way that
+//! `serde_json` does not share, duplicate object keys, so a rejection whose
+//! message says "duplicate object key" is the only permitted disagreement (and
+//! then `serde_json` must accept). The oracle also rejects floats outside the
+//! `f64` range ("number out of range"), which RT-JSON keeps as a lexeme; those
+//! documents are skipped.
 //!
-//! Feature: ruletrace-compiler, R-D3: RT-JSON agrees with serde_json on generated documents.
+//! Feature: ruletrace-compiler, R-D3: RT-JSON agrees with serde_json on
+//! generated documents.
 #![allow(
     missing_docs,
     clippy::unwrap_used,
@@ -40,7 +42,8 @@ fn same(ours: &Value<Position>, theirs: &Oracle) -> Result<(), String> {
         (Kind::Bool(a), Oracle::Bool(b)) if a == b => Ok(()),
         (Kind::Integer(n), Oracle::Number(m)) if m.as_u64() == Some(*n) => Ok(()),
         (Kind::Number(lexeme), Oracle::Number(m)) => {
-            // Only digit strings can be compared exactly without trusting float parsing.
+            // Only digit strings can be compared exactly without trusting float
+            // parsing.
             if lexeme.bytes().all(|b| b.is_ascii_digit()) && m.as_u64().is_some() {
                 if m.as_u64() == lexeme.parse::<u64>().ok() {
                     Ok(())
@@ -65,7 +68,8 @@ fn same(ours: &Value<Position>, theirs: &Oracle) -> Result<(), String> {
     }
 }
 
-/// Compares the two parsers on one input. Returns true when the input was compared.
+/// Compares the two parsers on one input. Returns true when the input was
+/// compared.
 fn agree(bytes: &[u8]) -> Result<bool, TestCaseError> {
     let oracle = serde_json::from_slice::<Oracle>(bytes);
     let ours = run(bytes);
@@ -260,7 +264,8 @@ fn mutate(mut bytes: Vec<u8>, m: &Mutation) -> Vec<u8> {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(CASES))]
 
-    /// Every generated valid document is accepted by both parsers and decodes identically.
+    /// Every generated valid document is accepted by both parsers and decodes
+    /// identically.
     #[test]
     fn valid_documents_are_accepted_by_both(doc in valid_doc()) {
         let oracle = serde_json::from_str::<Oracle>(&doc).map_err(|e| {
@@ -272,8 +277,8 @@ proptest! {
         same(&ours, &oracle).map_err(TestCaseError::fail)?;
     }
 
-    /// One to three byte-level mutations of a valid document: both parsers agree on accept or
-    /// reject, and on the value when both accept.
+    /// One to three byte-level mutations of a valid document: both parsers
+    /// agree on accept or reject, and on the value when both accept.
     #[test]
     fn mutated_documents_get_the_same_verdict(
         doc in valid_doc(),
@@ -294,7 +299,8 @@ proptest! {
         agree(&bytes)?;
     }
 
-    /// A repeated key is the one place RT-JSON is stricter: it must reject, at the repeat.
+    /// A repeated key is the one place RT-JSON is stricter: it must reject, at
+    /// the repeat.
     #[test]
     fn repeated_keys_are_rejected(
         key in prop::sample::select(vec!["a", "k", "\\u0061", "é", "\\u00e9"]),
@@ -312,8 +318,9 @@ proptest! {
         prop_assert!(serde_json::from_str::<Oracle>(&doc).is_ok());
     }
 
-    /// Writing a parsed document and parsing it again changes nothing, in either form, and the
-    /// oracle reads the writer output as the same value as the original text.
+    /// Writing a parsed document and parsing it again changes nothing, in
+    /// either form, and the oracle reads the writer output as the same value as
+    /// the original text.
     #[test]
     fn writers_round_trip_and_the_oracle_agrees(doc in valid_doc()) {
         let parsed = run(doc.as_bytes()).unwrap();

@@ -1,9 +1,10 @@
 //! Independent exact-rational reference model (design §7.3, Req 20.22).
 //!
-//! Shares no code with `rt-numeric`: values are `BigInt` pairs, gcd is Euclid's algorithm,
-//! and every bound is read from `rt_numeric::limits`, the confirmed UD-3 constants. The
-//! model never overflows internally. A result outside the limits is reported as
-//! [`Kind::Overflow`], exactly as the specification states (Req 8.11).
+//! Shares no code with `rt-numeric`: values are `BigInt` pairs, gcd is Euclid's
+//! algorithm, and every bound is read from `rt_numeric::limits`, the confirmed
+//! UD-3 constants. The model never overflows internally. A result outside the
+//! limits is reported as [`Kind::Overflow`], exactly as the specification
+//! states (Req 8.11).
 
 use num_bigint::{BigInt, Sign};
 use rt_numeric::{limits, NumericError, RoundingMode};
@@ -175,7 +176,8 @@ impl Rat {
         (&self.n * &o.d).cmp(&(&o.n * &self.d))
     }
 
-    /// Left fold of `add` from zero, as the specification of aggregation states.
+    /// Left fold of `add` from zero, as the specification of aggregation
+    /// states.
     pub fn sum(values: &[Rat]) -> Result<Rat, Kind> {
         values
             .iter()
@@ -226,8 +228,8 @@ impl Rat {
         Rat::new(signed, scale).ok_or(Kind::Overflow)?.checked()
     }
 
-    /// Canonical text: a decimal when the denominator has only the factors 2 and 5,
-    /// otherwise `n/d`; zero is `0`.
+    /// Canonical text: a decimal when the denominator has only the factors 2
+    /// and 5, otherwise `n/d`; zero is `0`.
     pub fn canonical(&self) -> String {
         if self.is_zero() {
             return "0".to_owned();
@@ -298,8 +300,8 @@ fn decimal_value(neg: bool, int: &str, frac: &str) -> Rat {
     Rat::from_parts(m, pow10(frac.len() as u32))
 }
 
-/// Reference for `parse_literal` (Req 8.27): at most 38 significant digits and 28
-/// fractional digits, no `+`, exponent, fraction, `NaN` or `Infinity`.
+/// Reference for `parse_literal` (Req 8.27): at most 38 significant digits and
+/// 28 fractional digits, no `+`, exponent, fraction, `NaN` or `Infinity`.
 pub fn parse_literal(text: &str) -> Result<Rat, Kind> {
     let (neg, int, frac) = split_decimal(text).ok_or(Kind::InvalidLiteral)?;
     let significant = format!("{int}{frac}").trim_start_matches('0').len();
@@ -310,8 +312,8 @@ pub fn parse_literal(text: &str) -> Result<Rat, Kind> {
     decimal_value(neg, int, frac).checked()
 }
 
-/// Reference for `parse_canonical` (Req 8.16, 8.24, 8.25): a decimal with at most 126
-/// fractional digits, or `n/d` with a nonzero `d`.
+/// Reference for `parse_canonical` (Req 8.16, 8.24, 8.25): a decimal with at
+/// most 126 fractional digits, or `n/d` with a nonzero `d`.
 pub fn parse_canonical(text: &str) -> Result<Rat, Kind> {
     if let Some((n, d)) = text.split_once('/') {
         let (neg, n) = match n.strip_prefix('-') {

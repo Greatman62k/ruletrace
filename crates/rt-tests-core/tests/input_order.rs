@@ -1,10 +1,11 @@
-//! Property 24: Input order independence (task 5.22).
+//! Property 24: Input order independence.
 //!
 //! Feature: ruletrace-compiler, Property 24: Input order independence
 //!
-//! Permuting the participants, the fields and the elements of every collection of the
-//! Competition_Data (and the order in which the participant set of a rank Question is written)
-//! leaves every Outcome, Decision_Trace, Diagnostic and the comparison byte-identical.
+//! Permuting the participants, the fields and the elements of every collection
+//! of the Competition_Data (and the order in which the participant set of a
+//! rank Question is written) leaves every Outcome, Decision_Trace, Diagnostic
+//! and the comparison byte-identical.
 //!
 //! **Validates: Requirements 10.4, 10.3, 10.1**
 
@@ -84,8 +85,9 @@ fn agg(nodes: &mut Vec<CompiledNode>, func: AggFn) -> NodeIdx {
     )
 }
 
-/// Inputs `a` and `b`, a collection `results` with the field `place`, four aggregate Targets
-/// over it, a derived Target that adds an input, and a ranking on `a` then `b`.
+/// Inputs `a` and `b`, a collection `results` with the field `place`, four
+/// aggregate Targets over it, a derived Target that adds an input, and a
+/// ranking on `a` then `b`.
 fn rulebook() -> CompiledRulebook {
     let mut rules = Vec::new();
     for (id, target, func) in [
@@ -212,7 +214,8 @@ fn specs() -> impl Strategy<Value = Vec<Spec>> {
     (0usize..6).prop_flat_map(|n| (0..n).map(spec).collect::<Vec<_>>())
 }
 
-/// A permutation of `0..len` derived from `keys` (ties broken by position, so it is total).
+/// A permutation of `0..len` derived from `keys` (ties broken by position, so
+/// it is total).
 fn permutation(keys: &[u32], len: usize) -> Vec<usize> {
     let mut order: Vec<usize> = (0..len).collect();
     order.sort_by_key(|i| (keys.get(*i % keys.len().max(1)).copied().unwrap_or(0), *i));
@@ -226,7 +229,8 @@ fn permuted<T: Clone>(items: &[T], keys: &[u32]) -> Vec<T> {
         .collect()
 }
 
-/// Builds the data inserting participants, fields and elements in the order given by `keys`.
+/// Builds the data inserting participants, fields and elements in the order
+/// given by `keys`.
 fn build(specs: &[Spec], keys: Option<&[u32]>) -> CompetitionData {
     let ordered = match keys {
         Some(k) => permuted(specs, k),
@@ -328,8 +332,9 @@ proptest! {
     }
 }
 
-/// A fixed case with a tie and an empty collection (Indeterminate min and max), so the property cannot pass
-/// vacuously on a generator that never produces them.
+/// A fixed case with a tie and an empty collection (Indeterminate min and max),
+/// so the property cannot pass vacuously on a generator that never produces
+/// them.
 #[test]
 fn fixed_case_with_tie_and_missing_value_is_order_independent() {
     let specs = vec![

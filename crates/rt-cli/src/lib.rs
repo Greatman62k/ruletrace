@@ -1,11 +1,12 @@
 //! The `ruletrace` command-line driver (design §3.9.1, §6.1, §6.2.4).
 //!
-//! This is the only crate of the core that reads and writes files. [`run`] takes the arguments
-//! and an [`Fs`] and returns what the process must print and its exit code, so every step of
-//! every command can be tested without starting a process. A command runs its stages in the
-//! order of design §6.1: arguments, input reading, the pipeline stages, then writing. The first
-//! failing step decides the exit code. A failed command writes no output file and leaves an
-//! existing one byte-identical.
+//! This is the only crate of the core that reads and writes files. [`run`]
+//! takes the arguments and an [`Fs`] and returns what the process must print
+//! and its exit code, so every step of every command can be tested without
+//! starting a process. A command runs its stages in the order of design §6.1:
+//! arguments, input reading, the pipeline stages, then writing. The first
+//! failing step decides the exit code. A failed command writes no output file
+//! and leaves an existing one byte-identical.
 #![forbid(unsafe_code)]
 
 pub mod args;
@@ -23,11 +24,12 @@ use std::ffi::OsString;
 
 pub use io::{Fs, StdFs};
 
-/// What the process does after a command: bytes for standard output, text for standard error and
-/// the exit status.
+/// What the process does after a command: bytes for standard output, text for
+/// standard error and the exit status.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Outcome {
-    /// Standard output. Empty for `ingest`, whose result goes to its output files.
+    /// Standard output. Empty for `ingest`, whose result goes to its output
+    /// files.
     pub stdout: Vec<u8>,
     /// Standard error: the rendered Diagnostics in canonical order.
     pub stderr: String,
@@ -96,9 +98,9 @@ pub fn run(args: &[OsString], fs: &dyn Fs) -> Outcome {
     }
 }
 
-/// The outcome of a failed command: the earliest failing stage has already been chosen by the
-/// caller, so the first blocking Diagnostic of the sorted list decides the code. Warnings never
-/// decide.
+/// The outcome of a failed command: the earliest failing stage has already been
+/// chosen by the caller, so the first blocking Diagnostic of the sorted list
+/// decides the code. Warnings never decide.
 fn failure(problems: Vec<Diagnostic>) -> Outcome {
     let mut state = DiagnosticState::empty();
     for d in problems {

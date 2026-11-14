@@ -1,8 +1,8 @@
 //! `check-decisions` (tasks.md 2.10, decision gates of group 1).
 //!
-//! `tools/decision-gates.v1` ties crates to decision records. A gated crate may be a workspace
-//! member only when `tools/decisions/<id>.md` says `status: Confirmed`. A missing record counts
-//! as Pending.
+//! `tools/decision-gates.v1` ties crates to decision records. A gated crate may
+//! be a workspace member only when `tools/decisions/<id>.md` says
+//! `status: Confirmed`. A missing record counts as Pending.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -68,9 +68,9 @@ pub fn parse_gates(text: &str) -> Result<Vec<Gate>, String> {
     Ok(out)
 }
 
-/// Reads the status of a decision record: the first line that starts with `status:`
-/// (case-insensitive, markdown emphasis ignored). `None` when there is no such line or the value
-/// is neither `Confirmed` nor `Pending`.
+/// Reads the status of a decision record: the first line that starts with
+/// `status:` (case-insensitive, markdown emphasis ignored). `None` when there
+/// is no such line or the value is neither `Confirmed` nor `Pending`.
 #[must_use]
 pub fn parse_status(record: &str) -> Option<Status> {
     let value = record.lines().find_map(|l| {
@@ -92,8 +92,8 @@ pub fn parse_status(record: &str) -> Option<Status> {
     }
 }
 
-/// Findings for gated crates that are workspace members. `records` maps a decision id to the text
-/// of its record when the file exists.
+/// Findings for gated crates that are workspace members. `records` maps a
+/// decision id to the text of its record when the file exists.
 #[must_use]
 pub fn check(
     gates: &[Gate],
@@ -121,8 +121,8 @@ pub fn check(
     findings
 }
 
-/// Runs `check-decisions` on the repository at `root` given workspace member names.
-/// Returns the number of gated crates that are members.
+/// Runs `check-decisions` on the repository at `root` given workspace member
+/// names. Returns the number of gated crates that are members.
 ///
 /// # Errors
 /// One line per finding, or the load failure.

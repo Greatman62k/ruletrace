@@ -1,4 +1,4 @@
-//! Tests of passes 1 to 8 (task 5.1).
+//! Tests of passes 1 to 8.
 
 #[path = "tests_approval.rs"]
 mod approval_tests;
@@ -184,7 +184,8 @@ fn clean_rulebook_has_no_findings_and_records_dependencies() {
 fn unknown_name_type_mismatch_and_bad_span_give_one_diagnostic_each() {
     let bad_span = r#"{"document":"rules.md","start":10,"end":9999,"line":1,"column":11}"#;
     let r = check(&[
-        // Unknown field: the comparison must not add a type finding for the same node.
+        // Unknown field: the comparison must not add a type finding for the
+        // same node.
         elig(
             "a.unknown",
             "ea",
@@ -249,7 +250,8 @@ fn declared_type_that_differs_from_the_computed_type_is_one_finding_at_the_node(
         num("16")
     );
     let r = check(&[derived("d.x", "x", &e, &span_json(CLAUSE2))]);
-    // Declared number at the node (it computes boolean) and the rule type number vs boolean body.
+    // Declared number at the node (it computes boolean) and the rule type
+    // number vs boolean body.
     let c = codes(&r);
     assert_eq!(
         c.iter().filter(|c| **c == Code::ValTypeMismatch).count(),
@@ -444,7 +446,7 @@ fn origin_does_not_change_any_finding() {
         r.state().clone()
     };
     let (a, b) = (mk(MANUAL), mk(ai));
-    assert_eq!(a.as_slice().len(), 1); // the unknown field
+    assert_eq!(a.as_slice().len(), 1);
     assert_eq!(a, b);
 }
 
@@ -555,7 +557,8 @@ fn validate_content_reports_only_the_draft_with_a_verified_location() {
         matches!(d.primary(), Location::Source(s) if *s == SourceSpan::new(&model(), s.start().get(), s.end().get(), s.line(), s.column()).unwrap())
     );
 
-    // A draft that closes a cycle with an existing rule is reported, an existing cycle is not.
+    // A draft that closes a cycle with an existing rule is reported, an
+    // existing cycle is not.
     let cyc = RuleDraft {
         id: RuleId::new("base").unwrap(),
         content: content(&rf("dr", "number")),

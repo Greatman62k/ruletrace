@@ -164,12 +164,14 @@ fn table_ends_at_blank_line_and_list_item() {
 #[test]
 fn size_limit_comes_first_with_one_code_each() {
     let bad = vec![0xffu8; 11];
-    // Over the effective limit below 16 MiB: RT-LIM-0001, even though the format is also bad.
+    // Over the effective limit below 16 MiB: RT-LIM-0001, even though the
+    // format is also bad.
     assert_eq!(
         code_of(ingest(&bad, &id("x.pdf"), None, 10)),
         Code::LimitFileTooLarge
     );
-    // Equal to the limit is accepted by the size check and fails the later UTF-8 check.
+    // Equal to the limit is accepted by the size check and fails the later
+    // UTF-8 check.
     assert_eq!(
         code_of(ingest(&bad, &id("x.md"), None, 11)),
         Code::IngestNotUtf8

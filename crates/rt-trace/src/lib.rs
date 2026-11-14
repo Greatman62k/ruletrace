@@ -1,14 +1,14 @@
-//! Outcomes, Decision_Traces, Kleene three-valued logic and replay (design §3.6.3).
+//! Outcomes, Decision_Traces, Kleene three-valued logic and replay (design
+//! §3.6.3).
 //!
-//! This crate holds the data the engine produces and the Explainer consumes. It depends on
-//! neither: the engine builds a [`DecisionTrace`], the Explainer verifies its spans against
-//! pre-loaded Source_Models, and [`replay`] re-derives every step from the trace alone.
+//! This crate holds the data the engine produces and the Explainer consumes. It
+//! depends on neither: the engine builds a [`DecisionTrace`], the Explainer
+//! verifies its spans against pre-loaded Source_Models, and [`replay`]
+//! re-derives every step from the trace alone.
 //!
-//! A trace holds Locations and document hashes only, never source text (Req 10.11). Numbers are
-//! [`rt_numeric::ExactNumber`]; no floating-point type appears in any public item.
-//!
-//! Not yet part of this crate: a parser for the canonical form (the Explainer works on in-memory
-//! traces).
+//! A trace holds Locations and document hashes only, never source text (Req
+//! 10.11). Numbers are [`rt_numeric::ExactNumber`]; no floating-point type
+//! appears in any public item.
 #![forbid(unsafe_code)]
 
 mod outcome;

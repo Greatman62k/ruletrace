@@ -2,8 +2,9 @@
 
 use std::fmt::Write as _;
 
-/// Escapes every Unicode `Cc` character as `\u{hex}`, except a line feed that is the final
-/// character of the input. All rendered untrusted text must pass through this function.
+/// Escapes every Unicode `Cc` character as `\u{hex}`, except a line feed that
+/// is the final character of the input. All rendered untrusted text must pass
+/// through this function.
 #[must_use]
 pub fn escape_controls(text: &str) -> String {
     let (body, tail) = match text.strip_suffix('\n') {

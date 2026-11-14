@@ -1,4 +1,5 @@
-//! `ruletrace ingest`: stage 1, and stage 2 only with `--candidates` (Req 17.1).
+//! `ruletrace ingest`: stage 1, and stage 2 only with `--candidates` (Req
+//! 17.1).
 
 use crate::args::IngestArgs;
 use crate::io::{commit_files, input_location, Fs};
@@ -11,16 +12,16 @@ use std::path::Path;
 /// Runs the command.
 ///
 /// # Errors
-/// The Diagnostics of the earliest failing step. Nothing is written in that case.
+/// The Diagnostics of the earliest failing step. Nothing is written in that
+/// case.
 pub(crate) fn run(args: &IngestArgs, fs: &dyn Fs) -> Result<DiagnosticState, DiagnosticState> {
     let limit = args.max_bytes.unwrap_or(MAX_SOURCE_DOCUMENT_BYTES);
-    // Step 1: read the input. One byte more than the limit is enough to see that it is larger.
+    // Read one byte more than the limit, which is enough to see the input is
+    // larger.
     let bytes = read_document(fs, &args.document, limit).map_err(|d| single(*d))?;
-    // Step 2: stage 1, ingestion.
     let model = ingest(&bytes, &args.document_id, args.format, limit).map_err(|d| single(*d))?;
     let mut warnings = DiagnosticState::empty();
     let mut outputs: Vec<(&Path, Vec<u8>)> = vec![(&args.out, model.print().into_bytes())];
-    // Step 3: stage 2, extraction, only when candidates are requested.
     if let Some(path) = &args.candidates {
         let staged = extract(&model, ExtractionMode::first_version())
             .map_err(rt_foundation::Rejected::into_diagnostics)?;
@@ -29,7 +30,7 @@ pub(crate) fn run(args: &IngestArgs, fs: &dyn Fs) -> Result<DiagnosticState, Dia
         let text = print_candidates(model.document(), &clauses);
         outputs.push((path, text.into_bytes()));
     }
-    // Step 4: write all outputs, or none.
+    // Write all outputs, or none.
     let files: Vec<(&Path, &[u8])> = outputs.iter().map(|(p, b)| (*p, b.as_slice())).collect();
     commit_files(fs, &files).map_err(|d| single(*d))?;
     Ok(warnings)

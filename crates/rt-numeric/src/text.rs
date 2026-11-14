@@ -1,20 +1,23 @@
 //! Literal parsing, canonical serialization and the bounded digit-vector codec
 //! (design §4.2.4, Req 8.16, 8.17, 8.24, 8.25, 8.27).
 //!
-//! A decimal expansion of a value in lowest terms can have 126 fractional digits, which
-//! does not fit in 256 bits. The private [`Digits`] vector (base 10^9 limbs, at most 200
-//! digits) multiplies and divides by 2 and 5 so that no big-integer type is needed.
-//! Every function here is total: invalid input is an `Err`, never a panic.
+//! A decimal expansion of a value in lowest terms can have 126 fractional
+//! digits, which does not fit in 256 bits. The private [`Digits`] vector (base
+//! 10^9 limbs, at most 200 digits) multiplies and divides by 2 and 5 so that no
+//! big-integer type is needed. Every function here is total: invalid input is
+//! an `Err`, never a panic.
 
 use crate::wide::gcd;
 use crate::{limits, make, ExactNumber, LiteralFault, NumericError, Sign};
 
-/// Most decimal digits the codec holds. The widest value is below 2^253 (77 digits).
+/// Most decimal digits the codec holds. The widest value is below 2^253 (77
+/// digits).
 const MAX_DIGITS: usize = 200;
 const LIMB_BASE: u64 = 1_000_000_000;
 const LIMB_DIGITS: usize = 9;
 
-/// Bounded unsigned decimal digit vector, little-endian base 10^9 limbs, no high zero limb.
+/// Bounded unsigned decimal digit vector, little-endian base 10^9 limbs, no
+/// high zero limb.
 #[derive(Debug)]
 struct Digits {
     limbs: Vec<u32>,
@@ -32,8 +35,8 @@ impl Digits {
         Digits { limbs }
     }
 
-    /// From ASCII digits without leading zeros. `None` beyond [`MAX_DIGITS`] or on a
-    /// non-digit.
+    /// From ASCII digits without leading zeros. `None` beyond [`MAX_DIGITS`] or
+    /// on a non-digit.
     fn from_ascii(digits: &str) -> Option<Digits> {
         let bytes = digits.as_bytes();
         if bytes.len() > MAX_DIGITS {
@@ -68,7 +71,8 @@ impl Digits {
         }
     }
 
-    /// Multiplies by `m` (below 10^9). `false` when the result exceeds [`MAX_DIGITS`].
+    /// Multiplies by `m` (below 10^9). `false` when the result exceeds
+    /// [`MAX_DIGITS`].
     fn mul_small(&mut self, m: u32) -> bool {
         let mut carry: u64 = 0;
         for limb in &mut self.limbs {
@@ -83,8 +87,8 @@ impl Digits {
         self.digit_len() <= MAX_DIGITS
     }
 
-    /// Divides by `m` (nonzero, below 10^9) when exact and returns `true`; otherwise
-    /// leaves the value unchanged and returns `false`.
+    /// Divides by `m` (nonzero, below 10^9) when exact and returns `true`;
+    /// otherwise leaves the value unchanged and returns `false`.
     fn div_small_exact(&mut self, m: u32) -> bool {
         if m == 0 {
             return false;
@@ -216,8 +220,8 @@ pub(crate) fn parse_literal(text: &str) -> Result<ExactNumber, NumericError> {
     make(s.negative, m / g, den / g)
 }
 
-/// Canonical text (Req 8.16, 8.24): a decimal when the denominator has only the factors
-/// 2 and 5, otherwise `n/d`.
+/// Canonical text (Req 8.16, 8.24): a decimal when the denominator has only the
+/// factors 2 and 5, otherwise `n/d`.
 pub(crate) fn to_canonical(a: &ExactNumber) -> String {
     if a.sign == Sign::Zero {
         return "0".to_owned();
@@ -229,13 +233,14 @@ pub(crate) fn to_canonical(a: &ExactNumber) -> String {
     }
 }
 
-/// The unsigned decimal expansion, or `None` when the denominator has another prime
-/// factor (or, unreachably, when the codec bound is exceeded).
+/// The unsigned decimal expansion, or `None` when the denominator has another
+/// prime factor (or, unreachably, when the codec bound is exceeded).
 fn decimal_digits(a: &ExactNumber) -> Option<String> {
     let twos = a.den.trailing_zeros();
     let mut rest = a.den >> twos;
     let mut fives: u32 = 0;
-    // `checked_rem` rather than `is_multiple_of`, which is newer than the 1.89 floor.
+    // `checked_rem` rather than `is_multiple_of`, which is newer than the 1.89
+    // floor.
     while rest.checked_rem(5) == Some(0) {
         rest /= 5;
         fives += 1;
@@ -273,7 +278,8 @@ fn decimal_digits(a: &ExactNumber) -> Option<String> {
     })
 }
 
-/// Parses canonical artifact text: a decimal with up to 126 fractional digits, or `n/d`.
+/// Parses canonical artifact text: a decimal with up to 126 fractional digits,
+/// or `n/d`.
 pub(crate) fn parse_canonical(text: &str) -> Result<ExactNumber, NumericError> {
     match text.split_once('/') {
         Some((n, d)) => parse_fraction(n, d),
@@ -324,7 +330,8 @@ fn parse_fraction(n: &str, d: &str) -> Result<ExactNumber, NumericError> {
     make(negative, num / g, den / g)
 }
 
-/// Unsigned integer from ASCII digits. Overflow of `u128` is [`NumericError::Overflow`].
+/// Unsigned integer from ASCII digits. Overflow of `u128` is
+/// [`NumericError::Overflow`].
 fn parse_u128(digits: &str) -> Result<u128, NumericError> {
     if digits.is_empty() {
         return Err(fault(LiteralFault::Empty));

@@ -1,8 +1,9 @@
 //! The canonical RT-JSON writers (design §4.1.1).
 //!
-//! Both forms use the same string escaping and write object members in the order the value
-//! stores them, so the fixed per-object key order is the order in which the caller builds the
-//! value. Writing is iterative and does not depend on nesting depth.
+//! Both forms use the same string escaping and write object members in the
+//! order the value stores them, so the fixed per-object key order is the order
+//! in which the caller builds the value. Writing is iterative and does not
+//! depend on nesting depth.
 
 use crate::value::{Kind, Value};
 use std::fmt::Write as _;
@@ -13,7 +14,8 @@ pub fn write_compact<P>(value: &Value<P>) -> String {
     write(value, false)
 }
 
-/// Pretty form: two-space indent, one member or element per line, trailing line feed.
+/// Pretty form: two-space indent, one member or element per line, trailing line
+/// feed.
 #[must_use]
 pub fn write_pretty<P>(value: &Value<P>) -> String {
     let mut out = write(value, true);
@@ -88,8 +90,8 @@ fn write<P>(root: &Value<P>, pretty: bool) -> String {
     out
 }
 
-/// `\"`, `\\`, `\n`, `\r`, `\t`, `\u00xx` (lowercase hex) for every other Unicode `Cc`
-/// character, all other scalar values literally.
+/// `\"`, `\\`, `\n`, `\r`, `\t`, `\u00xx` (lowercase hex) for every other
+/// Unicode `Cc` character, all other scalar values literally.
 fn push_string(out: &mut String, text: &str) {
     out.push('"');
     for c in text.chars() {

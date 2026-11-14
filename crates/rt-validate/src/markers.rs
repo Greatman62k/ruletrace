@@ -22,10 +22,11 @@ fn list(items: &[String]) -> String {
         .join(", ")
 }
 
-/// One `RT-VAL-0004` per rule with ambiguity markers (every interpretation, in recorded order,
-/// none selected), one `RT-VAL-0005` per rule with incompleteness markers (every missing
-/// element, in recorded order). A marker outside the supported shape (2 to 16 interpretations,
-/// 1 to 16 missing names, 1 to 1000 characters each) is `RT-VAL-0003`.
+/// One `RT-VAL-0004` per rule with ambiguity markers (every interpretation, in
+/// recorded order, none selected), one `RT-VAL-0005` per rule with
+/// incompleteness markers (every missing element, in recorded order). A marker
+/// outside the supported shape (2 to 16 interpretations, 1 to 16 missing names,
+/// 1 to 1000 characters each) is `RT-VAL-0003`.
 pub(crate) fn check(markers: &[Marker], site: &Site, out: &mut DiagnosticState) {
     let mut interpretations: Vec<String> = Vec::new();
     let mut missing: Vec<String> = Vec::new();

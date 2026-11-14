@@ -1,10 +1,12 @@
-//! The Rule_Content hash and the Draft hash (design §3.8.2, §4.1.7; Req 25.3 to 25.5).
+//! The Rule_Content hash and the Draft hash (design §3.8.2, §4.1.7; Req 25.3 to
+//! 25.5).
 //!
-//! Both hash the canonical compact bytes of the content, in this key order: `ir_version`, `id`,
-//! `revision` (Rule_Content only), `kind`, `target`, `type`, the kind-specific body, `markers`
-//! and `spans`. A span is `document`, `sha256` (the hash the Rulebook declares for that
-//! document), `start`, `end`. The Origin, approval data, span `line` and `column` and every
-//! derived value are not part of the input, so changing only those never changes the hash.
+//! Both hash the canonical compact bytes of the content, in this key order:
+//! `ir_version`, `id`, `revision` (Rule_Content only), `kind`, `target`,
+//! `type`, the kind-specific body, `markers` and `spans`. A span is `document`,
+//! `sha256` (the hash the Rulebook declares for that document), `start`, `end`.
+//! The Origin, approval data, span `line` and `column` and every derived value
+//! are not part of the input, so changing only those never changes the hash.
 
 use crate::print::{body_members, marker_out, s, write, Out};
 use crate::rule::{RuleContent, RuleRevision, Span};
@@ -12,8 +14,8 @@ use crate::rulebook::{DocumentDecl, IrVersion};
 use rt_foundation::{DocumentId, RevisionNumber, RuleId};
 use rt_hash::{sha256, Sha256Hex};
 
-/// Why a content hash cannot be computed. The Validator reports both cases as diagnostics; no
-/// hash is made from a guessed document hash.
+/// Why a content hash cannot be computed. The Validator reports both cases as
+/// diagnostics; no hash is made from a guessed document hash.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ContentHashError {
     /// A span names a document the Rulebook does not declare.
@@ -81,14 +83,16 @@ fn hash_input(
     Ok(write(&Out::Obj(members), false))
 }
 
-/// The Rule_Content_Hash of a revision: SHA-256 of the canonical compact Rule_Content including
-/// `ir_version` and `revision`. Approvals bind this value (Req 25.3 to 25.5).
+/// The Rule_Content_Hash of a revision: SHA-256 of the canonical compact
+/// Rule_Content including `ir_version` and `revision`. Approvals bind this
+/// value (Req 25.3 to 25.5).
 ///
-/// `documents` are the Rulebook's declared documents; each span contributes the declared hash of
-/// its document.
+/// `documents` are the Rulebook's declared documents; each span contributes the
+/// declared hash of its document.
 ///
 /// # Errors
-/// [`ContentHashError`] when a span's document is undeclared or declared with two hashes.
+/// [`ContentHashError`] when a span's document is undeclared or declared with
+/// two hashes.
 pub fn rule_content_hash(
     ir_version: &IrVersion,
     revision: &RuleRevision,
@@ -104,8 +108,9 @@ pub fn rule_content_hash(
     Ok(sha256(bytes.as_bytes()))
 }
 
-/// The Draft hash of a proposal: the same hash as [`rule_content_hash`] over the content without
-/// `revision`, because the Revision_Number is assigned at adoption (design §3.8.2).
+/// The Draft hash of a proposal: the same hash as [`rule_content_hash`] over
+/// the content without `revision`, because the Revision_Number is assigned at
+/// adoption (design §3.8.2).
 ///
 /// # Errors
 /// The same [`ContentHashError`] cases as [`rule_content_hash`].

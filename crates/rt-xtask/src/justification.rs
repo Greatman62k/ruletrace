@@ -1,6 +1,6 @@
 //! `check-justification`: every external crate in `Cargo.lock` needs a row in
-//! `tools/dependencies.v1` with a purpose, the alternatives considered and a maintenance status
-//! (Req 21.5, 21.6).
+//! `tools/dependencies.v1` with a purpose, the alternatives considered and a
+//! maintenance status (Req 21.5, 21.6).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -39,8 +39,8 @@ fn tokens(line: &str) -> Result<Vec<String>, String> {
     Ok(out)
 }
 
-/// Parses `tools/dependencies.v1`. Fields that are absent or blank are kept as empty text so
-/// that [`check`] can name them.
+/// Parses `tools/dependencies.v1`. Fields that are absent or blank are kept as
+/// empty text so that [`check`] can name them.
 ///
 /// # Errors
 /// A missing header, a malformed line, an unknown key or a crate listed twice.
@@ -121,7 +121,8 @@ pub fn external_crates(lock: &str) -> BTreeSet<String> {
 /// Pure part of the check. Returns the number of external crates checked.
 ///
 /// # Errors
-/// One line per crate that has no row or a row without purpose, alternatives or status.
+/// One line per crate that has no row or a row without purpose, alternatives or
+/// status.
 pub fn check_texts(lock: &str, dependencies: &str) -> Result<usize, String> {
     let entries = parse_entries(dependencies)?;
     let crates = external_crates(lock);

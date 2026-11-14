@@ -1,6 +1,6 @@
-//! The golden-file comparison harness. Bytes are compared exactly: one byte, one line ending or
-//! one trailing space is a failure. A failure names the golden file, the platform and the first
-//! differing offset.
+//! The golden-file comparison harness. Bytes are compared exactly: one byte,
+//! one line ending or one trailing space is a failure. A failure names the
+//! golden file, the platform and the first differing offset.
 
 use std::path::{Path, PathBuf};
 
@@ -9,7 +9,8 @@ pub fn fixtures_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures")
 }
 
-/// The platform name: the CI matrix label when set, otherwise the operating system and architecture.
+/// The platform name: the CI matrix label when set, otherwise the operating
+/// system and architecture.
 pub fn platform() -> String {
     match std::env::var("RULETRACE_CI_PLATFORM") {
         Ok(p) if !p.is_empty() => p,

@@ -1,20 +1,25 @@
-//! The Proof_Report builder (design §8.11.9, Req 33.14, 13.11, 13.19, 13.21, 31.13).
+//! The Proof_Report builder (design §8.11.9, Req 33.14, 13.11, 13.19, 13.21,
+//! 31.13).
 //!
-//! One section per decision, in the order of Req 33.14: the Question and Outcome; each applied
-//! Rule with identifier and Revision_Number; the Approval_Record of each Rule; each Source_Span
-//! with the exact text the Explainer resolved; each input value read; each calculation step with
-//! operation, operands and exact result; each tie-breaking fact; each missing input; each
-//! considered Rule that did not apply; the verification status; the published-result comparison.
+//! One section per decision, in the order of Req 33.14: the Question and
+//! Outcome; each applied Rule with identifier and Revision_Number; the
+//! Approval_Record of each Rule; each Source_Span with the exact text the
+//! Explainer resolved; each input value read; each calculation step with
+//! operation, operands and exact result; each tie-breaking fact; each missing
+//! input; each considered Rule that did not apply; the verification status; the
+//! published-result comparison.
 //!
-//! The report is built only from the Decision_Trace, the [`ApprovalFacts`] derived from the
-//! ledger by the caller, and the Explainer's [`Verification`]. It computes no value and contains
-//! no text from an AI provider. It has no timestamp, path or environment value, so equal inputs
-//! give equal bytes in both forms.
+//! The report is built only from the Decision_Trace, the [`ApprovalFacts`]
+//! derived from the ledger by the caller, and the Explainer's [`Verification`].
+//! It computes no value and contains no text from an AI provider. It has no
+//! timestamp, path or environment value, so equal inputs give equal bytes in
+//! both forms.
 //!
-//! The header statements of Req 34 are added by task 11.9 through [`ProofHeader::statements`].
-//! The tie-breaking section lists, in trace order, each `compare` entry with its criteria and
-//! both compared values in declared order (Req 12.7), and each `tie_group` entry. A trace without
-//! such entries falls back to the Tie_Group of the Outcome.
+//! The header statements of Req 34 are added by task 11.9 through
+//! [`ProofHeader::statements`]. The tie-breaking section lists, in trace order,
+//! each `compare` entry with its criteria and both compared values in declared
+//! order (Req 12.7), and each `tie_group` entry. A trace without such entries
+//! falls back to the Tie_Group of the Outcome.
 
 use crate::results::{diagnostics, obj, severity_name, status_name, text};
 use crate::verify::{SpanResolution, Verification, VerificationStatus};
@@ -33,7 +38,8 @@ pub const PROOF_REPORT_FORMAT: &str = "ruletrace-proof-report";
 /// Version of the Proof_Report format.
 pub const PROOF_REPORT_VERSION: u32 = 1;
 
-/// The Approval_Record facts of one Rule revision, as the caller derived them from the ledger.
+/// The Approval_Record facts of one Rule revision, as the caller derived them
+/// from the ledger.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ApprovalView {
     /// Reviewer identity.
@@ -44,7 +50,8 @@ pub struct ApprovalView {
     pub content_hash: String,
 }
 
-/// Approval facts keyed by (Rule identifier, Revision_Number). `rt-explain` never reads a ledger.
+/// Approval facts keyed by (Rule identifier, Revision_Number). `rt-explain`
+/// never reads a ledger.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ApprovalFacts(BTreeMap<(RuleId, RevisionNumber), ApprovalView>);
 
@@ -67,8 +74,9 @@ impl ApprovalFacts {
     }
 }
 
-/// The result of comparing one Outcome with a Published_Result, already rendered by the caller as
-/// canonical text. The report copies it and compares nothing.
+/// The result of comparing one Outcome with a Published_Result, already
+/// rendered by the caller as canonical text. The report copies it and compares
+/// nothing.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PublishedFact {
     /// No published value was supplied for this question.
@@ -84,8 +92,9 @@ pub enum PublishedFact {
     },
 }
 
-/// Everything the builder reads. `traces[i]` and `verifications[i]` answer the same question;
-/// `published` is empty (nothing compared) or has one entry per trace.
+/// Everything the builder reads. `traces[i]` and `verifications[i]` answer the
+/// same question; `published` is empty (nothing compared) or has one entry per
+/// trace.
 #[derive(Clone, Copy, Debug)]
 pub struct ProofInputs<'a> {
     /// Decision_Traces in Question order.
@@ -98,7 +107,8 @@ pub struct ProofInputs<'a> {
     pub published: &'a [PublishedFact],
     /// Rulebook content hash of the Compiled_Rulebook, as text.
     pub rulebook_hash: &'a str,
-    /// Whether the Competition_Data is synthetic, when the caller states it. A label only.
+    /// Whether the Competition_Data is synthetic, when the caller states it. A
+    /// label only.
     pub synthetic_data: Option<bool>,
 }
 
@@ -154,7 +164,8 @@ pub struct DecisionSection {
     pub index: usize,
     /// The Decision_Trace.
     pub trace: DecisionTrace,
-    /// Approval facts per applied Rule, aligned with `trace.rules()`; `None` when not supplied.
+    /// Approval facts per applied Rule, aligned with `trace.rules()`; `None`
+    /// when not supplied.
     pub approvals: Vec<Option<ApprovalView>>,
     /// Explainer output for the trace.
     pub verification: Verification,
@@ -750,9 +761,10 @@ fn section_value(d: &DecisionSection) -> Value<()> {
     ])
 }
 
-/// The machine form: canonical compact RT-JSON, fixed key order, no float, trailing line feed.
-/// `calculation_steps` repeats the trace entries (`step` and `decision`) with operands and exact
-/// results, so a reader can recompute each one.
+/// The machine form: canonical compact RT-JSON, fixed key order, no float,
+/// trailing line feed. `calculation_steps` repeats the trace entries (`step`
+/// and `decision`) with operands and exact results, so a reader can recompute
+/// each one.
 #[must_use]
 pub fn render_proof_json(report: &ProofReport) -> Vec<u8> {
     let h = &report.header;

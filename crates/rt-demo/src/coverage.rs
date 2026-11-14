@@ -1,9 +1,10 @@
 //! The Coverage_Statement generator (design §8.11.8, Req 33.6).
 //!
-//! [`classify`] is a pure function. It gives every Candidate_Clause exactly one class by the
-//! first matching row of the table in §8.11.8 and fails naming the first clause that matches no
-//! row. Nothing is read from a file, the environment or a clock here; the caller supplies bytes
-//! for [`parse_notes`] and writes the output of [`print_json`] and [`print_markdown`].
+//! [`classify`] is a pure function. It gives every Candidate_Clause exactly one
+//! class by the first matching row of the table in §8.11.8 and fails naming the
+//! first clause that matches no row. Nothing is read from a file, the
+//! environment or a clock here; the caller supplies bytes for [`parse_notes`]
+//! and writes the output of [`print_json`] and [`print_markdown`].
 
 use crate::json::{array, integer, parse_strict, string};
 use rt_foundation::{Code, DocumentId, Location};
@@ -17,7 +18,8 @@ use std::fmt;
 const NOTES_FORMAT: &str = "ruletrace-coverage-notes";
 const STATEMENT_FORMAT: &str = "ruletrace-coverage-statement";
 
-/// One human-authored reason why a clause is not a rule, keyed by the exact span of the clause.
+/// One human-authored reason why a clause is not a rule, keyed by the exact
+/// span of the clause.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CoverageNote {
     /// The document of the clause.
@@ -30,7 +32,8 @@ pub struct CoverageNote {
     pub reason: String,
 }
 
-/// The parsed `coverage-notes.json`. Every entry is labelled `authored` in the file.
+/// The parsed `coverage-notes.json`. Every entry is labelled `authored` in the
+/// file.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CoverageNotes {
     notes: Vec<CoverageNote>,
@@ -85,7 +88,8 @@ pub struct PendingEntry {
     pub finding: Option<StoreFinding>,
 }
 
-/// The stored proposal batches, reduced to what coverage needs. Empty in the `hand` profile.
+/// The stored proposal batches, reduced to what coverage needs. Empty in the
+/// `hand` profile.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct StoreBatches {
     /// Pending proposals in store order.
@@ -291,13 +295,13 @@ fn pairs(keys: &[RuleKey]) -> Vec<(String, u32)> {
 
 /// Classifies every clause by the first matching row of design §8.11.8.
 ///
-/// `clauses` are taken in ascending start offset (sorted here, so the caller's order does not
-/// matter). The class is then checked against `validation`: a clause classed `rule_approved`
-/// must have no `RT-ING-0006` Warning.
+/// `clauses` are taken in ascending start offset (sorted here, so the caller's
+/// order does not matter). The class is then checked against `validation`: a
+/// clause classed `rule_approved` must have no `RT-ING-0006` Warning.
 ///
 /// # Errors
-/// [`CoverageError::Unclassified`] naming the first clause that matches no row, or
-/// [`CoverageError::ValidationDisagrees`].
+/// [`CoverageError::Unclassified`] naming the first clause that matches no row,
+/// or [`CoverageError::ValidationDisagrees`].
 pub fn classify(
     clauses: &[CandidateClause],
     rulebook: &Rulebook,
@@ -358,14 +362,12 @@ fn classify_one(
     statuses: &std::collections::BTreeMap<RuleKey, ApprovalStatus>,
     effective: &std::collections::BTreeMap<rt_foundation::RuleId, RuleKey>,
 ) -> Option<CoverageClass> {
-    // Row 1.
     let approved = keys_in(rulebook, clause, &|k| effective.get(&k.id) == Some(k));
     if !approved.is_empty() {
         return Some(CoverageClass::RuleApproved {
             rules: pairs(&approved),
         });
     }
-    // Row 2.
     let rejected = keys_in(rulebook, clause, &|k| {
         statuses.get(k) == Some(&ApprovalStatus::Rejected)
     });
@@ -384,7 +386,6 @@ fn classify_one(
             rules: pairs(&rejected),
         });
     }
-    // Rows 3 and 4.
     let inside = |e: &&PendingEntry| contained(&e.document, e.start, e.end, clause);
     for entry in store.pending.iter().filter(inside) {
         if let Some(StoreFinding::Unsupported { capability }) = &entry.finding {
@@ -434,7 +435,8 @@ fn rule_values(rules: &[(String, u32)]) -> Value<()> {
     )
 }
 
-/// The canonical `coverage-statement.json`: RT-JSON pretty with a fixed key order.
+/// The canonical `coverage-statement.json`: RT-JSON pretty with a fixed key
+/// order.
 #[must_use]
 pub fn print_json(statement: &CoverageStatement) -> String {
     let entries = statement
@@ -512,7 +514,8 @@ fn class_detail(class: &CoverageClass) -> String {
     }
 }
 
-/// The `coverage-statement.md` rendering: one row per clause, in the order of the JSON file.
+/// The `coverage-statement.md` rendering: one row per clause, in the order of
+/// the JSON file.
 #[must_use]
 pub fn print_markdown(statement: &CoverageStatement) -> String {
     let mut out = String::from("# Coverage statement\n\n");

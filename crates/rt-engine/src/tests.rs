@@ -125,7 +125,8 @@ pub(crate) fn build(inputs: &[(&str, CType)], rules: Vec<CompiledRule>) -> Compi
     build_with(inputs, rules, &[])
 }
 
-/// `prec` lists (declaration id, Target, rule identifiers in order of precedence).
+/// `prec` lists (declaration id, Target, rule identifiers in order of
+/// precedence).
 pub(crate) fn build_with(
     inputs: &[(&str, CType)],
     mut rules: Vec<CompiledRule>,
@@ -709,7 +710,7 @@ fn an_element_without_the_aggregated_field_is_missing_information() {
     );
 }
 
-// ----- questions, conflicts and the parts that belong to later work -----
+// ----- questions and conflicts -----
 
 #[test]
 fn a_question_naming_an_unknown_target_or_participant_is_invalid() {
@@ -795,8 +796,8 @@ fn hundredths(n: u32) -> String {
 }
 
 proptest! {
-    /// **Validates: Requirements 8.1, 8.10, 8.12, 10.2, 13.11**
-    /// A weighted score of exact decimals is the exact sum of the exact products.
+    /// **Validates: Requirements 8.1, 8.10, 8.12, 10.2, 13.11** A weighted
+    /// score of exact decimals is the exact sum of the exact products.
     #[test]
     fn weighted_scores_equal_an_independent_integer_model(
         pairs in proptest::collection::vec((0u32..100_000, 0u32..100_000), 1..5)
@@ -825,12 +826,11 @@ proptest! {
         let total: u64 = pairs.iter().map(|(w, v)| u64::from(*w) * u64::from(*v)).sum();
         let expected = format!("{}.{:04}", total / 10_000, total % 10_000);
         prop_assert_eq!(outcome, decided_number(&expected));
-        // Evaluating again gives the identical result.
         prop_assert_eq!(evaluate(&rb, &d, &[ask("score", "p1")], None), evaluate(&rb, &d, &[ask("score", "p1")], None));
     }
 
-    /// **Validates: Requirements 11.1, 11.4, 11.5, 11.6**
-    /// Boolean combinations follow Kleene logic for every mix of true, false and missing inputs.
+    /// **Validates: Requirements 11.1, 11.4, 11.5, 11.6** Boolean combinations
+    /// follow Kleene logic for every mix of true, false and missing inputs.
     #[test]
     fn boolean_rules_follow_kleene_three_valued_logic(
         s in proptest::collection::vec(0u8..3, 3)

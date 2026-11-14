@@ -1,19 +1,21 @@
-//! `ruletrace review list`, `approve` and `reject` (design §3.8.3, §3.9.1; Req 5.8 to 5.12,
-//! 17.11, 23.12 to 23.14, 26.16 to 26.19).
+//! `ruletrace review list`, `approve` and `reject` (design §3.8.3, §3.9.1; Req
+//! 5.8 to 5.12, 17.11, 23.12 to 23.14, 26.16 to 26.19).
 //!
-//! The review group reads no environment variable, no AI configuration and no clock. The
-//! Reviewer and the time come only from arguments, and the planning is the pure
-//! [`rt_review::plan_review`]. This module owns the I/O around it:
+//! The review group reads no environment variable, no AI configuration and no
+//! clock. The Reviewer and the time come only from arguments, and the planning
+//! is the pure [`rt_review::plan_review`]. This module owns the I/O around it:
 //!
-//! * `approve` and `reject` take the exclusive lock on `<ledger>.lock` (`RT-APR-0212`, exit 70),
-//!   read the Rulebook, the ledger and the Source_Models, plan, and replace the ledger with one
-//!   atomic rename of the complete new file ([`commit_files`] with a single file). A refusal is
-//!   exactly one Diagnostic and no file changes. The lock file is a control file that holds no
-//!   data and is not part of the review state.
-//! * The journaled two-file commit that adopts Proposal_Store revisions is task 7.3. A review of
-//!   a revision that exists in the Rulebook changes the ledger only, so one rename is atomic.
-//! * `list` takes no lock and writes nothing. Source text comes from the Explainer
-//!   ([`rt_explain::verify_trace`]) over a trace that holds the spans of the revision.
+//! * `approve` and `reject` take the exclusive lock on `<ledger>.lock`
+//!   (`RT-APR-0212`, exit 70), read the Rulebook, the ledger and the
+//!   Source_Models, plan, and replace the ledger with one atomic rename of the
+//!   complete new file ([`commit_files`] with a single file). A refusal is
+//!   exactly one Diagnostic and no file changes. The lock file is a control
+//!   file that holds no data and is not part of the review state.
+//! * A review of a revision that exists in the Rulebook changes the ledger
+//!   only, so one rename is atomic.
+//! * `list` takes no lock and writes nothing. Source text comes from the
+//!   Explainer ([`rt_explain::verify_trace`]) over a trace that holds the spans
+//!   of the revision.
 
 use crate::args::{DecideArgs, ReviewArgs, ReviewCommand};
 use crate::io::{acquire_lock, commit_files, input_location, Fs};
@@ -82,7 +84,8 @@ fn load_rulebook(path: &Path, fs: &dyn Fs, problems: &mut DiagnosticState) -> Op
         let bytes = read_input(fs, path, MAX_RULEBOOK_BYTES).map_err(|d| vec![*d])?;
         let staged = rt_ir::parse_rulebook(&bytes, &input, MAX_RULEBOOK_BYTES, MAX_CONTAINER_DEPTH)
             .map_err(|r| r.into_diagnostics().as_slice().to_vec())?;
-        // Parser warnings are not shown by the review group: `validate` reports them.
+        // Parser warnings are not shown by the review group: `validate` reports
+        // them.
         Ok(staged.into_parts().0)
     };
     collect(step(), problems)
@@ -98,7 +101,8 @@ fn load_ledger(
         let input = input_id(path).map_err(|d| vec![*d])?;
         let bytes = match fs.read(path, MAX_LEDGER_BYTES.saturating_add(1)) {
             Ok(bytes) => bytes,
-            // `--create-ledger` starts a new ledger only when the file does not exist.
+            // `--create-ledger` starts a new ledger only when the file does not
+            // exist.
             Err(e) if e.kind() == ErrorKind::NotFound && create => {
                 return Ok(ApprovalLedger::empty())
             }
@@ -137,7 +141,8 @@ fn sibling(path: &Path, suffix: &str) -> PathBuf {
 }
 
 fn decide(args: &ReviewArgs, d: &DecideArgs, fs: &dyn Fs) -> Done {
-    // Step 1 of design §3.8.3: the exclusive lock, held until this function returns.
+    // Step 1 of design §3.8.3: the exclusive lock, held until this function
+    // returns.
     let lock_path = sibling(&args.ledger, ".lock");
     let _lock = match acquire_lock(fs, &lock_path) {
         Ok(lock) => lock,
@@ -313,8 +318,9 @@ fn describe(
     }
 }
 
-/// One line group per span of the revision. The text is what the Explainer resolved and
-/// verified against the Source_Model, or the code of the failure. No text is invented.
+/// One line group per span of the revision. The text is what the Explainer
+/// resolved and verified against the Source_Model, or the code of the failure.
+/// No text is invented.
 fn span_lines(rb: &Rulebook, rev: &RuleRevision, sources: &SourceModels) -> Vec<String> {
     let trace_spans: Vec<Option<TraceSpan>> = rev
         .content

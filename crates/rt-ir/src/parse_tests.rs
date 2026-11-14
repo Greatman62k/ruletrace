@@ -20,8 +20,8 @@ fn compact_doc(rules: &[&str]) -> String {
     )
 }
 
-/// The canonical pretty form of a compact document, made by `rt-json` and not by the printer
-/// under test.
+/// The canonical pretty form of a compact document, made by `rt-json` and not
+/// by the printer under test.
 fn pretty_of(compact: &str) -> String {
     let v = rt_json::parse(&input(), compact.as_bytes(), ParseLimits::new(1 << 24, 64)).unwrap();
     rt_json::write_pretty(&v)
@@ -331,7 +331,8 @@ fn syntax_errors_limits_and_boundaries() {
         small.diagnostics().as_slice()[0].code(),
         Code::LimitFileTooLarge
     );
-    // The deepest container of the example is at depth 7; the limit itself is accepted.
+    // The deepest container of the example is at depth 7; the limit itself is
+    // accepted.
     assert!(parse_rulebook(bytes, &input(), exact, 7).is_ok());
     let deep = parse_rulebook(bytes, &input(), exact, 6).unwrap_err();
     assert_eq!(
@@ -664,7 +665,8 @@ fn span_count_limit_is_checked_by_the_parser_and_the_printer() {
 
 #[test]
 fn revision_and_rule_count_limits() {
-    // 100,001 revisions of 10,001 rules would be large; use the fields the limits count.
+    // 100,001 revisions of 10,001 rules would be large; use the fields the
+    // limits count.
     let rule = |id: usize| {
         format!(
             r#"{{"id":"r{id}","revision":1,"origin":{{"kind":"manual","author":null}},"kind":"future","target":"t","markers":[],"spans":[]}}"#
@@ -702,8 +704,9 @@ fn the_private_writer_matches_the_rt_json_writer() {
     let text = full_document();
     let v = rt_json::parse(&input(), text.as_bytes(), ParseLimits::new(1 << 24, 64)).unwrap();
     let rb = parse(&text).unwrap();
-    // The canonical key order equals the order of the input, so the printer must reproduce the
-    // output of the independent rt-json writer byte for byte.
+    // The canonical key order equals the order of the input, so the printer
+    // must reproduce the output of the independent rt-json writer byte for
+    // byte.
     assert_eq!(print_compact(&rb).unwrap(), rt_json::write_compact(&v));
     assert_eq!(print_pretty(&rb).unwrap(), rt_json::write_pretty(&v));
 }

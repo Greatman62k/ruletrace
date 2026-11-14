@@ -1,4 +1,5 @@
-//! Ranking, precedence, execution conflicts and published comparison (task 5.10).
+//! Ranking, precedence, execution conflicts and published comparison (task
+//! 5.10).
 
 use crate::tests::*;
 use crate::*;
@@ -141,9 +142,9 @@ fn tie_breakers_apply_in_declared_order_and_only_to_participants_still_tied() {
             &[Direction::Asc, Direction::Desc],
         )],
     );
-    // p1 and p2 tie on a, and b separates them (smaller b first). p3 and p4 tie on a and b, and
-    // c is their only separator (larger c first). p5 is alone on a, so no tie-breaker of p5 is
-    // needed: it has none.
+    // p1 and p2 tie on a, and b separates them (smaller b first). p3 and p4 tie
+    // on a and b, and c is their only separator (larger c first). p5 is alone
+    // on a, so no tie-breaker of p5 is needed: it has none.
     let d = data(vec![
         (
             "p1",
@@ -188,7 +189,8 @@ fn tie_breakers_apply_in_declared_order_and_only_to_participants_still_tied() {
     );
     // p5 has no tie-breaker value and is not tied, so nothing is missing.
     assert!(trace.missing().is_empty());
-    // The comparison of p2 and p1 lists the key, which was equal, then the tie-breaker.
+    // The comparison of p2 and p1 lists the key, which was equal, then the
+    // tie-breaker.
     let c = trace
         .entries()
         .iter()
@@ -241,7 +243,6 @@ fn a_missing_ranking_key_makes_the_whole_set_indeterminate_naming_the_participan
     assert_eq!(codes(&e), vec![Code::ExeRankMissingValue]);
     let d0 = &e.diagnostics.as_slice()[0];
     assert!(d0.message().contains("'p2'"));
-    // No participant gets a position.
     assert!(trace
         .entries()
         .iter()
@@ -255,7 +256,8 @@ fn a_missing_tie_breaker_makes_only_the_tied_set_indeterminate() {
         &INPUTS,
         vec![ranking("rank.main", Direction::Desc, &[Direction::Asc])],
     );
-    // p1 and p2 tie on a and p2 lacks b. p3 is behind them and p0 ahead of them.
+    // p1 and p2 tie on a and p2 lacks b. p3 is behind them and p0 ahead of
+    // them.
     let d = scored(&[
         ("p0", Some("20"), None),
         ("p1", Some("10"), Some("1")),
@@ -272,7 +274,8 @@ fn a_missing_tie_breaker_makes_only_the_tied_set_indeterminate() {
             _ => None,
         })
         .collect();
-    // p0 is first and p3 is fourth, because its position counts both participants of the set.
+    // p0 is first and p3 is fourth, because its position counts both
+    // participants of the set.
     assert_eq!(placed, vec![(1, ids(&["p0"])), (4, ids(&["p3"]))]);
     assert_eq!(
         trace.missing(),
@@ -456,7 +459,8 @@ fn a_published_value_that_differs_by_one_unit_is_reported_with_its_trace_entry()
         ("p2", person(&[("a", text("9"))], None)),
     ]);
     let qs = [ask("total", "p1"), ask("total", "p2")];
-    // p1 computes 5 and p2 computes 10; the published 5.000... equals, and 11 differs by one unit.
+    // p1 computes 5 and p2 computes 10; the published 5.000... equals, and 11
+    // differs by one unit.
     let p = published(&[("p1", "total", pnum("5.0")), ("p2", "total", pnum("11"))]);
     let e = evaluate(&rb, &d, &qs, Some(&p));
     let c = e.comparison.unwrap();
@@ -645,7 +649,8 @@ proptest! {
                     prop_assert!(o.1 == me.1 && o.2 == me.2);
                 }
             }
-            // Groups are complete: nobody outside the group is equal to a member.
+            // Groups are complete: nobody outside the group is equal to a
+            // member.
             let me = people.iter().find(|p| p.0 == members[0]).unwrap();
             let equal = people.iter().filter(|o| o.1 == me.1 && o.2 == me.2).count();
             prop_assert_eq!(equal, members.len());

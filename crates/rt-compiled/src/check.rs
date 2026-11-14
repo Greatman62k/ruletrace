@@ -1,8 +1,8 @@
 //! The structural invariants of a Compiled_Rulebook.
 //!
-//! The Compiler builds a rulebook that satisfies these by construction, and the parser of the
-//! artifact runs the same checks, so an engine never meets a dangling index, a cyclic arena or
-//! an ill-typed node.
+//! The Compiler builds a rulebook that satisfies these by construction, and the
+//! parser of the artifact runs the same checks, so an engine never meets a
+//! dangling index, a cyclic arena or an ill-typed node.
 
 use crate::model::{
     CType, CompiledBody, CompiledLiteral, CompiledNode, CompiledParts, CompiledPrecedence,
@@ -24,7 +24,8 @@ pub enum CompiledErrorKind {
     BadIndex,
     /// A type does not match what the node, field or declaration requires.
     TypeMismatch,
-    /// A Source_Span is empty, reversed, has a zero line or column, or is missing.
+    /// A Source_Span is empty, reversed, has a zero line or column, or is
+    /// missing.
     BadSpan,
     /// A span or document entry does not agree with the document table.
     DocumentMismatch,
@@ -32,7 +33,8 @@ pub enum CompiledErrorKind {
     BadOrder,
     /// A node has the wrong number of operands.
     BadArity,
-    /// A Precedence_Declaration lists a rule of another Target or repeats a rule.
+    /// A Precedence_Declaration lists a rule of another Target or repeats a
+    /// rule.
     BadPrecedence,
 }
 
@@ -273,7 +275,8 @@ fn rule(p: &CompiledParts, n_targets: usize, i: usize, r: &CompiledRule) -> Chec
     body(p, r, &base)
 }
 
-/// A child must be an earlier node. This makes the arena acyclic by construction.
+/// A child must be an earlier node. This makes the arena acyclic by
+/// construction.
 fn child(r: &CompiledRule, own: NodeIdx, c: NodeIdx, at: &str) -> Result<CType, CompiledError> {
     let earlier = c < own;
     match (earlier, node_ty(&r.nodes, c)) {

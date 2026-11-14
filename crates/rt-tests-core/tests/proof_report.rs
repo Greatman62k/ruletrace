@@ -1,11 +1,13 @@
-//! Property 52: The Proof_Report is complete, ordered and replayable (task 6.8).
+//! Property 52: The Proof_Report is complete, ordered and replayable.
 //!
-//! Feature: ruletrace-compiler, Property 52: The Proof_Report is complete, ordered and replayable
+//! Feature: ruletrace-compiler, Property 52: The Proof_Report is complete,
+//! ordered and replayable
 //!
 //! **Validates: Requirements 33.14, 13.11**
 //!
-//! Traces are generated from integers; the expected texts are computed by this file, not by the
-//! report builder. Removing a calculation step or changing its result must fail the replay.
+//! Traces are generated from integers; the expected texts are computed by this
+//! file, not by the report builder. Removing a calculation step or changing its
+//! result must fail the replay.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -64,7 +66,8 @@ fn rule_id(k: usize) -> RuleId {
     RuleId::new(format!("score.r{k}")).unwrap()
 }
 
-/// `a + b`; `step_result` is what the recorded step claims, `with_step` drops the step entirely.
+/// `a + b`; `step_result` is what the recorded step claims, `with_step` drops
+/// the step entirely.
 fn trace(
     k: usize,
     rev: u32,

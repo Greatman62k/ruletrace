@@ -1,13 +1,16 @@
-//! Property 11: the compiled rule set equals the Effective set and compilation is atomic.
+//! Property 11: the compiled rule set equals the Effective set and compilation
+//! is atomic.
 //!
-//! **Validates: Requirements 5.2, 9.1, 9.2, 9.10, 9.11, 9.12, 25.17, 25.18, 7.6, 7.7**
+//! **Validates: Requirements 5.2, 9.1, 9.2, 9.10, 9.11, 9.12, 25.17, 25.18,
+//! 7.6, 7.7**
 //!
-//! A Rulebook of derived rules with several revisions each is generated, with a plan per
-//! revision (no record, approval, rejection). The ledger is written with an independent hash
-//! chain. An oracle derives the Effective set and the unresolved set from the plan alone:
-//! an unresolved revision gives `RT-APR-0001` and no value, no Effective revision gives
-//! `RT-APR-0002` and no value, otherwise the compiled rules are exactly the Effective
-//! revisions, independent of Origin and of the order of the revision list.
+//! A Rulebook of derived rules with several revisions each is generated, with a
+//! plan per revision (no record, approval, rejection). The ledger is written
+//! with an independent hash chain. An oracle derives the Effective set and the
+//! unresolved set from the plan alone: an unresolved revision gives
+//! `RT-APR-0001` and no value, no Effective revision gives `RT-APR-0002` and no
+//! value, otherwise the compiled rules are exactly the Effective revisions,
+//! independent of Origin and of the order of the revision list.
 
 #![allow(clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
 
@@ -128,8 +131,9 @@ fn sources() -> SourceModels {
     s
 }
 
-/// The oracle. Returns the Effective set (highest approved revision of each rule) and whether
-/// any revision is unresolved (Proposed with no higher approved or rejected revision).
+/// The oracle. Returns the Effective set (highest approved revision of each
+/// rule) and whether any revision is unresolved (Proposed with no higher
+/// approved or rejected revision).
 fn oracle(plan: &[Vec<Decision>]) -> (BTreeSet<(String, u32)>, bool) {
     let mut effective = BTreeSet::new();
     let mut unresolved = false;
@@ -151,7 +155,8 @@ fn oracle(plan: &[Vec<Decision>]) -> (BTreeSet<(String, u32)>, bool) {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(128))]
 
-    /// **Validates: Requirements 5.2, 9.1, 9.2, 9.10, 9.11, 9.12, 25.17, 25.18, 7.6, 7.7**
+    /// **Validates: Requirements 5.2, 9.1, 9.2, 9.10, 9.11, 9.12, 25.17, 25.18,
+    /// 7.6, 7.7**
     #[test]
     fn compiled_set_equals_the_effective_set(p in plan(), author in "[a-z]{1,8}") {
         let book = rulebook(&p, None);
@@ -163,7 +168,8 @@ proptest! {
             let rejected = outcome.expect_err("an unresolved revision blocks compilation");
             let codes: Vec<Code> = rejected.diagnostics().as_slice().iter().map(|d| d.code()).collect();
             prop_assert!(codes.contains(&Code::ApprovalUnresolved));
-            // The blocking Diagnostics are those of the validation, unchanged and in order.
+            // The blocking Diagnostics are those of the validation, unchanged
+            // and in order.
             let blocking: Vec<_> = result.state().as_slice().iter().filter(|d| d.severity().is_blocking()).collect();
             let got: Vec<_> = rejected.diagnostics().as_slice().iter().collect();
             prop_assert_eq!(got, blocking);
@@ -182,7 +188,8 @@ proptest! {
             prop_assert_eq!(compiled.order().len(), effective.len());
             prop_assert_eq!(got, effective);
 
-            // Origin and the order of the revision list do not change the compiled output.
+            // Origin and the order of the revision list do not change the
+            // compiled output.
             let mut changed = book.clone();
             for rev in &mut changed.revisions {
                 rev.origin = Origin::Manual { author: Some(Identity::new(author.clone()).expect("identity")) };

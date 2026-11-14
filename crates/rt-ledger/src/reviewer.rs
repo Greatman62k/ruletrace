@@ -4,9 +4,10 @@ use rt_foundation::{CliLocation, Code, Diagnostic, Location};
 use rt_ir::{Identity, Origin};
 use std::collections::BTreeSet;
 
-/// The AI identities of a target revision: proposer, provider, model and every recorded AI
-/// identity. Compared with a Reviewer by exact equality of Unicode scalar values, with no
-/// normalization, case folding or trimming (UD-23). Names are not authenticated (R-8).
+/// The AI identities of a target revision: proposer, provider, model and every
+/// recorded AI identity. Compared with a Reviewer by exact equality of Unicode
+/// scalar values, with no normalization, case folding or trimming (UD-23).
+/// Names are not authenticated (R-8).
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct AiIdentitySet(BTreeSet<String>);
 
@@ -37,7 +38,8 @@ impl AiIdentitySet {
         }
     }
 
-    /// Adds the identities of `other` (for example those of a Proposal_Store batch).
+    /// Adds the identities of `other` (for example those of a Proposal_Store
+    /// batch).
     #[must_use]
     pub fn union(mut self, other: &Self) -> Self {
         self.0.extend(other.0.iter().cloned());
@@ -51,8 +53,8 @@ impl AiIdentitySet {
     }
 }
 
-/// A human Reviewer: 1 to 200 Unicode scalar values. The type has no AI variant and its only
-/// constructor is [`Reviewer::new`].
+/// A human Reviewer: 1 to 200 Unicode scalar values. The type has no AI variant
+/// and its only constructor is [`Reviewer::new`].
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Reviewer(Identity);
 
@@ -67,7 +69,8 @@ impl Reviewer {
     /// Validates the Reviewer name.
     ///
     /// # Errors
-    /// `REVIEW_REVIEWER_INVALID` (`RT-APR-0202`) for empty text or more than 200 scalar values.
+    /// `REVIEW_REVIEWER_INVALID` (`RT-APR-0202`) for empty text or more than
+    /// 200 scalar values.
     #[allow(clippy::result_large_err)] // The design §3.4.4 signature returns a Diagnostic.
     pub fn new(raw: &str) -> Result<Self, Diagnostic> {
         Identity::new(raw).map(Self).map_err(|e| {

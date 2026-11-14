@@ -7,8 +7,8 @@ use rt_srcmodel::{CandidateClause, Element, ElementKind, SourceModel};
 /// How clauses are chosen.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ExtractionMode {
-    /// One clause per list item, and per heading, paragraph or table row that starts with a
-    /// numbering label.
+    /// One clause per list item, and per heading, paragraph or table row that
+    /// starts with a numbering label.
     FirstVersion,
 }
 
@@ -30,15 +30,17 @@ impl ExtractionMode {
 
 /// Extracts the Candidate_Clauses of a Source_Model, in ascending start order.
 ///
-/// The clause text is the exact span bytes. The Extractor creates no Rule, assigns no approval
-/// state and does not interpret the text (Req 2.2, 2.4).
+/// The clause text is the exact span bytes. The Extractor creates no Rule,
+/// assigns no approval state and does not interpret the text (Req 2.2, 2.4).
 ///
 /// # Errors
-/// `RT-ING-0004` when an element does not give a valid clause span. A `SourceModel` is checked
-/// when it is built, so this indicates a defect and gives no clauses (Req 2.7).
+/// `RT-ING-0004` when an element does not give a valid clause span. A
+/// `SourceModel` is checked when it is built, so this indicates a defect and
+/// gives no clauses (Req 2.7).
 ///
 /// # Warnings
-/// `RT-ING-0005` with the Document_Location of the whole document when no clause is found.
+/// `RT-ING-0005` with the Document_Location of the whole document when no
+/// clause is found.
 pub fn extract(model: &SourceModel, mode: ExtractionMode) -> StageResult<Vec<CandidateClause>> {
     let ExtractionMode::FirstVersion = mode;
     let mut state = DiagnosticState::empty();
@@ -76,9 +78,10 @@ pub fn extract(model: &SourceModel, mode: ExtractionMode) -> StageResult<Vec<Can
     stage_result(clauses, state)
 }
 
-/// `None` when the element is not a clause, otherwise `Some(label)` with the label when it has
-/// one. List items are always clauses. A list item takes a label at the start of its text (such
-/// as `1.`), otherwise the label after its marker.
+/// `None` when the element is not a clause, otherwise `Some(label)` with the
+/// label when it has one. List items are always clauses. A list item takes a
+/// label at the start of its text (such as `1.`), otherwise the label after its
+/// marker.
 fn candidate_label(model: &SourceModel, element: &Element) -> Option<Option<String>> {
     let text = model
         .content()
@@ -99,8 +102,9 @@ fn candidate_label(model: &SourceModel, element: &Element) -> Option<Option<Stri
     }
 }
 
-/// The text of the first cell of a pipe table row, from its first non-blank byte. The cell ends
-/// at the next `|`, so a label must be followed by whitespace inside the cell (as in `| 1. |`).
+/// The text of the first cell of a pipe table row, from its first non-blank
+/// byte. The cell ends at the next `|`, so a label must be followed by
+/// whitespace inside the cell (as in `| 1. |`).
 fn first_cell(row: &str) -> &str {
     let row = row.trim_start_matches([' ', '\t']);
     let row = row.strip_prefix('|').unwrap_or(row);

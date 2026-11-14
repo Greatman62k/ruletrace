@@ -1,8 +1,8 @@
-//! Diagnostic catalogue: reads `catalogue/diagnostics.v1.json`, validates it and renders the
-//! generated `Code` enum of `rt-foundation`.
+//! Diagnostic catalogue: reads `catalogue/diagnostics.v1.json`, validates it
+//! and renders the generated `Code` enum of `rt-foundation`.
 //!
-//! The reader accepts only the catalogue shape (an array of flat objects whose values are strings
-//! or non-negative integers). It is replaced by `rt-json` once that parser exists (task 2.7).
+//! The reader accepts only the catalogue shape (an array of flat objects whose
+//! values are strings or non-negative integers).
 
 use std::fmt::Write as _;
 use std::path::Path;
@@ -111,7 +111,8 @@ impl Reader {
 /// Parses the catalogue text.
 ///
 /// # Errors
-/// Returns a message for malformed text, a missing, unknown or repeated key, or a wrong value type.
+/// Returns a message for malformed text, a missing, unknown or repeated key, or
+/// a wrong value type.
 pub fn parse(text: &str) -> Result<Vec<Row>, String> {
     let mut r = Reader {
         chars: text.chars().collect(),
@@ -212,8 +213,9 @@ pub fn variant_name(mnemonic: &str) -> String {
         .collect()
 }
 
-/// Checks the rows: identifier shape, unique identifiers, mnemonics and variant names, known
-/// severity and exit status, non-empty text, and a Warning only with exit 0 (Req 7.19).
+/// Checks the rows: identifier shape, unique identifiers, mnemonics and variant
+/// names, known severity and exit status, non-empty text, and a Warning only
+/// with exit 0 (Req 7.19).
 ///
 /// # Errors
 /// Returns the first problem found, naming the code.
@@ -280,7 +282,8 @@ fn exit_variant(exit: u32) -> &'static str {
         .map_or("Internal", |(_, name)| name)
 }
 
-/// Renders the generated source file. The output is formatted as `rustfmt` would format it.
+/// Renders the generated source file. The output is formatted as `rustfmt`
+/// would format it.
 ///
 /// # Errors
 /// Returns the problem found by [`validate`].
@@ -370,7 +373,8 @@ pub fn render(rows: &[Row]) -> Result<String, String> {
 /// Reads the catalogue under `root` and writes the generated file.
 ///
 /// # Errors
-/// Returns a message when a file cannot be read or written or the catalogue is invalid.
+/// Returns a message when a file cannot be read or written or the catalogue is
+/// invalid.
 pub fn generate(root: &Path) -> Result<(), String> {
     let src = root.join(CATALOGUE_PATH);
     let text = std::fs::read_to_string(&src).map_err(|e| format!("{}: {e}", src.display()))?;
@@ -380,12 +384,14 @@ pub fn generate(root: &Path) -> Result<(), String> {
     std::fs::write(&dst, out).map_err(|e| format!("{}: {e}", dst.display()))
 }
 
-/// Baseline file, relative to the repository root (written by the first release, task 12.12).
+/// Baseline file, relative to the repository root (written by the first
+/// release).
 pub const BASELINE_PATH: &str = "catalogue/baseline.v1.json";
 
-/// Compares the current rows with the baseline rows (Req 7.11). Every baseline code must exist
-/// in the current catalogue with the same severity and a byte-identical meaning. A baseline code
-/// whose mnemonic now sits under another identifier is reported as renumbered.
+/// Compares the current rows with the baseline rows (Req 7.11). Every baseline
+/// code must exist in the current catalogue with the same severity and a
+/// byte-identical meaning. A baseline code whose mnemonic now sits under
+/// another identifier is reported as renumbered.
 #[must_use]
 pub fn compare_baseline(baseline: &[Row], current: &[Row]) -> Vec<String> {
     let mut out = Vec::new();
@@ -414,10 +420,11 @@ pub fn compare_baseline(baseline: &[Row], current: &[Row]) -> Vec<String> {
     out
 }
 
-/// Pure part of `check-catalogue`. `enum_ids` are the identifiers of every `Code` variant in
-/// declaration order, `generated` is the text of the checked-in generated file, `baseline` is the
-/// baseline file text when it exists, and `release_tags` is the output of `git tag --list`.
-/// Returns a one-line report.
+/// Pure part of `check-catalogue`. `enum_ids` are the identifiers of every
+/// `Code` variant in declaration order, `generated` is the text of the
+/// checked-in generated file, `baseline` is the baseline file text when it
+/// exists, and `release_tags` is the output of `git tag --list`. Returns a
+/// one-line report.
 ///
 /// # Errors
 /// One line per finding.
@@ -470,8 +477,9 @@ pub fn check_texts(
     }
 }
 
-/// `check-catalogue` on the repository at `root`. `release_tags` is the output of
-/// `git tag --list`, passed by the caller so that no core code runs a process.
+/// `check-catalogue` on the repository at `root`. `release_tags` is the output
+/// of `git tag --list`, passed by the caller so that no core code runs a
+/// process.
 ///
 /// # Errors
 /// One line per finding, or the file that could not be read.

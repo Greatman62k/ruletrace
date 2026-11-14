@@ -1,9 +1,10 @@
-//! Comparison of the computed Outcomes with a Published_Result (Req 13.12, 13.20, 8.26).
+//! Comparison of the computed Outcomes with a Published_Result (Req 13.12,
+//! 13.20, 8.26).
 //!
-//! Equality is exact: numbers are equal when `rt_numeric::cmp` says so, Booleans when they are
-//! the same Boolean. There is no tolerance and nothing is rounded. Differences are listed in
-//! participant then Target order. The two extra difference kinds for published ties belong to
-//! task 9.2.
+//! Equality is exact: numbers are equal when `rt_numeric::cmp` says so,
+//! Booleans when they are the same Boolean. There is no tolerance and nothing
+//! is rounded. Differences are listed in participant then Target order. The two
+//! extra difference kinds for published ties belong to task 9.2.
 
 use rt_data::{
     CompetitionData, ParticipantId, PublishedResult, PublishedValue, Question, TargetName,
@@ -35,20 +36,24 @@ pub struct Difference {
     pub computed: Computed,
     /// Index of the Question (and of its Outcome) that gave the computed value.
     pub question: usize,
-    /// Sequence number, in the Decision_Trace of that Question, of the entry that produced the
-    /// computed value: the final decision of a value Question, the position entry of a rank
-    /// Question. `None` when the Question has no trace.
+    /// Sequence number, in the Decision_Trace of that Question, of the entry
+    /// that produced the computed value: the final decision of a value
+    /// Question, the position entry of a rank Question. `None` when the
+    /// Question has no trace.
     pub entry: Option<u32>,
-    /// Whether the computed number has a non-terminating decimal expansion (Req 8.26).
+    /// Whether the computed number has a non-terminating decimal expansion (Req
+    /// 8.26).
     pub non_terminating: bool,
-    /// The statement of the difference, with the non-terminating note where it applies.
+    /// The statement of the difference, with the non-terminating note where it
+    /// applies.
     pub message: String,
 }
 
 /// The result of comparing with a Published_Result.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Comparison {
-    /// The published entries that a Question answers, in participant then Target order.
+    /// The published entries that a Question answers, in participant then
+    /// Target order.
     pub compared: Vec<(ParticipantId, TargetName)>,
     /// The published entries that no Question answers. They are not compared.
     pub unused: Vec<(ParticipantId, TargetName)>,
@@ -57,8 +62,8 @@ pub struct Comparison {
 }
 
 impl Comparison {
-    /// Whether every compared published value equals the computed one. Derived from the
-    /// differences only.
+    /// Whether every compared published value equals the computed one. Derived
+    /// from the differences only.
     #[must_use]
     pub fn is_equal(&self) -> bool {
         self.differences.is_empty()
@@ -75,16 +80,18 @@ fn seq_of(index: usize) -> Option<u32> {
     u32::try_from(index.saturating_add(1)).ok()
 }
 
-/// Whether the canonical text of `n` is a fraction whose reduced denominator has a prime factor
-/// other than 2 and 5, so that its decimal expansion does not terminate.
+/// Whether the canonical text of `n` is a fraction whose reduced denominator
+/// has a prime factor other than 2 and 5, so that its decimal expansion does
+/// not terminate.
 fn non_terminating(n: &ExactNumber) -> bool {
     let text = to_canonical(n);
     let Some((_, denominator)) = text.split_once('/') else {
         return false;
     };
     let Ok(mut d) = denominator.parse::<u128>() else {
-        // A denominator beyond u128 is not terminating unless it is a power of 2 and 5, which
-        // the Exact_Number bounds do not allow; state the fraction as non-terminating.
+        // A denominator beyond u128 is not terminating unless it is a power of
+        // 2 and 5, which the Exact_Number bounds do not allow; state the
+        // fraction as non-terminating.
         return true;
     };
     for p in [2_u128, 5] {
@@ -121,8 +128,9 @@ fn equal(published: &PublishedValue, computed: &Computed) -> bool {
     }
 }
 
-/// What each Question computed, by (participant, Target). The first Question that answers a
-/// pair wins, so a repeated Question cannot change the comparison.
+/// What each Question computed, by (participant, Target). The first Question
+/// that answers a pair wins, so a repeated Question cannot change the
+/// comparison.
 fn computed_values(
     data: &CompetitionData,
     questions: &[Question],

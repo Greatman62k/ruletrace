@@ -1,7 +1,9 @@
-//! RT-JSON: the strict JSON subset of design §4.1.1, with a positioned parser, canonical
-//! compact and pretty writers, and the shared flag-key check for decoders.
+//! RT-JSON: the strict JSON subset of design §4.1.1, with a positioned parser,
+//! canonical compact and pretty writers, and the shared flag-key check for
+//! decoders.
 //!
-//! The crate does no file access. Callers pass bytes and an [`InputId`](rt_foundation::InputId).
+//! The crate does no file access. Callers pass bytes and an
+//! [`InputId`](rt_foundation::InputId).
 #![forbid(unsafe_code)]
 
 mod flags;

@@ -17,7 +17,8 @@ impl fmt::Display for DuplicateDocument {
 
 impl std::error::Error for DuplicateDocument {}
 
-/// Loaded Source_Models by document identifier, iterated in ascending identifier order.
+/// Loaded Source_Models by document identifier, iterated in ascending
+/// identifier order.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SourceModels {
     models: BTreeMap<DocumentId, SourceModel>,
@@ -33,8 +34,8 @@ impl SourceModels {
     /// Adds a model.
     ///
     /// # Errors
-    /// [`DuplicateDocument`] when a model for the same document is already present. The set is
-    /// unchanged.
+    /// [`DuplicateDocument`] when a model for the same document is already
+    /// present. The set is unchanged.
     pub fn insert(&mut self, model: SourceModel) -> Result<(), DuplicateDocument> {
         let id = model.document().clone();
         if self.models.contains_key(&id) {

@@ -1,11 +1,12 @@
 //! The Rulebook content hash (design §3.6.2, Req 9.5).
 //!
-//! The hash is the SHA-256 of the canonical compact Rule_IR of a normalized copy of the
-//! Rulebook. The copy keeps the IR_Version, the type declarations, the Effective revisions, the
-//! Precedence_Declarations and the referenced documents. It drops every other revision, gives
-//! each revision the same Origin, and gives the Rulebook a fixed name and version. The `line`
-//! and `column` of a span are replaced by 1 because they are not part of the Rule_Content. The
-//! ledger is never read, so the hash cannot depend on it.
+//! The hash is the SHA-256 of the canonical compact Rule_IR of a normalized
+//! copy of the Rulebook. The copy keeps the IR_Version, the type declarations,
+//! the Effective revisions, the Precedence_Declarations and the referenced
+//! documents. It drops every other revision, gives each revision the same
+//! Origin, and gives the Rulebook a fixed name and version. The `line` and
+//! `column` of a span are replaced by 1 because they are not part of the
+//! Rule_Content. The ledger is never read, so the hash cannot depend on it.
 
 use crate::lower::{err, Lowered};
 use rt_foundation::{DocumentId, RuleId};

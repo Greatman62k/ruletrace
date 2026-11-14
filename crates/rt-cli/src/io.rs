@@ -1,8 +1,9 @@
 //! File access of the `ruletrace` executable (design §3.9, §6.2.4).
 //!
-//! Every file the CLI touches goes through the [`Fs`] trait, so that tests can fail each step.
-//! [`commit_files`] is the only way a command output is written: temp file, sync, rename, with the
-//! earlier content restored when a later rename fails (Req 17.13).
+//! Every file the CLI touches goes through the [`Fs`] trait, so that tests can
+//! fail each step. [`commit_files`] is the only way a command output is
+//! written: temp file, sync, rename, with the earlier content restored when a
+//! later rename fails (Req 17.13).
 
 use rt_foundation::{Code, Diagnostic, InputId, InputLocation, Location};
 use std::ffi::OsString;
@@ -11,18 +12,20 @@ use std::path::{Path, PathBuf};
 
 /// The file operations the CLI needs.
 pub trait Fs {
-    /// Reads at most `max_bytes` bytes of the file. A longer file is cut at `max_bytes`, which
-    /// lets the caller detect "larger than the limit" by asking for the limit plus one.
+    /// Reads at most `max_bytes` bytes of the file. A longer file is cut at
+    /// `max_bytes`, which lets the caller detect "larger than the limit" by
+    /// asking for the limit plus one.
     ///
     /// # Errors
     /// Any I/O error, including a missing file or a directory.
     fn read(&self, path: &Path, max_bytes: u64) -> io::Result<Vec<u8>>;
 
-    /// Creates the file, which must not exist, writes all bytes and syncs it to storage.
+    /// Creates the file, which must not exist, writes all bytes and syncs it to
+    /// storage.
     ///
     /// # Errors
-    /// `AlreadyExists` when the file exists, or any other I/O error. A failed write may leave a
-    /// partial file, which the caller removes.
+    /// `AlreadyExists` when the file exists, or any other I/O error. A failed
+    /// write may leave a partial file, which the caller removes.
     fn create_new(&self, path: &Path, bytes: &[u8]) -> io::Result<()>;
 
     /// Renames `from` to `to`, replacing `to` when it exists.
@@ -37,9 +40,10 @@ pub trait Fs {
     /// Any I/O error.
     fn remove(&self, path: &Path) -> io::Result<()>;
 
-    /// Takes an exclusive advisory lock on `path`, creating the file when needed. `Ok(None)`
-    /// means that this file system has no such lock, and the caller uses the lock-file
-    /// fallback of [`acquire_lock`]. The lock is released when the returned value is dropped.
+    /// Takes an exclusive advisory lock on `path`, creating the file when
+    /// needed. `Ok(None)` means that this file system has no such lock, and the
+    /// caller uses the lock-file fallback of [`acquire_lock`]. The lock is
+    /// released when the returned value is dropped.
     ///
     /// # Errors
     /// `WouldBlock` when another holder has the lock, or any other I/O error.
@@ -65,12 +69,13 @@ impl Drop for Lock<'_> {
     }
 }
 
-/// Takes the exclusive lock on `path` (Req 26.19, design §3.8.3 step 1): `File::try_lock` where
-/// the file system has it, otherwise a lock file created with `create_new` that is removed on
-/// release. The lock is never waited for.
+/// Takes the exclusive lock on `path` (Req 26.19, design §3.8.3 step 1):
+/// `File::try_lock` where the file system has it, otherwise a lock file created
+/// with `create_new` that is removed on release. The lock is never waited for.
 ///
 /// # Errors
-/// Any I/O error. `AlreadyExists` (fallback) and `WouldBlock` (native) mean another holder.
+/// Any I/O error. `AlreadyExists` (fallback) and `WouldBlock` (native) mean
+/// another holder.
 pub fn acquire_lock<'a>(fs: &'a dyn Fs, path: &Path) -> io::Result<Lock<'a>> {
     match fs.try_lock(path)? {
         Some(held) => Ok(Lock {
@@ -133,8 +138,8 @@ impl Fs for StdFs {
             Ok(()) => Ok(Some(Box::new(HeldFile { _file: file }))),
             Err(std::fs::TryLockError::WouldBlock) => Err(io::ErrorKind::WouldBlock.into()),
             Err(std::fs::TryLockError::Error(e)) if e.kind() == io::ErrorKind::Unsupported => {
-                // No advisory locks here: the caller falls back to a lock file, which needs a
-                // name that does not exist yet.
+                // No advisory locks here: the caller falls back to a lock file,
+                // which needs a name that does not exist yet.
                 drop(file);
                 let _ = std::fs::remove_file(path);
                 Ok(None)
@@ -144,8 +149,8 @@ impl Fs for StdFs {
     }
 }
 
-/// How many temp names are tried before giving up. A stray temp file of a crashed run is never
-/// read and never removed here, so the next name is tried.
+/// How many temp names are tried before giving up. A stray temp file of a
+/// crashed run is never read and never removed here, so the next name is tried.
 const TEMP_ATTEMPTS: u32 = 16;
 
 fn temp_path(path: &Path, attempt: u32) -> PathBuf {
@@ -169,8 +174,9 @@ fn write_failure(path: &Path, what: &str, error: &io::Error) -> Box<Diagnostic> 
     ))
 }
 
-/// The Input_Location of a file path. Control characters in the path are escaped so that the
-/// identifier is valid. An empty path (refused by the argument parser) has no location.
+/// The Input_Location of a file path. Control characters in the path are
+/// escaped so that the identifier is valid. An empty path (refused by the
+/// argument parser) has no location.
 #[must_use]
 pub fn input_location(path: &Path) -> Location {
     let text = rt_foundation::escape_controls(&path.display().to_string());
@@ -202,10 +208,10 @@ fn create_temp(fs: &dyn Fs, path: &Path, bytes: &[u8]) -> Result<PathBuf, Box<Di
     Err(write_failure(path, "no free temporary file name", &error))
 }
 
-/// Writes every `(path, bytes)` pair: all temp files first, then the renames. When any step
-/// fails, every temp file is removed and every target that was already replaced is restored, so
-/// no target changes (Req 17.13). Restoration is best effort and cannot itself fail the command
-/// further.
+/// Writes every `(path, bytes)` pair: all temp files first, then the renames.
+/// When any step fails, every temp file is removed and every target that was
+/// already replaced is restored, so no target changes (Req 17.13). Restoration
+/// is best effort and cannot itself fail the command further.
 ///
 /// # Errors
 /// `RT-CLI-0005` (exit 70) for the first failing step.
@@ -247,7 +253,8 @@ pub fn commit_files(fs: &dyn Fs, files: &[(&Path, &[u8])]) -> Result<(), Box<Dia
     Ok(())
 }
 
-/// Puts back the first `count` targets: their earlier bytes, or no file when none existed.
+/// Puts back the first `count` targets: their earlier bytes, or no file when
+/// none existed.
 fn restore(fs: &dyn Fs, files: &[(&Path, &[u8])], previous: &[Option<Vec<u8>>], count: usize) {
     for ((path, _), old) in files.iter().zip(previous).take(count) {
         match old {

@@ -1,11 +1,13 @@
 //! Ranking questions (Req 12, design §3.6.3 "Ranking").
 //!
-//! One [`Run`] per participant evaluates the criteria of the ranking rule. A criterion is
-//! evaluated for a participant only when the participant is still tied with another one after
-//! the preceding criteria (Req 12.1), and the result is cached for the comparisons recorded
-//! afterwards. Participants are handled by their position in the ascending identifier order, so
-//! nothing depends on input order. Ties are never broken by identifier: equal participants stay
-//! together and their identifiers are listed in ascending order for serialization only.
+//! One [`Run`] per participant evaluates the criteria of the ranking rule. A
+//! criterion is evaluated for a participant only when the participant is still
+//! tied with another one after the preceding criteria (Req 12.1), and the
+//! result is cached for the comparisons recorded afterwards. Participants are
+//! handled by their position in the ascending identifier order, so nothing
+//! depends on input order. Ties are never broken by identifier: equal
+//! participants stay together and their identifiers are listed in ascending
+//! order for serialization only.
 
 use crate::index::Index;
 use crate::support::{conflict, rule_location, rule_ref, trace_spans};
@@ -36,11 +38,13 @@ struct Lack {
     faults: Vec<Diagnostic>,
 }
 
-/// A set of participants (positions in the ascending identifier order) in the final order.
+/// A set of participants (positions in the ascending identifier order) in the
+/// final order.
 enum Block {
     /// Still tied after the criteria applied so far.
     Active(Vec<usize>),
-    /// Equal on every criterion: one position, a Tie_Group when it has several members.
+    /// Equal on every criterion: one position, a Tie_Group when it has several
+    /// members.
     Final(Vec<usize>),
     /// Cannot be placed because a value that a comparison needs is missing.
     Indeterminate(Vec<usize>),
@@ -81,7 +85,8 @@ fn rank_direction(direction: Direction) -> RankDirection {
 }
 
 impl<'a> Ranker<'a> {
-    /// The cached value of criterion `c` for participant `p`, evaluating it on first use.
+    /// The cached value of criterion `c` for participant `p`, evaluating it on
+    /// first use.
     fn slot(&mut self, c: usize, p: usize) -> Option<&Slot> {
         if !self.slots.contains_key(&(c, p)) {
             let node = self.criteria.get(c)?.0;
@@ -136,7 +141,8 @@ impl<'a> Ranker<'a> {
         self.criteria.get(c).map_or(Direction::Asc, |k| k.1)
     }
 
-    /// Evaluates criterion `c` for all of `members`; returns those that lack a value.
+    /// Evaluates criterion `c` for all of `members`; returns those that lack a
+    /// value.
     fn lacking(&mut self, c: usize, members: &[usize]) -> Vec<usize> {
         let mut out = Vec::new();
         for p in members {
@@ -147,8 +153,9 @@ impl<'a> Ranker<'a> {
         out
     }
 
-    /// Splits `members`, all with a value for criterion `c`, into groups equal on `c`, ahead
-    /// first. Within a group the members stay in ascending order and carry no ranking meaning.
+    /// Splits `members`, all with a value for criterion `c`, into groups equal
+    /// on `c`, ahead first. Within a group the members stay in ascending order
+    /// and carry no ranking meaning.
     fn split(&self, c: usize, members: &[usize]) -> Vec<Vec<usize>> {
         let direction = self.direction(c);
         let mut sorted: Vec<usize> = members.to_vec();
@@ -170,7 +177,8 @@ impl<'a> Ranker<'a> {
         groups
     }
 
-    /// The blocks in final order, and the participants that lack a needed value, by criterion.
+    /// The blocks in final order, and the participants that lack a needed
+    /// value, by criterion.
     fn order(&mut self) -> (Vec<Block>, Vec<(usize, usize)>) {
         let everyone: Vec<usize> = (0..self.pids.len()).collect();
         let mut missing: Vec<(usize, usize)> = Vec::new();
@@ -258,7 +266,8 @@ impl<'a> Ranker<'a> {
         }
     }
 
-    /// The diagnostics for the participants that lack a value, in the order of discovery.
+    /// The diagnostics for the participants that lack a value, in the order of
+    /// discovery.
     fn diagnostics(&self, missing: &[(usize, usize)], target: &str) -> Vec<Diagnostic> {
         let mut out = Vec::new();
         for (c, p) in missing {
@@ -332,8 +341,8 @@ impl<'a> Ranker<'a> {
     }
 }
 
-/// Appends the entries of one participant's run, moving the references of its decisions behind
-/// the entries already present.
+/// Appends the entries of one participant's run, moving the references of its
+/// decisions behind the entries already present.
 fn merge(out: &mut Vec<Entry>, entries: Vec<Entry>) {
     let offset = u32::try_from(out.len()).unwrap_or(u32::MAX);
     for entry in entries {
@@ -446,8 +455,8 @@ pub(crate) fn answer(
     };
     let (blocks, missing) = ranker.order();
 
-    // Positions: 1 plus the number of participants strictly ahead, which for a block is the
-    // number of participants in the blocks before it (Req 12.9).
+    // Positions: 1 plus the number of participants strictly ahead, which for a
+    // block is the number of participants in the blocks before it (Req 12.9).
     let mut places: Vec<Place> = Vec::new();
     let mut entries_after: Vec<Entry> = Vec::new();
     let mut ahead_count: usize = 0;

@@ -131,7 +131,8 @@ fn runbook_fails_on_an_unmarked_command_line() {
         let e = parse_runbook(&md).unwrap_err().to_string();
         assert!(e.contains("unmarked command"), "{line}: {e}");
     }
-    // A longer name is not a RuleTrace command, and prose outside fences is ignored.
+    // A longer name is not a RuleTrace command, and prose outside fences is
+    // ignored.
     let md = runbook_md("\nruletrace validate\n```sh\nruletrace-extra x\n```\n");
     assert!(parse_runbook(&md).is_ok());
 }
@@ -213,7 +214,8 @@ fn runbook_runs_with_cleared_environment_and_compares_goldens() {
     let root = temp("run");
     let bin = root.join("bin");
     std::fs::create_dir_all(&bin).unwrap();
-    // Stub of the logical executable: prints its argument count and the environment size.
+    // Stub of the logical executable: prints its argument count and the
+    // environment size.
     let script = "#!/bin/sh\nmkdir -p work\nprintf 'out' > work/o.json\n\
                   echo \"args=$# env=$(env | wc -l)\"\nexit 0\n";
     let exe = binary_path(&bin, "ruletrace");
@@ -223,8 +225,8 @@ fn runbook_runs_with_cleared_environment_and_compares_goldens() {
     std::fs::create_dir_all(&demo).unwrap();
     let rb = parse_runbook(&runbook_md("")).unwrap();
     let work = root.join("work-copy");
-    // First bless the goldens, then compare.
-    // `env` itself may add `PWD`/`_`, so the golden is blessed from the same run mechanism.
+    // First bless the goldens, then compare. `env` itself may add `PWD`/`_`, so
+    // the golden is blessed from the same run mechanism.
     run_runbook(&rb, "hand", &demo, &work, &bin, Mode::Bless).unwrap();
     let out = std::fs::read_to_string(demo.join("golden/steps/s01.stdout")).unwrap();
     assert!(out.starts_with("args=3 env="), "{out}");

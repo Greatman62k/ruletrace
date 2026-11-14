@@ -1,7 +1,8 @@
-//! The Coverage_Statement of the stand-in demonstration, `hand` profile (task 6.7).
+//! The Coverage_Statement of the stand-in demonstration, `hand` profile.
 //!
-//! The inputs are the blessed artifacts under `golden/artifacts/`, which the runbook test checks
-//! against the real binaries. Bless the coverage goldens with `RT_DEMO_BLESS=1`.
+//! The inputs are the blessed artifacts under `golden/artifacts/`, which the
+//! runbook test checks against the real binaries. Bless the coverage goldens
+//! with `RT_DEMO_BLESS=1`.
 
 use rt_demo::coverage::{
     classify, parse_notes, print_json, print_markdown, CoverageClass, CoverageError, CoverageNote,

@@ -1,7 +1,7 @@
-//! Tests of the Compiler (task 5.8).
+//! Tests of the Compiler.
 //!
-//! Ledgers are written by hand with their hash chain, as in the Validator tests, because
-//! `rt-ledger` has no append function.
+//! Ledgers are written by hand with their hash chain, as in the Validator
+//! tests, because `rt-ledger` has no append function.
 
 use super::*;
 use rt_compiled::{CompiledBody, CompiledRule, CompiledSpan, NodeKind, TargetIdx};
@@ -66,7 +66,8 @@ fn sources() -> SourceModels {
     s
 }
 
-/// `(rule, revision, is_rejection)` records for the revisions at the given positions.
+/// `(rule, revision, is_rejection)` records for the revisions at the given
+/// positions.
 fn ledger(rb: &Rulebook, records: &[(usize, bool)]) -> ApprovalLedger {
     let doc = sha256(TEXT.as_bytes());
     let mut out = format!("{}\n", rt_ledger::HEADER_LINE);
@@ -108,7 +109,8 @@ fn ok(result: &ValidationResult) -> (CompiledRulebook, DiagnosticState) {
     }
 }
 
-/// `r.a` reads the Target of `r.b`, so `r.b` must come first although `r.a` sorts first.
+/// `r.a` reads the Target of `r.b`, so `r.b` must come first although `r.a`
+/// sorts first.
 fn two_rules(author_a: &str) -> Vec<String> {
     vec![
         derived(
@@ -197,7 +199,8 @@ fn origin_and_rejected_revisions_do_not_change_the_output() {
     let plain = rulebook(&two_rules("null"));
     let (c1, _) = ok(&validated(&plain, &[(0, false), (1, false)]));
 
-    // A different author, and one more rule that is Rejected and so not Effective.
+    // A different author, and one more rule that is Rejected and so not
+    // Effective.
     let mut rules = two_rules(r#""Someone Else""#);
     rules.push(derived("r.c", "null", "other", &num("9")));
     let busy = rulebook(&rules);
@@ -300,7 +303,8 @@ fn names() -> Vec<Name> {
 #[test]
 fn a_cycle_gives_one_diagnostic_naming_each_rule_once() {
     use crate::order::evaluation_order;
-    // r1 -> r2 -> r3 -> r1 (a ref to a Target depends on its rule), and r0 stands apart.
+    // r1 -> r2 -> r3 -> r1 (a ref to a Target depends on its rule), and r0
+    // stands apart.
     let rules = vec![
         rule_with("r0", "z", &[], "rules.md"),
         rule_with("r1", "a", &["b"], "rules.md"),

@@ -1,9 +1,11 @@
-//! Deterministic generators and comparison functions of the differential numeric harness.
+//! Deterministic generators and comparison functions of the differential
+//! numeric harness.
 //!
-//! Operands are built from the reference model only, then converted through the canonical
-//! text. Every conversion also checks that `rt-numeric` prints the operand back to the
-//! same text, so a codec fault cannot hide inside operand construction. Tasks 3.6 and 3.7
-//! reuse these functions with their own case counts.
+//! Operands are built from the reference model only, then converted through the
+//! canonical text. Every conversion also checks that `rt-numeric` prints the
+//! operand back to the same text, so a codec fault cannot hide inside operand
+//! construction. Tasks 3.6 and 3.7 reuse these functions with their own case
+//! counts.
 
 use crate::reference::{bound, Kind, Rat};
 use num_bigint::BigInt;
@@ -11,7 +13,8 @@ use rt_numeric as rn;
 use rt_numeric::{ExactNumber, RoundingMode};
 use std::cmp::Ordering;
 
-/// Fixed seed of the corpus. Changing it changes the corpus, so do it deliberately.
+/// Fixed seed of the corpus. Changing it changes the corpus, so do it
+/// deliberately.
 pub const SEED: u64 = 0x5254_4E55_4D31_0001;
 /// Cases per operation (Req 20.22).
 pub const CASES: usize = 256;
@@ -21,7 +24,8 @@ pub const MODES: [RoundingMode; 3] = [
     RoundingMode::TowardZero,
 ];
 
-/// SplitMix64: a small fixed generator, so the corpus is identical on every platform.
+/// SplitMix64: a small fixed generator, so the corpus is identical on every
+/// platform.
 pub struct Rng(u64);
 
 impl Rng {
@@ -156,7 +160,8 @@ pub fn operand(r: &mut Rng) -> Rat {
     }
 }
 
-/// Converts a model value to an `rt-numeric` value and checks the round trip of text.
+/// Converts a model value to an `rt-numeric` value and checks the round trip of
+/// text.
 pub fn to_rt(v: &Rat) -> Result<ExactNumber, String> {
     let text = v.canonical();
     let n = rn::parse_canonical(&text).map_err(|e| format!("parse_canonical({text}): {e}"))?;
@@ -175,8 +180,9 @@ fn expect(r: Result<Rat, Kind>) -> Result<String, Kind> {
     r.map(|v| v.canonical())
 }
 
-/// Compares an `rt-numeric` result with the model result, by canonical text and by
-/// structural equality with the parsed model text (one zero form, normalized).
+/// Compares an `rt-numeric` result with the model result, by canonical text and
+/// by structural equality with the parsed model text (one zero form,
+/// normalized).
 fn agree(
     what: &str,
     got: Result<ExactNumber, rn::NumericError>,
@@ -256,8 +262,8 @@ pub fn check_aggregate(values: &[Rat]) -> Result<(), String> {
     Ok(())
 }
 
-/// Checks `parse_literal` and `parse_canonical` on one text: same acceptance, same value,
-/// same failure class.
+/// Checks `parse_literal` and `parse_canonical` on one text: same acceptance,
+/// same value, same failure class.
 pub fn check_text(text: &str) -> Result<(), String> {
     agree(
         &format!("parse_literal({text:?})"),
@@ -271,7 +277,8 @@ pub fn check_text(text: &str) -> Result<(), String> {
     )
 }
 
-/// Counts of outcomes seen, so a test can prove the corpus reaches both sides of the bound.
+/// Counts of outcomes seen, so a test can prove the corpus reaches both sides
+/// of the bound.
 #[derive(Default, Debug)]
 pub struct Seen {
     pub ok: usize,

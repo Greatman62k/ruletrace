@@ -1,9 +1,10 @@
-//! Property 40: Isolation of compiled rulebooks (task 5.25).
+//! Property 40: Isolation of compiled rulebooks.
 //!
 //! Feature: ruletrace-compiler, Property 40: Isolation of compiled rulebooks
 //!
-//! Two different Compiled_Rulebooks are evaluated in one process, A then B, B then A, and
-//! interleaved per record. Each one's outcomes and traces equal its solitary evaluation.
+//! Two different Compiled_Rulebooks are evaluated in one process, A then B, B
+//! then A, and interleaved per record. Each one's outcomes and traces equal its
+//! solitary evaluation.
 //!
 //! **Validates: Requirements 9.7, 10.8, 20.6**
 
@@ -59,8 +60,9 @@ fn rule(
     }
 }
 
-/// Same names in every rulebook (input `k`, collection `c.v`, Targets `agg` and `rank`), but a
-/// different aggregate, direction and tag, so any shared state would show.
+/// Same names in every rulebook (input `k`, collection `c.v`, Targets `agg` and
+/// `rank`), but a different aggregate, direction and tag, so any shared state
+/// would show.
 fn rulebook(func: AggFn, direction: Direction, tag: &str) -> CompiledRulebook {
     let num = |kind| CompiledNode {
         ty: CType::Number,
@@ -165,7 +167,8 @@ fn questions(n: usize) -> Vec<Question> {
     out
 }
 
-/// Outcomes and traces as bytes of their Debug form (the types are not serializable here).
+/// Outcomes and traces as bytes of their Debug form (the types are not
+/// serializable here).
 fn view(r: &rt_engine::Evaluation) -> String {
     format!("{:?}|{:?}", r.outcomes, r.traces)
 }
@@ -173,8 +176,8 @@ fn view(r: &rt_engine::Evaluation) -> String {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(128))]
 
-    /// Feature: ruletrace-compiler, Property 40: Isolation of compiled rulebooks
-    /// **Validates: Requirements 9.7, 10.8, 20.6**
+    /// Feature: ruletrace-compiler, Property 40: Isolation of compiled
+    /// rulebooks **Validates: Requirements 9.7, 10.8, 20.6**
     #[test]
     fn evaluation_of_two_rulebooks_equals_each_solitary_evaluation(
         sa in specs(),

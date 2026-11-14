@@ -1,7 +1,7 @@
-//! Isolation (Property 40, Req 20.6, 9.7): the Compiled_Rulebooks of different fixtures are
-//! evaluated A then B then C, C then B then A, and interleaved per Question in one process.
-//! Each result equals the solitary evaluation, and the solitary evaluation of a fixture is
-//! repeatable.
+//! Isolation (Property 40, Req 20.6, 9.7): the Compiled_Rulebooks of different
+//! fixtures are evaluated A then B then C, C then B then A, and interleaved per
+//! Question in one process. Each result equals the solitary evaluation, and the
+//! solitary evaluation of a fixture is repeatable.
 
 use crate::load::{load, Fixture, EXECUTABLE};
 use rt_engine::evaluate;

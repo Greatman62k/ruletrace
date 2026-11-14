@@ -1,14 +1,15 @@
 //! The results-file serializer (design §8.10, decision D-12, Req 31.5, 13.19).
 //!
-//! One function serves `ruletrace evaluate` and both applications, so byte identity between them
-//! holds by construction. The file has three parts:
+//! One function serves `ruletrace evaluate` and both applications, so byte
+//! identity between them holds by construction. The file has three parts:
 //!
-//! * `outcomes` and `traces`, one entry per Question in Question order, taken from the engine
-//!   unchanged;
+//! * `outcomes` and `traces`, one entry per Question in Question order, taken
+//!   from the engine unchanged;
 //! * `diagnostics`, the Diagnostics of the evaluation;
-//! * `verification`, one entry per trace with the status and the per-span result of the
-//!   Explainer. It is a separate section: removing it leaves the bytes of the other parts as they
-//!   would be without verification (Req 13.19). It carries no source text.
+//! * `verification`, one entry per trace with the status and the per-span
+//!   result of the Explainer. It is a separate section: removing it leaves the
+//!   bytes of the other parts as they would be without verification (Req
+//!   13.19). It carries no source text.
 //!
 //! No timestamp, path, process identifier or environment value is written.
 
@@ -25,8 +26,9 @@ pub const RESULTS_FORMAT: &str = "ruletrace-results";
 /// Version of the results format.
 pub const RESULTS_VERSION: u32 = 1;
 
-/// Everything the serializer reads. `outcomes[i]`, `traces[i]` and `verifications[i]` answer the
-/// same Question. The slices are borrowed; the engine's `Evaluation` supplies the first three.
+/// Everything the serializer reads. `outcomes[i]`, `traces[i]` and
+/// `verifications[i]` answer the same Question. The slices are borrowed; the
+/// engine's `Evaluation` supplies the first three.
 #[derive(Clone, Copy, Debug)]
 pub struct ResultsInput<'a> {
     /// One Outcome per Question.
@@ -51,7 +53,8 @@ pub enum ResultsError {
         /// Number of verifications.
         verifications: usize,
     },
-    /// An Outcome differs from the Outcome recorded in the trace at the same index.
+    /// An Outcome differs from the Outcome recorded in the trace at the same
+    /// index.
     OutcomeTraceMismatch {
         /// Index of the Question.
         index: usize,
@@ -78,8 +81,8 @@ impl fmt::Display for ResultsError {
 
 impl std::error::Error for ResultsError {}
 
-/// Builds an object. Every call site uses distinct literal keys, so the duplicate-key error
-/// cannot occur; a test would show a `null` if it did.
+/// Builds an object. Every call site uses distinct literal keys, so the
+/// duplicate-key error cannot occur; a test would show a `null` if it did.
 pub(crate) fn obj(members: Vec<(&str, Json)>) -> Json {
     Value::object(
         members
@@ -213,11 +216,12 @@ fn verification(index: usize, v: &Verification) -> Json {
     ])
 }
 
-/// The canonical RT-JSON value of the results file. Keys: `format`, `version`, `outcomes`,
-/// `traces`, `diagnostics`, `verification`.
+/// The canonical RT-JSON value of the results file. Keys: `format`, `version`,
+/// `outcomes`, `traces`, `diagnostics`, `verification`.
 ///
 /// # Errors
-/// [`ResultsError`] when the slices disagree in length or an Outcome differs from its trace.
+/// [`ResultsError`] when the slices disagree in length or an Outcome differs
+/// from its trace.
 pub fn results_value(input: &ResultsInput<'_>) -> Result<Value<()>, ResultsError> {
     let n = input.outcomes.len();
     if input.traces.len() != n || input.verifications.len() != n {
@@ -258,7 +262,8 @@ pub fn results_value(input: &ResultsInput<'_>) -> Result<Value<()>, ResultsError
     ]))
 }
 
-/// The results file as compact canonical RT-JSON bytes with a trailing line feed.
+/// The results file as compact canonical RT-JSON bytes with a trailing line
+/// feed.
 ///
 /// # Errors
 /// See [`results_value`].
@@ -268,7 +273,8 @@ pub fn serialize_results(input: &ResultsInput<'_>) -> Result<Vec<u8>, ResultsErr
     Ok(s.into_bytes())
 }
 
-/// The results file as pretty canonical RT-JSON bytes (two-space indent, trailing line feed).
+/// The results file as pretty canonical RT-JSON bytes (two-space indent,
+/// trailing line feed).
 ///
 /// # Errors
 /// See [`results_value`].

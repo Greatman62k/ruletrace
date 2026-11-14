@@ -1,12 +1,14 @@
 //! `scan-api` (design §3.4.3, Req 22.1, 24.2, 24.7).
 //!
-//! Reads the public function signatures of core and application crates with the token reader,
-//! compares the ones named in `tools/contracts.v1` with their contract, and fails when any public
-//! item takes or stores `has_errors` or `no_errors`.
+//! Reads the public function signatures of core and application crates with the
+//! token reader, compares the ones named in `tools/contracts.v1` with their
+//! contract, and fails when any public item takes or stores `has_errors` or
+//! `no_errors`.
 //!
-//! Contract line: `contract <crate> <name> (<param types>) [-> <result type>]`, where `<name>` is
-//! `function` or `Type::method`. A receiver is written `&self`, `&mut self` or `self`. Types are
-//! compared after dropping lifetimes and whitespace between symbols.
+//! Contract line: `contract <crate> <name> (<param types>) [-> <result type>]`,
+//! where `<name>` is `function` or `Type::method`. A receiver is written
+//! `&self`, `&mut self` or `self`. Types are compared after dropping lifetimes
+//! and whitespace between symbols.
 
 use crate::scan;
 use crate::tokens::{normalize, production_tokens, skip_group, tokenize, Token};
@@ -116,9 +118,10 @@ fn split_top(tokens: &[Token]) -> Vec<&[Token]> {
     parts
 }
 
-/// Parses `( params ) [-> result]` starting at the `(` at `open`. With `named`, each parameter
-/// is `pattern: Type`; otherwise it is only a type. Returns the signature, the identifiers bound
-/// by patterns and the index after the result type.
+/// Parses `( params ) [-> result]` starting at the `(` at `open`. With `named`,
+/// each parameter is `pattern: Type`; otherwise it is only a type. Returns the
+/// signature, the identifiers bound by patterns and the index after the result
+/// type.
 fn parse_signature(tokens: &[Token], open: usize, named: bool) -> (Signature, Vec<String>, usize) {
     let close = skip_group(tokens, open);
     let inner = tokens.get(open + 1..close.saturating_sub(1)).unwrap_or(&[]);
@@ -350,7 +353,8 @@ fn next_word(s: &str) -> (&str, &str) {
 /// Parses `tools/contracts.v1`.
 ///
 /// # Errors
-/// A message naming the line when the header is missing or an entry is malformed.
+/// A message naming the line when the header is missing or an entry is
+/// malformed.
 pub fn parse_contracts(text: &str) -> Result<Vec<Contract>, String> {
     let mut lines = text
         .lines()
@@ -430,7 +434,8 @@ pub fn check_contracts(
     findings
 }
 
-/// Findings for any item that takes or stores `has_errors` or `no_errors` (Req 22.1).
+/// Findings for any item that takes or stores `has_errors` or `no_errors` (Req
+/// 22.1).
 #[must_use]
 pub fn check_flags(krate: &str, files: &[(String, FileItems)]) -> Vec<String> {
     let mut findings = Vec::new();
@@ -462,7 +467,8 @@ pub fn check_flags(krate: &str, files: &[(String, FileItems)]) -> Vec<String> {
     findings
 }
 
-/// Runs `scan-api` on the repository at `root`. Returns `(crates, contracts)` checked.
+/// Runs `scan-api` on the repository at `root`. Returns `(crates, contracts)`
+/// checked.
 ///
 /// # Errors
 /// One line per finding, or the load failure.

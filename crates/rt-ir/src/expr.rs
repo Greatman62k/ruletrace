@@ -142,11 +142,12 @@ pub enum Literal {
     },
 }
 
-/// A well-formed construct this version does not define (rule kind or expression node), carried
-/// for the Validator, which reports it under `RT-VAL-0003`. It is never compiled.
+/// A well-formed construct this version does not define (rule kind or
+/// expression node), carried for the Validator, which reports it under
+/// `RT-VAL-0003`. It is never compiled.
 ///
-/// `raw` is the compact canonical RT-JSON text of the subtree. Input positions are not kept in
-/// it, so equality does not depend on layout.
+/// `raw` is the compact canonical RT-JSON text of the subtree. Input positions
+/// are not kept in it, so equality does not depend on layout.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpaqueConstruct {
     /// The unrecognized kind or node name.
@@ -167,7 +168,8 @@ impl OpaqueConstruct {
     /// Carries the subtree under a name given as text.
     ///
     /// # Errors
-    /// Returns [`NameError::NotWellFormed`] when the name is not `[a-z][a-z0-9_]*`.
+    /// Returns [`NameError::NotWellFormed`] when the name is not
+    /// `[a-z][a-z0-9_]*`.
     pub fn from_text<P>(name: &str, value: &Value<P>) -> Result<Self, NameError> {
         Ok(Self::new(OpaqueName::new(name)?, value))
     }
@@ -184,15 +186,15 @@ impl OpaqueConstruct {
 pub struct Expr {
     /// Input position of the node.
     pub loc: Loc,
-    /// The declared type `t`. `None` only when the input omitted it, which the Validator
-    /// reports (Req 3.9). It is never inferred (Req 3.5).
+    /// The declared type `t`. `None` only when the input omitted it, which the
+    /// Validator reports (Req 3.9). It is never inferred (Req 3.5).
     pub ty: Option<Type>,
     /// The form of the node.
     pub kind: ExprKind,
 }
 
-/// The node forms of design §4.1.4. Argument counts of `and` and `or` (2 to 64) and the
-/// expression depth limit are checked by the Validator.
+/// The node forms of design §4.1.4. Argument counts of `and` and `or` (2 to 64)
+/// and the expression depth limit are checked by the Validator.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ExprKind {
     /// `num`, `bool`, `text`, `date` and `enum` leaves.
@@ -256,7 +258,8 @@ pub enum ExprKind {
         /// Mode.
         mode: RoundingMode,
     },
-    /// `rank_reference` (UD-32). Where the option is not selected the Validator reports it.
+    /// `rank_reference` (UD-32). Where the option is not selected the Validator
+    /// reports it.
     RankReference {
         /// Ranking Target.
         target: Name,

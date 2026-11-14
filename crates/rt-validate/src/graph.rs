@@ -1,6 +1,8 @@
-//! Pass 8: reference cycles (Tarjan) and dependency metadata (design §3.6.1, Req 6.9, 6.10).
+//! Pass 8: reference cycles (Tarjan) and dependency metadata (design §3.6.1,
+//! Req 6.9, 6.10).
 //!
-//! Everything here is iterative, so a long reference chain cannot overflow the stack.
+//! Everything here is iterative, so a long reference chain cannot overflow the
+//! stack.
 
 use std::collections::VecDeque;
 
@@ -16,9 +18,10 @@ fn put(v: &mut [usize], i: usize, x: usize) {
     }
 }
 
-/// Strongly connected components of the graph `adj` (node `i` has edges to `adj[i]`), in reverse
-/// topological order: a component is listed after every component it points to. Members of one
-/// component are in ascending node order.
+/// Strongly connected components of the graph `adj` (node `i` has edges to
+/// `adj[i]`), in reverse topological order: a component is listed after every
+/// component it points to. Members of one component are in ascending node
+/// order.
 pub(crate) fn tarjan(adj: &[Vec<usize>]) -> Vec<Vec<usize>> {
     let n = adj.len();
     let mut index = vec![UNSEEN; n];
@@ -84,7 +87,8 @@ pub(crate) fn tarjan(adj: &[Vec<usize>]) -> Vec<Vec<usize>> {
     comps
 }
 
-/// True when the component is a cycle: it has several nodes, or one node with an edge to itself.
+/// True when the component is a cycle: it has several nodes, or one node with
+/// an edge to itself.
 pub(crate) fn is_cycle(comp: &[usize], adj: &[Vec<usize>]) -> bool {
     match comp {
         [] => false,
@@ -93,8 +97,9 @@ pub(crate) fn is_cycle(comp: &[usize], adj: &[Vec<usize>]) -> bool {
     }
 }
 
-/// The cycle through the lowest node of `comp`, in the order of reference, starting at that
-/// node: the shortest way back to it, breaking ties by ascending node order.
+/// The cycle through the lowest node of `comp`, in the order of reference,
+/// starting at that node: the shortest way back to it, breaking ties by
+/// ascending node order.
 pub(crate) fn cycle_path(comp: &[usize], adj: &[Vec<usize>]) -> Vec<usize> {
     let Some(&start) = comp.first() else {
         return Vec::new();

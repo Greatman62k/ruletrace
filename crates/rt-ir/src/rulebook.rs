@@ -50,7 +50,8 @@ pub struct DocumentDecl {
     pub sha256: Sha256Hex,
 }
 
-/// A Precedence_Declaration: a total order over the rules of one Target (not a rule kind).
+/// A Precedence_Declaration: a total order over the rules of one Target (not a
+/// rule kind).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Precedence {
     /// Where it was read.
@@ -65,8 +66,9 @@ pub struct Precedence {
     pub spans: Vec<Span>,
 }
 
-/// A parsed Rulebook. The `revisions` keep document order. The parser rejects duplicate
-/// (identifier, revision) pairs and the printer sorts them (Req 3.11, 4.7).
+/// A parsed Rulebook. The `revisions` keep document order. The parser rejects
+/// duplicate (identifier, revision) pairs and the printer sorts them (Req 3.11,
+/// 4.7).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Rulebook {
     /// The single IR_Version.
@@ -85,7 +87,8 @@ pub struct Rulebook {
     pub precedence: Vec<Precedence>,
 }
 
-/// A rule: all revisions that share one identifier, in ascending revision order.
+/// A rule: all revisions that share one identifier, in ascending revision
+/// order.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Rule<'a> {
     /// The rule identifier.
@@ -101,7 +104,8 @@ impl Rulebook {
         self.revisions.iter().find(|r| &r.key == key)
     }
 
-    /// The rules in ascending identifier order, each with its revisions in ascending order.
+    /// The rules in ascending identifier order, each with its revisions in
+    /// ascending order.
     #[must_use]
     pub fn rules(&self) -> Vec<Rule<'_>> {
         let mut sorted: Vec<&RuleRevision> = self.revisions.iter().collect();

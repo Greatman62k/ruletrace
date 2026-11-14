@@ -1,8 +1,9 @@
 //! The Compiled_Rulebook data model (design §4.1.6).
 //!
-//! The model holds Effective rules only. It stores no Origin, no approval data and no validity
-//! flag (Req 22.6): there is no field that could. Names are resolved to indices, nodes live in
-//! one arena per rule, and every node carries its resolved type.
+//! The model holds Effective rules only. It stores no Origin, no approval data
+//! and no validity flag (Req 22.6): there is no field that could. Names are
+//! resolved to indices, nodes live in one arena per rule, and every node
+//! carries its resolved type.
 
 use crate::index::{
     CollectionIdx, EnumIdx, FieldIdx, InputIdx, MemberIdx, NodeIdx, RuleIdx, SetIdx, TargetIdx,
@@ -13,8 +14,8 @@ use rt_ir::{AggFn, BinaryOp, CmpOp, Date, Direction, IrVersion, Name, Rounding, 
 use rt_numeric::ExactNumber;
 use std::collections::BTreeSet;
 
-/// A resolved type. `Error` of the IR cannot occur in a compiled form, and an enum type names
-/// its declaration by index.
+/// A resolved type. `Error` of the IR cannot occur in a compiled form, and an
+/// enum type names its declaration by index.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CType {
     /// An exact number.
@@ -121,8 +122,8 @@ pub struct CompiledSet {
     pub members: Vec<CompiledLiteral>,
 }
 
-/// A Source_Span as retained from the Rulebook, with the hash of its document. It is plain
-/// data: the Explainer verifies it against a Source_Model.
+/// A Source_Span as retained from the Rulebook, with the hash of its document.
+/// It is plain data: the Explainer verifies it against a Source_Model.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CompiledSpan {
     /// The document identifier.
@@ -139,7 +140,8 @@ pub struct CompiledSpan {
     pub column: u32,
 }
 
-/// One node of a rule's arena. Children are indices of nodes that come earlier in the arena.
+/// One node of a rule's arena. Children are indices of nodes that come earlier
+/// in the arena.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum NodeKind {
     /// A literal.
@@ -226,7 +228,8 @@ pub struct CompiledTieBreaker {
     pub direction: Direction,
 }
 
-/// The lowered body of a rule. There is no unrecognized variant: such a rule cannot compile.
+/// The lowered body of a rule. There is no unrecognized variant: such a rule
+/// cannot compile.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CompiledBody {
     /// A boolean Target per participant.
@@ -338,16 +341,16 @@ pub struct CompiledParts {
     pub precedence: Vec<CompiledPrecedence>,
 }
 
-/// An immutable, self-contained Compiled_Rulebook. It owns all of its data, has no interior
-/// mutability and shares nothing with any other value (Req 9.7).
+/// An immutable, self-contained Compiled_Rulebook. It owns all of its data, has
+/// no interior mutability and shares nothing with any other value (Req 9.7).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CompiledRulebook {
     parts: CompiledParts,
     targets: Vec<Name>,
 }
 
-/// The distinct Target names of `rules` in ascending byte order. A [`TargetIdx`] is a position
-/// in this list.
+/// The distinct Target names of `rules` in ascending byte order. A
+/// [`TargetIdx`] is a position in this list.
 #[must_use]
 pub fn targets_of(rules: &[CompiledRule]) -> Vec<Name> {
     let set: BTreeSet<&Name> = rules.iter().map(|r| &r.target).collect();
@@ -437,7 +440,8 @@ impl CompiledRulebook {
         &self.parts.precedence
     }
 
-    /// The distinct Target names, ascending. A [`TargetIdx`] is a position in this list.
+    /// The distinct Target names, ascending. A [`TargetIdx`] is a position in
+    /// this list.
     #[must_use]
     pub fn targets(&self) -> &[Name] {
         &self.targets

@@ -1,16 +1,19 @@
-//! Human-readable rendering of a verified trace (Req 13.9, 13.13, 13.16, 19.5, 19.10).
+//! Human-readable rendering of a verified trace (Req 13.9, 13.13, 13.16, 19.5,
+//! 19.10).
 
 use crate::verify::{SpanResolution, Verification, VerificationStatus};
 use rt_foundation::escape_controls;
 use rt_trace::{DecisionTrace, QuestionKind};
 use std::fmt::Write as _;
 
-/// Renders the question, the verification status, every span and the verification diagnostics.
+/// Renders the question, the verification status, every span and the
+/// verification diagnostics.
 ///
-/// Source text appears only for spans that resolved, exactly as the Source_Model holds it except
-/// that every control character is escaped by `escape_controls`. An unresolved span shows its
-/// recorded position and document hash only. `verification` must come from `verify_trace` on the
-/// same trace.
+/// Source text appears only for spans that resolved, exactly as the
+/// Source_Model holds it except that every control character is escaped by
+/// `escape_controls`. An unresolved span shows its recorded position and
+/// document hash only. `verification` must come from `verify_trace` on the same
+/// trace.
 #[must_use]
 pub fn render_trace(trace: &DecisionTrace, verification: &Verification) -> String {
     let mut out = String::new();

@@ -1,9 +1,10 @@
 //! Evaluation of the rules a question depends on, for one participant.
 //!
-//! One [`Run`] builds one Decision_Trace. Every node of a rule is evaluated exactly once, in
-//! post-order with operands left to right and no short-circuit, so the order of the trace
-//! entries is fixed. Graph walks use explicit stacks, so the depth of a hostile artifact cannot
-//! exhaust the call stack.
+//! One [`Run`] builds one Decision_Trace. Every node of a rule is evaluated
+//! exactly once, in post-order with operands left to right and no
+//! short-circuit, so the order of the trace entries is fixed. Graph walks use
+//! explicit stacks, so the depth of a hostile artifact cannot exhaust the call
+//! stack.
 
 use crate::index::{Index, Prec};
 use crate::support::{conflict, input_location, rule_location, rule_ref, trace_spans};
@@ -76,7 +77,8 @@ fn roots(body: &CompiledBody) -> Vec<NodeIdx> {
     }
 }
 
-/// The nodes reachable from `roots`, children before parents, operands left to right, each once.
+/// The nodes reachable from `roots`, children before parents, operands left to
+/// right, each once.
 fn reachable(rule: &CompiledRule, roots: &[NodeIdx]) -> Vec<NodeIdx> {
     let mut order = Vec::new();
     let mut seen: BTreeSet<NodeIdx> = BTreeSet::new();
@@ -114,8 +116,8 @@ fn reachable(rule: &CompiledRule, roots: &[NodeIdx]) -> Vec<NodeIdx> {
     order
 }
 
-/// The rules a rule reads through `ref` nodes: the first-listed rule when a precedence applies,
-/// else every rule of the Target.
+/// The rules a rule reads through `ref` nodes: the first-listed rule when a
+/// precedence applies, else every rule of the Target.
 fn dependencies(rulebook: &CompiledRulebook, index: &Index, rule: &CompiledRule) -> Vec<RuleIdx> {
     let mut out = Vec::new();
     for node in reachable(rule, &roots(&rule.body)) {
@@ -129,8 +131,9 @@ fn dependencies(rulebook: &CompiledRulebook, index: &Index, rule: &CompiledRule)
     out
 }
 
-/// The rules to evaluate for `start`, dependencies first. A dependency cycle (which the Compiler
-/// never produces) is cut here and reported when the cut rule is read.
+/// The rules to evaluate for `start`, dependencies first. A dependency cycle
+/// (which the Compiler never produces) is cut here and reported when the cut
+/// rule is read.
 pub(crate) fn plan(rulebook: &CompiledRulebook, index: &Index, start: RuleIdx) -> Vec<RuleIdx> {
     let mut order = Vec::new();
     let mut seen: BTreeSet<RuleIdx> = BTreeSet::new();
@@ -263,7 +266,8 @@ impl<'a> Run<'a> {
         self.run_plan(start, true);
     }
 
-    /// Evaluates everything the ranking rule `start` reads, but not the ranking rule itself.
+    /// Evaluates everything the ranking rule `start` reads, but not the ranking
+    /// rule itself.
     pub(crate) fn prepare(&mut self, start: RuleIdx) {
         self.run_plan(start, false);
     }
@@ -353,7 +357,8 @@ impl<'a> Run<'a> {
 
     // ----- trace entries -----
 
-    /// Gives a value a trace entry if it has none, so that a decision can refer to it.
+    /// Gives a value a trace entry if it has none, so that a decision can refer
+    /// to it.
     fn ensure(&mut self, cx: Cx<'_>, val: &mut Val) {
         if val.seq.is_some() {
             return;
@@ -371,8 +376,8 @@ impl<'a> Run<'a> {
         val.seq = Some(seq);
     }
 
-    /// A result that replay keeps as recorded: a value of a kind replay does not derive, or an
-    /// Unknown or fault.
+    /// A result that replay keeps as recorded: a value of a kind replay does
+    /// not derive, or an Unknown or fault.
     fn recorded(&mut self, cx: Cx<'_>, eval: Eval) -> Val {
         let mut val = Val { eval, seq: None };
         self.ensure(cx, &mut val);
@@ -484,8 +489,9 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// Reads an input of the participant: the supplied value, else the declared default, else
-    /// Unknown. A value that is present is never replaced by a default (Req 11.5).
+    /// Reads an input of the participant: the supplied value, else the declared
+    /// default, else Unknown. A value that is present is never replaced by a
+    /// default (Req 11.5).
     fn read(&mut self, cx: Cx<'_>, input: InputIdx) -> Val {
         let rulebook = self.rulebook;
         let Some(decl) = rulebook.inputs().get(input.at()) else {
@@ -592,9 +598,10 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// The value of another rule's Target (Req 12.5, 12.10). With a precedence declaration only
-    /// the first-listed rule's result is used and the others are recorded as not applied. Without
-    /// one, equal Known results are compatible and unequal ones are an execution conflict.
+    /// The value of another rule's Target (Req 12.5, 12.10). With a precedence
+    /// declaration only the first-listed rule's result is used and the others
+    /// are recorded as not applied. Without one, equal Known results are
+    /// compatible and unequal ones are an execution conflict.
     fn reference(&mut self, cx: Cx<'_>, target: TargetIdx) -> Val {
         let Some(name) = self.rulebook.target(target) else {
             return self.internal(cx, "a target index is out of range");
@@ -630,8 +637,9 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// Records every rule of `rules` that `prec` lists after `first` as considered and not
-    /// applied, with the declaration as the reason (Req 12.10, 13.4). Each rule once.
+    /// Records every rule of `rules` that `prec` lists after `first` as
+    /// considered and not applied, with the declaration as the reason (Req
+    /// 12.10, 13.4). Each rule once.
     pub(crate) fn note_overridden(&mut self, prec: &Prec, rules: &[RuleIdx], first: RuleIdx) {
         for n in overridden(self.rulebook, prec, rules, first) {
             if !self.not_applied.iter().any(|x| x.rule == n.rule) {
@@ -640,8 +648,9 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// The common result of several rules for one Target and subject when no precedence applies.
-    /// Unequal Known results are one `RT-DGN-0004` and no result is selected.
+    /// The common result of several rules for one Target and subject when no
+    /// precedence applies. Unequal Known results are one `RT-DGN-0004` and no
+    /// result is selected.
     pub(crate) fn combine(&mut self, name: &str, rules: &[RuleIdx]) -> Val {
         let rulebook = self.rulebook;
         let found: Vec<&CompiledRule> = rules.iter().filter_map(|i| rulebook.rule(*i)).collect();
@@ -702,7 +711,8 @@ impl<'a> Run<'a> {
         })
     }
 
-    /// Evaluates one criterion expression of the ranking rule `start` for this participant.
+    /// Evaluates one criterion expression of the ranking rule `start` for this
+    /// participant.
     pub(crate) fn criterion(&mut self, start: RuleIdx, root: NodeIdx) -> Val {
         let Some(rule) = self.rulebook.rule(start) else {
             return Val {
@@ -729,8 +739,8 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// Emits one numeric step. Faults of operands win, then Unknowns; otherwise the exact
-    /// result is computed, recorded and checked by replay.
+    /// Emits one numeric step. Faults of operands win, then Unknowns; otherwise
+    /// the exact result is computed, recorded and checked by replay.
     fn arith(&mut self, cx: Cx<'_>, op: StepOp, operands: Vec<Val>, field: Option<String>) -> Val {
         if let Some(d) = faults_of(&operands) {
             return self.recorded(cx, Eval::Fault(d));
@@ -857,7 +867,8 @@ impl<'a> Run<'a> {
         self.recorded(cx, Eval::Known(Value::Bool(found)))
     }
 
-    /// Kleene AND or OR. Every operand is evaluated; a fault in any operand is a fault.
+    /// Kleene AND or OR. Every operand is evaluated; a fault in any operand is
+    /// a fault.
     fn logic(&mut self, cx: Cx<'_>, is_and: bool, args: &[NodeIdx], vals: &mut Vals) -> Val {
         let mut operands = Vec::with_capacity(args.len());
         for a in args {
@@ -959,7 +970,8 @@ impl<'a> Run<'a> {
             return self.internal(cx, "a collection index is out of range");
         };
         let cname = decl.name.as_str();
-        // A collection the data does not supply is missing information, not an empty one.
+        // A collection the data does not supply is missing information, not an
+        // empty one.
         let Some(elements) = self.participant.collection(cname) else {
             return self.missing(cx, cname);
         };

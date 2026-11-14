@@ -11,13 +11,14 @@ use std::collections::BTreeMap;
 
 const FORMAT: &str = "ruletrace-data";
 
-/// A present value. A Missing_Value has no representation: it is the absence of an entry.
+/// A present value. A Missing_Value has no representation: it is the absence of
+/// an entry.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DataValue {
     /// `true` or `false`. `false` is present.
     Bool(bool),
-    /// Text, including numbers (Exact_Number strings), dates and enum members. `""` is present.
-    /// The engine checks it against the declared type.
+    /// Text, including numbers (Exact_Number strings), dates and enum members.
+    /// `""` is present. The engine checks it against the declared type.
     Text(String),
 }
 
@@ -32,8 +33,8 @@ pub struct Participant {
 }
 
 impl Participant {
-    /// Builds a participant. Elements of each collection are a multiset, so they are sorted and
-    /// input order never matters (Req 10.4).
+    /// Builds a participant. Elements of each collection are a multiset, so
+    /// they are sorted and input order never matters (Req 10.4).
     #[must_use]
     pub fn new(
         fields: BTreeMap<String, DataValue>,
@@ -60,8 +61,9 @@ impl Participant {
         &self.fields
     }
 
-    /// A collection, or `None` when the data does not supply it (missing information, Req 8.29).
-    /// `Some` with no element is a present, empty collection.
+    /// A collection, or `None` when the data does not supply it (missing
+    /// information, Req 8.29). `Some` with no element is a present, empty
+    /// collection.
     #[must_use]
     pub fn collection(&self, name: &str) -> Option<&[Element]> {
         self.collections.get(name).map(Vec::as_slice)
@@ -100,14 +102,16 @@ impl CompetitionData {
     }
 }
 
-/// The limits of one load (design §4.1.5). A value equal to a limit is accepted.
+/// The limits of one load (design §4.1.5). A value equal to a limit is
+/// accepted.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DataLimits {
     /// File size and container depth.
     pub parse: ParseLimits,
     /// Participants (default 100,000).
     pub max_participants: u32,
-    /// Collection elements per participant, over all collections (default 100,000).
+    /// Collection elements per participant, over all collections (default
+    /// 100,000).
     pub max_elements_per_participant: u32,
 }
 
@@ -121,14 +125,16 @@ impl Default for DataLimits {
     }
 }
 
-/// Parses a Competition_Data file. All faults of the file are reported, in canonical order.
+/// Parses a Competition_Data file. All faults of the file are reported, in
+/// canonical order.
 ///
 /// # Errors
-/// - `RT-LIM-0001` and `RT-LIM-0002` for size and depth, `RT-LIM-0004` for too many
-///   participants or elements.
-/// - `RT-EXE-0008` for a repeated participant identifier (the first is a related location).
-/// - `RT-EXE-0009` for any other fault: syntax, unknown or missing key, wrong shape, a JSON
-///   number where a string is required, an invalid identifier.
+/// - `RT-LIM-0001` and `RT-LIM-0002` for size and depth, `RT-LIM-0004` for too
+///   many participants or elements.
+/// - `RT-EXE-0008` for a repeated participant identifier (the first is a
+///   related location).
+/// - `RT-EXE-0009` for any other fault: syntax, unknown or missing key, wrong
+///   shape, a JSON number where a string is required, an invalid identifier.
 /// - `RT-DGN-0001` to `0003` for a flag or lifecycle key (Req 22.22).
 pub fn parse_data(
     input: &InputId,
@@ -300,7 +306,8 @@ fn decode_collections(
 }
 
 fn object(members: Vec<(&str, Value<()>)>) -> Value<()> {
-    // Callers pass distinct constant keys or keys of a map, so building cannot fail.
+    // Callers pass distinct constant keys or keys of a map, so building cannot
+    // fail.
     Value::object(
         members
             .into_iter()
@@ -324,8 +331,9 @@ fn fields_value(fields: &BTreeMap<String, DataValue>) -> Value<()> {
     Value::object(members).unwrap_or_else(|_| Value::null())
 }
 
-/// The canonical bytes of Competition_Data: RT-JSON pretty, fixed key order, participants by
-/// ascending identifier, one trailing line feed. Equal data always gives equal bytes.
+/// The canonical bytes of Competition_Data: RT-JSON pretty, fixed key order,
+/// participants by ascending identifier, one trailing line feed. Equal data
+/// always gives equal bytes.
 #[must_use]
 pub fn serialize_data(data: &CompetitionData) -> Vec<u8> {
     let participants = data

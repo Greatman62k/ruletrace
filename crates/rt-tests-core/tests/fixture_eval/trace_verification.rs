@@ -1,7 +1,8 @@
-//! Trace verification (Req 13.15 to 13.18, 20.5, 16.2): the Explainer runs over every trace of
-//! every executable fixture with the Source_Models preloaded. Each trace is verified, each span
-//! resolves to the exact bytes of the clause, and without the models the same traces are not
-//! verified and no text is invented.
+//! Trace verification (Req 13.15 to 13.18, 20.5, 16.2): the Explainer runs over
+//! every trace of every executable fixture with the Source_Models preloaded.
+//! Each trace is verified, each span resolves to the exact bytes of the clause,
+//! and without the models the same traces are not verified and no text is
+//! invented.
 
 use crate::load::{load, EXECUTABLE};
 use rt_engine::evaluate;

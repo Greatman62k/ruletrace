@@ -1,9 +1,11 @@
-//! Lowering of Effective revisions to the compiled form (design §3.6.2 step 4, §4.1.6).
+//! Lowering of Effective revisions to the compiled form (design §3.6.2 step 4,
+//! §4.1.6).
 //!
-//! Names become indices, declared types become resolved types, spans are copied in order, and
-//! Origin and approval data are dropped. A construct that cannot be lowered (an unresolved
-//! name, an unrecognized construct, a missing type) is a [`LowerError`]. The Validator has
-//! already reported every such defect, so this is a defensive path.
+//! Names become indices, declared types become resolved types, spans are copied
+//! in order, and Origin and approval data are dropped. A construct that cannot
+//! be lowered (an unresolved name, an unrecognized construct, a missing type)
+//! is a [`LowerError`]. The Validator has already reported every such defect,
+//! so this is a defensive path.
 
 use rt_compiled::{
     CType, CollectionIdx, CompiledBody, CompiledCollection, CompiledDocument, CompiledEnum,
@@ -18,7 +20,8 @@ use rt_ir::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
-/// A construct that cannot be lowered, with the rule it was found in, when there is one.
+/// A construct that cannot be lowered, with the rule it was found in, when
+/// there is one.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct LowerError {
     pub rule: Option<RuleId>,
@@ -44,7 +47,8 @@ fn idx<T>(value: usize, make: impl Fn(u32) -> T, what: &str) -> Lowered<T> {
 /// The fields of one collection by name.
 type Fields<'a> = BTreeMap<&'a Name, (FieldIdx, CType)>;
 
-/// The declarations of the Rulebook as index tables, plus the Targets of the compiled rules.
+/// The declarations of the Rulebook as index tables, plus the Targets of the
+/// compiled rules.
 struct Tables<'a> {
     rb: &'a Rulebook,
     enums: BTreeMap<&'a Name, EnumIdx>,
@@ -351,8 +355,9 @@ fn schema<'a>(
         collections: BTreeMap::new(),
         targets: targets.clone(),
     };
-    // Enums first: every other declaration may name one. The first declaration of a name is the
-    // one that resolves; a repeated name is rejected by the Compiled_Rulebook checks.
+    // Enums first: every other declaration may name one. The first declaration
+    // of a name is the one that resolves; a repeated name is rejected by the
+    // Compiled_Rulebook checks.
     for (i, e) in rb.types.enums.iter().enumerate() {
         t.enums
             .entry(&e.name)
@@ -457,7 +462,8 @@ impl PartsWithoutOrder {
     }
 }
 
-/// Lowers the Effective revisions (ascending by rule identifier) and the Precedence_Declarations.
+/// Lowers the Effective revisions (ascending by rule identifier) and the
+/// Precedence_Declarations.
 pub(crate) fn lower(
     rb: &Rulebook,
     effective: &BTreeMap<RuleId, RuleKey>,
@@ -530,7 +536,8 @@ pub(crate) fn lower(
         });
     }
 
-    // Referenced documents, ascending by identifier, with their declared hashes.
+    // Referenced documents, ascending by identifier, with their declared
+    // hashes.
     let mut docs: BTreeMap<DocumentId, Sha256Hex> = BTreeMap::new();
     for sp in rules
         .iter()

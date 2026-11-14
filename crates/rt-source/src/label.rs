@@ -2,9 +2,9 @@
 
 /// The numbering label at the start of `s`, when one is followed by whitespace.
 ///
-/// The accepted forms are `\d+(\.\d+)*[.)]?`, `\([a-z]{1,2}\)`, `\([ivxlc]+\)` and `[A-Z][.)]`.
-/// The label text includes its closing punctuation. A label at the very end of `s` has no
-/// following whitespace and is not a label.
+/// The accepted forms are `\d+(\.\d+)*[.)]?`, `\([a-z]{1,2}\)`, `\([ivxlc]+\)`
+/// and `[A-Z][.)]`. The label text includes its closing punctuation. A label at
+/// the very end of `s` has no following whitespace and is not a label.
 pub(crate) fn leading_label(s: &str) -> Option<&str> {
     let bytes = s.as_bytes();
     let len = match *bytes.first()? {

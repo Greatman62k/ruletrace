@@ -59,8 +59,9 @@ fn value(r: &NewRecord<'_>, hash: Option<&str>) -> Option<Value<()>> {
     object(members)
 }
 
-/// The record line with its `hash` (SHA-256 of the compact form without the `hash` key), and
-/// that hash. `None` only if the fixed key set were duplicated, which it cannot be.
+/// The record line with its `hash` (SHA-256 of the compact form without the
+/// `hash` key), and that hash. `None` only if the fixed key set were
+/// duplicated, which it cannot be.
 pub(crate) fn record_line(r: &NewRecord<'_>) -> Option<(String, Sha256Hex)> {
     let hash = sha256(write_compact(&value(r, None)?).as_bytes());
     let line = write_compact(&value(r, Some(hash.as_str()))?);

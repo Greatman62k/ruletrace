@@ -68,8 +68,9 @@ impl fmt::Display for BindingError {
 
 impl std::error::Error for BindingError {}
 
-/// The Approval_Binding: the pairs of document identifier and document hash, sorted by
-/// document identifier in UTF-8 byte order, with no document twice (Req 26.7).
+/// The Approval_Binding: the pairs of document identifier and document hash,
+/// sorted by document identifier in UTF-8 byte order, with no document twice
+/// (Req 26.7).
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default)]
 pub struct ApprovalBinding(Vec<BindingPair>);
 
@@ -100,8 +101,9 @@ impl ApprovalBinding {
 
 /// One verified record of the ledger.
 ///
-/// The fields are private and there is no public constructor: a value of this type exists only
-/// as the result of [`parse_ledger`](crate::parse_ledger), which has verified it.
+/// The fields are private and there is no public constructor: a value of this
+/// type exists only as the result of [`parse_ledger`](crate::parse_ledger),
+/// which has verified it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LedgerRecord {
     pub(crate) seq: u32,
@@ -181,10 +183,11 @@ impl LedgerRecord {
     }
 }
 
-/// A verified ledger: records with sequence numbers 1.. in file order and an intact chain.
+/// A verified ledger: records with sequence numbers 1.. in file order and an
+/// intact chain.
 ///
-/// There is no constructor from records and no mutating method. A value comes from
-/// [`parse_ledger`](crate::parse_ledger) or is the empty ledger.
+/// There is no constructor from records and no mutating method. A value comes
+/// from [`parse_ledger`](crate::parse_ledger) or is the empty ledger.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct ApprovalLedger {
     pub(crate) records: Vec<LedgerRecord>,
@@ -216,8 +219,8 @@ impl ApprovalLedger {
     }
 }
 
-/// Borrowed view of the twelve fields, used to build the canonical bytes of a record before
-/// and after its fields are fully validated.
+/// Borrowed view of the twelve fields, used to build the canonical bytes of a
+/// record before and after its fields are fully validated.
 pub(crate) struct Parts<'a> {
     pub seq: u32,
     pub kind: RecordKind,
@@ -252,8 +255,8 @@ impl<'a> Parts<'a> {
     }
 }
 
-/// Builds an object value. The keys of every caller are fixed and distinct, so the error case
-/// cannot occur; the fallback keeps the function total.
+/// Builds an object value. The keys of every caller are fixed and distinct, so
+/// the error case cannot occur; the fallback keeps the function total.
 fn object(members: Vec<(&str, Value<()>)>) -> Value<()> {
     Value::object(
         members
@@ -264,7 +267,8 @@ fn object(members: Vec<(&str, Value<()>)>) -> Value<()> {
     .unwrap_or_else(|_| Value::null())
 }
 
-/// The record as a value, key order of design §3.8.1, with or without the `hash` key.
+/// The record as a value, key order of design §3.8.1, with or without the
+/// `hash` key.
 pub(crate) fn record_value(p: &Parts<'_>, with_hash: bool) -> Value<()> {
     let binding = p
         .binding
@@ -300,7 +304,8 @@ pub(crate) fn computed_hash(p: &Parts<'_>) -> Sha256Hex {
     sha256(write_compact(&record_value(p, false)).as_bytes())
 }
 
-/// The canonical compact line of a record, with its `hash`, without the line feed.
+/// The canonical compact line of a record, with its `hash`, without the line
+/// feed.
 pub(crate) fn record_line(p: &Parts<'_>) -> String {
     write_compact(&record_value(p, true))
 }

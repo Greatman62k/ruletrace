@@ -222,9 +222,10 @@ fn parse_step(node: &Value<Position>) -> Result<Step, DemoError> {
 
 /// Parses `RUNBOOK.md`.
 ///
-/// The Markdown must hold exactly one block labelled `ruletrace-runbook`. Any other fenced block
-/// with a line that starts with `ruletrace`, `ruletrace-ai`, `prize-check` or `bracket-check`
-/// must be marked `live` in its info string, so no unexecuted offline command can exist.
+/// The Markdown must hold exactly one block labelled `ruletrace-runbook`. Any
+/// other fenced block with a line that starts with `ruletrace`, `ruletrace-ai`,
+/// `prize-check` or `bracket-check` must be marked `live` in its info string,
+/// so no unexecuted offline command can exist.
 ///
 /// # Errors
 /// [`DemoError::Runbook`] naming the line, step or field.

@@ -21,7 +21,8 @@ fn element(id: u32, kind: ElementKind, start: u32, end: u32, line: u32, column: 
     }
 }
 
-/// "# Title\n1. été\r\nend" : heading 0..7, list item 8..15 (é is two bytes), paragraph 17..20.
+/// "# Title\n1. été\r\nend" : heading 0..7, list item 8..15 (é is two bytes),
+/// paragraph 17..20.
 fn sample() -> SourceModel {
     let text = "# Title\n1. été\r\nend";
     let mut item = element(1, ElementKind::ListItem, 8, 16, 2, 1);
@@ -184,13 +185,16 @@ fn line_and_column_handle_terminators_bom_and_scalars() {
     // BOM is 3 bytes and one scalar; "a" is at column 2.
     assert_eq!(m.line_column(0), Some((1, 1)));
     assert_eq!(m.line_column(3), Some((1, 2)));
-    assert_eq!(m.line_column(5), Some((1, 4))); // between CR and LF, still line 1
+    // Between CR and LF, still line 1.
+    assert_eq!(m.line_column(5), Some((1, 4)));
     assert_eq!(m.line_column(6), Some((2, 1)));
     assert_eq!(m.line_column(8), Some((3, 1)));
     assert_eq!(m.line_column(10), Some((4, 1)));
-    assert_eq!(m.line_column(14), Some((4, 4))); // after "d é"
+    // After "d é".
+    assert_eq!(m.line_column(14), Some((4, 4)));
     assert_eq!(m.line_column(15), None);
-    assert_eq!(m.line_column(1), None); // inside the BOM
+    // Inside the BOM.
+    assert_eq!(m.line_column(1), None);
     assert!(!m.is_char_boundary(1));
     assert_eq!(m.len_bytes(), 14);
 }
@@ -284,8 +288,9 @@ fn source_models_reject_a_second_model_for_one_document() {
     assert_eq!(set.iter().count(), 1);
 }
 
-/// Every text up to four pieces from a mixed alphabet, with one paragraph per non-empty line:
-/// the model prints, reloads to an equal model, and every element resolves to its own text.
+/// Every text up to four pieces from a mixed alphabet, with one paragraph per
+/// non-empty line: the model prints, reloads to an equal model, and every
+/// element resolves to its own text.
 #[test]
 fn exhaustive_small_documents_round_trip_and_resolve() {
     let pieces = ["a", "é", "\n", "\r", "\r\n", "\u{feff}", " "];

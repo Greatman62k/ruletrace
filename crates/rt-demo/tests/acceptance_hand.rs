@@ -1,14 +1,17 @@
-//! The demonstration acceptance test, `hand` profile (task 6.9, design §8.11.12, Req 33.15 to
-//! 33.17, 20.26).
+//! The demonstration acceptance test, `hand` profile (design §8.11.12, Req
+//! 33.15 to 33.17, 20.26).
 //!
-//! In order: manifest checks, the runbook step by step against the golden files, every trace
-//! verified, the Proof_Report replayed by an independent decimal reference, the composition of the
-//! data (Req 33.13), the Coverage_Statement, the dependency tree of `ruletrace`, and the smoke
-//! versions of the mutations M1 to M3 (design §8.11.11). Run with `-- --nocapture` for the summary.
+//! In order: manifest checks, the runbook step by step against the golden
+//! files, every trace verified, the Proof_Report replayed by an independent
+//! decimal reference, the composition of the data (Req 33.13), the
+//! Coverage_Statement, the dependency tree of `ruletrace`, and the smoke
+//! versions of the mutations M1 to M3 (design §8.11.11). Run with
+//! `-- --nocapture` for the summary.
 //!
-//! The binaries come from `RT_BIN_DIR` or from a `cargo build` of `rt-cli`. Bless the golden files
-//! with `RT_DEMO_BLESS=1` (refused when `CI` is set). The test uses no network and no credential:
-//! each process runs with an empty environment.
+//! The binaries come from `RT_BIN_DIR` or from a `cargo build` of `rt-cli`.
+//! Bless the golden files with `RT_DEMO_BLESS=1` (refused when `CI` is set).
+//! The test uses no network and no credential: each process runs with an empty
+//! environment.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -30,8 +33,6 @@ type TestResult = Result<(), Box<dyn std::error::Error>>;
 type Json = Value<Position>;
 
 const PROFILE: &str = "hand";
-
-// ---------------------------------------------------------------- environment
 
 fn demo_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../demo/stand-in-hand")
@@ -74,8 +75,6 @@ impl Drop for TempDir {
         let _ = std::fs::remove_dir_all(&self.0);
     }
 }
-
-// ---------------------------------------------------------------- JSON access
 
 fn json(label: &str, bytes: &[u8]) -> Json {
     let input = InputId::new(label).unwrap();
@@ -122,10 +121,8 @@ fn same(a: &Json, b: &Json) -> bool {
     }
 }
 
-// ---------------------------------------------------------------- reference decimal arithmetic
-
-/// An exact decimal for the replay: `mantissa / 10^scale`. It is an independent reference model;
-/// it shares no code with `rt-numeric`.
+/// An exact decimal for the replay: `mantissa / 10^scale`. It is an independent
+/// reference model; it shares no code with `rt-numeric`.
 #[derive(Clone, Copy, Debug)]
 struct Dec {
     mantissa: i128,
@@ -176,7 +173,8 @@ enum Tv {
     Num(Dec),
     Bool(bool),
     Unknown,
-    /// A value of another type (standings). Only a `recorded` decision carries one.
+    /// A value of another type (standings). Only a `recorded` decision carries
+    /// one.
     Other,
 }
 
@@ -221,8 +219,9 @@ fn all_of(values: &[Tv]) -> Tv {
     }
 }
 
-/// Recomputes every calculation and decision entry of one Proof_Report section from its recorded
-/// operation and operands. Returns the number of entries recomputed.
+/// Recomputes every calculation and decision entry of one Proof_Report section
+/// from its recorded operation and operands. Returns the number of entries
+/// recomputed.
 fn replay_section(section: &Json) -> usize {
     let mut recorded: Vec<(u64, Tv)> = Vec::new();
     for read in items(at(section, "inputs_read")) {
@@ -302,8 +301,6 @@ fn replay_section(section: &Json) -> usize {
     checked
 }
 
-// ---------------------------------------------------------------- running steps
-
 fn step_by_id<'a>(runbook: &'a Runbook, id: &str) -> &'a Step {
     runbook
         .steps_for(PROFILE)
@@ -341,8 +338,6 @@ fn reads(trace: &Json, participant: &str, name: &str) -> bool {
             && at(e, "name").as_str() == Some(name)
     })
 }
-
-// ---------------------------------------------------------------- summary
 
 fn describe_outcome(outcome: &Json) -> String {
     match text(at(outcome, "state")) {
@@ -402,8 +397,6 @@ fn print_summary(runbook: &Runbook, work: &Path) {
     println!("\nfirst Proof_Report section:\n{first}");
 }
 
-// ---------------------------------------------------------------- the test
-
 #[test]
 fn hand_profile_acceptance() -> TestResult {
     let demo = demo_dir();
@@ -419,7 +412,8 @@ fn hand_profile_acceptance() -> TestResult {
         Kind::Bool(true)
     ));
 
-    // 2 to 4. The runbook, step by step: exit codes and every output byte against its golden file.
+    // 2 to 4. The runbook, step by step: exit codes and every output byte
+    // against its golden file.
     let runbook = parse_runbook(&std::fs::read_to_string(demo.join("RUNBOOK.md"))?)?;
     let bless = std::env::var("RT_DEMO_BLESS").ok();
     let ci = std::env::var("CI").ok();
@@ -441,7 +435,8 @@ fn hand_profile_acceptance() -> TestResult {
         "a Decision_Trace is not verified"
     );
 
-    // 5b. The Proof_Report replays: each calculation recomputed from operation and operands.
+    // 5b. The Proof_Report replays: each calculation recomputed from operation
+    // and operands.
     let proof = read_json(&work.join("work/proof.json"));
     let header = at(&proof, "header");
     let sections = items(at(&proof, "decisions"));
@@ -514,8 +509,9 @@ fn hand_profile_acceptance() -> TestResult {
         "the seeded difference is not reported"
     );
 
-    // 5d. The Coverage_Statement classifies every clause of the fresh Candidate_Clause list as an
-    // approved rule (the generator itself is tested in tests/coverage.rs).
+    // 5d. The Coverage_Statement classifies every clause of the fresh
+    // Candidate_Clause list as an approved rule (the generator itself is tested
+    // in tests/coverage.rs).
     let candidates = read_json(&work.join("work/candidates.json"));
     let statement = read_json(&demo.join("golden/artifacts/coverage-statement.json"));
     let clauses = items(at(&candidates, "clauses"));
@@ -531,7 +527,8 @@ fn hand_profile_acceptance() -> TestResult {
         assert_eq!(text(at(e, "class")), "rule_approved");
     }
 
-    // 5e. The dependency tree of `ruletrace` has no network, provider or AI crate.
+    // 5e. The dependency tree of `ruletrace` has no network, provider or AI
+    // crate.
     let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
     let metadata = Command::new(cargo)
         .args([
@@ -576,8 +573,9 @@ fn hand_profile_acceptance() -> TestResult {
     *slot = if *slot == b'x' { b'y' } else { b'x' };
     std::fs::write(&doc_path, &doc)?;
     run_expecting(step_by_id(&runbook, "s01"), 0, &bin, &m1.0);
-    // The canonical data holds an Indeterminate Outcome, and `evaluate` ranks stage 6 (exit 4)
-    // before the provenance rows of stage 7 (exit 2), see crates/rt-cli/src/evaluate.rs.
+    // The canonical data holds an Indeterminate Outcome, and `evaluate` ranks
+    // stage 6 (exit 4) before the provenance rows of stage 7 (exit 2), see
+    // crates/rt-cli/src/evaluate.rs.
     let c = run_expecting(step_by_id(&runbook, "s06"), 4, &bin, &m1.0);
     assert!(
         output_text(&c).contains("RT-PRV-0002"),
@@ -626,7 +624,8 @@ fn hand_profile_acceptance() -> TestResult {
     assert!(changed >= 1, "no dependent Outcome changed");
     assert!(unchanged >= 1, "no independent Outcome was checked");
 
-    // M3: one approved Rule_Content literal edited without a new approval (RN-29, option a).
+    // M3: one approved Rule_Content literal edited without a new approval
+    // (RN-29, option a).
     let m3 = TempDir::new("m3");
     rt_demo::copy_demo(work, &m3.0)?;
     std::fs::remove_file(m3.0.join("work/validation.json"))?;

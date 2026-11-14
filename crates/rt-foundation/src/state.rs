@@ -1,12 +1,14 @@
 //! `DiagnosticState` and the staged result types (Req 22, Req 7.19).
 //!
-//! The only stored diagnostic state is one ordered list. `has_errors`, `no_errors` and the
-//! outcome are computed from that list on every call. No constructor, field or method accepts
-//! them, so a contradictory state cannot be built.
+//! The only stored diagnostic state is one ordered list. `has_errors`,
+//! `no_errors` and the outcome are computed from that list on every call. No
+//! constructor, field or method accepts them, so a contradictory state cannot
+//! be built.
 
 use crate::{Code, Diagnostic};
 
-/// Result of validation, derived from the diagnostic list. Never stored or accepted as input.
+/// Result of validation, derived from the diagnostic list. Never stored or
+/// accepted as input.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ValidationOutcome {
     /// No blocking diagnostic exists.
@@ -15,7 +17,8 @@ pub enum ValidationOutcome {
     Failed,
 }
 
-/// An ordered list of diagnostics. The private list is the single source of truth.
+/// An ordered list of diagnostics. The private list is the single source of
+/// truth.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct DiagnosticState {
     items: Vec<Diagnostic>,
@@ -33,7 +36,8 @@ impl DiagnosticState {
         self.items.push(d);
     }
 
-    /// Appends all diagnostics of `other`, keeping their order. Nothing is merged or dropped.
+    /// Appends all diagnostics of `other`, keeping their order. Nothing is
+    /// merged or dropped.
     pub fn extend(&mut self, other: DiagnosticState) {
         self.items.extend(other.items);
     }
@@ -51,7 +55,8 @@ impl DiagnosticState {
         &self.items
     }
 
-    /// True when any diagnostic is an Error, Ambiguity or Unsupported. Computed, never stored.
+    /// True when any diagnostic is an Error, Ambiguity or Unsupported.
+    /// Computed, never stored.
     #[must_use]
     pub fn has_errors(&self) -> bool {
         self.items.iter().any(|d| d.severity().is_blocking())
@@ -82,7 +87,8 @@ impl DiagnosticState {
     }
 }
 
-/// A successful stage value with its non-blocking diagnostics. Only Warnings can be held.
+/// A successful stage value with its non-blocking diagnostics. Only Warnings
+/// can be held.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Staged<T> {
     value: T,
@@ -125,7 +131,8 @@ pub struct Rejected {
 }
 
 impl Rejected {
-    /// Builds a rejection. A list with no blocking diagnostic is handed back unchanged.
+    /// Builds a rejection. A list with no blocking diagnostic is handed back
+    /// unchanged.
     pub fn new(diagnostics: DiagnosticState) -> Result<Self, DiagnosticState> {
         if diagnostics.has_errors() {
             Ok(Self { diagnostics })
@@ -150,8 +157,9 @@ impl Rejected {
 /// The result of a pipeline stage.
 pub type StageResult<T> = Result<Staged<T>, Rejected>;
 
-/// Builds a stage result from a value and its diagnostics. A blocking diagnostic anywhere makes
-/// the result a `Rejected` and drops the value, so a value never accompanies a blocking item.
+/// Builds a stage result from a value and its diagnostics. A blocking
+/// diagnostic anywhere makes the result a `Rejected` and drops the value, so a
+/// value never accompanies a blocking item.
 pub fn stage_result<T>(value: T, diagnostics: DiagnosticState) -> StageResult<T> {
     match Rejected::new(diagnostics) {
         Ok(rejected) => Err(rejected),

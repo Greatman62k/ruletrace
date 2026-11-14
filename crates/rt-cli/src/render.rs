@@ -1,9 +1,9 @@
 //! Rendering of Diagnostics for standard error (Req 17.4, 19.5, 19.10).
 //!
-//! Each Diagnostic is a line group: the severity, code and message on the first line, then one
-//! indented line for the primary Location and one for each related Location. Every piece of
-//! text goes through `escape_controls`, so the only control character in the output is the line
-//! feed that ends each line.
+//! Each Diagnostic is a line group: the severity, code and message on the first
+//! line, then one indented line for the primary Location and one for each
+//! related Location. Every piece of text goes through `escape_controls`, so the
+//! only control character in the output is the line feed that ends each line.
 
 use rt_foundation::{
     escape_controls, CliLocation, Diagnostic, DiagnosticState, Location, Severity,
@@ -110,9 +110,10 @@ fn stored_location(v: &Value<Position>) -> Option<String> {
     }
 }
 
-/// A Diagnostic that a Validation_Result artifact stores, as the line group of [`diagnostic`],
-/// read from its RT-JSON form without changing any of its parts. `None` when the value is not a
-/// Diagnostic of the form of [`diagnostic_value`].
+/// A Diagnostic that a Validation_Result artifact stores, as the line group of
+/// [`diagnostic`], read from its RT-JSON form without changing any of its
+/// parts. `None` when the value is not a Diagnostic of the form of
+/// [`diagnostic_value`].
 #[must_use]
 pub fn stored(v: &Value<Position>) -> Option<String> {
     let text = |key: &str| v.get(key).and_then(|m| m.value.as_str());
@@ -154,8 +155,8 @@ fn opt_text(value: Option<&str>) -> Value<()> {
 }
 
 fn object(members: Vec<(&str, Value<()>)>) -> Value<()> {
-    // The keys are distinct constants at every call, so building cannot fail; the fallback is
-    // unreachable.
+    // The keys are distinct constants at every call, so building cannot fail;
+    // the fallback is unreachable.
     Value::object(
         members
             .into_iter()
@@ -198,9 +199,9 @@ fn location_value(location: &Location) -> Value<()> {
     }
 }
 
-/// One Diagnostic as an RT-JSON value with the keys `code`, `severity`, `message`, `primary`,
-/// `related` and `rules`. This is the form of the Validation_Result artifact and of
-/// `--output-format json`.
+/// One Diagnostic as an RT-JSON value with the keys `code`, `severity`,
+/// `message`, `primary`, `related` and `rules`. This is the form of the
+/// Validation_Result artifact and of `--output-format json`.
 #[must_use]
 pub fn diagnostic_value(d: &Diagnostic) -> Value<()> {
     let rules = d

@@ -1,16 +1,18 @@
 //! Evaluation order (design §3.6.2 step 5, Req 9.8, 9.9).
 //!
 //! Kahn's algorithm over the dependencies between rules. The ready set is a
-//! `BTreeSet<RuleId>`, so among rules that are ready together the lowest identifier (bytewise)
-//! comes first, whatever the input order. A rule that remains once the ready set is empty lies on
-//! or behind a cycle; each cycle is one Diagnostic `RT-CMP-0001`.
+//! `BTreeSet<RuleId>`, so among rules that are ready together the lowest
+//! identifier (bytewise) comes first, whatever the input order. A rule that
+//! remains once the ready set is empty lies on or behind a cycle; each cycle is
+//! one Diagnostic `RT-CMP-0001`.
 
 use rt_compiled::{CompiledBody, CompiledRule, NodeKind, RuleIdx};
 use rt_foundation::{Code, Diagnostic, Location, RuleId, RuleRef};
 use std::collections::{BTreeMap, BTreeSet};
 
-/// For each rule, the rules it depends on. A `ref` depends on every non-ranking rule with that
-/// Target, and a `rank_reference` on every ranking rule with that Target.
+/// For each rule, the rules it depends on. A `ref` depends on every non-ranking
+/// rule with that Target, and a `rank_reference` on every ranking rule with
+/// that Target.
 fn dependencies(rules: &[CompiledRule], targets: &[rt_ir::Name]) -> Vec<BTreeSet<usize>> {
     let mut value: BTreeMap<&rt_ir::Name, Vec<usize>> = BTreeMap::new();
     let mut ranking: BTreeMap<&rt_ir::Name, Vec<usize>> = BTreeMap::new();
@@ -40,8 +42,9 @@ fn dependencies(rules: &[CompiledRule], targets: &[rt_ir::Name]) -> Vec<BTreeSet
         .collect()
 }
 
-/// The first span of a rule as a Location. The Compiler holds no Source_Model, so a span cannot
-/// be verified here and the Location names the document (Req 6.24); none is invented.
+/// The first span of a rule as a Location. The Compiler holds no Source_Model,
+/// so a span cannot be verified here and the Location names the document (Req
+/// 6.24); none is invented.
 fn first_span(rule: &CompiledRule) -> Location {
     rule.spans
         .first()
@@ -114,7 +117,8 @@ fn cycles(rules: &[CompiledRule], deps: &[BTreeSet<usize>], waiting: &[usize]) -
         .filter(|(_, n)| **n > 0)
         .map(|(i, _)| i)
         .collect();
-    // reach[u]: the remaining rules reachable from u over one or more dependency edges.
+    // reach[u]: the remaining rules reachable from u over one or more
+    // dependency edges.
     let reach = |start: usize| -> BTreeSet<usize> {
         let mut seen = BTreeSet::new();
         let mut stack: Vec<usize> = vec![start];
@@ -136,8 +140,9 @@ fn cycles(rules: &[CompiledRule], deps: &[BTreeSet<usize>], waiting: &[usize]) -
         if done.contains(&u) || !ru.contains(&u) {
             continue;
         }
-        // The cycle through u: the rules that reach u and are reached from it. Rule indices
-        // ascend with rule identifiers, so the set is already in ascending identifier order.
+        // The cycle through u: the rules that reach u and are reached from it.
+        // Rule indices ascend with rule identifiers, so the set is already in
+        // ascending identifier order.
         let members: Vec<usize> = ru
             .iter()
             .copied()

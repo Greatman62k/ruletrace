@@ -48,8 +48,8 @@ impl FieldError {
     }
 }
 
-/// The twelve fields as decoded from one line. The reviewer is still text: its validity is
-/// checked after the sequence and the chain (design §3.8.1).
+/// The twelve fields as decoded from one line. The reviewer is still text: its
+/// validity is checked after the sequence and the chain (design §3.8.1).
 struct Decoded {
     seq: u32,
     kind: RecordKind,
@@ -132,8 +132,8 @@ fn column_of(loc: &Location) -> Option<u32> {
     }
 }
 
-/// Parses one line as RT-JSON and runs the flag and lifecycle key check (`RT-DGN-0001` to
-/// `0003`). Locations are moved to the file line.
+/// Parses one line as RT-JSON and runs the flag and lifecycle key check
+/// (`RT-DGN-0001` to `0003`). Locations are moved to the file line.
 fn parse_line(
     input: &InputId,
     line_no: u32,
@@ -207,7 +207,8 @@ fn u32_field(obj: &Value<Position>, key: &str) -> Result<u32, FieldError> {
         })
 }
 
-/// `YYYY-MM-DDTHH:MM:SSZ` with ASCII digits. Shape only: no calendar or clock check.
+/// `YYYY-MM-DDTHH:MM:SSZ` with ASCII digits. Shape only: no calendar or clock
+/// check.
 fn time_shape_ok(text: &str) -> bool {
     let b = text.as_bytes();
     b.len() == 20
@@ -269,7 +270,8 @@ fn decode_binding(obj: &Value<Position>) -> Result<ApprovalBinding, FieldError> 
         }
         pairs.push(BindingPair { document, sha256 });
     }
-    // Strictly ascending was checked above, so this cannot fail; the mapping keeps it total.
+    // Strictly ascending was checked above, so this cannot fail; the mapping
+    // keeps it total.
     ApprovalBinding::new(pairs).map_err(|e| FieldError::new("binding", None, e.to_string()))
 }
 
@@ -390,7 +392,8 @@ impl Walk<'_> {
         let input = self.input;
         let value = parse_line(input, line_no, text, self.limits)?;
 
-        // 1. Syntax and fields (RT-APR-0101), including the canonical compact form.
+        // 1. Syntax and fields (RT-APR-0101), including the canonical compact
+        //    form.
         let d = decode(&value).map_err(|e| {
             one(
                 Code::LedgerMalformed,
@@ -471,9 +474,10 @@ impl Walk<'_> {
         })
     }
 
-    /// A decision after a rejection of the same revision is contradictory (Rejected is
-    /// terminal). So is a second decision of the same revision with the same content hash
-    /// (Req 25.16). An approval of different content is a legitimate later approval.
+    /// A decision after a rejection of the same revision is contradictory
+    /// (Rejected is terminal). So is a second decision of the same revision
+    /// with the same content hash (Req 25.16). An approval of different content
+    /// is a legitimate later approval.
     fn check_contradiction(
         &mut self,
         line_no: u32,
@@ -519,17 +523,19 @@ impl Walk<'_> {
 
 /// Parses and verifies a ledger file.
 ///
-/// Verification runs record by record, in file order, and stops at the first failing record.
-/// The checks for one record are, in order: syntax and fields (`RT-APR-0101`, which includes
-/// the canonical compact form of the line), sequence number (`0103`), hash chain (`0102`),
-/// reviewer validity (`0105`) and contradictions (`0104`). The flag and lifecycle key check
-/// (`RT-DGN-0001` to `0003`) runs on each line right after it parses. A header-only ledger is
+/// Verification runs record by record, in file order, and stops at the first
+/// failing record. The checks for one record are, in order: syntax and fields
+/// (`RT-APR-0101`, which includes the canonical compact form of the line),
+/// sequence number (`0103`), hash chain (`0102`), reviewer validity (`0105`)
+/// and contradictions (`0104`). The flag and lifecycle key check (`RT-DGN-0001`
+/// to `0003`) runs on each line right after it parses. A header-only ledger is
 /// valid and empty. The file must end with a line feed.
 ///
 /// # Errors
-/// The diagnostics of the first failing record (or of the file as a whole for size, encoding
-/// or a missing header). Their Input_Location names the file line and, where known, the
-/// column and field. Nothing is returned on failure, so no status can be derived.
+/// The diagnostics of the first failing record (or of the file as a whole for
+/// size, encoding or a missing header). Their Input_Location names the file
+/// line and, where known, the column and field. Nothing is returned on failure,
+/// so no status can be derived.
 pub fn parse_ledger(
     input: &InputId,
     bytes: &[u8],

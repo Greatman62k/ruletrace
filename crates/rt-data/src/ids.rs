@@ -49,8 +49,8 @@ macro_rules! name {
         impl $name {
             /// Builds the name: 1 to 200 scalar values, no control character.
             ///
-            /// # Errors
-            /// Returns [`NameError`] for an empty, overlong or control-character name.
+            /// # Errors Returns [`NameError`] for an empty, overlong or
+            /// control-character name.
             pub fn new(text: impl Into<String>) -> Result<Self, NameError> {
                 let text = text.into();
                 check(&text)?;

@@ -1,11 +1,12 @@
-//! The `ruletrace ingest` golden test: the real binary, a scrubbed environment, byte comparison.
+//! The `ruletrace ingest` golden test: the real binary, a scrubbed environment,
+//! byte comparison.
 
 use crate::harness::{compare_bytes, fixtures_root, platform};
 use std::path::PathBuf;
 use std::process::Command;
 
-/// Builds `ruletrace` and returns its path. The binary lives in the same profile directory as
-/// this test executable.
+/// Builds `ruletrace` and returns its path. The binary lives in the same
+/// profile directory as this test executable.
 pub fn ruletrace_binary() -> PathBuf {
     let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
     let status = Command::new(cargo)

@@ -3,8 +3,9 @@
 use crate::SourceModel;
 use rt_foundation::{SourceSpan, SpanError, SpanSource};
 
-/// A clause the Extractor offers for rule authoring. It is not a Rule and has no approval state
-/// (Req 2.2). The span was verified against the model, and the text is the exact span bytes.
+/// A clause the Extractor offers for rule authoring. It is not a Rule and has
+/// no approval state (Req 2.2). The span was verified against the model, and
+/// the text is the exact span bytes.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CandidateClause {
     span: SourceSpan,
@@ -13,12 +14,12 @@ pub struct CandidateClause {
 }
 
 impl CandidateClause {
-    /// Builds a clause for the byte range `start..end` of `model`. Line and column come from
-    /// the model, and the text is copied from it.
+    /// Builds a clause for the byte range `start..end` of `model`. Line and
+    /// column come from the model, and the text is copied from it.
     ///
     /// # Errors
-    /// A [`SpanError`] when the range is empty, outside the document or not on character
-    /// boundaries.
+    /// A [`SpanError`] when the range is empty, outside the document or not on
+    /// character boundaries.
     pub fn new(
         model: &SourceModel,
         start: u32,

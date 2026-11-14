@@ -1,5 +1,5 @@
-//! Reports built from Decision_Traces. Task 5.12 provides the Proof_Report; the application
-//! report model of design §8.5 is added by the application tasks.
+//! Reports built from Decision_Traces. Task 5.12 provides the Proof_Report; the
+//! application report model of design §8.5 is added by the application tasks.
 
 pub mod proof;
 

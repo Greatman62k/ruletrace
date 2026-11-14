@@ -1,6 +1,7 @@
 //! Diagnostic severity.
 
-/// Severity of a diagnostic. Fixed per catalogue code, never chosen by a caller.
+/// Severity of a diagnostic. Fixed per catalogue code, never chosen by a
+/// caller.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Severity {
     /// A violation that blocks compilation.

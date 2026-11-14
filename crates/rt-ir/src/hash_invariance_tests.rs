@@ -1,12 +1,14 @@
 //! Property 13: Rule_Content_Hash invariance (task 4.14, design §5).
 //!
-//! Two Rulebook texts that carry the same Rule_Content but differ in everything that is not
-//! content give the same Rule_Content hash and the same Draft hash: the Origin, the span `line`
-//! and `column`, the order of the members of every JSON object, the layout, unreferenced
-//! documents, other rules and the order of the document list. Approval data and derived status
-//! are not inputs of the hash functions at all (the hash takes only the IR_Version, one
-//! revision and the declared documents), so no argument of them can change the result; the
-//! in-memory part of the property also replaces the Origin and the span positions directly.
+//! Two Rulebook texts that carry the same Rule_Content but differ in everything
+//! that is not content give the same Rule_Content hash and the same Draft hash:
+//! the Origin, the span `line` and `column`, the order of the members of every
+//! JSON object, the layout, unreferenced documents, other rules and the order
+//! of the document list. Approval data and derived status are not inputs of the
+//! hash functions at all (the hash takes only the IR_Version, one revision and
+//! the declared documents), so no argument of them can change the result; the
+//! in-memory part of the property also replaces the Origin and the span
+//! positions directly.
 //!
 //! **Validates: Requirements 3.13, 25.3, 25.9**
 
@@ -106,8 +108,8 @@ fn quoted(items: &[String]) -> String {
         .join(",")
 }
 
-/// Joins JSON members in an order given by `seed` (Fisher-Yates over a small LCG). Seed 0 keeps
-/// the given (canonical) order.
+/// Joins JSON members in an order given by `seed` (Fisher-Yates over a small
+/// LCG). Seed 0 keeps the given (canonical) order.
 fn members(mut items: Vec<String>, seed: u64) -> String {
     if seed != 0 {
         let mut state = seed;
@@ -184,7 +186,8 @@ fn rule_text(id: &str, c: &Content, n: &Noise, first: bool) -> String {
 fn rulebook_text(c: &Content, n: &Noise) -> String {
     let mut rules = vec![rule_text("elig.basic", c, n, true)];
     if n.extra_rule {
-        // A different rule with different content, placed after the one under test.
+        // A different rule with different content, placed after the one under
+        // test.
         let other = Content {
             value: "99".to_owned(),
             ..c.clone()
@@ -263,8 +266,8 @@ fn canonical_noise() -> Noise {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(128))]
 
-    /// Origin, span line and column, member order, other rules, unreferenced documents and
-    /// document order never change either hash.
+    /// Origin, span line and column, member order, other rules, unreferenced
+    /// documents and document order never change either hash.
     ///
     /// **Validates: Requirements 3.13, 25.3, 25.9**
     #[test]
@@ -273,14 +276,15 @@ proptest! {
         let varied = parse(&rulebook_text(&c, &n));
         prop_assert_eq!(hashes(&varied, "elig.basic"), hashes(&base, "elig.basic"));
 
-        // The same Rulebook printed in both canonical forms hashes the same after re-parsing.
+        // The same Rulebook printed in both canonical forms hashes the same
+        // after re-parsing.
         for printed in [print_pretty(&varied).unwrap(), print_compact(&varied).unwrap()] {
             prop_assert_eq!(hashes(&parse(&printed), "elig.basic"), hashes(&base, "elig.basic"));
         }
     }
 
-    /// Replacing the Origin and the span positions of a parsed revision in memory leaves the
-    /// hashes unchanged.
+    /// Replacing the Origin and the span positions of a parsed revision in
+    /// memory leaves the hashes unchanged.
     ///
     /// **Validates: Requirements 25.3, 25.9**
     #[test]

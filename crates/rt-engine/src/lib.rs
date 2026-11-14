@@ -1,33 +1,38 @@
-//! The Rules_Engine: a pure function from a Compiled_Rulebook, Competition_Data and Questions to
-//! Outcomes and Decision_Traces (design §3.6.3, Req 8, 10, 11).
+//! The Rules_Engine: a pure function from a Compiled_Rulebook, Competition_Data
+//! and Questions to Outcomes and Decision_Traces (design §3.6.3, Req 8, 10,
+//! 11).
 //!
-//! * The engine takes in-memory typed values only. It reads no file, environment, clock, random
-//!   source or source text, keeps no global state and uses only ordered collections, so equal
-//!   inputs give equal outputs in any order and next to any other rulebook (Req 10.2 to 10.8).
-//! * Numbers are `rt_numeric::ExactNumber`. Division, overflow and invalid numeric data are
-//!   reported as Diagnostics (`RT-EXE-0002`, `0003`, `0005`); nothing wraps, saturates or rounds
-//!   except where a rule declares rounding.
-//! * A field is Missing only when absent or `null`. Zero, `false` and `""` are present. A declared
-//!   default supplies a missing field and its spans are recorded in the trace (Req 11.2). Any
-//!   other missing input makes the result Unknown, and Boolean logic is Kleene three-valued:
-//!   every operand is evaluated left to right and nothing short-circuits (Req 11.4).
-//! * `count` and `sum` of an empty collection are 0. `min` and `max` of an empty collection are
-//!   Unknown, and only an Outcome that depends on them reports `RT-DGN-0005` (Req 8.29, 8.30).
-//!   A collection the data does not supply is missing information.
+//! * The engine takes in-memory typed values only. It reads no file,
+//!   environment, clock, random source or source text, keeps no global state
+//!   and uses only ordered collections, so equal inputs give equal outputs in
+//!   any order and next to any other rulebook (Req 10.2 to 10.8).
+//! * Numbers are `rt_numeric::ExactNumber`. Division, overflow and invalid
+//!   numeric data are reported as Diagnostics (`RT-EXE-0002`, `0003`, `0005`);
+//!   nothing wraps, saturates or rounds except where a rule declares rounding.
+//! * A field is Missing only when absent or `null`. Zero, `false` and `""` are
+//!   present. A declared default supplies a missing field and its spans are
+//!   recorded in the trace (Req 11.2). Any other missing input makes the result
+//!   Unknown, and Boolean logic is Kleene three-valued: every operand is
+//!   evaluated left to right and nothing short-circuits (Req 11.4).
+//! * `count` and `sum` of an empty collection are 0. `min` and `max` of an
+//!   empty collection are Unknown, and only an Outcome that depends on them
+//!   reports `RT-DGN-0005` (Req 8.29, 8.30). A collection the data does not
+//!   supply is missing information.
 //! * Every Outcome has one Decision_Trace that `rt_trace::replay` re-derives.
 //!
-//! * Ranking questions follow Req 12: every criterion has a declared direction, tie-breakers are
-//!   applied in declared order to the participants still tied, equal participants form one
-//!   Tie_Group, and `Rank_Position = 1 + participants strictly ahead`. A missing value that a
-//!   comparison needs makes the whole set it belongs to Indeterminate (`RT-EXE-0006`).
-//! * Several rules for one Target use only the first-listed rule of a precedence declaration and
-//!   record the others as considered and not applied. Without a declaration, unequal Known
-//!   results are one `RT-DGN-0004` and no result is selected (Req 12.5, 12.10, 12.11).
-//! * A supplied Published_Result is compared by exact equality (no tolerance), and the
-//!   differences are listed in participant then Target order (Req 13.12).
-//!
-//! Not part of this crate: `rank_reference` (task 9.3) and the two extra difference kinds for
-//! published ties (task 9.2).
+//! * Ranking questions follow Req 12: every criterion has a declared direction,
+//!   tie-breakers are applied in declared order to the participants still tied,
+//!   equal participants form one Tie_Group, and
+//!   `Rank_Position = 1 + participants strictly ahead`. A missing value that a
+//!   comparison needs makes the whole set it belongs to Indeterminate
+//!   (`RT-EXE-0006`).
+//! * Several rules for one Target use only the first-listed rule of a
+//!   precedence declaration and record the others as considered and not
+//!   applied. Without a declaration, unequal Known results are one
+//!   `RT-DGN-0004` and no result is selected (Req 12.5, 12.10, 12.11).
+//! * A supplied Published_Result is compared by exact equality (no tolerance),
+//!   and the differences are listed in participant then Target order (Req
+//!   13.12).
 #![forbid(unsafe_code)]
 
 mod compare;
@@ -58,10 +63,11 @@ use std::collections::BTreeSet;
 pub use crate::compare::{Comparison, Computed, Difference};
 pub use rt_trace::{DecisionTrace, Outcome, Reason};
 
-/// The result of one evaluation. `outcomes[i]` and `traces[i]` answer `questions[i]`.
+/// The result of one evaluation. `outcomes[i]` and `traces[i]` answer
+/// `questions[i]`.
 ///
-/// There is no stored validity flag: whether the evaluation had errors is derived from
-/// `diagnostics`.
+/// There is no stored validity flag: whether the evaluation had errors is
+/// derived from `diagnostics`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Evaluation {
     /// One Outcome per Question, in the order of the Questions.
@@ -82,12 +88,14 @@ struct Answer {
 
 /// Evaluates `questions` against `data` with the rules of `rulebook`.
 ///
-/// This is a pure function of its arguments. A fault in one Question (division by zero, overflow,
-/// a data value of the wrong type, a missing input) makes only the Questions that depend on it
-/// Indeterminate; the others are unchanged (Req 10.6, 11.6).
+/// This is a pure function of its arguments. A fault in one Question (division
+/// by zero, overflow, a data value of the wrong type, a missing input) makes
+/// only the Questions that depend on it Indeterminate; the others are unchanged
+/// (Req 10.6, 11.6).
 ///
-/// When `published` is supplied it is compared with the computed Outcomes by exact equality and
-/// the result is in [`Evaluation::comparison`]. The comparison never changes an Outcome.
+/// When `published` is supplied it is compared with the computed Outcomes by
+/// exact equality and the result is in [`Evaluation::comparison`]. The
+/// comparison never changes an Outcome.
 #[must_use]
 pub fn evaluate(
     rulebook: &CompiledRulebook,
@@ -103,7 +111,8 @@ pub fn evaluate(
     for (i, question) in questions.iter().enumerate() {
         let answer = answer(rulebook, &index, data, i, question);
         outcomes.push(answer.outcome);
-        // A trace is always buildable here: the parts have no entry that refers forward.
+        // A trace is always buildable here: the parts have no entry that refers
+        // forward.
         if let Some(trace) = answer.trace {
             trace_of.push(Some(traces.len()));
             traces.push(trace);
@@ -195,7 +204,8 @@ fn answer(
     }
 }
 
-/// Answers a value question over the rules of its Target (Req 12.5, 12.10, 12.11).
+/// Answers a value question over the rules of its Target (Req 12.5, 12.10,
+/// 12.11).
 fn value_answer(
     mut run: Run<'_>,
     index: &Index,
@@ -222,7 +232,8 @@ fn value_answer(
             let conflicted = matches!(&result.eval, Eval::Fault(found)
                 if found.iter().any(|d| d.code() == Code::ExecutionConflictDetected));
             if conflicted {
-                // Each incompatible rule and its result are recorded; none is marked applied.
+                // Each incompatible rule and its result are recorded; none is
+                // marked applied.
                 for r in rules {
                     run.record(*r);
                 }
@@ -261,7 +272,8 @@ fn invalid(position: usize, question: TraceQuestion, problems: &[String]) -> Ans
     )
 }
 
-/// An Indeterminate answer without evaluation: no rule result is selected or computed.
+/// An Indeterminate answer without evaluation: no rule result is selected or
+/// computed.
 fn refused(
     question: TraceQuestion,
     rules: &[RuleIdx],
@@ -344,7 +356,8 @@ fn unknown_diagnostics(rulebook: &CompiledRulebook, unks: &[Unk]) -> Vec<Diagnos
     out
 }
 
-/// Turns the finished run of `root` into the Outcome and Decision_Trace of the question.
+/// Turns the finished run of `root` into the Outcome and Decision_Trace of the
+/// question.
 fn conclude(
     mut run: Run<'_>,
     root: RuleIdx,

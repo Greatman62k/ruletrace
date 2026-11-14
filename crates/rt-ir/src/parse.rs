@@ -1,9 +1,10 @@
 //! The Rule_IR parser (design §4.1.1 to §4.1.5, Req 3, 4, 19, 22).
 //!
-//! [`parse_rulebook`] reads strict RT-JSON with `rt-json` and decodes it into a [`Rulebook`].
-//! It gathers every parse diagnostic of the document, sorts them into the canonical order of
-//! Req 7.10 and returns no Rulebook when there is one. Nothing is inferred, defaulted from
-//! another field or guessed: an absent `type` or `t` stays absent for the Validator to report.
+//! [`parse_rulebook`] reads strict RT-JSON with `rt-json` and decodes it into a
+//! [`Rulebook`]. It gathers every parse diagnostic of the document, sorts them
+//! into the canonical order of Req 7.10 and returns no Rulebook when there is
+//! one. Nothing is inferred, defaulted from another field or guessed: an absent
+//! `type` or `t` stays absent for the Validator to report.
 //!
 //! Diagnostic codes of this stage:
 //!
@@ -22,9 +23,10 @@
 //! | `RT-IR-0010` | missing required field, wrong JSON type or invalid value |
 //! | `RT-LIM-0004` | more than 10,000 rules, 100,000 revisions or 64 spans per rule |
 //!
-//! Values that the data model cannot hold are refused here, not by the Validator: rounding
-//! places outside 0 to 28 or a missing rounding mode or places (`RT-IR-0010`), and an unknown
-//! rounding mode name (`RT-IR-0002`, design §4.2.5).
+//! Values that the data model cannot hold are refused here, not by the
+//! Validator: rounding places outside 0 to 28 or a missing rounding mode or
+//! places (`RT-IR-0010`), and an unknown rounding mode name (`RT-IR-0002`,
+//! design §4.2.5).
 
 use crate::expr::{
     AggFn, BinaryOp, CmpOp, Expr, ExprKind, Literal, OpaqueConstruct, Places, Rounding,
@@ -50,8 +52,9 @@ use rt_json::{
 use rt_numeric::{ExactNumber, RoundingMode};
 use std::collections::BTreeMap;
 
-/// The decoder is recursive over expression nesting. An overridden depth limit above this value
-/// is applied as this value, so a hostile document cannot exhaust the stack.
+/// The decoder is recursive over expression nesting. An overridden depth limit
+/// above this value is applied as this value, so a hostile document cannot
+/// exhaust the stack.
 pub const DECODER_DEPTH_CAP: u32 = 512;
 
 /// Deepest nesting accepted when an opaque subtree is rebuilt.
@@ -73,14 +76,15 @@ const RULE_KEYS: [&str; 8] = [
 
 /// Parses a Rule_IR document.
 ///
-/// `max_bytes` and `max_depth` are the effective size and container-depth limits. A document of
-/// exactly the limit is accepted. A depth limit above [`DECODER_DEPTH_CAP`] is applied as the
-/// cap.
+/// `max_bytes` and `max_depth` are the effective size and container-depth
+/// limits. A document of exactly the limit is accepted. A depth limit above
+/// [`DECODER_DEPTH_CAP`] is applied as the cap.
 ///
 /// # Errors
-/// All parse diagnostics of the document in the canonical order of Req 7.10, with no Rulebook
-/// (Req 4.8). A size, nesting or syntax failure stops at the first one, because the document
-/// cannot be read past it. Every other failure is collected, so one call reports them all.
+/// All parse diagnostics of the document in the canonical order of Req 7.10,
+/// with no Rulebook (Req 4.8). A size, nesting or syntax failure stops at the
+/// first one, because the document cannot be read past it. Every other failure
+/// is collected, so one call reports them all.
 pub fn parse_rulebook(
     bytes: &[u8],
     input: &InputId,
@@ -119,7 +123,8 @@ pub fn parse_rulebook(
     }
 }
 
-/// Builds the rejection. Every code of this stage is blocking, so the list is always accepted.
+/// Builds the rejection. Every code of this stage is blocking, so the list is
+/// always accepted.
 fn reject(mut diags: Vec<Diagnostic>) -> Rejected {
     diags.sort();
     let mut state = DiagnosticState::empty();
@@ -129,8 +134,9 @@ fn reject(mut diags: Vec<Diagnostic>) -> Rejected {
     match Rejected::new(state) {
         Ok(rejected) => rejected,
         Err(_) => {
-            // Unreachable while the catalogue gives every code above a blocking severity; the
-            // internal error is itself blocking, so this recursion ends at once.
+            // Unreachable while the catalogue gives every code above a blocking
+            // severity; the internal error is itself blocking, so this
+            // recursion ends at once.
             diags.push(Diagnostic::new(
                 Code::InternalError,
                 "a Rule_IR parse diagnostic was not blocking".to_owned(),
@@ -141,10 +147,11 @@ fn reject(mut diags: Vec<Diagnostic>) -> Rejected {
     }
 }
 
-/// `rt-json` reports a repeated key as a syntax error. When the repeated key is the top-level
-/// `ir_version`, Req 3.15 wants `RT-IR-0006` with the first declaration as a related Location.
-/// The repeat is renamed in a copy of the same length, the copy is parsed so that every
-/// position is unchanged, and the diagnostic is built from the two key positions.
+/// `rt-json` reports a repeated key as a syntax error. When the repeated key is
+/// the top-level `ir_version`, Req 3.15 wants `RT-IR-0006` with the first
+/// declaration as a related Location. The repeat is renamed in a copy of the
+/// same length, the copy is parsed so that every position is unchanged, and the
+/// diagnostic is built from the two key positions.
 fn repeated_version(
     input: &InputId,
     bytes: &[u8],
@@ -295,8 +302,9 @@ impl<'i> Dec<'i> {
         }
     }
 
-    /// One `RT-IR-0002` per name of the object that `allowed` does not list. Flag and
-    /// lifecycle keys are not unknown names: they were reported before.
+    /// One `RT-IR-0002` per name of the object that `allowed` does not list.
+    /// Flag and lifecycle keys are not unknown names: they were reported
+    /// before.
     fn unknown_in(&mut self, o: &Obj<'_>, allowed: &[&str]) {
         for m in o.members {
             if !allowed.contains(&m.key.as_str()) && !is_flag_key(&m.key) {
@@ -409,8 +417,9 @@ impl<'i> Dec<'i> {
         ok.then_some(out)
     }
 
-    /// An Exact_Number: a JSON string that `rt-numeric` accepts as a decimal literal. A bare
-    /// JSON number (any form) is `RT-IR-0004` with its text (Req 4.4).
+    /// An Exact_Number: a JSON string that `rt-numeric` accepts as a decimal
+    /// literal. A bare JSON number (any form) is `RT-IR-0004` with its text
+    /// (Req 4.4).
     fn exact_number(&mut self, v: &Value<Position>, path: &str) -> Option<ExactNumber> {
         let (text, bare) = match v.kind() {
             Kind::String(t) => (t.clone(), false),
@@ -619,7 +628,8 @@ impl<'i> Dec<'i> {
         })
     }
 
-    /// Decodes each element of an array. Every element is decoded, so all diagnostics appear.
+    /// Decodes each element of an array. Every element is decoded, so all
+    /// diagnostics appear.
     fn each<T>(
         &mut self,
         v: &Value<Position>,
@@ -1262,8 +1272,8 @@ impl<'i> Dec<'i> {
 
     // ----- opaque constructs -----
 
-    /// Carries a well-formed but undefined kind or node: the members `members` as compact
-    /// canonical RT-JSON text.
+    /// Carries a well-formed but undefined kind or node: the members `members`
+    /// as compact canonical RT-JSON text.
     fn opaque<'a>(
         &mut self,
         name: &str,
@@ -1305,7 +1315,8 @@ impl<'i> Dec<'i> {
 
     // ----- literals and expressions -----
 
-    /// The fields of a literal node after `node` and `t`, read from the object `o`.
+    /// The fields of a literal node after `node` and `t`, read from the object
+    /// `o`.
     fn literal_fields(&mut self, node: &str, o: &Obj<'_>) -> Option<Literal> {
         match node {
             "num" => {
@@ -1361,8 +1372,8 @@ impl<'i> Dec<'i> {
         }
     }
 
-    /// A literal in a position without its own `t` (set member, default value). A `t` that is
-    /// present must equal the type the literal implies.
+    /// A literal in a position without its own `t` (set member, default value).
+    /// A `t` that is present must equal the type the literal implies.
     fn literal_node(&mut self, v: &Value<Position>, path: &str) -> Option<Literal> {
         let o = self.open(v, path)?;
         let node_value = self.req(&o, "node")?;
@@ -1405,8 +1416,8 @@ impl<'i> Dec<'i> {
         Some(literal)
     }
 
-    /// True when `key` holds a well-formed name that `known` does not accept: the node is then
-    /// carried as an unrecognized construct (Req 4.9).
+    /// True when `key` holds a well-formed name that `known` does not accept:
+    /// the node is then carried as an unrecognized construct (Req 4.9).
     fn unknown_operator(o: &Obj<'_>, key: &str, known: fn(&str) -> bool) -> bool {
         o.get(key)
             .and_then(|m| m.value.as_str())

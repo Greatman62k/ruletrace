@@ -2,9 +2,10 @@
 //!
 //! **Validates: Requirements 7.10, 7.22, 6.12, 17.12**
 //!
-//! "Rendering" here is the `Debug` text of the sorted list, which prints every field of every
-//! diagnostic. The real renderers are later tasks; this test pins the property they rely on,
-//! that one multiset of diagnostics has one canonical sequence and so one byte string.
+//! "Rendering" here is the `Debug` text of the sorted list, which prints every
+//! field of every diagnostic. The real renderers are later tasks; this test
+//! pins the property they rely on, that one multiset of diagnostics has one
+//! canonical sequence and so one byte string.
 
 use proptest::prelude::*;
 use rt_foundation::{
@@ -13,7 +14,8 @@ use rt_foundation::{
 };
 use std::cmp::Ordering;
 
-/// A 100 byte ASCII document in which every offset is a boundary and every line has 10 columns.
+/// A 100 byte ASCII document in which every offset is a boundary and every line
+/// has 10 columns.
 struct Doc(DocumentId);
 
 impl SpanSource for Doc {
@@ -129,8 +131,9 @@ fn sorted(mut list: Vec<Diagnostic>) -> Vec<Diagnostic> {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
-    /// Every permutation of a generated list sorts to the same sequence and the same bytes;
-    /// equal items are retained and rendering twice gives identical bytes.
+    /// Every permutation of a generated list sorts to the same sequence and the
+    /// same bytes; equal items are retained and rendering twice gives identical
+    /// bytes.
     #[test]
     fn permutation_sorts_to_identical_bytes(
         (list, shuffled) in prop::collection::vec(arb_diagnostic(), 0..12)
@@ -142,7 +145,8 @@ proptest! {
         prop_assert_eq!(&a, &b);
         prop_assert_eq!(render(&a), render(&b));
         prop_assert_eq!(render(&a), render(&a));
-        // Sorted output is a permutation of the input: nothing merged, nothing lost.
+        // Sorted output is a permutation of the input: nothing merged, nothing
+        // lost.
         for d in &list {
             let want = list.iter().filter(|x| *x == d).count();
             let got = a.iter().filter(|x| *x == d).count();
@@ -151,7 +155,8 @@ proptest! {
         prop_assert!(a.windows(2).all(|w| w[0] <= w[1]));
     }
 
-    /// The order is total, antisymmetric, transitive and consistent with equality.
+    /// The order is total, antisymmetric, transitive and consistent with
+    /// equality.
     #[test]
     fn order_is_a_total_order(
         a in arb_diagnostic(),

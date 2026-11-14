@@ -1,4 +1,5 @@
-//! Tests for the Explainer (Req 13.7 to 13.9, 13.13 to 13.17, 13.19, 13.22, 13.23).
+//! Tests for the Explainer (Req 13.7 to 13.9, 13.13 to 13.17, 13.19, 13.22,
+//! 13.23).
 
 use super::*;
 use proptest::prelude::*;
@@ -12,7 +13,8 @@ use rt_trace::{
     TraceSpan, TraceValue,
 };
 
-/// Content with an ESC byte inside the first span and a two-byte character at bytes 11..13.
+/// Content with an ESC byte inside the first span and a two-byte character at
+/// bytes 11..13.
 const CONTENT: &str = "# Title\n1. \u{e9}t\u{e9}\r\nend\u{1b}[0m";
 
 fn doc(name: &str) -> DocumentId {
@@ -226,8 +228,9 @@ fn rendering_is_deterministic() {
 }
 
 proptest! {
-    /// Text is produced exactly when the span lies on boundaries inside the document, and then
-    /// it equals the model bytes. Any other offset pair gives no text and is not verified.
+    /// Text is produced exactly when the span lies on boundaries inside the
+    /// document, and then it equals the model bytes. Any other offset pair
+    /// gives no text and is not verified.
     #[test]
     fn text_only_for_resolvable_spans(start in 0u32..40, end in 0u32..40) {
         let t = trace_with(vec![span_of("rules.md", start, end)]);

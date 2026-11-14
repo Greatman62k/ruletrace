@@ -1,4 +1,4 @@
-//! Tests of `plan_review` (task 6.1).
+//! Tests of `plan_review`.
 
 use super::*;
 use rt_foundation::{Code, DocumentId, InputId, RevisionNumber, RuleId, Severity};

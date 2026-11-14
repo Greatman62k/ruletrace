@@ -1,5 +1,5 @@
-//! Pure span and hash verification helpers used by the Explainer and review display
-//! (design §3.5, steps 3 to 5 of the resolution algorithm).
+//! Pure span and hash verification helpers used by the Explainer and review
+//! display (design §3.5, steps 3 to 5 of the resolution algorithm).
 
 use crate::SourceModel;
 use rt_foundation::{Code, SourceSpan};
@@ -44,8 +44,9 @@ impl SourceModel {
     /// The exact text of the byte range `start..end`.
     ///
     /// # Errors
-    /// [`SpanFailure::OutOfRange`] when `start >= end` or `end` is beyond the document, then
-    /// [`SpanFailure::NotOnBoundary`] when an offset splits a character.
+    /// [`SpanFailure::OutOfRange`] when `start >= end` or `end` is beyond the
+    /// document, then [`SpanFailure::NotOnBoundary`] when an offset splits a
+    /// character.
     pub fn text(&self, start: u32, end: u32) -> Result<&str, SpanFailure> {
         if start >= end || u64::from(end) > self.byte_len() {
             return Err(SpanFailure::OutOfRange);
@@ -55,8 +56,8 @@ impl SourceModel {
             .ok_or(SpanFailure::NotOnBoundary)
     }
 
-    /// Resolves a recorded span: hash first, then range, then boundaries. No text is produced
-    /// unless every check passes.
+    /// Resolves a recorded span: hash first, then range, then boundaries. No
+    /// text is produced unless every check passes.
     ///
     /// # Errors
     /// The first failed check, in the order of the Explainer's algorithm.
@@ -70,8 +71,8 @@ impl SourceModel {
         self.text(start, end)
     }
 
-    /// The exact text of a verified [`SourceSpan`], or `None` when the span names another
-    /// document or does not lie in this one.
+    /// The exact text of a verified [`SourceSpan`], or `None` when the span
+    /// names another document or does not lie in this one.
     #[must_use]
     pub fn span_text(&self, span: &SourceSpan) -> Option<&str> {
         if span.doc() != self.document() {

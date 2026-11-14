@@ -1,5 +1,6 @@
-//! Differential numeric harness: `rt-numeric` against an independent exact-rational model
-//! (task 3.5, Req 20.22, 8.11). The model is test-only code in `reference.rs`.
+//! Differential numeric harness: `rt-numeric` against an independent
+//! exact-rational model (Req 20.22, 8.11). The model is test-only code in
+//! `reference.rs`.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,

@@ -1,8 +1,9 @@
 //! Canonical Source_Model serialization and the loader (design §3.5).
 //!
 //! File form: RT-JSON pretty, fixed key order, full document text embedded:
-//! `format`, `version`, `document`, `kind`, `sha256`, `bytes`, `content`, `elements`; an element
-//! has `id`, `kind`, `level`, `label`, `start`, `end`, `line`, `column`, `parent`.
+//! `format`, `version`, `document`, `kind`, `sha256`, `bytes`, `content`,
+//! `elements`; an element has `id`, `kind`, `level`, `label`, `start`, `end`,
+//! `line`, `column`, `parent`.
 
 use crate::model::{DocumentKind, Element, ElementKind, SourceModel};
 use rt_foundation::{
@@ -21,7 +22,8 @@ const ELEMENT_KEYS: [&str; 9] = [
     "id", "kind", "level", "label", "start", "end", "line", "column", "parent",
 ];
 
-/// The default limits for loading a Source_Model file: 64 MiB and container depth 64.
+/// The default limits for loading a Source_Model file: 64 MiB and container
+/// depth 64.
 #[must_use]
 pub fn default_load_limits() -> ParseLimits {
     ParseLimits::new(MAX_SOURCE_MODEL_BYTES, MAX_CONTAINER_DEPTH)
@@ -61,7 +63,8 @@ impl SourceModel {
             ("sha256", Value::string(self.sha256().as_str())),
             (
                 "bytes",
-                // The size check at construction keeps the length within 32 bits.
+                // The size check at construction keeps the length within 32
+                // bits.
                 Value::integer(u32::try_from(self.byte_len()).unwrap_or(u32::MAX)),
             ),
             ("content", Value::string(self.content())),
@@ -69,8 +72,8 @@ impl SourceModel {
         ])
     }
 
-    /// The canonical file form: RT-JSON pretty with the fixed key order, ending in a line feed.
-    /// The same model always gives the same bytes.
+    /// The canonical file form: RT-JSON pretty with the fixed key order, ending
+    /// in a line feed. The same model always gives the same bytes.
     #[must_use]
     pub fn print(&self) -> String {
         write_pretty(&self.to_value())
@@ -82,16 +85,17 @@ impl SourceModel {
         write_compact(&self.to_value())
     }
 
-    /// Loads a Source_Model file. Every check of the model is made: the shape of the file, the
-    /// SHA-256 of `content` against `sha256`, `bytes` against the content length, and each
-    /// element against the text.
+    /// Loads a Source_Model file. Every check of the model is made: the shape
+    /// of the file, the SHA-256 of `content` against `sha256`, `bytes` against
+    /// the content length, and each element against the text.
     ///
     /// # Errors
     /// - `RT-LIM-0001` or `RT-LIM-0002` when the file exceeds the limits.
-    /// - `RT-PRV-0005` for any other failure: not valid RT-JSON, a wrong or missing field, a
-    ///   hash or length mismatch, or an element that does not match the text. A failure inside
-    ///   the file has an input location with line and column and a field path. A hash, length
-    ///   or element failure has the Document_Location of the document.
+    /// - `RT-PRV-0005` for any other failure: not valid RT-JSON, a wrong or
+    ///   missing field, a hash or length mismatch, or an element that does not
+    ///   match the text. A failure inside the file has an input location with
+    ///   line and column and a field path. A hash, length or element failure
+    ///   has the Document_Location of the document.
     pub fn load(
         input: &InputId,
         bytes: &[u8],
@@ -120,7 +124,8 @@ impl SourceModel {
 }
 
 fn member_object(members: Vec<(&str, Value<()>)>) -> Value<()> {
-    // The keys above are distinct constants, so building cannot fail; the fallback is unreachable.
+    // The keys above are distinct constants, so building cannot fail; the
+    // fallback is unreachable.
     Value::object(
         members
             .into_iter()

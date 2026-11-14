@@ -2,10 +2,11 @@
 //!
 //! **Validates: Requirements 26.2, 26.3, 26.4, 26.20, 26.21, 26.23**
 //!
-//! `rt-ledger` has no public record constructor, so the ledgers are written here in their
-//! canonical text form and sealed with an independently computed hash chain (SHA-256 of the
-//! compact record without its `hash` key). Every tampered ledger must fail with one of
-//! `RT-APR-0101` to `0104` at the first affected record, and yield no ledger at all.
+//! `rt-ledger` has no public record constructor, so the ledgers are written
+//! here in their canonical text form and sealed with an independently computed
+//! hash chain (SHA-256 of the compact record without its `hash` key). Every
+//! tampered ledger must fail with one of `RT-APR-0101` to `0104` at the first
+//! affected record, and yield no ledger at all.
 
 #![allow(clippy::expect_used, clippy::indexing_slicing)]
 
@@ -50,8 +51,8 @@ fn hex(seed: &str) -> String {
     sha256(seed.as_bytes()).as_str().to_owned()
 }
 
-/// Builds the canonical record lines with a correct chain. Revision numbers are distinct, so
-/// no two records contradict each other.
+/// Builds the canonical record lines with a correct chain. Revision numbers are
+/// distinct, so no two records contradict each other.
 fn build(recs: &[Rec]) -> Vec<String> {
     let mut prev = ZERO_HASH.to_owned();
     let mut lines = Vec::new();
@@ -119,7 +120,8 @@ const TAMPER_CODES: [Code; 4] = [
     Code::LedgerRecordContradictory,
 ];
 
-/// Asserts the single diagnostic of a rejected ledger and returns its code and line.
+/// Asserts the single diagnostic of a rejected ledger and returns its code and
+/// line.
 fn rejected(bytes: &[u8]) -> Result<(Code, u32), TestCaseError> {
     let errs = match parse(bytes) {
         Ok(_) => return Err(TestCaseError::fail("tampered ledger was accepted")),
@@ -217,8 +219,8 @@ proptest! {
         lines.insert(p, copy);
         let (code, line) = rejected(&file(&lines))?;
         prop_assert_eq!(code, Code::LedgerSequenceInvalid);
-        // A copy placed directly before its original is itself valid; the original after it
-        // is the first record out of sequence.
+        // A copy placed directly before its original is itself valid; the
+        // original after it is the first record out of sequence.
         let expected = if p == j { p + 3 } else { p + 2 };
         prop_assert_eq!(line, expected as u32);
     }

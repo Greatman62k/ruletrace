@@ -1,9 +1,11 @@
-//! Task 6.4: no code path outside `ruletrace review` appends to the Approval_Ledger or sets Approved.
+//! No code path outside `ruletrace review` appends to the Approval_Ledger or
+//! sets Approved.
 //!
-//! Source scan of every workspace crate for callers of the one append function (`plan_review`,
-//! the only producer of new ledger bytes), a check that `rt-ledger` has no append function, a
-//! dependency check over `tools/allowed-edges.v1` and the crate manifests, and negative checks
-//! that a Rulebook field or a command-line flag cannot set Approved.
+//! Source scan of every workspace crate for callers of the one append function
+//! (`plan_review`, the only producer of new ledger bytes), a check that
+//! `rt-ledger` has no append function, a dependency check over
+//! `tools/allowed-edges.v1` and the crate manifests, and negative checks that a
+//! Rulebook field or a command-line flag cannot set Approved.
 //!
 //! **Validates: Requirements 5.12, 26.18, 26.26, 26.27, 27.4**
 
@@ -42,8 +44,9 @@ fn rust_files(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-/// `crate:line` of each code line (not a comment) that contains one of `tokens`, for crates
-/// whose name does not satisfy `allowed`, and for `rt-cli` files other than `review.rs`.
+/// `crate:line` of each code line (not a comment) that contains one of
+/// `tokens`, for crates whose name does not satisfy `allowed`, and for `rt-cli`
+/// files other than `review.rs`.
 fn offenders(tokens: &[&str], allowed: impl Fn(&str) -> bool) -> Vec<String> {
     let mut found = Vec::new();
     let mut crates: Vec<PathBuf> = fs::read_dir(root().join("crates"))
@@ -96,7 +99,8 @@ fn only_review_and_the_cli_review_module_touch_the_append_function() {
 
 #[test]
 fn the_scan_names_crate_and_line_for_an_extra_caller() {
-    // Positive control: a stricter allow-list finds the real caller in rt-cli's review module.
+    // Positive control: a stricter allow-list finds the real caller in rt-cli's
+    // review module.
     let found = offenders(&APPEND_TOKENS, |c| c == "rt-review");
     assert!(
         found.iter().any(|f| f.starts_with("rt-cli:")) || found.is_empty(),

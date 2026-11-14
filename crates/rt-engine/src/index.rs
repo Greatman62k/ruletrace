@@ -12,11 +12,13 @@ pub(crate) struct Prec {
     pub(crate) order: Vec<RuleIdx>,
 }
 
-/// Rules grouped by the name they define. Lists are in ascending rule identifier order because
-/// the Compiled_Rulebook keeps its rules in that order.
+/// Rules grouped by the name they define. Lists are in ascending rule
+/// identifier order because the Compiled_Rulebook keeps its rules in that
+/// order.
 #[derive(Debug, Default)]
 pub(crate) struct Index {
-    /// Rules that give a value to a Target (eligibility, derived, weighted score), by Target.
+    /// Rules that give a value to a Target (eligibility, derived, weighted
+    /// score), by Target.
     pub(crate) value: BTreeMap<String, Vec<RuleIdx>>,
     /// Ranking rules, by Target.
     pub(crate) ranking: BTreeMap<String, Vec<RuleIdx>>,
@@ -59,15 +61,16 @@ impl Index {
         index
     }
 
-    /// The first-listed rule of `rules` under the precedence of `target`, if one is declared.
+    /// The first-listed rule of `rules` under the precedence of `target`, if
+    /// one is declared.
     pub(crate) fn first_listed(&self, target: &str, rules: &[RuleIdx]) -> Option<(&Prec, RuleIdx)> {
         let prec = self.precedence.get(target)?;
         let first = prec.order.iter().copied().find(|r| rules.contains(r))?;
         Some((prec, first))
     }
 
-    /// The value rules whose results a read of `target` needs: the first-listed rule when a
-    /// precedence applies, else every rule of the Target.
+    /// The value rules whose results a read of `target` needs: the first-listed
+    /// rule when a precedence applies, else every rule of the Target.
     pub(crate) fn sources(&self, target: &str) -> Vec<RuleIdx> {
         let Some(rules) = self.value.get(target) else {
             return Vec::new();

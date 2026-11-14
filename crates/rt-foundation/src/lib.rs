@@ -1,6 +1,8 @@
-//! Foundation types: identifiers, locations, severity, limits and control-character escaping.
+//! Foundation types: identifiers, locations, severity, limits and
+//! control-character escaping.
 //!
-//! `Code` is generated from `catalogue/diagnostics.v1.json` by `rt-xtask gen-catalogue`.
+//! `Code` is generated from `catalogue/diagnostics.v1.json` by
+//! `rt-xtask gen-catalogue`.
 #![forbid(unsafe_code)]
 
 mod code;

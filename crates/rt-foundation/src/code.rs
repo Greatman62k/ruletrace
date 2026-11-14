@@ -5,15 +5,17 @@ use std::cmp::Ordering;
 use std::fmt;
 
 impl Code {
-    /// True when the code's severity is blocking (Error, Ambiguity or Unsupported).
+    /// True when the code's severity is blocking (Error, Ambiguity or
+    /// Unsupported).
     #[must_use]
     pub fn is_blocking(self) -> bool {
         self.severity().is_blocking()
     }
 }
 
-/// Codes order by their identifier bytes (`RT-<family>-<number>`), as Req 7.10 requires for the
-/// "Diagnostic code in ascending lexicographic order" and for a No_Location reason code.
+/// Codes order by their identifier bytes (`RT-<family>-<number>`), as Req 7.10
+/// requires for the "Diagnostic code in ascending lexicographic order" and for
+/// a No_Location reason code.
 impl Ord for Code {
     fn cmp(&self, other: &Self) -> Ordering {
         self.id().as_bytes().cmp(other.id().as_bytes())

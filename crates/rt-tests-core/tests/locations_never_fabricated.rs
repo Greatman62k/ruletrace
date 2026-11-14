@@ -1,14 +1,16 @@
-//! Property 8: locations are never fabricated and are preserved (task 5.19).
+//! Property 8: locations are never fabricated and are preserved.
 //!
 //! **Validates: Requirements 7.3, 7.14, 7.15, 7.21, 9.3, 13.2**
 //!
-//! Rulebooks of derived rules with one or two revisions (a first revision that is rejected, then
-//! an approved one) are generated, each revision with 1 to 3 spans chosen among the clauses of a
-//! fixed document. The oracle is the generated span list alone. Every `Source` location in the
-//! validation, compilation and evaluation Diagnostics must equal one of those spans, the
-//! rejected-revision Warning must carry the first span of its revision, the compiled rule must
-//! hold the spans of its Effective revision in order with the document hash, and every span of
-//! every trace must equal the span of the compiled rule that carries it.
+//! Rulebooks of derived rules with one or two revisions (a first revision that
+//! is rejected, then an approved one) are generated, each revision with 1 to 3
+//! spans chosen among the clauses of a fixed document. The oracle is the
+//! generated span list alone. Every `Source` location in the validation,
+//! compilation and evaluation Diagnostics must equal one of those spans, the
+//! rejected-revision Warning must carry the first span of its revision, the
+//! compiled rule must hold the spans of its Effective revision in order with
+//! the document hash, and every span of every trace must equal the span of the
+//! compiled rule that carries it.
 
 #![allow(
     clippy::expect_used,
@@ -45,7 +47,8 @@ fn text_and_clauses() -> (String, Vec<(u32, u32, u32)>) {
     (text, out)
 }
 
-/// Per rule: whether it has a rejected first revision, and the clause indices of each revision.
+/// Per rule: whether it has a rejected first revision, and the clause indices
+/// of each revision.
 type Plan = Vec<(bool, Vec<Vec<usize>>)>;
 
 fn plan() -> impl Strategy<Value = Plan> {
@@ -90,7 +93,8 @@ fn book(plan: &Plan, clauses: &[(u32, u32, u32)], text: &str) -> Rulebook {
     }
 }
 
-/// Rejects every first revision of a two-revision rule and approves every last revision.
+/// Rejects every first revision of a two-revision rule and approves every last
+/// revision.
 fn ledger(book: &Rulebook, plan: &Plan, text: &str) -> rt_ledger::ApprovalLedger {
     let doc = sha256(text.as_bytes());
     let mut out = format!("{HEADER_LINE}\n");
@@ -131,7 +135,8 @@ fn key((s, e, l): (u32, u32, u32)) -> Key {
     ("rules.md".to_owned(), s, e, l, 1)
 }
 
-/// Every `Source` location of the diagnostics (primary and related) must be in `allowed`.
+/// Every `Source` location of the diagnostics (primary and related) must be in
+/// `allowed`.
 fn check_sources(diags: &[Diagnostic], allowed: &[Key]) -> Result<(), TestCaseError> {
     for d in diags {
         for loc in std::iter::once(d.primary()).chain(d.related()) {
@@ -179,7 +184,8 @@ proptest! {
             .collect();
         check_sources(result.state().as_slice(), &allowed)?;
 
-        // One rejected-revision Warning per rejected first revision, at its first span.
+        // One rejected-revision Warning per rejected first revision, at its
+        // first span.
         let rejected: Vec<&Diagnostic> = result
             .state()
             .as_slice()
@@ -198,7 +204,8 @@ proptest! {
         let (compiled, warnings) = staged.into_parts();
         check_sources(warnings.as_slice(), &allowed)?;
 
-        // Compiled spans equal the spans of the Effective revision: same count, order, hash.
+        // Compiled spans equal the spans of the Effective revision: same count,
+        // order, hash.
         let doc_hash = sha256(text.as_bytes());
         prop_assert_eq!(compiled.rules().len(), p.len());
         for (i, (_, revs)) in p.iter().enumerate() {
@@ -217,7 +224,8 @@ proptest! {
             prop_assert!(rule.spans.iter().all(|s| s.sha256.as_str() == doc_hash.as_str()));
         }
 
-        // Evaluation: traces carry exactly the spans of the compiled rules they name.
+        // Evaluation: traces carry exactly the spans of the compiled rules they
+        // name.
         let by_rule: BTreeMap<String, Vec<Key>> = compiled
             .rules()
             .iter()

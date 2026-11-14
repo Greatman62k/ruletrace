@@ -1,7 +1,8 @@
-//! Tests of passes 10 and 11 and of the public `validate` function (task 5.3).
+//! Tests of passes 10 and 11 and of the public `validate` function.
 //!
-//! The ledger has no append function in `rt-ledger`, so these tests write canonical ledger
-//! lines by hand (the hash chain is computed here, as `rt-review` will do) and parse them.
+//! The ledger has no append function in `rt-ledger`, so these tests write
+//! canonical ledger lines by hand (the hash chain is computed here, as
+//! `rt-review` will do) and parse them.
 
 use super::*;
 use rt_foundation::Severity;

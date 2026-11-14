@@ -1,24 +1,29 @@
 //! Block structure of a document (design §3.5, Markdown mapping).
 //!
-//! The parser is line based. It reads the decoded text once, from the top, and never looks back
-//! except at the table delimiter row one line ahead. Every offset it produces is a byte offset
-//! into the text it was given.
+//! The parser is line based. It reads the decoded text once, from the top, and
+//! never looks back except at the table delimiter row one line ahead. Every
+//! offset it produces is a byte offset into the text it was given.
 //!
 //! Conventions fixed here where the design leaves room:
-//! - An element span starts at the first byte of its first line that is not a space or tab, so
-//!   leading indentation is never part of a span. It ends at the end of its last line, before the
-//!   line terminator. Trailing spaces stay in the span (bytes are not normalized).
-//! - Headings, fences, list markers and tables are recognised at any indentation.
+//! - An element span starts at the first byte of its first line that is not a
+//!   space or tab, so leading indentation is never part of a span. It ends at
+//!   the end of its last line, before the line terminator. Trailing spaces stay
+//!   in the span (bytes are not normalized).
+//! - Headings, fences, list markers and tables are recognised at any
+//!   indentation.
 //! - An indentation width counts a tab as four and any other byte as one.
-//! - A list item takes the non-blank lines that follow its first line, up to a blank line or the
-//!   next block start. A later item is nested when it is indented deeper than the open item.
-//! - A table row has the table as its parent. Every other block has the nearest open list item
-//!   that is indented less than the block, otherwise the nearest enclosing heading.
+//! - A list item takes the non-blank lines that follow its first line, up to a
+//!   blank line or the next block start. A later item is nested when it is
+//!   indented deeper than the open item.
+//! - A table row has the table as its parent. Every other block has the nearest
+//!   open list item that is indented less than the block, otherwise the nearest
+//!   enclosing heading.
 
 use crate::label::leading_label;
 use rt_srcmodel::ElementKind;
 
-/// The text is longer than a 32-bit offset can number. The size limit makes this unreachable.
+/// The text is longer than a 32-bit offset can number. The size limit makes
+/// this unreachable.
 #[derive(Debug)]
 pub(crate) struct Overflow;
 
@@ -142,7 +147,8 @@ fn fence_close(rest: &str, c: u8, len: usize) -> bool {
     run >= len && rest.bytes().skip(run).all(is_blank_byte)
 }
 
-/// The byte length of a list marker and the spaces after it, when `rest` starts a list item.
+/// The byte length of a list marker and the spaces after it, when `rest` starts
+/// a list item.
 fn list_marker(rest: &str) -> Option<usize> {
     let bytes = rest.as_bytes();
     let marker = match *bytes.first()? {
@@ -170,7 +176,8 @@ fn list_marker(rest: &str) -> Option<usize> {
     }
 }
 
-/// The cells of a pipe-table row, split on `|` that a backslash does not escape.
+/// The cells of a pipe-table row, split on `|` that a backslash does not
+/// escape.
 fn split_cells(row: &str) -> Vec<&str> {
     let t = row.trim_matches([' ', '\t']);
     let t = t.strip_prefix('|').unwrap_or(t);
@@ -269,7 +276,8 @@ impl<'a> Parser<'a> {
         Ok(id)
     }
 
-    /// Closes the lists that a block of the given width does not belong to, and returns its parent.
+    /// Closes the lists that a block of the given width does not belong to, and
+    /// returns its parent.
     fn block_parent(&mut self, width: usize) -> Option<u32> {
         while self.lists.last().is_some_and(|&(w, _)| w >= width) {
             self.lists.pop();
@@ -384,10 +392,11 @@ impl<'a> Parser<'a> {
         Ok(())
     }
 
-    /// Reads a fenced code block that opens on line `i`. Returns the next line to read.
+    /// Reads a fenced code block that opens on line `i`. Returns the next line
+    /// to read.
     fn fence(&mut self, i: usize, first: usize, c: u8, len: usize) -> Result<usize, Overflow> {
-        // An unclosed fence ends at its last non-blank line, so that a span never ends in a
-        // line terminator.
+        // An unclosed fence ends at its last non-blank line, so that a span
+        // never ends in a line terminator.
         let mut last = i;
         let mut j = i + 1;
         while j < self.lines.len() {
@@ -429,7 +438,8 @@ impl<'a> Parser<'a> {
         Ok(())
     }
 
-    /// Reads a pipe table whose header row is line `i`. Returns the next line to read.
+    /// Reads a pipe table whose header row is line `i`. Returns the next line
+    /// to read.
     fn table(&mut self, i: usize, first: usize) -> Result<usize, Overflow> {
         let mut last = i + 1;
         while last + 1 < self.lines.len()

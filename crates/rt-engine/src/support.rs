@@ -6,9 +6,10 @@ use rt_foundation::{
 };
 use rt_trace::{DocumentHash, TraceSpan};
 
-/// A span as the Compiled_Rulebook retains it. The Validator checked it against the Source_Model
-/// before compilation, and the engine has no source text, so this view claims what the
-/// artifact records. The Explainer verifies the span again against the Source_Model.
+/// A span as the Compiled_Rulebook retains it. The Validator checked it against
+/// the Source_Model before compilation, and the engine has no source text, so
+/// this view claims what the artifact records. The Explainer verifies the span
+/// again against the Source_Model.
 struct Claimed<'a>(&'a CompiledSpan);
 
 impl SpanSource for Claimed<'_> {
@@ -26,8 +27,8 @@ impl SpanSource for Claimed<'_> {
     }
 }
 
-/// The location of a retained span. If the artifact's span is inconsistent the diagnostic points
-/// at the whole document, so no position is ever invented.
+/// The location of a retained span. If the artifact's span is inconsistent the
+/// diagnostic points at the whole document, so no position is ever invented.
 pub(crate) fn claimed_location(span: &CompiledSpan) -> Location {
     match SourceSpan::new(&Claimed(span), span.start, span.end, span.line, span.column) {
         Ok(s) => Location::Source(s),
@@ -67,8 +68,9 @@ pub(crate) fn trace_spans(spans: &[CompiledSpan]) -> Vec<TraceSpan> {
         .collect()
 }
 
-/// A position in a data input that the engine received as typed values. The file name belongs to
-/// the caller, so the location names the kind of input and the path inside it.
+/// A position in a data input that the engine received as typed values. The
+/// file name belongs to the caller, so the location names the kind of input and
+/// the path inside it.
 pub(crate) fn input_location(path: &str) -> Location {
     named_input("competition-data", path)
 }
@@ -85,9 +87,10 @@ pub(crate) fn named_input(input: &str, path: &str) -> Location {
     }
 }
 
-/// `RT-DGN-0004` for rules that give incompatible results for one Target and subject. `rules` is
-/// in ascending identifier order. The primary location is the first span of the first rule; every
-/// other span of those rules is related (Req 12.11).
+/// `RT-DGN-0004` for rules that give incompatible results for one Target and
+/// subject. `rules` is in ascending identifier order. The primary location is
+/// the first span of the first rule; every other span of those rules is related
+/// (Req 12.11).
 pub(crate) fn conflict(rules: &[&CompiledRule], what: &str) -> Diagnostic {
     let primary = rules.first().map_or_else(
         || Location::None(Code::ExecutionConflictDetected),

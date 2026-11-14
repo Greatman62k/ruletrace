@@ -1,12 +1,13 @@
 //! Canonical serialization of a Compiled_Rulebook (design §4.1.6).
 //!
-//! RT-JSON with a fixed key order. Top level: `format`, `compiler_version`, `ir_version`,
-//! `rulebook_hash`, `documents`, `inputs`, `collections`, `enums`, `sets`, `order`, `rules`,
-//! `precedence`. A rule: `id`, `revision`, `kind`, `target`, `type`, `spans`, `nodes`, then the
-//! root fields of its kind. A node: `idx`, `node`, `t`, then its fields; children are indices.
-//! A Target is written by name (it has no table of its own) and read back against the
-//! distinct Targets of `rules`. Numbers are canonical exact text, so a value without a finite
-//! decimal expansion is written as a fraction.
+//! RT-JSON with a fixed key order. Top level: `format`, `compiler_version`,
+//! `ir_version`, `rulebook_hash`, `documents`, `inputs`, `collections`,
+//! `enums`, `sets`, `order`, `rules`, `precedence`. A rule: `id`, `revision`,
+//! `kind`, `target`, `type`, `spans`, `nodes`, then the root fields of its
+//! kind. A node: `idx`, `node`, `t`, then its fields; children are indices. A
+//! Target is written by name (it has no table of its own) and read back against
+//! the distinct Targets of `rules`. Numbers are canonical exact text, so a
+//! value without a finite decimal expansion is written as a fraction.
 
 use crate::index::NodeIdx;
 use crate::model::{
@@ -21,8 +22,8 @@ pub const FORMAT_NAME: &str = "ruletrace-compiled";
 
 type Json = Value<()>;
 
-/// Builds an object. Every call site uses distinct literal keys, so the duplicate-key error
-/// cannot occur; a test would show a `null` if it did.
+/// Builds an object. Every call site uses distinct literal keys, so the
+/// duplicate-key error cannot occur; a test would show a `null` if it did.
 fn obj(members: Vec<(&str, Json)>) -> Json {
     Value::object(
         members
@@ -45,7 +46,8 @@ fn idx(n: NodeIdx) -> Json {
     int(n.get())
 }
 
-/// The type text: `number`, `boolean`, `text`, `date`, `ranking`, or `enum:<index>`.
+/// The type text: `number`, `boolean`, `text`, `date`, `ranking`, or
+/// `enum:<index>`.
 pub(crate) fn type_text(ty: CType) -> String {
     match ty {
         CType::Number => "number".to_owned(),
@@ -371,7 +373,8 @@ impl CompiledRulebook {
         rt_json::write_compact(&self.to_value())
     }
 
-    /// Pretty canonical text (two-space indent, trailing line feed), as stored in a file.
+    /// Pretty canonical text (two-space indent, trailing line feed), as stored
+    /// in a file.
     #[must_use]
     pub fn to_canonical_pretty(&self) -> String {
         rt_json::write_pretty(&self.to_value())

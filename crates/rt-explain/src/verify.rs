@@ -8,10 +8,12 @@ use rt_srcmodel::{SourceModel, SourceModels, SpanFailure};
 use rt_trace::{DecisionTrace, Entry, TraceSpan};
 use std::collections::BTreeMap;
 
-/// Whether a trace is verified. Always derived from a [`Verification`], never stored.
+/// Whether a trace is verified. Always derived from a [`Verification`], never
+/// stored.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VerificationStatus {
-    /// At least one span, every span resolved, and no blocking verification diagnostic.
+    /// At least one span, every span resolved, and no blocking verification
+    /// diagnostic.
     Verified,
     /// Anything else.
     NotVerified,
@@ -20,9 +22,11 @@ pub enum VerificationStatus {
 /// What became of one recorded span.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SpanResolution {
-    /// The span resolved. The text is the exact bytes of the Source_Model between start and end.
+    /// The span resolved. The text is the exact bytes of the Source_Model
+    /// between start and end.
     Resolved(String),
-    /// The span did not resolve. The code is the catalogue code of the failure. No text exists.
+    /// The span did not resolve. The code is the catalogue code of the failure.
+    /// No text exists.
     Unresolved(Code),
 }
 
@@ -86,7 +90,8 @@ impl Verification {
     }
 }
 
-/// Every span reference of the trace in the order of `DecisionTrace::spans`, with its rule.
+/// Every span reference of the trace in the order of `DecisionTrace::spans`,
+/// with its rule.
 fn references(trace: &DecisionTrace) -> Vec<(&RuleId, Option<RevisionNumber>, &TraceSpan)> {
     let mut out = Vec::new();
     for r in trace.rules() {
@@ -103,7 +108,8 @@ fn references(trace: &DecisionTrace) -> Vec<(&RuleId, Option<RevisionNumber>, &T
     out
 }
 
-/// True when the model passes a fresh structural check (hash, length and element spans).
+/// True when the model passes a fresh structural check (hash, length and
+/// element spans).
 fn model_is_valid(model: &SourceModel) -> bool {
     SourceModel::new(
         model.document().clone(),
@@ -114,9 +120,10 @@ fn model_is_valid(model: &SourceModel) -> bool {
     .is_ok_and(|fresh| fresh.sha256() == model.sha256())
 }
 
-/// Verifies every span of `trace` against `models`. All spans are checked (no stop at the first
-/// failure), and each failed span yields exactly one Diagnostic, the first matching row of
-/// Req 13.16 in the order `RT-PRV-0006`, `0001`, `0002`, `0003`, `0004`, `0005`.
+/// Verifies every span of `trace` against `models`. All spans are checked (no
+/// stop at the first failure), and each failed span yields exactly one
+/// Diagnostic, the first matching row of Req 13.16 in the order `RT-PRV-0006`,
+/// `0001`, `0002`, `0003`, `0004`, `0005`.
 #[must_use]
 pub fn verify_trace(trace: &DecisionTrace, models: &SourceModels) -> Verification {
     let refs = references(trace);
@@ -165,7 +172,8 @@ pub fn verify_trace(trace: &DecisionTrace, models: &SourceModels) -> Verificatio
     Verification { spans, diagnostics }
 }
 
-/// The recorded span as a Location when the model can verify it, else the document.
+/// The recorded span as a Location when the model can verify it, else the
+/// document.
 fn recorded_location(model: Option<&SourceModel>, span: &TraceSpan) -> Location {
     model
         .and_then(|m| {

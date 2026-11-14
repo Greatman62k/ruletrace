@@ -1,4 +1,5 @@
-//! Declarations in scope, document states and rule locations shared by all passes.
+//! Declarations in scope, document states and rule locations shared by all
+//! passes.
 
 use rt_foundation::{
     Code, Diagnostic, DiagnosticState, DocumentId, Location, RevisionNumber, RuleId, RuleRef,
@@ -12,7 +13,8 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(crate) enum DocState<'a> {
     /// The Source_Model is present and its hash equals the declared hash.
     Verified(&'a SourceModel),
-    /// No model, or a hash mismatch (already reported). Spans cannot be checked or resolved.
+    /// No model, or a hash mismatch (already reported). Spans cannot be checked
+    /// or resolved.
     Unavailable,
 }
 
@@ -26,9 +28,10 @@ pub(crate) struct Decls<'a> {
 }
 
 impl<'a> Decls<'a> {
-    /// Collects the declarations and resolves every declared document against `sources`
-    /// (pass 2). A missing model gives `RT-VAL-0017` and a hash mismatch `RT-VAL-0018`, once per
-    /// document in `report_docs`, with the Document_Location.
+    /// Collects the declarations and resolves every declared document against
+    /// `sources` (pass 2). A missing model gives `RT-VAL-0017` and a hash
+    /// mismatch `RT-VAL-0018`, once per document in `report_docs`, with the
+    /// Document_Location.
     pub(crate) fn new(
         rb: &'a Rulebook,
         sources: &'a SourceModels,
@@ -95,8 +98,9 @@ impl<'a> Decls<'a> {
         d
     }
 
-    /// The verified Source_Span of `span`, or `None` when the document is unavailable or the
-    /// span does not verify. No span is built without that check (Req 7.14, 7.15).
+    /// The verified Source_Span of `span`, or `None` when the document is
+    /// unavailable or the span does not verify. No span is built without that
+    /// check (Req 7.14, 7.15).
     pub(crate) fn verified(&self, span: &Span) -> Option<SourceSpan> {
         match self.docs.get(&span.document) {
             Some(DocState::Verified(model)) => {
@@ -107,8 +111,9 @@ impl<'a> Decls<'a> {
     }
 }
 
-/// Where the diagnostics of one rule point: its first span (primary) and the others (related),
-/// as verified Source_Spans where possible and as Document_Locations otherwise (Req 6.24).
+/// Where the diagnostics of one rule point: its first span (primary) and the
+/// others (related), as verified Source_Spans where possible and as
+/// Document_Locations otherwise (Req 6.24).
 pub(crate) struct Site {
     pub rule: RuleRef,
     primary: Option<Location>,
@@ -138,7 +143,8 @@ impl Site {
         }
     }
 
-    /// A Diagnostic about the rule. A rule without any span has no location (`Location::None`).
+    /// A Diagnostic about the rule. A rule without any span has no location
+    /// (`Location::None`).
     pub(crate) fn diag(&self, code: Code, message: String) -> Diagnostic {
         let primary = self.primary.clone().unwrap_or(Location::None(code));
         Diagnostic::new(code, message, primary)

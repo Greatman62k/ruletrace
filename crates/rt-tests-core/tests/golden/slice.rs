@@ -1,14 +1,17 @@
-//! Slice 0 golden fixtures (task 5.27; Req 16.2 to 16.7, 20.4 to 20.6, design §7.3).
+//! Slice 0 golden fixtures (Req 16.2 to 16.7, 20.4 to 20.6, design §7.3).
 //!
-//! Each fixture runs the real `ruletrace` binary (`ingest`, `validate`, `compile`, `evaluate`)
-//! in a scrubbed environment inside a temporary copy of the fixture, and compares the bytes of
-//! every output with the files under `expected/`. The first failing command decides
-//! `expected/stderr.txt` and `expected/exit-code`; a fixture whose pipeline stops before an
-//! artifact exists has no golden file for it, and the test asserts that the file is absent.
+//! Each fixture runs the real `ruletrace` binary (`ingest`, `validate`,
+//! `compile`, `evaluate`) in a scrubbed environment inside a temporary copy of
+//! the fixture, and compares the bytes of every output with the files under
+//! `expected/`. The first failing command decides `expected/stderr.txt` and
+//! `expected/exit-code`; a fixture whose pipeline stops before an artifact
+//! exists has no golden file for it, and the test asserts that the file is
+//! absent.
 //!
-//! Blessing: `RULETRACE_BLESS=1 cargo test -p rt-tests-core --test golden golden_slice` rewrites
-//! the expected files. It is refused when `CI` or `GITHUB_ACTIONS` is set, so goldens are only
-//! ever blessed locally and reviewed in the diff.
+//! Blessing:
+//! `RULETRACE_BLESS=1 cargo test -p rt-tests-core --test golden golden_slice`
+//! rewrites the expected files. It is refused when `CI` or `GITHUB_ACTIONS` is
+//! set, so goldens are only ever blessed locally and reviewed in the diff.
 
 use crate::harness::{compare_bytes, fixtures_root, platform};
 use crate::ingest::ruletrace_binary;
@@ -85,8 +88,8 @@ fn command(work: &Path, args: &[&str]) -> (i32, Vec<u8>) {
     (output.status.code().unwrap(), output.stderr)
 }
 
-/// Runs the pipeline in a temporary copy of the fixture (without `expected/`), stopping at the
-/// first failing command.
+/// Runs the pipeline in a temporary copy of the fixture (without `expected/`),
+/// stopping at the first failing command.
 fn run_pipeline(name: &str) -> Run {
     let work = std::env::temp_dir().join(format!("rt-golden-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&work);
@@ -257,8 +260,8 @@ fn expected_text(name: &str, file: &str) -> String {
     .unwrap()
 }
 
-/// The observable facts each fixture exists to show, read from the blessed goldens so a wrong
-/// bless is caught (Req 16.2 to 16.7).
+/// The observable facts each fixture exists to show, read from the blessed
+/// goldens so a wrong bless is caught (Req 16.2 to 16.7).
 #[test]
 fn golden_slice_facts() {
     let basic = expected_text("slice-basic", "results.json");

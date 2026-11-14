@@ -1,18 +1,20 @@
 //! `ruletrace validate`: stages 3 and 4 (Req 16.2, 17.1).
 //!
-//! The command reads the Rulebook, the ledger, the Source_Models and the optional candidates
-//! (all invalid input is exit 2), runs the validator, and writes the Validation_Result artifact.
-//! The artifact rule is the RN-29 record, option (a): the artifact is also written when only
-//! blocking Diagnostics of the Rulebook prevent success (exit 3). Failures that are invalid
-//! input (exit 2, for example `RT-VAL-0017` and `RT-VAL-0018`) and failed writes (exit 70)
-//! create no file.
+//! The command reads the Rulebook, the ledger, the Source_Models and the
+//! optional candidates (all invalid input is exit 2), runs the validator, and
+//! writes the Validation_Result artifact. The artifact rule is the RN-29
+//! record, option (a): the artifact is also written when only blocking
+//! Diagnostics of the Rulebook prevent success (exit 3). Failures that are
+//! invalid input (exit 2, for example `RT-VAL-0017` and `RT-VAL-0018`) and
+//! failed writes (exit 70) create no file.
 //!
-//! The artifact is RT-JSON, compact, with the keys in this order: `format`, `version`,
-//! `executable`, `rulebook`, `ledger`, `diagnostics`, `checked_conflict_classes`,
-//! `rule_metadata`. `executable` is always `false`: a Validation_Result is never a
-//! Compiled_Rulebook, and `compile` re-derives its verdict from the Rulebook, the ledger and the
-//! Diagnostics instead of reading a stored flag, so no validity flag or status is stored
-//! (Req 22). `ledger` holds the canonical ledger text as one string.
+//! The artifact is RT-JSON, compact, with the keys in this order: `format`,
+//! `version`, `executable`, `rulebook`, `ledger`, `diagnostics`,
+//! `checked_conflict_classes`, `rule_metadata`. `executable` is always `false`:
+//! a Validation_Result is never a Compiled_Rulebook, and `compile` re-derives
+//! its verdict from the Rulebook, the ledger and the Diagnostics instead of
+//! reading a stored flag, so no validity flag or status is stored (Req 22).
+//! `ledger` holds the canonical ledger text as one string.
 
 use crate::args::ValidateArgs;
 use crate::io::{commit_files, input_location, Fs};
@@ -33,14 +35,16 @@ use std::path::{Path, PathBuf};
 pub(crate) struct Done {
     pub(crate) state: DiagnosticState,
     pub(crate) code: ExitCode,
-    /// Diagnostics of a stored artifact, already rendered, that follow `state` on standard
-    /// error. Only `compile` has any: it passes on the Diagnostics of a refused artifact.
+    /// Diagnostics of a stored artifact, already rendered, that follow `state`
+    /// on standard error. Only `compile` has any: it passes on the Diagnostics
+    /// of a refused artifact.
     pub(crate) stored: Vec<String>,
 }
 
-/// The exit code of a Diagnostic list: success without a blocking Diagnostic, else the lowest
-/// catalogue exit code among the blocking ones. A lower code belongs to an earlier stage of the
-/// order of Req 16.17 (invalid input before blocking results before output failures).
+/// The exit code of a Diagnostic list: success without a blocking Diagnostic,
+/// else the lowest catalogue exit code among the blocking ones. A lower code
+/// belongs to an earlier stage of the order of Req 16.17 (invalid input before
+/// blocking results before output failures).
 pub(crate) fn exit_code_of(state: &DiagnosticState) -> ExitCode {
     state
         .as_slice()
@@ -51,8 +55,9 @@ pub(crate) fn exit_code_of(state: &DiagnosticState) -> ExitCode {
         .unwrap_or(ExitCode::Success)
 }
 
-/// The exit code after a failure of a later stage (output write): the code of an earlier failing
-/// stage stands, exit 70 applies only when no earlier stage failed (Req 16.14, 16.17).
+/// The exit code after a failure of a later stage (output write): the code of
+/// an earlier failing stage stands, exit 70 applies only when no earlier stage
+/// failed (Req 16.14, 16.17).
 pub(crate) fn later_failure(earlier: ExitCode) -> ExitCode {
     match earlier {
         ExitCode::Success => ExitCode::Internal,
@@ -96,7 +101,8 @@ pub(crate) fn run(args: &ValidateArgs, fs: &dyn Fs) -> Done {
     state.extend(inputs.parse_warnings.clone());
     let mut state = state.sorted();
     let code = exit_code_of(&state);
-    // Success, or blocking Diagnostics of the Rulebook only (exit 3, RN-29): write the artifact.
+    // Success, or blocking Diagnostics of the Rulebook only (exit 3, RN-29):
+    // write the artifact.
     if matches!(code, ExitCode::Success | ExitCode::Blocked) {
         match artifact(&result) {
             Ok(text) => {
@@ -163,8 +169,8 @@ pub(crate) fn input_id(path: &Path) -> Result<InputId, Box<Diagnostic>> {
     })
 }
 
-/// Reads one input. One byte more than `limit` is read, so the parser can see that the file is
-/// larger than the limit.
+/// Reads one input. One byte more than `limit` is read, so the parser can see
+/// that the file is larger than the limit.
 pub(crate) fn read_input(fs: &dyn Fs, path: &Path, limit: u64) -> Result<Vec<u8>, Box<Diagnostic>> {
     fs.read(path, limit.saturating_add(1)).map_err(|e| {
         let what = if e.kind() == ErrorKind::NotFound {
@@ -305,7 +311,8 @@ fn load_candidates(
     }
 }
 
-/// The `document` member of a candidates file, read before the file is checked against a model.
+/// The `document` member of a candidates file, read before the file is checked
+/// against a model.
 fn candidates_document(
     input: &InputId,
     bytes: &[u8],
@@ -340,7 +347,8 @@ pub(crate) fn collect<T>(
 }
 
 pub(crate) fn object(members: Vec<(&str, Value<()>)>) -> Value<()> {
-    // The keys are distinct constants at every call; the fallback is unreachable.
+    // The keys are distinct constants at every call; the fallback is
+    // unreachable.
     Value::object(
         members
             .into_iter()
@@ -391,7 +399,8 @@ fn artifact(result: &ValidationResult) -> Result<String, Box<Diagnostic>> {
         })
         .collect();
     let ledger = rt_ledger::print_ledger(result.ledger());
-    // The Rulebook is already canonical compact RT-JSON, so it is spliced as it is.
+    // The Rulebook is already canonical compact RT-JSON, so it is spliced as it
+    // is.
     let mut out = String::from(
         r#"{"format":"ruletrace-validation","version":1,"executable":false,"rulebook":"#,
     );

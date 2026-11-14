@@ -1,4 +1,5 @@
-//! Tests for the results serializer and the Proof_Report (Req 33.14, 13.11, 13.19, 31.5).
+//! Tests for the results serializer and the Proof_Report (Req 33.14, 13.11,
+//! 13.19, 31.5).
 
 use crate::report::{
     build_proof_report, render_proof_human, render_proof_json, ApprovalFacts, ApprovalView,
@@ -65,7 +66,8 @@ fn rule() -> RuleId {
     RuleId::new("score.total").unwrap()
 }
 
-/// `a + b` with two reads, one step and one decision, plus a missing input of another field.
+/// `a + b` with two reads, one step and one decision, plus a missing input of
+/// another field.
 fn sum_trace(a: i64, b: i64, outcome: Outcome, spans: Vec<TraceSpan>) -> DecisionTrace {
     let sum = a + b;
     DecisionTrace::new(TraceParts {

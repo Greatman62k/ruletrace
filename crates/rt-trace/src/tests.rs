@@ -237,7 +237,6 @@ fn step_faults_and_empty_aggregates_replay() {
         }]),
     );
     assert!(replay(&build(p.clone())).is_ok());
-    // An empty min without a collection name is refused at construction.
     empty_min.field = None;
     let mut bad = p;
     bad.entries[1] = Entry::Step(empty_min);
@@ -302,7 +301,8 @@ fn diagnosed_reason_uses_trace_diagnostics() {
 
 #[test]
 fn decisions_follow_kleene_without_short_circuit() {
-    // false AND unknown = false; unknown OR unknown = unknown; NOT unknown = unknown.
+    // false AND unknown = false; unknown OR unknown = unknown; NOT unknown =
+    // unknown.
     let p = parts(
         vec![
             read("flag", TraceValue::Bool(false)),
@@ -455,7 +455,6 @@ fn replay_rederives_the_criteria_of_a_comparison() {
     )))
     .unwrap();
     assert_eq!(replay(&good).as_ref(), Ok(good.outcome()));
-    // The recorded result contradicts the values and the direction.
     let bad = DecisionTrace::new(ranking_parts(compare_entry(
         "2",
         "7",
@@ -464,7 +463,6 @@ fn replay_rederives_the_criteria_of_a_comparison() {
     )))
     .unwrap();
     assert_eq!(replay(&bad), Err(ReplayError::CompareMismatch { seq: 1 }));
-    // Equal values with a first-ahead result is also refused.
     let tied = DecisionTrace::new(ranking_parts(compare_entry(
         "5",
         "5",
@@ -557,7 +555,6 @@ proptest! {
         entries.push(decision(DecisionOp::Recorded, DecisionValue::Known(TraceValue::Bool(true)), vec![]));
         let trace = build(parts(entries, Outcome::Decided(TraceValue::Bool(true))));
         prop_assert!(replay(&trace).is_ok());
-        // Serialization is a pure function of the trace.
         prop_assert_eq!(trace.to_canonical_compact(), trace.clone().to_canonical_compact());
     }
 

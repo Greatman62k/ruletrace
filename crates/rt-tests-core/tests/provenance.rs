@@ -1,12 +1,13 @@
-//! Property 26: Provenance verification (task 5.24).
+//! Property 26: Provenance verification.
 //!
-//! **Validates: Requirements 13.7, 13.8, 13.9, 13.13, 13.14, 13.15, 13.16, 13.17, 13.19, 13.22,
-//! 19.5, 19.10**
+//! **Validates: Requirements 13.7, 13.8, 13.9, 13.13, 13.14, 13.15, 13.16,
+//! 13.17, 13.19, 13.22, 19.5, 19.10**
 //!
-//! The expectation is computed by an independent oracle that reads only the generated content
-//! strings and the recorded span, never the Explainer or the Source_Model span logic. It applies
-//! the first matching row of the Req 13.16 table in order: document missing, hash mismatch, span
-//! out of range, span not on a UTF-8 boundary.
+//! The expectation is computed by an independent oracle that reads only the
+//! generated content strings and the recorded span, never the Explainer or the
+//! Source_Model span logic. It applies the first matching row of the Req 13.16
+//! table in order: document missing, hash mismatch, span out of range, span not
+//! on a UTF-8 boundary.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -28,7 +29,8 @@ use rt_trace::{
 };
 
 const NAMES: [&str; 3] = ["a.md", "b.md", "c.md"];
-/// Characters of the generated documents: ASCII, a two-byte letter, ESC, CR, LF, TAB.
+/// Characters of the generated documents: ASCII, a two-byte letter, ESC, CR,
+/// LF, TAB.
 const ALPHABET: [char; 8] = ['a', '0', ' ', '\u{e9}', '\u{1b}', '\r', '\n', '\t'];
 const MAX_OFFSET: u32 = 20;
 
@@ -59,7 +61,8 @@ fn model(name: &str, content: &str) -> SourceModel {
 
 #[derive(Clone, Debug)]
 struct SpanSpec {
-    /// Index into `NAMES`, or `NAMES.len()` for a document no model can exist for.
+    /// Index into `NAMES`, or `NAMES.len()` for a document no model can exist
+    /// for.
     doc: usize,
     hash_ok: bool,
     start: u32,
@@ -204,7 +207,8 @@ proptest! {
         let v = verify_trace(&trace, &models);
         let any_model = !models.is_empty();
 
-        // Req 13.19: verification leaves the trace, its outcome and spans unchanged.
+        // Req 13.19: verification leaves the trace, its outcome and spans
+        // unchanged.
         prop_assert_eq!(&trace, &before);
         prop_assert_eq!(v.spans().len(), case.spans.len());
 
@@ -219,7 +223,8 @@ proptest! {
             prop_assert_eq!(&verdict.span, recorded[i]);
             match oracle(&case, spec, any_model) {
                 Expect::Text(text) => {
-                    // Req 13.9, 13.15: text equals the model bytes, nothing else.
+                    // Req 13.9, 13.15: text equals the model bytes, nothing
+                    // else.
                     prop_assert_eq!(verdict.text(), Some(text.as_str()));
                     resolved += 1;
                 }
@@ -237,7 +242,8 @@ proptest! {
             }
         }
 
-        // Req 13.7, 13.16: one Diagnostic per failing span, none for resolved ones.
+        // Req 13.7, 13.16: one Diagnostic per failing span, none for resolved
+        // ones.
         let mut actual: Vec<String> = Vec::new();
         for d in v.diagnostics().as_slice() {
             if d.code() == Code::ProvNotVerifiedNoSources
@@ -278,7 +284,8 @@ proptest! {
         let verified = !case.spans.is_empty() && resolved == case.spans.len();
         prop_assert_eq!(v.status() == VerificationStatus::Verified, verified);
 
-        // Req 13.9, 19.5, 19.10: text appears once per resolved span, with controls escaped.
+        // Req 13.9, 19.5, 19.10: text appears once per resolved span, with
+        // controls escaped.
         let out = render_trace(&trace, &v);
         prop_assert_eq!(out.matches("  text: ").count(), resolved);
         prop_assert!(!out.chars().any(|c| c.is_control() && c != '\n'));

@@ -1,6 +1,6 @@
-//! A small Rust tokenizer for the source scans (design §3.3). It is a heuristic reader, not a
-//! parser: it removes comments, keeps string contents as one token, and keeps line numbers.
-//! It uses no regex crate.
+//! A small Rust tokenizer for the source scans (design §3.3). It is a heuristic
+//! reader, not a parser: it removes comments, keeps string contents as one
+//! token, and keeps line numbers. It uses no regex crate.
 
 use std::collections::BTreeSet;
 
@@ -11,7 +11,8 @@ pub enum Kind {
     Ident(String),
     /// Lifetime such as `'a` (text without the quote).
     Lifetime(String),
-    /// Punctuation. `::`, `->` and `=>` are single tokens, everything else is one character.
+    /// Punctuation. `::`, `->` and `=>` are single tokens, everything else is
+    /// one character.
     Punct(String),
     /// Content of a string literal (escapes are not decoded).
     Str(String),
@@ -63,8 +64,8 @@ impl Token {
     }
 }
 
-/// Joins tokens into one normalized text: lifetimes are dropped and a space is kept only
-/// between two word-like tokens.
+/// Joins tokens into one normalized text: lifetimes are dropped and a space is
+/// kept only between two word-like tokens.
 #[must_use]
 pub fn normalize(tokens: &[Token]) -> String {
     let mut out = String::new();
@@ -90,13 +91,15 @@ fn is_ident_char(c: char) -> bool {
     c == '_' || c.is_alphanumeric()
 }
 
-/// Splits Rust source text into tokens. Never fails: unterminated literals end at end of input.
+/// Splits Rust source text into tokens. Never fails: unterminated literals end
+/// at end of input.
 #[must_use]
 pub fn tokenize(src: &str) -> Vec<Token> {
     let cs: Vec<char> = src.chars().collect();
     let at = |i: usize| cs.get(i).copied();
     let raw_start = |j: usize| -> Option<usize> {
-        // Returns the number of `#` when a raw string starts at `j` (at the `r`).
+        // Returns the number of `#` when a raw string starts at `j` (at the
+        // `r`).
         if at(j) != Some('r') {
             return None;
         }
@@ -293,7 +296,8 @@ pub fn tokenize(src: &str) -> Vec<Token> {
     out
 }
 
-/// Index just after the group that opens at `open` (a `(`, `[` or `{`), or the end of input.
+/// Index just after the group that opens at `open` (a `(`, `[` or `{`), or the
+/// end of input.
 #[must_use]
 pub fn skip_group(tokens: &[Token], open: usize) -> usize {
     let mut depth = 0usize;
@@ -312,8 +316,8 @@ pub fn skip_group(tokens: &[Token], open: usize) -> usize {
     tokens.len()
 }
 
-/// Index just after the item that starts at `start`: through its first top-level `{...}` block
-/// or its first top-level `;`.
+/// Index just after the item that starts at `start`: through its first
+/// top-level `{...}` block or its first top-level `;`.
 fn skip_item(tokens: &[Token], start: usize) -> usize {
     let mut i = start;
     while let Some(t) = tokens.get(i) {
@@ -348,9 +352,9 @@ fn test_attr(tokens: &[Token], i: usize) -> Option<usize> {
     (cfg_test || plain_test).then(|| skip_group(tokens, i + 1))
 }
 
-/// Tokens of `src` without test-only items (`#[cfg(test)]` and `#[test]`), and the names of
-/// out-of-line test modules (`#[cfg(test)] mod name;`). A file that starts with `#![cfg(test)]`
-/// yields no tokens.
+/// Tokens of `src` without test-only items (`#[cfg(test)]` and `#[test]`), and
+/// the names of out-of-line test modules (`#[cfg(test)] mod name;`). A file
+/// that starts with `#![cfg(test)]` yields no tokens.
 #[must_use]
 pub fn production_tokens(src: &str) -> (Vec<Token>, BTreeSet<String>) {
     let tokens = tokenize(src);

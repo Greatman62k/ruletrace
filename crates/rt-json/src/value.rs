@@ -1,8 +1,9 @@
 //! The RT-JSON value tree.
 //!
-//! One generic tree serves both directions. A parsed document is `Value<Position>`: every value
-//! and every key carries its byte offset, line and column. A document built in memory for the
-//! writers is `Value<()>`, which carries no position and cannot pretend to have one.
+//! One generic tree serves both directions. A parsed document is
+//! `Value<Position>`: every value and every key carries its byte offset, line
+//! and column. A document built in memory for the writers is `Value<()>`, which
+//! carries no position and cannot pretend to have one.
 
 use std::collections::BTreeSet;
 
@@ -27,12 +28,13 @@ pub enum Kind<P> {
     Null,
     /// `true` or `false`.
     Bool(bool),
-    /// A non-negative integer literal up to [`MAX_SAFE_INTEGER`], written without sign,
-    /// fraction or exponent.
+    /// A non-negative integer literal up to [`MAX_SAFE_INTEGER`], written
+    /// without sign, fraction or exponent.
     Integer(u64),
-    /// Any other valid JSON number (negative, fraction, exponent, or above the integer bound),
-    /// kept as its literal text. The parser never converts it to a number. A decoder that
-    /// expects an Exact_Number reports it (RT-IR-0004) with this text.
+    /// Any other valid JSON number (negative, fraction, exponent, or above the
+    /// integer bound), kept as its literal text. The parser never converts it
+    /// to a number. A decoder that expects an Exact_Number reports it
+    /// (RT-IR-0004) with this text.
     Number(String),
     /// A string, with escapes resolved.
     String(String),
@@ -55,8 +57,9 @@ pub struct Member<P> {
 
 /// A value and the position where it starts.
 ///
-/// `Clone`, `Debug` and `PartialEq` follow the nesting and are therefore recursive. Parsing,
-/// writing and dropping are iterative and safe at any nesting depth.
+/// `Clone`, `Debug` and `PartialEq` follow the nesting and are therefore
+/// recursive. Parsing, writing and dropping are iterative and safe at any
+/// nesting depth.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Value<P> {
     pos: P,
@@ -135,8 +138,9 @@ impl std::fmt::Display for DuplicateKey {
 
 impl std::error::Error for DuplicateKey {}
 
-/// Builders for values that the writers print. The order of object members is the order the
-/// caller gives, which is how a writer's fixed per-object key order is expressed.
+/// Builders for values that the writers print. The order of object members is
+/// the order the caller gives, which is how a writer's fixed per-object key
+/// order is expressed.
 impl Value<()> {
     /// `null`.
     #[must_use]
@@ -171,7 +175,8 @@ impl Value<()> {
     /// An object with members in the given order.
     ///
     /// # Errors
-    /// Returns the first repeated key, because a document with a repeated key does not parse.
+    /// Returns the first repeated key, because a document with a repeated key
+    /// does not parse.
     pub fn object(members: Vec<(String, Value<()>)>) -> Result<Self, DuplicateKey> {
         let mut seen = BTreeSet::new();
         for (key, _) in &members {
@@ -205,8 +210,8 @@ fn take_children<P>(kind: &mut Kind<P>) -> Option<Vec<Value<P>>> {
     }
 }
 
-/// Dropping is iterative, so a tree as deep as an overridden depth limit allows cannot overflow
-/// the stack.
+/// Dropping is iterative, so a tree as deep as an overridden depth limit allows
+/// cannot overflow the stack.
 impl<P> Drop for Value<P> {
     fn drop(&mut self) {
         let Some(mut work) = take_children(&mut self.kind) else {

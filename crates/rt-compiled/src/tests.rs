@@ -60,7 +60,8 @@ fn rule(
     }
 }
 
-/// Targets are `eligible`, `extra`, `in_set`, `licence`, `ranking`, `score`, in that order.
+/// Targets are `eligible`, `extra`, `in_set`, `licence`, `ranking`, `score`, in
+/// that order.
 const T_RANKING: u32 = 4;
 const T_SCORE: u32 = 5;
 

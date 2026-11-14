@@ -1,5 +1,5 @@
-//! The part of `cargo metadata --format-version 1 --all-features` that the graph checks use,
-//! parsed with `rt-json`.
+//! The part of `cargo metadata --format-version 1 --all-features` that the
+//! graph checks use, parsed with `rt-json`.
 
 use rt_foundation::InputId;
 use rt_json::{parse, Kind, ParseLimits, Value};
@@ -30,8 +30,8 @@ pub struct DepDecl {
 pub struct Metadata {
     /// Declared dependencies of each workspace member, by package name.
     pub members: BTreeMap<String, Vec<DepDecl>>,
-    /// Resolved graph of all packages by name (all kinds, all features). `None` when the
-    /// metadata has no `resolve` section.
+    /// Resolved graph of all packages by name (all kinds, all features). `None`
+    /// when the metadata has no `resolve` section.
     pub resolved: Option<BTreeMap<String, BTreeSet<String>>>,
 }
 

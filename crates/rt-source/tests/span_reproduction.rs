@@ -1,9 +1,11 @@
-//! Property 1: Source span reproduction and ordering (design §5, Requirement 1.1 to 1.4).
+//! Property 1: Source span reproduction and ordering (design §5, Requirement
+//! 1.1 to 1.4).
 //!
-//! For any generated UTF-8 document with LF, CRLF or CR endings, tabs and non-ASCII text, every
-//! element of the ingested `SourceModel` is ordered by start offset, its span bytes equal the
-//! element text, the recorded hash is checked against the content, and line and column
-//! recomputed here independently equal the recorded values. The extracted clause texts equal
+//! For any generated UTF-8 document with LF, CRLF or CR endings, tabs and
+//! non-ASCII text, every element of the ingested `SourceModel` is ordered by
+//! start offset, its span bytes equal the element text, the recorded hash is
+//! checked against the content, and line and column recomputed here
+//! independently equal the recorded values. The extracted clause texts equal
 //! the bytes of their spans.
 
 use proptest::prelude::*;
@@ -16,8 +18,8 @@ fn eol() -> impl Strategy<Value = &'static str> {
     prop_oneof![Just("\n"), Just("\r\n"), Just("\r")]
 }
 
-/// One line of document text: headings, list items (nested), table rows, fences, numbering
-/// labels, tabs and non-ASCII text.
+/// One line of document text: headings, list items (nested), table rows,
+/// fences, numbering labels, tabs and non-ASCII text.
 fn line() -> impl Strategy<Value = String> {
     let prefix = prop_oneof![
         Just(""),
@@ -53,7 +55,8 @@ fn line() -> impl Strategy<Value = String> {
     (prefix, body).prop_map(|(p, b)| format!("{p}{b}"))
 }
 
-/// A UTF-8 document, optionally starting with a BOM, with each line ending chosen independently.
+/// A UTF-8 document, optionally starting with a BOM, with each line ending
+/// chosen independently.
 fn gen_document() -> impl Strategy<Value = String> {
     (
         any::<bool>(),
@@ -74,8 +77,8 @@ fn gen_document() -> impl Strategy<Value = String> {
         })
 }
 
-/// 1-based line and column (in scalar values) of a byte offset, computed from the raw text.
-/// LF, CRLF and a lone CR each end one line.
+/// 1-based line and column (in scalar values) of a byte offset, computed from
+/// the raw text. LF, CRLF and a lone CR each end one line.
 fn position(text: &str, offset: usize) -> (u32, u32) {
     let bytes = text.as_bytes();
     let mut line = 1u32;
@@ -98,7 +101,8 @@ fn position(text: &str, offset: usize) -> (u32, u32) {
         }
         i += 1;
     }
-    // A CRLF split by `offset` cannot occur: spans start on a line start or inside a line.
+    // A CRLF split by `offset` cannot occur: spans start on a line start or
+    // inside a line.
     let column = text[line_start..offset].chars().count() as u32 + 1;
     (line, column)
 }
@@ -111,8 +115,9 @@ proptest! {
         let id = DocumentId::new(name).unwrap();
         let model = ingest(text.as_bytes(), &id, None, MAX_SOURCE_DOCUMENT_BYTES).unwrap();
 
-        // The content is the input and the recorded hash verifies against it. The printed
-        // model loads back only when the hash equals the SHA-256 of the content.
+        // The content is the input and the recorded hash verifies against it.
+        // The printed model loads back only when the hash equals the SHA-256 of
+        // the content.
         prop_assert_eq!(model.content().as_bytes(), text.as_bytes());
         prop_assert_eq!(model.byte_len(), text.len() as u64);
         prop_assert!(model.verify_hash(model.sha256()).is_ok());
@@ -124,7 +129,8 @@ proptest! {
         ).unwrap();
         prop_assert_eq!(&loaded, &model);
 
-        // Ordering, exact span bytes, and independently recomputed line and column.
+        // Ordering, exact span bytes, and independently recomputed line and
+        // column.
         let mut previous_start = 0u32;
         for (index, e) in model.elements().iter().enumerate() {
             prop_assert_eq!(e.id as usize, index);
@@ -137,7 +143,8 @@ proptest! {
             prop_assert_eq!((e.line, e.column), position(&text, start));
         }
 
-        // Every clause text equals the bytes of its span, in ascending start order.
+        // Every clause text equals the bytes of its span, in ascending start
+        // order.
         let extracted = extract(&model, ExtractionMode::first_version()).unwrap();
         let mut previous_start = 0u32;
         for clause in extracted.value() {

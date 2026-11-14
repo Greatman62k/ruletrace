@@ -1,9 +1,10 @@
-//! Source ingestion (design §3.5, Requirement 1): document bytes to a verified `SourceModel`.
+//! Source ingestion (design §3.5, Requirement 1): document bytes to a verified
+//! `SourceModel`.
 //!
-//! [`ingest`] is a pure function of its four arguments. It does no file, network, clock or
-//! environment access. The checks run in a fixed order and the first failure decides the single
-//! diagnostic: size limit, format, UTF-8, then structure. No `SourceModel` is produced for a
-//! failed document.
+//! [`ingest`] is a pure function of its four arguments. It does no file,
+//! network, clock or environment access. The checks run in a fixed order and
+//! the first failure decides the single diagnostic: size limit, format, UTF-8,
+//! then structure. No `SourceModel` is produced for a failed document.
 #![forbid(unsafe_code)]
 
 mod extract;
@@ -21,18 +22,25 @@ const MAGIC_WINDOW: usize = 512;
 /// Ingests a document.
 ///
 /// - `bytes`: the raw document, including any BOM.
-/// - `id`: the caller's opaque document identifier. Its extension selects the format.
-/// - `format_hint`: overrides the extension. It never overrides the content check.
-/// - `limit`: the effective size limit in bytes. A limit above 16 MiB is capped at 16 MiB.
+/// - `id`: the caller's opaque document identifier. Its extension selects the
+///   format.
+/// - `format_hint`: overrides the extension. It never overrides the content
+///   check.
+/// - `limit`: the effective size limit in bytes. A limit above 16 MiB is capped
+///   at 16 MiB.
 ///
 /// # Errors
 /// One diagnostic with the Document_Location of `id`:
-/// - `RT-LIM-0001` when the document is larger than a configured `limit` below 16 MiB.
-/// - `RT-ING-0003` when the document is larger than 16 MiB and the limit is not lower.
-/// - `RT-ING-0002` (Unsupported) for an unsupported extension or a binary or HTML prefix.
-/// - `RT-ING-0001` when the bytes are not UTF-8; the message gives the first invalid offset.
-/// - `RT-ING-0004` when the structure found does not pass the `SourceModel` checks.
-///   This indicates a defect in the Ingestor, not in the document.
+/// - `RT-LIM-0001` when the document is larger than a configured `limit` below
+///   16 MiB.
+/// - `RT-ING-0003` when the document is larger than 16 MiB and the limit is not
+///   lower.
+/// - `RT-ING-0002` (Unsupported) for an unsupported extension or a binary or
+///   HTML prefix.
+/// - `RT-ING-0001` when the bytes are not UTF-8; the message gives the first
+///   invalid offset.
+/// - `RT-ING-0004` when the structure found does not pass the `SourceModel`
+///   checks. This indicates a defect in the Ingestor, not in the document.
 pub fn ingest(
     bytes: &[u8],
     id: &DocumentId,

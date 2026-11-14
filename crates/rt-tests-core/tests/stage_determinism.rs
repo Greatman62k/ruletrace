@@ -1,11 +1,12 @@
-//! Property 2: Stage determinism (task 5.17).
+//! Property 2: Stage determinism.
 //!
 //! Feature: ruletrace-compiler, Property 2: Stage determinism
 //!
-//! The seven stage functions (ingest, extract, parse, validate, compile, evaluate, verify) are
-//! each run on fixed typed inputs in a generated order, on the main thread and on another
-//! thread, with a different rulebook's full pipeline run in between. Every output, as canonical
-//! or Debug bytes, equals the output of a reference run.
+//! The seven stage functions (ingest, extract, parse, validate, compile,
+//! evaluate, verify) are each run on fixed typed inputs in a generated order,
+//! on the main thread and on another thread, with a different rulebook's full
+//! pipeline run in between. Every output, as canonical or Debug bytes, equals
+//! the output of a reference run.
 //!
 //! **Validates: Requirements 1.7, 4.11, 6.12, 9.4, 10.2, 10.8, 24.6**
 

@@ -1,15 +1,18 @@
-//! Property 9: approval status is a pure function of the Rulebook and the ledger.
+//! Property 9: approval status is a pure function of the Rulebook and the
+//! ledger.
 //!
 //! **Validates: Requirements 5.1, 5.3, 5.16, 25.11, 26.10, 26.11**
 //!
-//! A Rulebook is generated as text and parsed by `rt-ir`. A ledger is generated as a plan per
-//! revision (a matching approval, stale approvals with a wrong content hash, a wrong
-//! `ir_version` or a wrong binding, and a rejection), written in canonical form with an
-//! independently computed hash chain and verified by `parse_ledger`. An independent oracle
-//! states the expected status of every revision from the plan alone. The derived statuses,
-//! Effective revisions and unresolved revisions must equal the oracle, be the same when derived
-//! twice, and not change when the interleaving of records of different revisions, the Origin
-//! of revisions or the order of the revision list changes.
+//! A Rulebook is generated as text and parsed by `rt-ir`. A ledger is generated
+//! as a plan per revision (a matching approval, stale approvals with a wrong
+//! content hash, a wrong `ir_version` or a wrong binding, and a rejection),
+//! written in canonical form with an independently computed hash chain and
+//! verified by `parse_ledger`. An independent oracle states the expected status
+//! of every revision from the plan alone. The derived statuses, Effective
+//! revisions and unresolved revisions must equal the oracle, be the same when
+//! derived twice, and not change when the interleaving of records of different
+//! revisions, the Origin of revisions or the order of the revision list
+//! changes.
 
 #![allow(clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
 
@@ -30,8 +33,9 @@ use std::collections::{BTreeMap, BTreeSet};
 const DOC_A: &str = "eb4d68f2de94881529749748a8de99f39505ae89a2ae4fa9d88a6d7b07de788a";
 const DOC_B: &str = "1111111111111111111111111111111111111111111111111111111111111111";
 
-/// What a revision's record plan holds for the slot that uses the true content hash. Only one
-/// such record per revision is allowed: a second decision with the same hash is contradictory.
+/// What a revision's record plan holds for the slot that uses the true content
+/// hash. Only one such record per revision is allowed: a second decision with
+/// the same hash is contradictory.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum TrueSlot {
     None,
@@ -146,7 +150,8 @@ fn parse_book(text: &str) -> Rulebook {
     }
 }
 
-/// The binding JSON of a revision: sorted, de-duplicated (document, declared hash).
+/// The binding JSON of a revision: sorted, de-duplicated (document, declared
+/// hash).
 fn binding_json(r: &Revision, corrupt: bool) -> String {
     let docs: BTreeSet<&str> = r
         .spans
@@ -180,8 +185,8 @@ struct Draft {
     binding: String,
 }
 
-/// The records of one revision in their required order. A rejection is last (Rejected is
-/// terminal, a later record would be contradictory).
+/// The records of one revision in their required order. A rejection is last
+/// (Rejected is terminal, a later record would be contradictory).
 fn drafts_of(book: &Rulebook, i: usize, j: usize, r: &Revision) -> Vec<Draft> {
     let rev = find(book, i, j);
     let true_hash = rule_content_hash(&book.ir_version, rev, &book.documents)
@@ -226,7 +231,8 @@ fn find(book: &Rulebook, i: usize, j: usize) -> &RuleRevision {
         .expect("revision")
 }
 
-/// Merges the per-revision queues in an order given by `seed`, keeping each queue's order.
+/// Merges the per-revision queues in an order given by `seed`, keeping each
+/// queue's order.
 fn interleave(queues: Vec<Vec<Draft>>, seed: u64) -> Vec<Draft> {
     let mut order: Vec<usize> = queues
         .iter()
@@ -325,8 +331,8 @@ fn derived(book: &Rulebook, ledger: &ApprovalLedger) -> BTreeMap<Key, ApprovalSt
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(128))]
 
-    /// Statuses equal the oracle, deriving twice gives equal results, and the Effective and
-    /// unresolved revisions follow from them.
+    /// Statuses equal the oracle, deriving twice gives equal results, and the
+    /// Effective and unresolved revisions follow from them.
     ///
     /// **Validates: Requirements 5.1, 5.3, 25.11, 26.10, 26.11**
     #[test]
@@ -340,8 +346,8 @@ proptest! {
         prop_assert_eq!(statuses.len(), book.revisions.len());
         prop_assert_eq!(derived(&book, &ledger), expected.clone());
 
-        // Effective revision: the highest Approved revision of each rule; none if no revision
-        // of the rule is Approved.
+        // Effective revision: the highest Approved revision of each rule; none
+        // if no revision of the rule is Approved.
         let effective: BTreeMap<String, Key> = effective_revisions(&book, &statuses)
             .into_iter()
             .map(|(id, k)| (id.as_str().to_owned(), (k.id.as_str().to_owned(), k.revision.get())))
@@ -354,7 +360,8 @@ proptest! {
         }
         prop_assert_eq!(effective, want_effective);
 
-        // Unresolved: Proposed with no higher Approved or Rejected revision of the same rule.
+        // Unresolved: Proposed with no higher Approved or Rejected revision of
+        // the same rule.
         let got: Vec<Key> = unresolved(&book, &statuses)
             .into_iter()
             .map(|k| (k.id.as_str().to_owned(), k.revision.get()))
@@ -375,9 +382,10 @@ proptest! {
         prop_assert_eq!(got, want);
     }
 
-    /// Nothing but the Rulebook content and the ledger decisions changes a status: another
-    /// interleaving of the records of different revisions, a different Origin, different span
-    /// positions and a different order of the revision list leave the statuses unchanged.
+    /// Nothing but the Rulebook content and the ledger decisions changes a
+    /// status: another interleaving of the records of different revisions, a
+    /// different Origin, different span positions and a different order of the
+    /// revision list leave the statuses unchanged.
     ///
     /// **Validates: Requirements 5.3, 5.16, 26.10, 26.11**
     #[test]

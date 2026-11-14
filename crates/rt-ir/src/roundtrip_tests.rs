@@ -1,11 +1,12 @@
 //! Property 3: Rulebook serialization round trip (task 4.11).
 //!
-//! The parser keeps document order, the printer sorts revisions by (identifier, revision) and
-//! documents by (identifier, hash), and `Rulebook` equality is order-sensitive. The generator
-//! therefore builds revisions and documents in an arbitrary (shuffled) construction order, and
-//! the comparison is made against the canonical-order form of the generated Rulebook
-//! (`canonical_order`). Types, precedence, spans and every other list keep their order, which
-//! the printer preserves.
+//! The parser keeps document order, the printer sorts revisions by (identifier,
+//! revision) and documents by (identifier, hash), and `Rulebook` equality is
+//! order-sensitive. The generator therefore builds revisions and documents in
+//! an arbitrary (shuffled) construction order, and the comparison is made
+//! against the canonical-order form of the generated Rulebook
+//! (`canonical_order`). Types, precedence, spans and every other list keep
+//! their order, which the printer preserves.
 //!
 //! **Validates: Requirements 3.10, 3.11, 4.5, 4.6**
 
@@ -30,8 +31,8 @@ fn parse(text: &str) -> Rulebook {
     }
 }
 
-/// The Rulebook with revisions sorted by key and documents by (identifier, hash): the order the
-/// printer writes and the parser then reads back.
+/// The Rulebook with revisions sorted by key and documents by (identifier,
+/// hash): the order the printer writes and the parser then reads back.
 fn canonical_order(rb: &Rulebook) -> Rulebook {
     let mut out = rb.clone();
     out.revisions.sort_by(|a, b| a.key.cmp(&b.key));
@@ -40,7 +41,7 @@ fn canonical_order(rb: &Rulebook) -> Rulebook {
     out
 }
 
-// ---- generators -------------------------------------------------------------------------
+// ---- generators ----
 
 fn name() -> impl Strategy<Value = Name> {
     "[a-z][a-z0-9_]{0,6}".prop_map(|s| Name::new(s).unwrap())
@@ -329,7 +330,8 @@ fn body() -> impl Strategy<Value = RuleBody> {
 }
 
 fn rule_id() -> impl Strategy<Value = RuleId> {
-    // A small alphabet makes shared identifiers (several revisions of one rule) common.
+    // A small alphabet makes shared identifiers (several revisions of one rule)
+    // common.
     "[a-c][a-c0-9_.-]{0,3}".prop_map(|s| RuleId::new(s).unwrap())
 }
 
@@ -432,8 +434,8 @@ fn precedence() -> impl Strategy<Value = Precedence> {
     )
 }
 
-/// Renumbers the revisions of each rule 1, 2, 3 ... (the parser rejects gaps), in list order;
-/// the caller shuffles the numbered list afterwards.
+/// Renumbers the revisions of each rule 1, 2, 3 ... (the parser rejects gaps),
+/// in list order; the caller shuffles the numbered list afterwards.
 fn number_revisions(revisions: Vec<RuleRevision>) -> Vec<RuleRevision> {
     let mut next: std::collections::BTreeMap<RuleId, u32> = std::collections::BTreeMap::new();
     revisions
@@ -447,8 +449,8 @@ fn number_revisions(revisions: Vec<RuleRevision>) -> Vec<RuleRevision> {
         .collect()
 }
 
-/// A Rulebook in arbitrary construction order: revisions are unique by key but unsorted,
-/// documents are unique by identifier but unsorted.
+/// A Rulebook in arbitrary construction order: revisions are unique by key but
+/// unsorted, documents are unique by identifier but unsorted.
 fn rulebook() -> impl Strategy<Value = Rulebook> {
     (
         text(),
@@ -483,7 +485,7 @@ fn rulebook() -> impl Strategy<Value = Rulebook> {
         })
 }
 
-// ---- properties -------------------------------------------------------------------------
+// ---- properties ----
 
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(128))]
@@ -497,14 +499,11 @@ proptest! {
                 if pretty { print_pretty(r) } else { print_compact(r) }.unwrap()
             };
             let printed = print(&rb);
-            // Printing twice is byte identical.
             prop_assert_eq!(&printed, &print(&rb));
-            // The printed order does not depend on construction order.
+            // Printing is independent of construction order.
             prop_assert_eq!(&printed, &print(&canonical));
-            // parse(print(rb)) equals rb (in canonical order).
             let reparsed = parse(&printed);
             prop_assert_eq!(&reparsed, &canonical);
-            // print(parse(print(rb))) equals print(rb).
             prop_assert_eq!(&print(&reparsed), &printed);
         }
     }

@@ -1,9 +1,11 @@
-//! The candidates file: the printed and parsed form of a Candidate_Clause list (design §3.5).
+//! The candidates file: the printed and parsed form of a Candidate_Clause list
+//! (design §3.5).
 //!
-//! File form: RT-JSON pretty, fixed key order: `format`, `version`, `document`, `clauses`; a
-//! clause has `document`, `start`, `end`, `line`, `column`, `label`, `text`. Parsing checks every
-//! clause against the Source_Model of the document, so a parsed list holds verified spans and the
-//! exact source text only.
+//! File form: RT-JSON pretty, fixed key order: `format`, `version`, `document`,
+//! `clauses`; a clause has `document`, `start`, `end`, `line`, `column`,
+//! `label`, `text`. Parsing checks every clause against the Source_Model of the
+//! document, so a parsed list holds verified spans and the exact source text
+//! only.
 
 use crate::{CandidateClause, SourceModel};
 use rt_foundation::{Code, Diagnostic, DocumentId, InputId, SourceSpan};
@@ -17,13 +19,15 @@ const CLAUSE_KEYS: [&str; 7] = [
     "document", "start", "end", "line", "column", "label", "text",
 ];
 
-/// Why a candidates file was refused. The catalogue has no code for this failure, so the caller
-/// that owns the command chooses how to report it.
+/// Why a candidates file was refused. The catalogue has no code for this
+/// failure, so the caller that owns the command chooses how to report it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CandidatesError {
-    /// The file exceeds a size or nesting limit (`RT-LIM-0001` or `RT-LIM-0002`).
+    /// The file exceeds a size or nesting limit (`RT-LIM-0001` or
+    /// `RT-LIM-0002`).
     Limit(Box<Diagnostic>),
-    /// The file is not valid RT-JSON, has a wrong shape, or disagrees with the Source_Model.
+    /// The file is not valid RT-JSON, has a wrong shape, or disagrees with the
+    /// Source_Model.
     Invalid {
         /// What is wrong.
         message: String,
@@ -57,7 +61,8 @@ fn invalid(at: Option<Position>, field: &str, message: &str) -> CandidatesError 
 }
 
 fn member_object(members: Vec<(&str, Value<()>)>) -> Value<()> {
-    // The keys used are distinct constants, so building cannot fail; the fallback is unreachable.
+    // The keys used are distinct constants, so building cannot fail; the
+    // fallback is unreachable.
     Value::object(
         members
             .into_iter()
@@ -67,8 +72,9 @@ fn member_object(members: Vec<(&str, Value<()>)>) -> Value<()> {
     .unwrap_or_else(|_| Value::null())
 }
 
-/// The canonical candidates file: RT-JSON pretty with the fixed key order, ending in a line
-/// feed. The same list always gives the same bytes. Offsets are 32-bit by the model's limit.
+/// The canonical candidates file: RT-JSON pretty with the fixed key order,
+/// ending in a line feed. The same list always gives the same bytes. Offsets
+/// are 32-bit by the model's limit.
 #[must_use]
 pub fn print_candidates(document: &DocumentId, clauses: &[CandidateClause]) -> String {
     let items = clauses
@@ -96,9 +102,10 @@ pub fn print_candidates(document: &DocumentId, clauses: &[CandidateClause]) -> S
 
 /// Parses a candidates file for `model` and verifies it against the model.
 ///
-/// Every clause must name the document of `model`, have a span that the model accepts (inside
-/// the document, on character boundaries, with the stated line and column), carry text equal to
-/// the span bytes, and start after the previous clause.
+/// Every clause must name the document of `model`, have a span that the model
+/// accepts (inside the document, on character boundaries, with the stated line
+/// and column), carry text equal to the span bytes, and start after the
+/// previous clause.
 ///
 /// # Errors
 /// [`CandidatesError`] for the first failure found.

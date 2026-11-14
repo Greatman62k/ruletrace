@@ -1,4 +1,5 @@
-//! Identifier newtypes. Identifiers are opaque strings and are never joined to a path.
+//! Identifier newtypes. Identifiers are opaque strings and are never joined to
+//! a path.
 
 use std::fmt;
 
@@ -54,10 +55,12 @@ macro_rules! opaque_id {
         pub struct $name(String);
 
         impl $name {
-            /// Builds the identifier. It must be non-empty and contain no control character.
+            /// Builds the identifier. It must be non-empty and contain no
+            /// control character.
             ///
             /// # Errors
-            /// Returns [`IdError`] when the text is empty or contains a control character.
+            /// Returns [`IdError`] when the text is empty or contains a control
+            /// character.
             pub fn new(text: impl Into<String>) -> Result<Self, IdError> {
                 let text = text.into();
                 check_opaque(&text)?;
@@ -80,8 +83,8 @@ macro_rules! opaque_id {
 }
 
 opaque_id!(
-    /// Opaque UTF-8 identifier of a Source_Document (backslashes are normalised by the CLI).
-    /// Ordered bytewise.
+    /// Opaque UTF-8 identifier of a Source_Document (backslashes are normalised
+    /// by the CLI). Ordered bytewise.
     DocumentId
 );
 opaque_id!(
@@ -89,8 +92,8 @@ opaque_id!(
     InputId
 );
 
-/// Rule identifier matching `[a-z][a-z0-9_.-]{0,127}`. Ordered bytewise on UTF-8, which for
-/// this ASCII alphabet is the derived `String` order.
+/// Rule identifier matching `[a-z][a-z0-9_.-]{0,127}`. Ordered bytewise on
+/// UTF-8, which for this ASCII alphabet is the derived `String` order.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RuleId(String);
 
@@ -101,7 +104,8 @@ impl RuleId {
     /// Builds a rule identifier.
     ///
     /// # Errors
-    /// Returns [`IdError`] when the text does not match `[a-z][a-z0-9_.-]{0,127}`.
+    /// Returns [`IdError`] when the text does not match
+    /// `[a-z][a-z0-9_.-]{0,127}`.
     pub fn new(text: impl Into<String>) -> Result<Self, IdError> {
         let text = text.into();
         let mut bytes = text.bytes();
@@ -150,10 +154,12 @@ impl RevisionNumber {
         }
     }
 
-    /// Builds a revision number from a wider integer, rejecting values outside the range.
+    /// Builds a revision number from a wider integer, rejecting values outside
+    /// the range.
     ///
     /// # Errors
-    /// Returns [`IdError::RevisionOutOfRange`] for values below 1 or above `u32::MAX`.
+    /// Returns [`IdError::RevisionOutOfRange`] for values below 1 or above
+    /// `u32::MAX`.
     pub fn from_i128(value: i128) -> Result<Self, IdError> {
         u32::try_from(value)
             .map_err(|_| IdError::RevisionOutOfRange)
@@ -173,8 +179,8 @@ impl fmt::Display for RevisionNumber {
     }
 }
 
-/// A reference to a rule, optionally to one revision. Ordered by rule id bytewise, then revision
-/// (an absent revision sorts first).
+/// A reference to a rule, optionally to one revision. Ordered by rule id
+/// bytewise, then revision (an absent revision sorts first).
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RuleRef {
     /// The rule.

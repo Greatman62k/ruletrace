@@ -1,8 +1,9 @@
 //! The hand-written argument parser (design §3.9).
 //!
-//! Options may appear in any order. A repeated option is an error (except `--source-model`), `--` is not supported, and the
-//! form `--name=value` is not supported. Every problem is a `Cli_Location` Diagnostic. All
-//! problems of one command line are reported, so a user sees them at once; none of them reads a
+//! Options may appear in any order. A repeated option is an error (except
+//! `--source-model`), `--` is not supported, and the form `--name=value` is not
+//! supported. Every problem is a `Cli_Location` Diagnostic. All problems of one
+//! command line are reported, so a user sees them at once; none of them reads a
 //! file.
 
 use rt_foundation::{CliLocation, Code, Diagnostic, DocumentId, Location, RevisionNumber, RuleId};
@@ -54,7 +55,8 @@ pub enum ReviewCommand {
     Decide(DecideArgs),
 }
 
-/// The values of one `approve` or `reject` request. Reviewer and time come only from here.
+/// The values of one `approve` or `reject` request. Reviewer and time come only
+/// from here.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DecideArgs {
     /// The rule to decide.
@@ -97,9 +99,11 @@ pub struct ValidateArgs {
     pub out: PathBuf,
     /// The rendering of Diagnostics on standard error.
     pub output_format: OutputFormat,
-    /// The size limit given by `--max-bytes` for the Rulebook and the ledger, if any.
+    /// The size limit given by `--max-bytes` for the Rulebook and the ledger,
+    /// if any.
     pub max_bytes: Option<u64>,
-    /// The container depth limit given by `--max-depth` for the Rulebook and the ledger, if any.
+    /// The container depth limit given by `--max-depth` for the Rulebook and
+    /// the ledger, if any.
     pub max_depth: Option<u32>,
 }
 
@@ -119,11 +123,13 @@ pub struct EvaluateArgs {
     pub compiled: PathBuf,
     /// The Competition_Data file.
     pub data: PathBuf,
-    /// The Questions file, if given. Without it the default Questions are used (RN-6).
+    /// The Questions file, if given. Without it the default Questions are used
+    /// (RN-6).
     pub questions: Option<PathBuf>,
     /// The Published_Result file, if given.
     pub published: Option<PathBuf>,
-    /// The Source_Model files, in the order given. Without any, provenance is not verified.
+    /// The Source_Model files, in the order given. Without any, provenance is
+    /// not verified.
     pub source_models: Vec<PathBuf>,
     /// Where the results file is written.
     pub out: PathBuf,
@@ -202,14 +208,15 @@ const EVALUATE_OPTIONS: [&str; 12] = [
     "--proof-report-json",
 ];
 
-/// Options that may be given more than once. Their values are collected in order.
+/// Options that may be given more than once. Their values are collected in
+/// order.
 const REPEATABLE: [&str; 1] = ["--source-model"];
 
 /// Options that take no value.
 const FLAGS: [&str; 2] = ["--render", "--create-ledger"];
 
-/// Options whose value may be empty, because the review planner refuses an empty value with its
-/// own REVIEW Diagnostic (Req 23.14, 23.15).
+/// Options whose value may be empty, because the review planner refuses an
+/// empty value with its own REVIEW Diagnostic (Req 23.14, 23.15).
 const MAY_BE_EMPTY: [&str; 2] = ["--reviewer", "--reason"];
 
 const REVIEW_LIST_OPTIONS: [&str; 5] = [
@@ -266,11 +273,12 @@ fn display(text: &str) -> String {
     rt_foundation::escape_controls(text)
 }
 
-/// Parses the arguments after the program name. The command name is at position 0.
+/// Parses the arguments after the program name. The command name is at
+/// position 0.
 ///
 /// # Errors
-/// All Diagnostics of the command line, in the order found. They have codes `RT-CLI-0001`,
-/// `RT-CLI-0002` or `RT-CLI-0004` and a `Cli_Location`.
+/// All Diagnostics of the command line, in the order found. They have codes
+/// `RT-CLI-0001`, `RT-CLI-0002` or `RT-CLI-0004` and a `Cli_Location`.
 pub fn parse(args: &[OsString]) -> Result<Invocation, Vec<Diagnostic>> {
     let mut text = Vec::with_capacity(args.len());
     for (index, arg) in args.iter().enumerate() {
@@ -309,7 +317,8 @@ pub fn parse(args: &[OsString]) -> Result<Invocation, Vec<Diagnostic>> {
     }
 }
 
-/// The option values of one command: position and text of each option that was given once.
+/// The option values of one command: position and text of each option that was
+/// given once.
 type Given<'a> = BTreeMap<&'static str, (usize, &'a str)>;
 
 /// Values of the repeatable options, with their positions, in the order given.
@@ -755,7 +764,8 @@ fn parse_evaluate(text: &[String]) -> Result<Invocation, Vec<Diagnostic>> {
     }
 }
 
-/// A positive whole number option, or `None` when absent or invalid (a problem is recorded).
+/// A positive whole number option, or `None` when absent or invalid (a problem
+/// is recorded).
 fn positive(
     given: &Given<'_>,
     name: &'static str,

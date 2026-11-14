@@ -1,13 +1,15 @@
 //! The canonical Rule_IR printers (design §4.1.1, §4.1.2).
 //!
-//! Both forms use the single key order of design §4.1.2 and the string escaping of `rt-json`.
-//! Rules are written sorted by (identifier bytes, revision) and documents by identifier bytes,
-//! so two equal Rulebooks give byte-identical output whatever order they were built in.
+//! Both forms use the single key order of design §4.1.2 and the string escaping
+//! of `rt-json`. Rules are written sorted by (identifier bytes, revision) and
+//! documents by identifier bytes, so two equal Rulebooks give byte-identical
+//! output whatever order they were built in.
 //!
-//! The printers build a private output tree ([`Out`]) and write it. The tree is private because
-//! it must carry number lexemes of opaque subtrees verbatim, which `rt-json` builders cannot
-//! express. [`write`] follows the layout of `rt_json::write_compact` and
-//! `rt_json::write_pretty`; a test checks the two against each other.
+//! The printers build a private output tree ([`Out`]) and write it. The tree is
+//! private because it must carry number lexemes of opaque subtrees verbatim,
+//! which `rt-json` builders cannot express. [`write`] follows the layout of
+//! `rt_json::write_compact` and `rt_json::write_pretty`; a test checks the two
+//! against each other.
 
 use crate::expr::{Expr, ExprKind, Literal, OpaqueConstruct, Rounding};
 use crate::rule::{
@@ -23,7 +25,8 @@ use rt_json::{Kind, ParseLimits, Position, Value};
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
 
-/// A node of the output tree. Object members keep the order given, which is the key order.
+/// A node of the output tree. Object members keep the order given, which is the
+/// key order.
 #[derive(Clone, Debug)]
 pub(crate) enum Out {
     Null,
@@ -52,7 +55,8 @@ pub(crate) fn obj(members: Vec<(&str, Out)>) -> Out {
     )
 }
 
-/// Converts a parsed value into an output node, keeping number lexemes verbatim.
+/// Converts a parsed value into an output node, keeping number lexemes
+/// verbatim.
 pub(crate) fn value_to_out(value: &Value<Position>) -> Out {
     match value.kind() {
         Kind::Null => Out::Null,
@@ -70,8 +74,9 @@ pub(crate) fn value_to_out(value: &Value<Position>) -> Out {
     }
 }
 
-/// The members of the opaque subtree, in carried order. The raw text was written by the
-/// canonical writer, so it always parses; an unreadable value gives no members.
+/// The members of the opaque subtree, in carried order. The raw text was
+/// written by the canonical writer, so it always parses; an unreadable value
+/// gives no members.
 fn splice(opaque: &OpaqueConstruct) -> Vec<(String, Out)> {
     let Ok(input) = InputId::new("opaque") else {
         return Vec::new();
@@ -86,9 +91,7 @@ fn splice(opaque: &OpaqueConstruct) -> Vec<(String, Out)> {
     }
 }
 
-// ---------------------------------------------------------------------------------------------
-// Writer
-// ---------------------------------------------------------------------------------------------
+// ----- Writer -----
 
 fn push_string(out: &mut String, text: &str) {
     out.push('"');
@@ -172,9 +175,7 @@ fn write_node(out: &mut String, value: &Out, pretty: bool, level: usize) {
     }
 }
 
-// ---------------------------------------------------------------------------------------------
-// Rulebook to output tree
-// ---------------------------------------------------------------------------------------------
+// ----- Rulebook to output tree -----
 
 pub(crate) fn opt_str(text: Option<&str>) -> Out {
     text.map_or(Out::Null, s)
@@ -215,7 +216,8 @@ fn literal_fields(literal: &Literal) -> Vec<(String, Out)> {
     }
 }
 
-/// A literal in a position that has no `t` of its own (set member, default): the type is derived.
+/// A literal in a position that has no `t` of its own (set member, default):
+/// the type is derived.
 fn literal_out(literal: &Literal) -> Out {
     let mut members = vec![
         ("node".to_owned(), s(literal_node_name(literal))),
@@ -535,8 +537,8 @@ fn limit_diagnostic(what: &str, count: usize, limit: u32) -> Diagnostic {
     )
 }
 
-/// Checks the count limits of design §4.1.5 on an in-memory Rulebook, so that the printer never
-/// writes a document its own parser would refuse.
+/// Checks the count limits of design §4.1.5 on an in-memory Rulebook, so that
+/// the printer never writes a document its own parser would refuse.
 fn check_limits(rulebook: &Rulebook) -> Vec<Diagnostic> {
     let mut found = Vec::new();
     let ids: BTreeSet<&str> = rulebook
@@ -605,13 +607,15 @@ fn rulebook_out(rulebook: &Rulebook) -> Out {
     ])
 }
 
-/// Prints a Rulebook in the pretty form: two-space indent, one member or element per line and a
-/// trailing line feed. This is the form of a Rulebook file. The same Rulebook always gives the
-/// same bytes, and [`parse_rulebook`](crate::parse_rulebook) accepts them.
+/// Prints a Rulebook in the pretty form: two-space indent, one member or
+/// element per line and a trailing line feed. This is the form of a Rulebook
+/// file. The same Rulebook always gives the same bytes, and
+/// [`parse_rulebook`](crate::parse_rulebook) accepts them.
 ///
 /// # Errors
-/// `RT-LIM-0004` for each count limit of design §4.1.5 that the Rulebook exceeds (rules,
-/// revisions, spans per rule). Nothing is printed then, because the parser would refuse it.
+/// `RT-LIM-0004` for each count limit of design §4.1.5 that the Rulebook
+/// exceeds (rules, revisions, spans per rule). Nothing is printed then, because
+/// the parser would refuse it.
 pub fn print_pretty(rulebook: &Rulebook) -> Result<String, Vec<Diagnostic>> {
     let found = check_limits(rulebook);
     if found.is_empty() {
@@ -621,7 +625,8 @@ pub fn print_pretty(rulebook: &Rulebook) -> Result<String, Vec<Diagnostic>> {
     }
 }
 
-/// Prints a Rulebook in the compact form: no whitespace and no trailing line feed.
+/// Prints a Rulebook in the compact form: no whitespace and no trailing line
+/// feed.
 ///
 /// # Errors
 /// The same `RT-LIM-0004` diagnostics as [`print_pretty`].

@@ -1,19 +1,20 @@
-//! Property 5 (Rulebook and ledger part, task 4.12): contradictory flag input is rejected.
+//! Property 5 (Rulebook and ledger part): contradictory flag input is rejected.
 //!
-//! Any non-empty set of the flag keys (`has_errors`, `no_errors`, `validation_status`,
-//! `validation_result`, `passed`) and lifecycle keys (`approval_status`, `is_approved`,
-//! `is_rejected`, `is_proposed`, `approval_record`) is inserted, each at its own position and
-//! with its own value, into one object of a valid Rulebook or of a valid ledger line. The
-//! parser must return one Error per category present (`RT-DGN-0002` when both `has_errors` and
-//! `no_errors` are present, else `RT-DGN-0001`, and `RT-DGN-0003` for lifecycle keys), each
-//! naming every offending field, with the first offending key in input order as the primary
-//! location and the others as related locations. No value is returned, so no later stage can
-//! run. The catalogue maps all three codes to exit code 2 (`InvalidInput`); the CLI has no
-//! validate command yet, so the exit code is asserted at the catalogue level.
+//! Any non-empty set of the flag keys (`has_errors`, `no_errors`,
+//! `validation_status`, `validation_result`, `passed`) and lifecycle keys
+//! (`approval_status`, `is_approved`, `is_rejected`, `is_proposed`,
+//! `approval_record`) is inserted, each at its own position and with its own
+//! value, into one object of a valid Rulebook or of a valid ledger line. The
+//! parser must return one Error per category present (`RT-DGN-0002` when both
+//! `has_errors` and `no_errors` are present, else `RT-DGN-0001`, and
+//! `RT-DGN-0003` for lifecycle keys), each naming every offending field, with
+//! the first offending key in input order as the primary location and the
+//! others as related locations. No value is returned, so no later stage can
+//! run. The catalogue maps all three codes to exit code 2 (`InvalidInput`); the
+//! exit code is asserted at the catalogue level.
 //!
-//! Later tasks (7.8, 9.12) extend the generator to the other input kinds.
-//!
-//! **Validates: Requirements 4.10, 22.6, 22.7, 22.9, 22.10, 22.11, 22.12, 22.13, 22.16, 22.17, 22.18, 20.25**
+//! **Validates: Requirements 4.10, 22.6, 22.7, 22.9, 22.10, 22.11, 22.12,
+//! 22.13, 22.16, 22.17, 22.18, 20.25**
 
 #![allow(clippy::expect_used, clippy::indexing_slicing)]
 
@@ -35,7 +36,8 @@ fn hex(seed: &str) -> String {
     sha256(seed.as_bytes()).as_str().to_owned()
 }
 
-/// A valid ledger of `n` records, sealed with an independently computed hash chain.
+/// A valid ledger of `n` records, sealed with an independently computed hash
+/// chain.
 fn ledger_lines(n: usize) -> Vec<String> {
     let mut lines = vec![HEADER_LINE.to_owned()];
     let mut prev = ZERO_HASH.to_owned();
@@ -64,9 +66,11 @@ struct Object {
 /// Finds every object of compact JSON text and its insert offsets.
 fn objects(text: &str) -> Vec<Object> {
     let mut done: Vec<Object> = Vec::new();
-    // Stack of open containers: Some(index into `open`) for objects, None for arrays.
+    // Stack of open containers: Some(index into `open`) for objects, None for
+    // arrays.
     let mut stack: Vec<Option<usize>> = Vec::new();
-    let mut open: Vec<(Vec<usize>, usize)> = Vec::new(); // (before offsets, open offset)
+    // Each entry is (before offsets, open offset).
+    let mut open: Vec<(Vec<usize>, usize)> = Vec::new();
     let (mut in_str, mut esc) = (false, false);
     for (i, b) in text.bytes().enumerate() {
         if in_str {
@@ -110,7 +114,8 @@ fn objects(text: &str) -> Vec<Object> {
 struct Insertion {
     key: &'static str,
     value: &'static str,
-    /// Slot 0..=members: before member `slot`, or the end when `slot == members`.
+    /// Slot 0..=members: before member `slot`, or the end when
+    /// `slot == members`.
     slot: usize,
 }
 

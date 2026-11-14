@@ -1,29 +1,32 @@
-//! Pass 10 (approval gate) and pass 11 (candidates) (design §3.6.1, Req 2.5, 5, 6.13 to 6.15,
-//! 25, 26).
+//! Pass 10 (approval gate) and pass 11 (candidates) (design §3.6.1, Req 2.5,
+//! 5, 6.13 to 6.15, 25, 26).
 //!
-//! Statuses come from `rt_ledger::derive_statuses` only. This module never stores a status.
+//! Statuses come from `rt_ledger::derive_statuses` only. This module never
+//! stores a status.
 //!
-//! * `RT-APR-0001` (Error): one per unresolved revision, at the first span of the rule.
+//! * `RT-APR-0001` (Error): one per unresolved revision, at the first span of
+//!   the rule.
 //! * `RT-APR-0002` (Error): no Effective revision exists.
-//! * `RT-APR-0003` (Warning): one per ledger record that matches no current revision or, for an
-//!   approval, does not match its revision in rule, revision, content hash, IR_Version and
-//!   binding. Such a record never counts as an approval, because `derive_statuses` requires a
-//!   full match.
-//! * `RT-APR-0004` (Error): a Rejected revision whose current content hash differs from the one
-//!   in its rejection record. The revision stays Rejected.
+//! * `RT-APR-0003` (Warning): one per ledger record that matches no current
+//!   revision or, for an approval, does not match its revision in rule,
+//!   revision, content hash, IR_Version and binding. Such a record never counts
+//!   as an approval, because `derive_statuses` requires a full match.
+//! * `RT-APR-0004` (Error): a Rejected revision whose current content hash
+//!   differs from the one in its rejection record. The revision stays Rejected.
 //! * `RT-APR-0006` (Warning): one per Rejected revision.
 //! * `RT-ING-0006` (Warning): one per Candidate_Clause that no rule references.
 //!
 //! Choices the design leaves open:
 //!
-//! * A Rule references a Candidate_Clause when a span of any revision of the Rule, whatever its
-//!   status, is in the same document and shares at least one byte with the clause span.
-//! * The stale-record and unreferenced-clause Diagnostics point at the ledger record
-//!   (`Location::Input`, input `ledger`, the file line of the record) and at the clause span.
-//!   The stale record Diagnostic also lists the first span of its revision as a related
-//!   location when the revision exists.
-//! * `RT-APR-0004` is not combined with `RT-APR-0003`: a rejection record is stale only when it
-//!   names no revision of the Rulebook.
+//! * A Rule references a Candidate_Clause when a span of any revision of the
+//!   Rule, whatever its status, is in the same document and shares at least one
+//!   byte with the clause span.
+//! * The stale-record and unreferenced-clause Diagnostics point at the ledger
+//!   record (`Location::Input`, input `ledger`, the file line of the record)
+//!   and at the clause span. The stale record Diagnostic also lists the first
+//!   span of its revision as a related location when the revision exists.
+//! * `RT-APR-0004` is not combined with `RT-APR-0003`: a rejection record is
+//!   stale only when it names no revision of the Rulebook.
 
 use crate::ctx::{Decls, Site};
 use rt_foundation::{Code, Diagnostic, DiagnosticState, InputId, InputLocation, Location, RuleRef};
@@ -35,8 +38,9 @@ use rt_ledger::{
 use rt_srcmodel::CandidateClause;
 use std::collections::{BTreeMap, BTreeSet};
 
-/// The sorted binding of a revision, or `None` when a span names an undeclared document or one
-/// declared with two different hashes. Mirrors the derivation of `rt-ledger`.
+/// The sorted binding of a revision, or `None` when a span names an undeclared
+/// document or one declared with two different hashes. Mirrors the derivation
+/// of `rt-ledger`.
 fn current_binding(rb: &Rulebook, rev: &RuleRevision) -> Option<Vec<BindingPair>> {
     let mut pairs: BTreeSet<BindingPair> = BTreeSet::new();
     for span in &rev.content.spans {
@@ -57,7 +61,8 @@ fn current_binding(rb: &Rulebook, rev: &RuleRevision) -> Option<Vec<BindingPair>
     Some(pairs.into_iter().collect())
 }
 
-/// True when the approval `record` matches `rev` in every bound field (Req 26.6).
+/// True when the approval `record` matches `rev` in every bound field (Req
+/// 26.6).
 fn approval_matches(rb: &Rulebook, rev: &RuleRevision, record: &LedgerRecord) -> bool {
     if record.ir_version() != rb.ir_version.as_str() {
         return false;
@@ -90,7 +95,8 @@ fn record_ref(record: &LedgerRecord) -> RuleRef {
     }
 }
 
-/// Pass 10: the approval gate. `decls` must have been built without reported documents.
+/// Pass 10: the approval gate. `decls` must have been built without reported
+/// documents.
 pub(crate) fn gate(
     rb: &Rulebook,
     ledger: &ApprovalLedger,
@@ -108,7 +114,8 @@ pub(crate) fn gate(
         )
     };
 
-    // Unresolved revisions: Proposed with no higher decided revision (Req 25.13, 25.21).
+    // Unresolved revisions: Proposed with no higher decided revision (Req
+    // 25.13, 25.21).
     for key in unresolved(rb, &statuses) {
         if let Some(rev) = rb.revision(&key) {
             out.push(site_of(rev).diag(
@@ -130,7 +137,8 @@ pub(crate) fn gate(
         ));
     }
 
-    // Rejected revisions: a Warning, and an Error when the content changed since the rejection.
+    // Rejected revisions: a Warning, and an Error when the content changed
+    // since the rejection.
     let rejections: BTreeMap<RuleKey, &LedgerRecord> = ledger
         .records()
         .iter()
@@ -216,7 +224,8 @@ pub(crate) fn gate(
     }
 }
 
-/// Pass 11: a Warning for each Candidate_Clause that no rule references (Req 2.5).
+/// Pass 11: a Warning for each Candidate_Clause that no rule references (Req
+/// 2.5).
 pub(crate) fn candidates(rb: &Rulebook, clauses: &[CandidateClause], out: &mut DiagnosticState) {
     for clause in clauses {
         let span = clause.span();

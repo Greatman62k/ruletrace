@@ -9,8 +9,8 @@ use std::collections::BTreeMap;
 
 const FORMAT: &str = "ruletrace-published";
 
-/// A published number, always read from a decimal literal (Req 8.27), so it serializes back to
-/// a literal.
+/// A published number, always read from a decimal literal (Req 8.27), so it
+/// serializes back to a literal.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PublishedNumber(ExactNumber);
 
@@ -41,8 +41,8 @@ pub enum PublishedValue {
     Number(PublishedNumber),
 }
 
-/// The published values, keyed by participant then Target, which is the order in which
-/// differences are listed (design §3.6.3).
+/// The published values, keyed by participant then Target, which is the order
+/// in which differences are listed (design §3.6.3).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PublishedResult {
     entries: BTreeMap<(ParticipantId, TargetName), PublishedValue>,
@@ -70,11 +70,11 @@ impl PublishedResult {
 
 /// Parses a Published_Result file.
 ///
-/// # Errors
-/// `RT-LIM-0001`, `RT-LIM-0002`, `RT-DGN-0001` to `0003` as for Competition_Data, and
-/// `RT-EXE-0009` for any other fault: unknown or missing key, a value that is neither a
-/// boolean nor a decimal literal string within the literal limits (a JSON number is refused),
-/// a repeated (participant, target) pair, an invalid name.
+/// # Errors `RT-LIM-0001`, `RT-LIM-0002`, `RT-DGN-0001` to `0003` as for
+/// Competition_Data, and `RT-EXE-0009` for any other fault: unknown or missing
+/// key, a value that is neither a boolean nor a decimal literal string within
+/// the literal limits (a JSON number is refused), a repeated (participant,
+/// target) pair, an invalid name.
 pub fn parse_published(
     input: &InputId,
     bytes: &[u8],
@@ -147,8 +147,8 @@ fn decode(ctx: &mut Ctx<'_>, root: &Value<Position>) -> Option<PublishedResult> 
     Some(PublishedResult::new(out))
 }
 
-/// The canonical bytes of a Published_Result: RT-JSON pretty, fixed key order, entries by
-/// participant then Target, numbers in canonical form.
+/// The canonical bytes of a Published_Result: RT-JSON pretty, fixed key order,
+/// entries by participant then Target, numbers in canonical form.
 #[must_use]
 pub fn serialize_published(result: &PublishedResult) -> Vec<u8> {
     let items = result

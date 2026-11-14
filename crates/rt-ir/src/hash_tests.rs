@@ -10,7 +10,8 @@ const GOLDEN: &str = "d1b4158c4852a5cd3d15a8d1226143461defc7c238eea3f84fef425a5d
 /// The canonical Rule_Content of design §4.1.7 (hash input).
 const CANONICAL: &str = r#"{"ir_version":"1","id":"elig.basic","revision":1,"kind":"eligibility","target":"eligible","type":"boolean","expr":{"node":"and","t":"boolean","args":[{"node":"cmp","t":"boolean","op":"ge","left":{"node":"field","t":"number","name":"age"},"right":{"node":"num","t":"number","value":"16"}},{"node":"field","t":"boolean","name":"licence"}]},"markers":[],"spans":[{"document":"rules.md","sha256":"eb4d68f2de94881529749748a8de99f39505ae89a2ae4fa9d88a6d7b07de788a","start":21,"end":91}]}"#;
 
-/// The rulebook of design §4.1.7, with `origin`, `end` and `line` made variable.
+/// The rulebook of design §4.1.7, with `origin`, `end` and `line` made
+/// variable.
 fn rulebook_text(origin: &str, value: &str, end: u32, line: u32, revision: u32) -> String {
     format!(
         r#"{{"format":"ruletrace-rulebook","ir_version":"1","name":"spring-open","version":"2026.1","documents":[{{"id":"rules.md","sha256":"{DOC_HASH}"}}],"types":{{"inputs":[{{"name":"age","type":"number"}},{{"name":"licence","type":"boolean"}}],"enums":[],"sets":[],"collections":[]}},"rules":[{{"id":"elig.basic","revision":{revision},"origin":{origin},"kind":"eligibility","target":"eligible","type":"boolean","expr":{{"node":"and","t":"boolean","args":[{{"node":"cmp","t":"boolean","op":"ge","left":{{"node":"field","t":"number","name":"age"}},"right":{{"node":"num","t":"number","value":"{value}"}}}},{{"node":"field","t":"boolean","name":"licence"}}]}},"markers":[],"spans":[{{"document":"rules.md","start":21,"end":{end},"line":{line},"column":1}}]}}],"precedence":[]}}"#

@@ -1,4 +1,5 @@
-//! Small accessors over the positioned RT-JSON tree, shared by the manifest and runbook parsers.
+//! Small accessors over the positioned RT-JSON tree, shared by the manifest and
+//! runbook parsers.
 
 use rt_foundation::InputId;
 use rt_json::{check_flag_keys, parse, Kind, ParseLimits, Position, Value};
@@ -17,7 +18,8 @@ pub(crate) fn parse_strict(label: &str, bytes: &[u8]) -> Result<Value<Position>,
     Ok(doc)
 }
 
-/// A required field of an object: the member value, or the reason it is unusable.
+/// A required field of an object: the member value, or the reason it is
+/// unusable.
 pub(crate) fn field<'a>(
     object: &'a Value<Position>,
     key: &str,

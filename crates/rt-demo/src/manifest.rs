@@ -1,4 +1,5 @@
-//! The demonstration manifest and its checks (design §8.11.3, Req 33.2, 33.13, 28.11).
+//! The demonstration manifest and its checks (design §8.11.3, Req 33.2, 33.13,
+//! 28.11).
 
 use crate::error::DemoError;
 use crate::json::{array, boolean, check_relative, field, integer, parse_strict, string};
@@ -10,7 +11,8 @@ use rt_json::{Kind, Position, Value};
 pub struct ManifestDocument {
     /// The document identifier.
     pub id: String,
-    /// The path of the committed Source_Document, relative to the demonstration directory.
+    /// The path of the committed Source_Document, relative to the demonstration
+    /// directory.
     pub path: String,
     /// Whether the document may be transmitted to an AI provider.
     pub transmission_permitted: bool,
@@ -26,7 +28,8 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    /// Whether `ruletrace-ai` may be run for the document. Unknown documents are refused.
+    /// Whether `ruletrace-ai` may be run for the document. Unknown documents
+    /// are refused.
     #[must_use]
     pub fn may_transmit(&self, document_id: &str) -> bool {
         self.documents
@@ -34,7 +37,8 @@ impl Manifest {
             .any(|d| d.id == document_id && d.transmission_permitted)
     }
 
-    /// Refuses a transmission for a document whose `transmission_permitted` is not `true`.
+    /// Refuses a transmission for a document whose `transmission_permitted` is
+    /// not `true`.
     ///
     /// # Errors
     /// [`DemoError::Manifest`] naming the document and the field.
@@ -186,12 +190,13 @@ fn check_script(
     check_hash(path, script, path, "", files)
 }
 
-/// Checks a manifest. `files` returns the bytes of a file by its path relative to the
-/// demonstration directory, or `None` when it cannot be read.
+/// Checks a manifest. `files` returns the bytes of a file by its path relative
+/// to the demonstration directory, or `None` when it cannot be read.
 ///
-/// Every field of §8.11.3 must be present. A recorded hash must equal the file hash. A licence,
-/// its reference and `transmission_permitted` must be recorded. A failure names the document
-/// identifier (or the data or script path) and the field.
+/// Every field of §8.11.3 must be present. A recorded hash must equal the file
+/// hash. A licence, its reference and `transmission_permitted` must be
+/// recorded. A failure names the document identifier (or the data or script
+/// path) and the field.
 ///
 /// # Errors
 /// The first failure, as [`DemoError::Manifest`].
@@ -221,7 +226,8 @@ pub fn check_manifest(
         check_data(entry, files)?;
     }
     let script = field(&doc, "provider_script").map_err(|p| err(top, "provider_script", p))?;
-    // The `hand` profile has no Recorded_Provider_Script: the member is present and null.
+    // The `hand` profile has no Recorded_Provider_Script: the member is present
+    // and null.
     if !matches!(script.kind(), Kind::Null) {
         check_script(script, files)?;
     }

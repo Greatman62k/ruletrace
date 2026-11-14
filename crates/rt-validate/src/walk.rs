@@ -1,14 +1,17 @@
-//! Passes 1 (types present, depth), 3 (names), 4 (types), 5 (numeric declarations) and 6
-//! (boundary) over the expressions of one rule revision, plus the dependencies for pass 8.
+//! Passes 1 (types present, depth), 3 (names), 4 (types), 5 (numeric
+//! declarations) and 6 (boundary) over the expressions of one rule revision,
+//! plus the dependencies for pass 8.
 //!
-//! A node whose name does not resolve, or that is outside the boundary, gets the internal type
-//! `Type::Error`. Every check treats `Error` as compatible with anything, so one defect gives
-//! one Diagnostic (design §3.6.1). The walk descends at most `MAX_EXPRESSION_DEPTH` levels, so a
-//! library-built tree of any depth cannot overflow the stack.
+//! A node whose name does not resolve, or that is outside the boundary, gets
+//! the internal type `Type::Error`. Every check treats `Error` as compatible
+//! with anything, so one defect gives one Diagnostic (design §3.6.1). The walk
+//! descends at most `MAX_EXPRESSION_DEPTH` levels, so a library-built tree of
+//! any depth cannot overflow the stack.
 //!
-//! Pass 5 has nothing left to check here: a rounding mode or places that are missing, unknown or
-//! outside 0 to 28 cannot be represented by `rt_ir::Rounding`, `Places` or the `round` node, and
-//! the parser reports them as `RT-IR-0010` or `RT-IR-0002` (exit 2) before validation starts.
+//! Pass 5 has nothing left to check here: a rounding mode or places that are
+//! missing, unknown or outside 0 to 28 cannot be represented by
+//! `rt_ir::Rounding`, `Places` or the `round` node, and the parser reports them
+//! as `RT-IR-0010` or `RT-IR-0002` (exit 2) before validation starts.
 
 use crate::ctx::{Decls, Site};
 use rt_foundation::{Code, DiagnosticState, MAX_EXPRESSION_DEPTH};
@@ -28,7 +31,8 @@ pub(crate) struct TargetInfo {
 /// Value Targets of the current revisions, by Target name.
 pub(crate) type Targets = BTreeMap<Name, Vec<TargetInfo>>;
 
-/// What a rule reads (Req 6.10): input fields, collections and the Targets it references.
+/// What a rule reads (Req 6.10): input fields, collections and the Targets it
+/// references.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Deps {
     pub fields: BTreeSet<Name>,
@@ -36,7 +40,8 @@ pub(crate) struct Deps {
     pub refs: BTreeSet<Name>,
 }
 
-/// The type a rule kind computes, or `None` for a `default` (the input's type) or an unrecognized kind.
+/// The type a rule kind computes, or `None` for a `default` (the input's type)
+/// or an unrecognized kind.
 pub(crate) fn kind_type(body: &RuleBody) -> Option<Type> {
     match body {
         RuleBody::Eligibility { .. } => Some(Type::Boolean),
@@ -46,9 +51,10 @@ pub(crate) fn kind_type(body: &RuleBody) -> Option<Type> {
     }
 }
 
-/// Capability names of well-formed construct names that lie outside the boundary (Req 14.5,
-/// 14.13). The table is part of the validator, which reads no file. `rank_reference` is
-/// unsupported until the user selects Rank_Reference under UD-32.
+/// Capability names of well-formed construct names that lie outside the
+/// boundary (Req 14.5, 14.13). The table is part of the validator, which reads
+/// no file. `rank_reference` is unsupported until the user selects
+/// Rank_Reference under UD-32.
 fn capability(name: &str) -> String {
     let known = match name {
         "rank_reference" => "rank reference",
@@ -72,7 +78,8 @@ pub(crate) struct Walk<'a, 'b> {
     pub targets: &'b Targets,
     pub site: &'b Site,
     pub out: &'b mut DiagnosticState,
-    /// False for a Rejected or superseded revision: only pass 1 findings are reported.
+    /// False for a Rejected or superseded revision: only pass 1 findings are
+    /// reported.
     pub full: bool,
     pub deps: Deps,
     depth_reported: bool,
@@ -335,8 +342,8 @@ impl<'a, 'b> Walk<'a, 'b> {
         );
     }
 
-    /// Checks a rule's declared type against the type its kind computes (pass 4) and that a
-    /// declared type is present (pass 1).
+    /// Checks a rule's declared type against the type its kind computes (pass
+    /// 4) and that a declared type is present (pass 1).
     fn rule_type(&mut self, content: &RuleContent, expected: &Type) {
         match &content.ty {
             None => self.out.push(self.site.diag(

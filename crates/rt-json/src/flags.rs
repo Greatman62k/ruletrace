@@ -1,9 +1,11 @@
-//! The shared flag-key and lifecycle-key check of decoders (Req 4.10, 22.9, 22.10, 22.17).
+//! The shared flag-key and lifecycle-key check of decoders (Req 4.10, 22.9,
+//! 22.10, 22.17).
 
 use crate::value::{Kind, Position, Value};
 use rt_foundation::{escape_controls, Code, Diagnostic, InputId, InputLocation, Location};
 
-/// Keys that supply a diagnostic-state flag or a validation status (`RT-DGN-0001`/`0002`).
+/// Keys that supply a diagnostic-state flag or a validation status
+/// (`RT-DGN-0001`/`0002`).
 pub const FLAG_KEYS: [&str; 5] = [
     "has_errors",
     "no_errors",
@@ -12,7 +14,8 @@ pub const FLAG_KEYS: [&str; 5] = [
     "passed",
 ];
 
-/// Keys that supply a lifecycle flag or a stored Approval_Status (`RT-DGN-0003`).
+/// Keys that supply a lifecycle flag or a stored Approval_Status
+/// (`RT-DGN-0003`).
 pub const LIFECYCLE_KEYS: [&str; 5] = [
     "approval_status",
     "is_approved",
@@ -21,21 +24,24 @@ pub const LIFECYCLE_KEYS: [&str; 5] = [
     "approval_record",
 ];
 
-/// Checks every object of a parsed document for flag and lifecycle keys, whatever the value
-/// is and whether or not it agrees with a derived value.
+/// Checks every object of a parsed document for flag and lifecycle keys,
+/// whatever the value is and whether or not it agrees with a derived value.
 ///
 /// Each object that has such keys gives, in addition to nothing else:
-/// - one `RT-DGN-0002` when it has both `has_errors` and `no_errors`, naming every flag key of
-///   the object; otherwise one `RT-DGN-0001` naming every flag key of the object;
+/// - one `RT-DGN-0002` when it has both `has_errors` and `no_errors`, naming
+///   every flag key of the object; otherwise one `RT-DGN-0001` naming every
+///   flag key of the object;
 /// - one `RT-DGN-0003` naming every lifecycle key of the object.
 ///
-/// The primary location is the first offending key in input order (line, column and a field
-/// path such as `rules[0].has_errors`). Further offending keys are related locations in input
-/// order. The result is sorted. Callers run this before any unknown-name check, return no
-/// value on `Err`, and run no later stage.
+/// The primary location is the first offending key in input order (line, column
+/// and a field path such as `rules[0].has_errors`). Further offending keys are
+/// related locations in input order. The result is sorted. Callers run this
+/// before any unknown-name check, return no value on `Err`, and run no later
+/// stage.
 ///
 /// # Errors
-/// All diagnostics found, sorted. `Ok` means the document has none of these keys.
+/// All diagnostics found, sorted. `Ok` means the document has none of these
+/// keys.
 pub fn check_flag_keys(input: &InputId, document: &Value<Position>) -> Result<(), Vec<Diagnostic>> {
     let mut found = Vec::new();
     let mut stack: Vec<(&Value<Position>, String)> = vec![(document, String::new())];

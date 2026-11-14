@@ -4,7 +4,8 @@ use crate::value::{Kind, Member, Position, Value, MAX_SAFE_INTEGER};
 use rt_foundation::{Code, Diagnostic, InputId, InputLocation, Location};
 use std::collections::BTreeSet;
 
-/// The effective limits of one parse (design §4.1.5). A value equal to a limit is accepted.
+/// The effective limits of one parse (design §4.1.5). A value equal to a limit
+/// is accepted.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ParseLimits {
     max_bytes: u64,
@@ -12,8 +13,8 @@ pub struct ParseLimits {
 }
 
 impl ParseLimits {
-    /// Limits for one parse. Offsets are 32-bit, so a byte limit above `u32::MAX` is applied
-    /// as `u32::MAX`.
+    /// Limits for one parse. Offsets are 32-bit, so a byte limit above
+    /// `u32::MAX` is applied as `u32::MAX`.
     #[must_use]
     pub const fn new(max_bytes: u64, max_depth: u32) -> Self {
         Self {
@@ -37,19 +38,23 @@ impl ParseLimits {
 
 /// Parses one RT-JSON document.
 ///
-/// Checks, in this order: size against the limit (before any content is read), byte order mark,
-/// UTF-8, then the grammar. Parsing stops at the first error, so the returned diagnostic is the
-/// one with the lowest offset. Container depth is checked when a container opens, before any
-/// value is built, and the outermost container has depth 1.
+/// Checks, in this order: size against the limit (before any content is read),
+/// byte order mark, UTF-8, then the grammar. Parsing stops at the first error,
+/// so the returned diagnostic is the one with the lowest offset. Container
+/// depth is checked when a container opens, before any value is built, and the
+/// outermost container has depth 1.
 ///
 /// # Errors
-/// - `RT-LIM-0001` when the input is larger than the limit (names the file, limit and size).
-/// - `RT-LIM-0002` when nesting is deeper than the limit (names the file, limit, depth reached
-///   and byte offset, with the line and column of the container that exceeded it).
-/// - `RT-IR-0001` for any other violation of the dialect. The message says which.
+/// - `RT-LIM-0001` when the input is larger than the limit (names the file,
+///   limit and size).
+/// - `RT-LIM-0002` when nesting is deeper than the limit (names the file,
+///   limit, depth reached and byte offset, with the line and column of the
+///   container that exceeded it).
+/// - `RT-IR-0001` for any other violation of the dialect. The message says
+///   which.
 ///
-/// Every diagnostic has an input location with line and column, except the size error, which
-/// has none.
+/// Every diagnostic has an input location with line and column, except the size
+/// error, which has none.
 pub fn parse(
     input: &InputId,
     bytes: &[u8],
@@ -188,7 +193,8 @@ impl Parser<'_> {
         self.bytes.get(self.i.saturating_add(offset)).copied()
     }
 
-    /// Consumes one byte. The column advances once per scalar value, on its first byte.
+    /// Consumes one byte. The column advances once per scalar value, on its
+    /// first byte.
     fn bump(&mut self) {
         if let Some(b) = self.peek() {
             self.i = self.i.saturating_add(1);
@@ -244,7 +250,8 @@ impl Parser<'_> {
         }
     }
 
-    /// Adds a completed value to the open container, then reads the separator or the closer.
+    /// Adds a completed value to the open container, then reads the separator
+    /// or the closer.
     fn attach(
         &mut self,
         stack: &mut Vec<Frame>,
@@ -359,8 +366,8 @@ impl Parser<'_> {
         Ok(Step::Value)
     }
 
-    /// Reads `"key" :` and returns the key and its position. Rejects a repeated key at the
-    /// position of the repeat.
+    /// Reads `"key" :` and returns the key and its position. Rejects a repeated
+    /// key at the position of the repeat.
     fn read_key(
         &mut self,
         keys: &mut BTreeSet<String>,
@@ -458,7 +465,7 @@ impl Parser<'_> {
     }
 
     fn string(&mut self) -> Result<String, Box<Diagnostic>> {
-        self.bump(); // opening quote
+        self.bump();
         let mut out = String::new();
         let mut run = self.i;
         loop {

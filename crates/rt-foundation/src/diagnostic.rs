@@ -5,8 +5,9 @@ use std::cmp::Ordering;
 
 /// An error, warning, ambiguity or unsupported-construct report.
 ///
-/// The fields are private and the only constructor is [`Diagnostic::new`], which takes no
-/// severity: the severity is always the one the catalogue fixes for the code (Req 7.18).
+/// The fields are private and the only constructor is [`Diagnostic::new`],
+/// which takes no severity: the severity is always the one the catalogue fixes
+/// for the code (Req 7.18).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Diagnostic {
     code: Code,
@@ -67,7 +68,8 @@ impl Diagnostic {
         &self.related
     }
 
-    /// The rules concerned, in stored order. The first one is the rule identifier of Req 7.22.
+    /// The rules concerned, in stored order. The first one is the rule
+    /// identifier of Req 7.22.
     #[must_use]
     pub fn rules(&self) -> &[RuleRef] {
         &self.rules
@@ -80,10 +82,11 @@ impl Diagnostic {
     }
 }
 
-/// The total order of Req 7.10 and 7.22: primary location (variant rank first), code identifier
-/// bytes, message bytes, related locations (a proper prefix sorts first), then the first rule
-/// identifier bytes (none sorts first). Two diagnostics equal under all of those are ordered by
-/// the full rule list, so that the order is total and consistent with `Eq`, and sorting any
+/// The total order of Req 7.10 and 7.22: primary location (variant rank first),
+/// code identifier bytes, message bytes, related locations (a proper prefix
+/// sorts first), then the first rule identifier bytes (none sorts first). Two
+/// diagnostics equal under all of those are ordered by the full rule list, so
+/// that the order is total and consistent with `Eq`, and sorting any
 /// permutation of a list gives one result. Equal items are kept, never merged.
 impl Ord for Diagnostic {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -181,7 +184,8 @@ mod tests {
         v.sort();
         assert_eq!(v[0].primary(), &input("a", None));
 
-        // "RT-AI-0001" < "RT-APP-0001" bytewise ('I' < 'P'), whatever the enum order is.
+        // "RT-AI-0001" < "RT-APP-0001" bytewise ('I' < 'P'), whatever the enum
+        // order is.
         let loc = input("a", None);
         let mut v = [
             d(Code::AppInputMalformed, "", loc.clone()),

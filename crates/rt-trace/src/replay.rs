@@ -1,8 +1,10 @@
-//! Replay: re-derive every step and decision of a trace and compare the Outcome (Req 13.11).
+//! Replay: re-derive every step and decision of a trace and compare the Outcome
+//! (Req 13.11).
 //!
-//! Steps are recomputed from `op` and `operands` through `rt-numeric`. Decisions are recomputed
-//! from the entries they reference with Kleene logic. The Outcome is that of the last decision
-//! entry. Equality is exact; there is no tolerance.
+//! Steps are recomputed from `op` and `operands` through `rt-numeric`.
+//! Decisions are recomputed from the entries they reference with Kleene logic.
+//! The Outcome is that of the last decision entry. Equality is exact; there is
+//! no tolerance.
 
 use crate::outcome::{Outcome, Reason, TraceValue};
 use crate::trace::{
@@ -41,7 +43,8 @@ pub enum ReplayError {
         /// Result re-derived from the operands.
         derived: StepResult,
     },
-    /// A ranking comparison does not follow from its recorded values and directions.
+    /// A ranking comparison does not follow from its recorded values and
+    /// directions.
     CompareMismatch {
         /// Sequence number of the comparison.
         seq: u32,
@@ -62,11 +65,13 @@ pub enum ReplayError {
         /// Outcome re-derived.
         derived: Outcome,
     },
-    /// The trace has no decision entry, so a Decided Outcome cannot be re-derived.
+    /// The trace has no decision entry, so a Decided Outcome cannot be
+    /// re-derived.
     NoDecision,
     /// An Indeterminate Outcome lists no reason.
     NoReason,
-    /// An Indeterminate Outcome lists a reason that nothing in the trace supports.
+    /// An Indeterminate Outcome lists a reason that nothing in the trace
+    /// supports.
     UnsupportedReason {
         /// The reason.
         reason: Reason,
@@ -263,7 +268,8 @@ fn supported(trace: &DecisionTrace, reason: &Reason) -> bool {
     }
 }
 
-/// The order of two compared values: numbers by exact value, dates by their canonical text.
+/// The order of two compared values: numbers by exact value, dates by their
+/// canonical text.
 fn order_of(left: &TraceValue, right: &TraceValue) -> Option<Ordering> {
     match (left, right) {
         (TraceValue::Number(a), TraceValue::Number(b)) => Some(rt_numeric::cmp(a, b)),
@@ -286,8 +292,8 @@ fn check_compare(seq: u32, c: &CompareEntry) -> Result<(), ReplayError> {
             }
             _ => CriterionResult::Second,
         };
-        // Every criterion before the last must have been equal, or the comparison would have
-        // stopped there.
+        // Every criterion before the last must have been equal, or the
+        // comparison would have stopped there.
         let is_last = i.saturating_add(1) == count;
         if derived != k.result || (!is_last && derived != CriterionResult::Equal) {
             return Err(bad);
@@ -308,12 +314,13 @@ fn check_compare(seq: u32, c: &CompareEntry) -> Result<(), ReplayError> {
 
 /// Replays a trace.
 ///
-/// Every step is re-derived through `rt-numeric` and compared with its recorded result; every
-/// decision is re-derived from the entries it references (Kleene logic, left to right, no
-/// short-circuit) and compared; the Outcome of the last decision entry is compared with the
-/// recorded Outcome. An Indeterminate Outcome must list at least one reason and every reason
-/// must be supported by the trace: a missing input in `missing`, an undefined step over the
-/// named collection, or a blocking Diagnostic of that code.
+/// Every step is re-derived through `rt-numeric` and compared with its recorded
+/// result; every decision is re-derived from the entries it references (Kleene
+/// logic, left to right, no short-circuit) and compared; the Outcome of the
+/// last decision entry is compared with the recorded Outcome. An Indeterminate
+/// Outcome must list at least one reason and every reason must be supported by
+/// the trace: a missing input in `missing`, an undefined step over the named
+/// collection, or a blocking Diagnostic of that code.
 ///
 /// # Errors
 /// The first [`ReplayError`], in entry order, then the Outcome checks.

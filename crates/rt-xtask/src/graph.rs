@@ -1,7 +1,9 @@
-//! `check-graph` and `check-tree` (design §3.3, Req 21.8, 21.13, 24.5, 24.9, 24.10, 27.5).
+//! `check-graph` and `check-tree` (design §3.3, Req 21.8, 21.13, 24.5, 24.9,
+//! 24.10, 27.5).
 //!
-//! Both checks are pure functions of the parsed edge list and the parsed `cargo metadata`.
-//! Crates named in the list that are not yet workspace members are ignored.
+//! Both checks are pure functions of the parsed edge list and the parsed
+//! `cargo metadata`. Crates named in the list that are not yet workspace
+//! members are ignored.
 
 use crate::edges::{matches_any, Class, EdgeList};
 use crate::metadata::Metadata;
@@ -135,7 +137,8 @@ impl<'a> Tarjan<'a> {
     }
 }
 
-/// Strongly connected components of `adj` that contain a cycle, each sorted by name.
+/// Strongly connected components of `adj` that contain a cycle, each sorted by
+/// name.
 fn cyclic_components(adj: &Adjacency) -> Vec<Vec<&str>> {
     let mut t = Tarjan {
         adj,
@@ -163,8 +166,8 @@ fn cyclic_components(adj: &Adjacency) -> Vec<Vec<&str>> {
     out
 }
 
-/// Breadth-first search from `root`, not entering crates for which `skip` is true. Returns the
-/// parent of every reached crate.
+/// Breadth-first search from `root`, not entering crates for which `skip` is
+/// true. Returns the parent of every reached crate.
 fn reach(adj: &Adjacency, root: &str, skip: &dyn Fn(&str) -> bool) -> BTreeMap<String, String> {
     let mut parents: BTreeMap<String, String> = BTreeMap::new();
     let mut seen: BTreeSet<&str> = BTreeSet::from([root]);
@@ -345,10 +348,11 @@ fn join(set: &BTreeSet<String>) -> String {
         .join(", ")
 }
 
-/// Runs every `check-tree` rule: the full resolved tree (normal, build, dev, all features) of
-/// `rt-cli`, `rt-ai-mock` and each core crate must hold no network or AI crate; each
-/// application's tree must hold no `forbid-transitive` crate; the trees of `rt-cli` and
-/// `rt-ai-tool` must hold no application layer.
+/// Runs every `check-tree` rule: the full resolved tree (normal, build, dev,
+/// all features) of `rt-cli`, `rt-ai-mock` and each core crate must hold no
+/// network or AI crate; each application's tree must hold no
+/// `forbid-transitive` crate; the trees of `rt-cli` and `rt-ai-tool` must hold
+/// no application layer.
 #[must_use]
 pub fn check_tree(list: &EdgeList, md: &Metadata) -> Vec<Finding> {
     let Some(graph) = &md.resolved else {
@@ -466,7 +470,8 @@ external sha2 allowed-in rt-hash
 
     type Spec<'a> = &'a [(&'a str, &'a [(&'a str, &'a str)])];
 
-    /// Builds cargo metadata JSON: `members` are workspace crates, `externals` other packages.
+    /// Builds cargo metadata JSON: `members` are workspace crates, `externals`
+    /// other packages.
     fn metadata(members: Spec<'_>, externals: Spec<'_>) -> Metadata {
         let all: Vec<_> = members.iter().chain(externals.iter()).collect();
         let package = |name: &str, deps: &[(&str, &str)]| {

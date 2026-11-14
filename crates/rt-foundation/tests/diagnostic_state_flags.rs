@@ -1,14 +1,17 @@
 //! Property 4: Diagnostic_State flags are derived and consistent.
 //!
-//! Feature: ruletrace-compiler, Property 4: Diagnostic_State flags are derived and consistent
+//! Feature: ruletrace-compiler, Property 4: Diagnostic_State flags are derived
+//! and consistent
 //!
-//! **Validates: Requirements 22.1, 22.2, 22.3, 22.4, 22.5, 22.14, 22.19, 22.20, 25.20, 6.26**
+//! **Validates: Requirements 22.1, 22.2, 22.3, 22.4, 22.5, 22.14, 22.19, 22.20,
+//! 25.20, 6.26**
 //!
-//! The oracle counts severities directly with an exhaustive `match`, independent of
-//! `Severity::is_blocking`. "Compilability" is `stage_result`, which accepts a value only when the
-//! state has no blocking item. No exit-code mapping from a state exists in this crate yet, so
-//! the exit-code clause is covered through `ExitCode::Success` versus a rejection only where the
-//! crate defines it (compilability).
+//! The oracle counts severities directly with an exhaustive `match`,
+//! independent of `Severity::is_blocking`. "Compilability" is `stage_result`,
+//! which accepts a value only when the state has no blocking item. No exit-code
+//! mapping from a state exists in this crate yet, so the exit-code clause is
+//! covered through `ExitCode::Success` versus a rejection only where the crate
+//! defines it (compilability).
 
 use proptest::prelude::*;
 use rt_foundation::{
@@ -82,8 +85,8 @@ fn arb_diag_from(codes: Vec<Code>) -> impl Strategy<Value = Diagnostic> {
         .prop_map(|(code, loc)| Diagnostic::new(code, String::new(), loc))
 }
 
-/// Lists of diagnostics of every severity and location variant, including empty lists and
-/// lists that hold only Warnings.
+/// Lists of diagnostics of every severity and location variant, including empty
+/// lists and lists that hold only Warnings.
 fn gen_diagnostics() -> impl Strategy<Value = Vec<Diagnostic>> {
     let any = Code::ALL.to_vec();
     let warnings = codes_where(|s| !blocking_by_match(s));
@@ -124,8 +127,9 @@ fn catalogue_covers_every_severity() {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
-    /// has_errors is exactly "some Error, Ambiguity or Unsupported item"; no_errors is its
-    /// negation; the outcome follows; the flags do not depend on order or on the sort.
+    /// has_errors is exactly "some Error, Ambiguity or Unsupported item";
+    /// no_errors is its negation; the outcome follows; the flags do not depend
+    /// on order or on the sort.
     #[test]
     fn flags_are_derived_from_the_list(list in gen_diagnostics()) {
         let s = state_of(&list);
@@ -150,8 +154,8 @@ proptest! {
         }
     }
 
-    /// Adding or removing Warning items changes no flag and not compilability; adding one
-    /// blocking item to any list makes it fail.
+    /// Adding or removing Warning items changes no flag and not compilability;
+    /// adding one blocking item to any list makes it fail.
     #[test]
     fn warnings_never_change_flags(
         list in gen_diagnostics(),
@@ -177,7 +181,8 @@ proptest! {
         prop_assert_eq!(stripped.outcome(), base.outcome());
         prop_assert_eq!(compilable(&stripped), compilable(&base));
 
-        // One blocking item always flips the state to failed, and extend keeps that.
+        // One blocking item always flips the state to failed, and extend keeps
+        // that.
         let mut blocked = base.clone();
         blocked.push(blocker);
         prop_assert!(blocked.has_errors() && !blocked.no_errors());

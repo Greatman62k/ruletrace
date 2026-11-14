@@ -1,12 +1,11 @@
-//! Property 19: rounding at declared points only (task 3.8, Req 8.3, 8.4, 8.14, 8.28).
+//! Property 19: rounding at declared points only (Req 8.3, 8.4, 8.14, 8.28).
 //!
-//! Limitation: the engine and the validator do not exist yet, so this runs at the
-//! `rt-numeric` level. It covers (a) `round` equals the reference rounding for every mode
-//! and places 0 to 28, (b) places outside 0 to 28 are refused, never clamped, and
-//! (c) no other operation changes the exact value of a result: add, sub, mul, div, neg,
-//! sum, min and max return the exact reference value, so no rounding happens implicitly.
-//! The validator diagnostics for missing or out-of-range declarations (Req 8.3, 8.4) are
-//! not testable until the validator exists.
+//! This runs at the `rt-numeric` level. It covers (a) `round` equals the
+//! reference rounding for every mode and places 0 to 28, (b) places outside 0
+//! to 28 are refused, never clamped, and (c) no other operation changes the
+//! exact value of a result: add, sub, mul, div, neg, sum, min and max return
+//! the exact reference value, so no rounding happens implicitly. Validator
+//! diagnostics for missing or out-of-range declarations are not covered here.
 //!
 //! **Validates: Requirements 8.3, 8.4, 8.14, 8.28**
 
@@ -99,8 +98,9 @@ fn rounding_is_idempotent_and_within_one_unit_of_the_exact_value() {
 
 #[test]
 fn no_operation_other_than_round_changes_the_exact_value() {
-    // `check_pair` compares each result with the exact reference value, so any implicit
-    // rounding, truncation or scaling in add, sub, mul, div or neg would disagree.
+    // `check_pair` compares each result with the exact reference value, so any
+    // implicit rounding, truncation or scaling in add, sub, mul, div or neg
+    // would disagree.
     let vals = values(SEED ^ 0x22);
     let mut r = Rng::new(SEED ^ 0x23);
     for v in edge_values() {

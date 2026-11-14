@@ -1,12 +1,15 @@
-//! Task 6.3: refused `ruletrace review` requests leave every file byte-identical (single-file case).
+//! Refused `ruletrace review` requests leave every file byte-identical
+//! (single-file case).
 //!
 //! **Property 15: Review refusals leave files unchanged**
 //!
-//! For each refusal class (stale hash, invalid transition, invalid or AI-equal reviewer, blocking
-//! Diagnostic, missing target, bad reason, missing Source_Model) over generated parameters, the
-//! Rulebook, ledger and Source_Model are byte identical afterwards (no lock or temporary file
-//! remains), stdout is empty, and exactly one REVIEW Diagnostic with the specified code and exit
-//! code is returned. The Proposal_Store is not part of the single-file case (task 7.5 extends it).
+//! For each refusal class (stale hash, invalid transition, invalid or AI-equal
+//! reviewer, blocking Diagnostic, missing target, bad reason, missing
+//! Source_Model) over generated parameters, the Rulebook, ledger and
+//! Source_Model are byte identical afterwards (no lock or temporary file
+//! remains), stdout is empty, and exactly one REVIEW Diagnostic with the
+//! specified code and exit code is returned. The Proposal_Store is not part of
+//! the single-file case.
 //!
 //! **Validates: Requirements 26.16, 26.17, 26.18, 26.19, 26.24, 26.25, 5.10**
 
@@ -78,8 +81,8 @@ impl Fs for MemFs {
     }
 }
 
-/// One rule revision of a generated Rulebook: id, revision number, constant value, clause index
-/// and a shift of the span start.
+/// One rule revision of a generated Rulebook: id, revision number, constant
+/// value, clause index and a shift of the span start.
 #[derive(Clone)]
 struct Rev {
     id: &'static str,
@@ -138,7 +141,8 @@ fn content_hash(text: &str, revs: &[Rev], index: usize) -> String {
         .to_string()
 }
 
-/// A ledger record: kind, rule, revision, content hash, IR_Version, bound document hash.
+/// A ledger record: kind, rule, revision, content hash, IR_Version, bound
+/// document hash.
 struct Rec(
     &'static str,
     &'static str,
@@ -315,7 +319,8 @@ fn refusal(kind: u8, n: u32, text: &str, reject: bool) -> Refusal {
                 3,
             )
         }
-        // AI-equal reviewer: the name of an identity in the revision's AI origin.
+        // AI-equal reviewer: the name of an identity in the revision's AI
+        // origin.
         3 => {
             let id = text;
             let h = sha256(b"x");
@@ -338,7 +343,8 @@ fn refusal(kind: u8, n: u32, text: &str, reject: bool) -> Refusal {
                 3,
             )
         }
-        // Blocking Diagnostic: a span on an undeclared document leaves no approval binding.
+        // Blocking Diagnostic: a span on an undeclared document leaves no
+        // approval binding.
         4 => {
             let rb = rulebook(TEXT, "1", &revs).replacen(
                 r#""spans":[{"document":"rules.md""#,
@@ -381,7 +387,8 @@ fn refusal(kind: u8, n: u32, text: &str, reject: bool) -> Refusal {
                 2,
             )
         }
-        // Missing Source_Model: none supplied, or a model for another document hash.
+        // Missing Source_Model: none supplied, or a model for another document
+        // hash.
         _ => {
             let fs = plain();
             let a = args(&hash, "A. Reviewer", "d.a", 1, reason, false);

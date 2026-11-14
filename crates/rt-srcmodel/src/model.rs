@@ -68,15 +68,16 @@ impl ElementKind {
     }
 }
 
-/// One structural element of a document. The values are checked when the element is part of a
-/// [`SourceModel`].
+/// One structural element of a document. The values are checked when the
+/// element is part of a [`SourceModel`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Element {
     /// Identifier. Equal to the position of the element in the model.
     pub id: u32,
     /// Kind.
     pub kind: ElementKind,
-    /// Heading level 1 to 6. `Some` for a heading and `None` for every other kind.
+    /// Heading level 1 to 6. `Some` for a heading and `None` for every other
+    /// kind.
     pub level: Option<u8>,
     /// Leading numbering label, when present.
     pub label: Option<String>,
@@ -190,8 +191,8 @@ pub struct SourceModel {
 }
 
 impl SourceModel {
-    /// Builds a model from the document text, computing the hash and the byte length, and
-    /// checks every element against the text.
+    /// Builds a model from the document text, computing the hash and the byte
+    /// length, and checks every element against the text.
     ///
     /// # Errors
     /// The first failed structural check as a [`ModelError`].
@@ -205,7 +206,8 @@ impl SourceModel {
         Self::from_claimed(document, kind, hash, content, elements)
     }
 
-    /// Builds a model from a recorded hash, which must equal the hash of the content.
+    /// Builds a model from a recorded hash, which must equal the hash of the
+    /// content.
     pub(crate) fn from_claimed(
         document: DocumentId,
         kind: DocumentKind,
@@ -269,7 +271,8 @@ impl SourceModel {
         Ok(())
     }
 
-    /// Content length as `u32`. The size check at construction keeps it within range.
+    /// Content length as `u32`. The size check at construction keeps it within
+    /// range.
     fn len32(&self) -> u32 {
         u32::try_from(self.content.len()).unwrap_or(u32::MAX)
     }
@@ -334,7 +337,8 @@ impl SourceModel {
     }
 }
 
-/// Byte offset of the start of every line. LF, CRLF and a lone CR each end one line.
+/// Byte offset of the start of every line. LF, CRLF and a lone CR each end one
+/// line.
 fn line_starts(content: &str) -> Vec<u32> {
     let mut starts = vec![0u32];
     let mut bytes = content.as_bytes().iter().enumerate().peekable();

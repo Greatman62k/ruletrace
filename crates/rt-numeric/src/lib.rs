@@ -1,16 +1,14 @@
 //! Exact numbers for Rule_IR, compilation and execution (class core, std-only).
 //!
 //! The public API is representation-independent: callers see only the opaque
-//! [`ExactNumber`], [`NumericError`], [`RoundingMode`], the [`limits`] constants and the
-//! free functions below. The representation confirmed in `tools/decisions/UD-3.md` is a
-//! bounded rational (R-128). A change of representation stays inside this crate.
+//! [`ExactNumber`], [`NumericError`], [`RoundingMode`], the [`limits`]
+//! constants and the free functions below. The representation confirmed in
+//! `tools/decisions/UD-3.md` is a bounded rational (R-128). A change of
+//! representation stays inside this crate.
 //!
-//! No floating-point type appears in any public item. Every operation that can fail
-//! returns a [`NumericError`]; nothing wraps, saturates or rounds silently.
-//!
-//! Status (task 3.2): checked arithmetic, comparison, `sum`, `min`, `max` and `count` are
-//! implemented, and so are literal parsing and canonical text (task 3.3) and `round`
-//! (task 3.4).
+//! No floating-point type appears in any public item. Every operation that can
+//! fail returns a [`NumericError`]; nothing wraps, saturates or rounds
+//! silently.
 #![forbid(unsafe_code)]
 
 mod text;
@@ -19,7 +17,8 @@ mod wide;
 use std::cmp::Ordering;
 use std::fmt;
 
-/// Bounds from the confirmed `ExactNumber_Limits` record (`tools/decisions/UD-3.md`).
+/// Bounds from the confirmed `ExactNumber_Limits` record
+/// (`tools/decisions/UD-3.md`).
 pub mod limits {
     /// Largest numerator magnitude: 2^127 - 1.
     pub const NUMERATOR_MAX: u128 = (1u128 << 127) - 1;
@@ -47,8 +46,8 @@ enum Sign {
     Negative,
 }
 
-/// An exact number, always normalized: lowest terms, positive denominator, one zero
-/// (`0/1`). Fields are private, so structural equality is value equality.
+/// An exact number, always normalized: lowest terms, positive denominator, one
+/// zero (`0/1`). Fields are private, so structural equality is value equality.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ExactNumber {
     sign: Sign,
@@ -123,8 +122,8 @@ impl fmt::Display for NumericError {
 
 impl std::error::Error for NumericError {}
 
-/// Rounding mode declared by a rule (Rule_IR names `half_even`, `half_away_from_zero`,
-/// `toward_zero`).
+/// Rounding mode declared by a rule (Rule_IR names `half_even`,
+/// `half_away_from_zero`, `toward_zero`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum RoundingMode {
     /// Nearest; ties go to the even last digit.
@@ -156,8 +155,9 @@ impl RoundingMode {
     }
 }
 
-/// Builds a number from an already reduced `num/den` (`den > 0`, coprime). Zero gives the
-/// single zero; a part beyond the bounds gives [`NumericError::Overflow`].
+/// Builds a number from an already reduced `num/den` (`den > 0`, coprime). Zero
+/// gives the single zero; a part beyond the bounds gives
+/// [`NumericError::Overflow`].
 fn make(negative: bool, num: u128, den: u128) -> Result<ExactNumber, NumericError> {
     if num == 0 {
         return Ok(ExactNumber::ZERO);
@@ -181,9 +181,10 @@ impl ExactNumber {
 
 /// `a + b`, exact or [`NumericError::Overflow`].
 ///
-/// Knuth, TAOCP 4.5.1: with `g = gcd(b, d)` the sum `(a d/g + c b/g) / (b d/g)` reduces
-/// only by a divisor of `g`. The numerator needs at most 255 bits; the unreduced
-/// denominator is below 2^254, so the bound applies to the reduced result only.
+/// Knuth, TAOCP 4.5.1: with `g = gcd(b, d)` the sum `(a d/g + c b/g) / (b d/g)`
+/// reduces only by a divisor of `g`. The numerator needs at most 255 bits; the
+/// unreduced denominator is below 2^254, so the bound applies to the reduced
+/// result only.
 pub fn add(a: &ExactNumber, b: &ExactNumber) -> Result<ExactNumber, NumericError> {
     if a.is_zero() {
         return Ok(b.clone());
@@ -230,8 +231,8 @@ pub fn sub(a: &ExactNumber, b: &ExactNumber) -> Result<ExactNumber, NumericError
     add(a, &neg(b))
 }
 
-/// `a * b`, exact or [`NumericError::Overflow`]. Cross-cancels first, so the product is
-/// already in lowest terms and only the bound check can fail.
+/// `a * b`, exact or [`NumericError::Overflow`]. Cross-cancels first, so the
+/// product is already in lowest terms and only the bound check can fail.
 pub fn mul(a: &ExactNumber, b: &ExactNumber) -> Result<ExactNumber, NumericError> {
     if a.is_zero() || b.is_zero() {
         return Ok(ExactNumber::ZERO);
@@ -252,7 +253,8 @@ pub fn div(a: &ExactNumber, b: &ExactNumber) -> Result<ExactNumber, NumericError
     if b.is_zero() {
         return Err(NumericError::DivisionByZero);
     }
-    // The reciprocal of a normalized number is normalized and within the same bounds.
+    // The reciprocal of a normalized number is normalized and within the same
+    // bounds.
     let reciprocal = ExactNumber {
         sign: b.sign,
         num: b.den,
@@ -296,14 +298,16 @@ pub fn neg(a: &ExactNumber) -> ExactNumber {
     }
 }
 
-/// Left fold of [`add`] over `values` in the given order; the empty sum is zero.
+/// Left fold of [`add`] over `values` in the given order; the empty sum is
+/// zero.
 pub fn sum(values: &[ExactNumber]) -> Result<ExactNumber, NumericError> {
     values
         .iter()
         .try_fold(ExactNumber::ZERO, |acc, v| add(&acc, v))
 }
 
-/// The smallest of `values`, or `None` when empty (the caller reports RT-DGN-0005).
+/// The smallest of `values`, or `None` when empty (the caller reports
+/// RT-DGN-0005).
 pub fn min(values: &[ExactNumber]) -> Option<ExactNumber> {
     let mut it = values.iter();
     let first = it.next()?;
@@ -316,7 +320,8 @@ pub fn min(values: &[ExactNumber]) -> Option<ExactNumber> {
     )
 }
 
-/// The largest of `values`, or `None` when empty (the caller reports RT-DGN-0005).
+/// The largest of `values`, or `None` when empty (the caller reports
+/// RT-DGN-0005).
 pub fn max(values: &[ExactNumber]) -> Option<ExactNumber> {
     let mut it = values.iter();
     let first = it.next()?;
@@ -329,7 +334,8 @@ pub fn max(values: &[ExactNumber]) -> Option<ExactNumber> {
     )
 }
 
-/// The integer `n` as an exact number, or [`NumericError::Overflow`] beyond the bound.
+/// The integer `n` as an exact number, or [`NumericError::Overflow`] beyond the
+/// bound.
 pub fn count(n: usize) -> Result<ExactNumber, NumericError> {
     let n = u128::try_from(n).map_err(|_| NumericError::Overflow)?;
     make(false, n, 1)
@@ -339,11 +345,8 @@ pub fn count(n: usize) -> Result<ExactNumber, NumericError> {
 /// [`NumericError::InvalidPlaces`]; a result beyond the bounds gives
 /// [`NumericError::Overflow`].
 ///
-/// Design §4.2.3: the scaled numerator `num * 10^places` (below 2^221) is divided by the
-/// denominator into a quotient and a remainder `r < den`. `2r` is compared with `den`
-/// (it fits in `u128` because `den < 2^127`), the mode decides whether the magnitude
-/// goes up by one unit, and the result `q / 10^places` is reduced by `gcd(10^places,
-/// q mod 10^places)`. Rounding is applied only where the caller declares it.
+/// Rounds only where the caller declares it. The algorithm is in design
+/// §4.2.3.
 pub fn round(
     a: &ExactNumber,
     places: u32,
@@ -384,23 +387,25 @@ pub fn round(
     make(a.is_negative(), num, scale / g)
 }
 
-/// Parses a decimal literal: optional `-`, digits, optional `.` and digits; at most 38
-/// significant and 28 fractional digits; no exponent, `+`, `NaN`, `Infinity` or fraction.
-/// `-0` and `0.00` give zero. Used for Rule_IR, Competition_Data and Published_Result.
+/// Parses a decimal literal: optional `-`, digits, optional `.` and digits; at
+/// most 38 significant and 28 fractional digits; no exponent, `+`, `NaN`,
+/// `Infinity` or fraction. `-0` and `0.00` give zero. Used for Rule_IR,
+/// Competition_Data and Published_Result.
 pub fn parse_literal(text: &str) -> Result<ExactNumber, NumericError> {
     text::parse_literal(text)
 }
 
-/// The canonical text: a decimal when the denominator has only the factors 2 and 5
-/// (no exponent, no trailing fractional zeros, zero is `0`), otherwise `n/d` in lowest
-/// terms with the minus sign on the numerator only.
+/// The canonical text: a decimal when the denominator has only the factors 2
+/// and 5 (no exponent, no trailing fractional zeros, zero is `0`), otherwise
+/// `n/d` in lowest terms with the minus sign on the numerator only.
 pub fn to_canonical(a: &ExactNumber) -> String {
     text::to_canonical(a)
 }
 
-/// Parses canonical text from a serialized artifact: a decimal with up to 126 fractional
-/// digits, or `n/d`. A fraction is accepted here only; [`parse_literal`] rejects it. A
-/// fraction not in lowest terms is accepted and normalized, so the value is exact.
+/// Parses canonical text from a serialized artifact: a decimal with up to 126
+/// fractional digits, or `n/d`. A fraction is accepted here only;
+/// [`parse_literal`] rejects it. A fraction not in lowest terms is accepted and
+/// normalized, so the value is exact.
 pub fn parse_canonical(text: &str) -> Result<ExactNumber, NumericError> {
     text::parse_canonical(text)
 }
@@ -475,17 +480,20 @@ mod tests {
         );
         assert_eq!(sub(&max, &int(-1)), Err(NumericError::Overflow));
         assert_eq!(add(&max, &int(-(MAX as i128))), Ok(ExactNumber::ZERO));
-        // Denominators MAX and MAX-1 are coprime; the lcm is far beyond the bound.
+        // Denominators MAX and MAX-1 are coprime; the lcm is far beyond the
+        // bound.
         let a = q(false, 1, MAX);
         let b = q(false, 1, MAX - 1);
         assert_eq!(add(&a, &b), Err(NumericError::Overflow));
-        // The unreduced denominator is beyond 2^128 but the result reduces into bounds.
+        // The unreduced denominator is beyond 2^128 but the result reduces into
+        // bounds.
         let d = 1u128 << 126;
         assert_eq!(
             add(&q(false, 1, d), &q(false, 1, d)),
             Ok(q(false, 1, d / 2))
         );
-        let c = MAX; // 1/c + 1/c = 2/c
+        // 1/c + 1/c = 2/c.
+        let c = MAX;
         assert_eq!(add(&q(false, 1, c), &q(false, 1, c)), Ok(q(false, 2, c)));
     }
 
@@ -558,7 +566,8 @@ mod tests {
         assert_eq!(count(42), Ok(int(42)));
     }
 
-    /// Deterministic xorshift generator; no clock or randomness source (core rule).
+    /// Deterministic xorshift generator; no clock or randomness source (core
+    /// rule).
     struct Xs(u64);
     impl Xs {
         fn next(&mut self) -> u64 {
@@ -586,7 +595,8 @@ mod tests {
             if !b.is_zero() {
                 assert_eq!(div(&mul(&a, &b).unwrap(), &b).unwrap(), a);
             }
-            // normalized: zero is the single zero, denominator positive and reduced
+            // normalized: zero is the single zero, denominator positive and
+            // reduced
             if s.is_zero() {
                 assert_eq!(s, ExactNumber::ZERO);
             } else {
@@ -689,7 +699,8 @@ mod tests {
             parse_canonical(&format!("0.{}5", "0".repeat(126))),
             bad(LiteralFault::TooManyFractionDigits)
         );
-        // largest numerator over a power of five, a power of two and a power of ten
+        // largest numerator over a power of five, a power of two and a power of
+        // ten
         for den in [5u128.pow(54), 1u128 << 126, 10u128.pow(28)] {
             let v = q(true, MAX, den);
             assert_eq!(parse_canonical(&to_canonical(&v)), Ok(v));

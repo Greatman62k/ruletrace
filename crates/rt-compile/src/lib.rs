@@ -1,36 +1,40 @@
 //! The Compiler, stage 5 (design §3.6.2, Req 9, 22).
 //!
-//! [`compile`] turns a `ValidationResult` into a `CompiledRulebook` or into blocking
-//! Diagnostics, never into a partial value (Req 9.10).
+//! [`compile`] turns a `ValidationResult` into a `CompiledRulebook` or into
+//! blocking Diagnostics, never into a partial value (Req 9.10).
 //!
-//! 1. The Approval_Status of every revision is derived again from the Rulebook and the ledger
-//!    inside the result, and the blocking Diagnostics of passes 9 and 10 are compared with the
-//!    supplied state. Any difference gives `RT-APR-0005` and nothing else (Req 9.12).
-//! 2. A state with a blocking Diagnostic gives exactly those Diagnostics, unchanged and in order
-//!    (Req 9.2, RN-29).
+//! 1. The Approval_Status of every revision is derived again from the Rulebook
+//!    and the ledger inside the result, and the blocking Diagnostics of passes
+//!    9 and 10 are compared with the supplied state. Any difference gives
+//!    `RT-APR-0005` and nothing else (Req 9.12).
+//! 2. A state with a blocking Diagnostic gives exactly those Diagnostics,
+//!    unchanged and in order (Req 9.2, RN-29).
 //! 3. No Effective revision gives `RT-APR-0002` (Req 9.13).
-//! 4. Exactly the Effective revisions are lowered; Origin and ledger data are dropped (Req 9.1,
-//!    9.3, 9.5).
-//! 5. The evaluation order is fixed by Kahn's algorithm with the lowest identifier first
-//!    (Req 9.8). A cycle gives `RT-CMP-0001` (Req 9.9).
+//! 4. Exactly the Effective revisions are lowered; Origin and ledger data are
+//!    dropped (Req 9.1, 9.3, 9.5).
+//! 5. The evaluation order is fixed by Kahn's algorithm with the lowest
+//!    identifier first (Req 9.8). A cycle gives `RT-CMP-0001` (Req 9.9).
 //!
-//! The Compiler reads no file, clock, random value or environment variable. Its output is a
-//! function of the `ValidationResult` and [`COMPILER_VERSION`] (Req 9.14).
+//! The Compiler reads no file, clock, random value or environment variable. Its
+//! output is a function of the `ValidationResult` and [`COMPILER_VERSION`] (Req
+//! 9.14).
 //!
 //! Choices the design leaves open:
 //!
-//! * The comparison of step 1 covers the blocking Diagnostics of passes 9 and 10, which the
-//!   design names. The Compiler holds no Source_Model, so passes 1 to 8 are not repeated; their
-//!   Diagnostics are returned by step 2 and a construct that cannot be lowered is
-//!   `RT-CMP-0003`. For the same reason a Source_Span Location is compared at document level,
-//!   and the Locations the Compiler creates (`RT-CMP-0001`, `RT-APR-0002`) are Document
-//!   Locations, never an unverified span.
-//! * A `ValidationResult` always carries its Rulebook, ledger and state, so `RT-CMP-0002` cannot
-//!   arise from this type.
-//! * The Rulebook content hash is the SHA-256 of the canonical compact Rule_IR of the Effective
-//!   revisions, with a fixed Origin, name and version and without span line and column
-//!   (`content_hash`).
-//! * Warnings of the state accompany a successful result. They are not part of the artifact.
+//! * The comparison of step 1 covers the blocking Diagnostics of passes 9 and
+//!   10, which the design names. The Compiler holds no Source_Model, so passes
+//!   1 to 8 are not repeated; their Diagnostics are returned by step 2 and a
+//!   construct that cannot be lowered is `RT-CMP-0003`. For the same reason a
+//!   Source_Span Location is compared at document level, and the Locations the
+//!   Compiler creates (`RT-CMP-0001`, `RT-APR-0002`) are Document Locations,
+//!   never an unverified span.
+//! * A `ValidationResult` always carries its Rulebook, ledger and state, so
+//!   `RT-CMP-0002` cannot arise from this type.
+//! * The Rulebook content hash is the SHA-256 of the canonical compact Rule_IR
+//!   of the Effective revisions, with a fixed Origin, name and version and
+//!   without span line and column (`content_hash`).
+//! * Warnings of the state accompany a successful result. They are not part of
+//!   the artifact.
 #![forbid(unsafe_code)]
 
 mod content_hash;
@@ -46,8 +50,8 @@ use rt_ir::Rulebook;
 use rt_ledger::{derive_statuses, effective_revisions};
 use rt_validate::ValidationResult;
 
-/// The Compiler version recorded in every Compiled_Rulebook. It is build metadata of this
-/// crate, not a clock.
+/// The Compiler version recorded in every Compiled_Rulebook. It is build
+/// metadata of this crate, not a clock.
 pub const COMPILER_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// The blocking codes that passes 9 and 10 produce.
@@ -62,7 +66,8 @@ const RECHECKED: [Code; 8] = [
     Code::ApprovalRejectedRevisionModified,
 ];
 
-/// The Document Location of the Rulebook (its first declared document), or no location.
+/// The Document Location of the Rulebook (its first declared document), or no
+/// location.
 fn rulebook_location(rb: &Rulebook, code: Code) -> Location {
     rb.documents
         .first()
@@ -77,7 +82,8 @@ fn at_document(l: &Location) -> Location {
     }
 }
 
-/// The blocking Diagnostics of passes 9 and 10 in canonical order, compared at document level.
+/// The blocking Diagnostics of passes 9 and 10 in canonical order, compared at
+/// document level.
 fn gate_view(state: &DiagnosticState) -> Vec<Diagnostic> {
     let mut view: Vec<Diagnostic> = state
         .as_slice()
@@ -193,8 +199,8 @@ fn build(
     Ok((compiled, warnings))
 }
 
-/// Builds the rejection. Every code returned above is blocking, so the list is accepted at
-/// once; the fallback only guards against a catalogue change.
+/// Builds the rejection. Every code returned above is blocking, so the list is
+/// accepted at once; the fallback only guards against a catalogue change.
 fn reject(diags: Vec<Diagnostic>) -> Rejected {
     let mut state = DiagnosticState::empty();
     for d in &diags {
@@ -216,12 +222,12 @@ fn reject(diags: Vec<Diagnostic>) -> Rejected {
 
 /// Compiles a `ValidationResult` (stage 5).
 ///
-/// Returns the whole `CompiledRulebook` with the Warnings of the state, or a rejection with the
-/// blocking Diagnostics and no value. Compilation is atomic (Req 9.10).
+/// Returns the whole `CompiledRulebook` with the Warnings of the state, or a
+/// rejection with the blocking Diagnostics and no value. Compilation is atomic
+/// (Req 9.10).
 ///
-/// # Errors
-/// A `Rejected` with `RT-APR-0005`, the blocking Diagnostics of the state, `RT-APR-0002`,
-/// `RT-CMP-0001` or `RT-CMP-0003`.
+/// # Errors A `Rejected` with `RT-APR-0005`, the blocking Diagnostics of the
+/// state, `RT-APR-0002`, `RT-CMP-0001` or `RT-CMP-0003`.
 pub fn compile(result: &ValidationResult) -> StageResult<CompiledRulebook> {
     match build(result) {
         Ok((compiled, warnings)) => stage_result(compiled, warnings),

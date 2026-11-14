@@ -1,4 +1,5 @@
-//! Rule revisions, origins, rule kinds, markers and spans (design §3.4.4, §4.1.2, §4.1.3).
+//! Rule revisions, origins, rule kinds, markers and spans (design §3.4.4,
+//! §4.1.2, §4.1.3).
 
 use crate::expr::{Expr, Literal, OpaqueConstruct, Rounding};
 use crate::loc::Loc;
@@ -7,7 +8,8 @@ use crate::types::Type;
 use rt_foundation::{DocumentId, RevisionNumber, RuleId};
 use rt_hash::Sha256Hex;
 
-/// Rule identifier and revision. Ordered by identifier bytes, then revision (Req 3.11).
+/// Rule identifier and revision. Ordered by identifier bytes, then revision
+/// (Req 3.11).
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RuleKey {
     /// The rule.
@@ -16,9 +18,9 @@ pub struct RuleKey {
     pub revision: RevisionNumber,
 }
 
-/// A source span in Rule_IR form. It is plain data until the Validator checks it against a
-/// Source_Model (Req 7.15). `line` and `column` are convenience values and are not part of the
-/// Rule_Content.
+/// A source span in Rule_IR form. It is plain data until the Validator checks
+/// it against a Source_Model (Req 7.15). `line` and `column` are convenience
+/// values and are not part of the Rule_Content.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Span {
     /// Where the span was read.
@@ -35,7 +37,8 @@ pub struct Span {
     pub column: u32,
 }
 
-/// Provenance of an AI-proposed revision (Req 25.2). Never part of the Rule_Content.
+/// Provenance of an AI-proposed revision (Req 25.2). Never part of the
+/// Rule_Content.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AiOrigin {
     /// The proposing identity.
@@ -56,7 +59,8 @@ pub struct AiOrigin {
     pub ai_identities: Vec<Identity>,
 }
 
-/// Where a revision came from. Provenance only: it never changes semantics or compiled output.
+/// Where a revision came from. Provenance only: it never changes semantics or
+/// compiled output.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Origin {
     /// Written by a person.
@@ -68,8 +72,9 @@ pub enum Origin {
     AiProposal(AiOrigin),
 }
 
-/// An ambiguity or incompleteness marker (UD-5). Counts (2 to 16 interpretations, 1 to 16
-/// missing names, 1 to 1000 characters each) are checked by the Validator.
+/// An ambiguity or incompleteness marker (UD-5). Counts (2 to 16
+/// interpretations, 1 to 16 missing names, 1 to 1000 characters each) are
+/// checked by the Validator.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Marker {
     /// The source text allows several readings. None is selected.
@@ -152,7 +157,8 @@ pub struct DefaultValue {
     pub literal: Literal,
 }
 
-/// The five rule kinds (Req 14.1) and the carrier for any other well-formed kind.
+/// The five rule kinds (Req 14.1) and the carrier for any other well-formed
+/// kind.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RuleBody {
     /// `eligibility`: a Boolean Target per participant.
@@ -165,7 +171,8 @@ pub enum RuleBody {
         /// The value.
         expr: Expr,
     },
-    /// `weighted_score`: the sum of weight times value, optionally rounded once.
+    /// `weighted_score`: the sum of weight times value, optionally rounded
+    /// once.
     WeightedScore {
         /// Terms in declared order.
         terms: Vec<WeightedTerm>,
@@ -188,7 +195,8 @@ pub enum RuleBody {
         /// The constant.
         value: DefaultValue,
     },
-    /// A well-formed kind name this version does not define. It holds the fields after `type`.
+    /// A well-formed kind name this version does not define. It holds the
+    /// fields after `type`.
     Unrecognized(OpaqueConstruct),
 }
 
@@ -207,13 +215,15 @@ impl RuleBody {
     }
 }
 
-/// The Rule_Content of a revision (Req 25.4) apart from `id` and `revision`, which are in the
-/// [`RuleKey`]: Target, declared type, body, markers and spans. It excludes the Origin.
+/// The Rule_Content of a revision (Req 25.4) apart from `id` and `revision`,
+/// which are in the [`RuleKey`]: Target, declared type, body, markers and
+/// spans. It excludes the Origin.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuleContent {
     /// The Target the rule decides or defines.
     pub target: Name,
-    /// Declared `type`. `None` only when the input omitted it (the Validator reports it).
+    /// Declared `type`. `None` only when the input omitted it (the Validator
+    /// reports it).
     pub ty: Option<Type>,
     /// Kind-specific fields.
     pub body: RuleBody,
@@ -223,8 +233,8 @@ pub struct RuleContent {
     pub spans: Vec<Span>,
 }
 
-/// One revision of a rule. It has no approval field: the status is derived from the
-/// Approval_Ledger (Req 5.1).
+/// One revision of a rule. It has no approval field: the status is derived from
+/// the Approval_Ledger (Req 5.1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuleRevision {
     /// Where the revision was read.

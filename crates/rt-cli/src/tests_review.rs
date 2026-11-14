@@ -1,4 +1,4 @@
-//! Tests of `ruletrace review list`, `approve` and `reject` (task 6.2).
+//! Tests of `ruletrace review list`, `approve` and `reject`.
 
 use super::validate_tests::{empty_ledger, model_text, rulebook_text, TEXT};
 use super::*;

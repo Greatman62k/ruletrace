@@ -1,10 +1,12 @@
-//! Property 17: exact arithmetic laws and differential equivalence (task 3.6).
+//! Property 17: exact arithmetic laws and differential equivalence.
 //!
-//! **Validates: Requirements 8.1, 8.8, 8.9, 8.11, 8.12, 8.17, 8.18, 8.22, 8.23, 20.22**
+//! **Validates: Requirements 8.1, 8.8, 8.9, 8.11, 8.12, 8.17, 8.18, 8.22, 8.23,
+//! 20.22**
 //!
-//! Operands come from the harness generators (edge values at, next to and one step
-//! inside the bound, plus 256 seeded random cases per operation). Results beyond the
-//! bound arise from the operations themselves, because every operand is in range.
+//! Operands come from the harness generators (edge values at, next to and one
+//! step inside the bound, plus 256 seeded random cases per operation). Results
+//! beyond the bound arise from the operations themselves, because every operand
+//! is in range.
 
 use crate::harness::{
     check_pair, check_round, edge_values, operand, to_rt, Rng, CASES, MODES, SEED,
@@ -31,7 +33,8 @@ fn triples(seed: u64) -> Vec<(Rat, Rat, Rat)> {
     out
 }
 
-/// Exact result of an operation without any bound, as an unreduced-then-normalized pair.
+/// Exact result of an operation without any bound, as an
+/// unreduced-then-normalized pair.
 fn exact(op: &str, a: &Rat, b: &Rat) -> Option<Rat> {
     let (an, ad, bn, bd) = (
         a.numerator(),
@@ -94,8 +97,8 @@ fn overflow_is_reported_exactly_when_the_normalized_result_is_outside_the_limits
 
 #[test]
 fn every_operation_agrees_with_the_reference_model() {
-    // The harness check covers add, sub, mul, div, cmp and neg; 256 random pairs per run
-    // plus every edge pair.
+    // The harness check covers add, sub, mul, div, cmp and neg; 256 random
+    // pairs per run plus every edge pair.
     for (a, b) in pairs(SEED ^ 0x18) {
         check_pair(&a, &b).unwrap();
     }
@@ -117,7 +120,8 @@ fn rounding_agrees_for_every_mode_and_place() {
 
 #[test]
 fn add_then_subtract_returns_the_original() {
-    // Req 8.8, over pairs where a + b and (a + b) - b are both within the limits.
+    // Req 8.8, over pairs where a + b and (a + b) - b are both within the
+    // limits.
     let mut checked = 0;
     for (a, b) in pairs(SEED ^ 0x20) {
         let (x, y) = (to_rt(&a).unwrap(), to_rt(&b).unwrap());
@@ -150,7 +154,8 @@ fn addition_is_commutative_and_associative() {
         assert_eq!(rn::add(&x, &y), rn::add(&y, &x));
         assert_eq!(rn::mul(&x, &y), rn::mul(&y, &x));
         commuted += 1;
-        // Req 8.9: any grouping or order, when every intermediate sum is in range.
+        // Req 8.9: any grouping or order, when every intermediate sum is in
+        // range.
         let orders = [
             (&a, &b, &c, (&x, &y, &z)),
             (&a, &c, &b, (&x, &z, &y)),
@@ -200,7 +205,8 @@ fn comparison_is_by_value_and_equal_values_have_one_form() {
         rn::parse_literal("1.0").unwrap(),
         rn::parse_literal("1.00").unwrap()
     );
-    // Unreduced fractions normalize to lowest terms with a positive denominator.
+    // Unreduced fractions normalize to lowest terms with a positive
+    // denominator.
     let mut r = Rng::new(SEED ^ 0x22);
     let mut values = edge_values();
     values.extend((0..CASES).map(|_| operand(&mut r)));
@@ -209,7 +215,7 @@ fn comparison_is_by_value_and_equal_values_have_one_form() {
         let k = BigInt::from(r.below(1000) + 2);
         let (n, d) = (v.numerator() * &k, v.denominator() * &k);
         if n.magnitude() > bound().magnitude() || d > bound() {
-            // Unreduced text beyond the limits is the parser's concern (task 3.7).
+            // Unreduced text beyond the limits is the parser's concern.
             continue;
         }
         let text = format!("{n}/{d}");
@@ -217,7 +223,8 @@ fn comparison_is_by_value_and_equal_values_have_one_form() {
         let in_range = parse_canonical(&text).is_ok();
         let got = rn::parse_canonical(&text);
         if in_range {
-            // Only reducible texts inside the limits are accepted; they equal the value.
+            // Only reducible texts inside the limits are accepted; they equal
+            // the value.
             let got = got.unwrap();
             assert_eq!(got, want, "{text}");
             assert_eq!(rn::cmp(&got, &want), Ordering::Equal);
@@ -278,9 +285,10 @@ fn zero_has_one_form_everywhere() {
 
 #[test]
 fn results_are_normalized_within_the_limits() {
-    // Req 8.22 and 8.23: every Ok result is in lowest terms with a positive denominator,
-    // and the outcome depends only on the exact normalized result, never on the size of
-    // an intermediate value (the operands here make cross products up to ~2^254).
+    // Req 8.22 and 8.23: every Ok result is in lowest terms with a positive
+    // denominator, and the outcome depends only on the exact normalized result,
+    // never on the size of an intermediate value (the operands here make cross
+    // products up to ~2^254).
     let max = bound();
     let big = Rat::from_parts(max.clone(), BigInt::from(1u8));
     let near = Rat::from_parts(&max - 1u8, max.clone());

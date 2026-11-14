@@ -1,12 +1,14 @@
-//! Property 20: Missing values never become defaults (task 5.20).
+//! Property 20: Missing values never become defaults.
 //!
 //! **Validates: Requirements 11.1, 11.2, 11.3, 11.5, 11.6, 13.5**
 //!
-//! Feature: ruletrace-compiler, Property 20: Missing values never become defaults.
+//! Feature: ruletrace-compiler, Property 20: Missing values never become
+//! defaults.
 //!
-//! The Compiled_Rulebooks are built with `CompiledRulebook::from_parts` (there is no compiler
-//! yet). The expectation is computed by an oracle that reads only the generated values: a field
-//! is Missing exactly when the generator left it out, and `0` and `false` are present.
+//! The Compiled_Rulebooks are built with `CompiledRulebook::from_parts`. The
+//! expectation is computed by an oracle that reads only the generated values: a
+//! field is Missing exactly when the generator left it out, and `0` and `false`
+//! are present.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -89,7 +91,8 @@ fn rule(
     }
 }
 
-/// `other = c`, `sum = a + b`, `ok = flag`, and optionally the default `flag = true`.
+/// `other = c`, `sum = a + b`, `ok = flag`, and optionally the default
+/// `flag = true`.
 fn rulebook(with_default: bool) -> CompiledRulebook {
     let mut rules = vec![
         rule(
@@ -172,7 +175,8 @@ fn rulebook(with_default: bool) -> CompiledRulebook {
     .unwrap()
 }
 
-/// One generated participant: `None` is a Missing_Value. Numbers include 0, the flag includes false.
+/// One generated participant: `None` is a Missing_Value. Numbers include 0, the
+/// flag includes false.
 #[derive(Clone, Debug)]
 struct Fields {
     a: Option<i32>,
@@ -267,7 +271,8 @@ fn check(f: &Fields, with_default: bool) -> Result<(), TestCaseError> {
         let replayed = rt_trace::replay(trace);
         prop_assert_eq!(replayed.as_ref(), Ok(outcome));
 
-        // A declared default supplies only its own input, and only when it is absent.
+        // A declared default supplies only its own input, and only when it is
+        // absent.
         let defaulted = with_default && target == "ok" && f.flag.is_none();
         let missing: Vec<&str> = required
             .iter()
@@ -284,10 +289,12 @@ fn check(f: &Fields, with_default: bool) -> Result<(), TestCaseError> {
                 prop_assert_eq!(reads.len(), 1);
                 let spans: Vec<u32> = reads[0].default_spans.iter().map(|s| s.start).collect();
                 if defaulted {
-                    // Req 11.2: the default's Source_Span is recorded in the trace.
+                    // Req 11.2: the default's Source_Span is recorded in the
+                    // trace.
                     prop_assert_eq!(spans, vec![START_DEFAULT, START_DEFAULT + 40]);
                 } else {
-                    // Req 11.5: a present value (including false) is never replaced.
+                    // Req 11.5: a present value (including false) is never
+                    // replaced.
                     prop_assert!(spans.is_empty());
                 }
             }
@@ -332,7 +339,8 @@ fn check(f: &Fields, with_default: bool) -> Result<(), TestCaseError> {
             }
         }
 
-        // Unrelated fields never change the Outcome (Req 11.6): keep only the required ones.
+        // Unrelated fields never change the Outcome (Req 11.6): keep only the
+        // required ones.
         let only = Fields {
             a: f.a.filter(|_| required.contains(&"a")),
             b: f.b.filter(|_| required.contains(&"b")),
@@ -349,7 +357,8 @@ fn check(f: &Fields, with_default: bool) -> Result<(), TestCaseError> {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
-    /// Feature: ruletrace-compiler, Property 20: Missing values never become defaults.
+    /// Feature: ruletrace-compiler, Property 20: Missing values never become
+    /// defaults.
     #[test]
     fn missing_values_never_become_defaults(f in fields()) {
         check(&f, false)?;

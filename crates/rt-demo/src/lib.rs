@@ -1,8 +1,9 @@
-//! Demonstration harness (class tool, used by tests only): manifest checks, the runbook parser,
-//! the subprocess runner and golden comparison.
+//! Demonstration harness (class tool, used by tests only): manifest checks, the
+//! runbook parser, the subprocess runner and golden comparison.
 //!
-//! The harness is document-agnostic. It names no document and reads no environment variable;
-//! the caller passes `RT_BIN_DIR`, `RT_DEMO_BLESS` and `CI` as values.
+//! The harness is document-agnostic. It names no document and reads no
+//! environment variable; the caller passes `RT_BIN_DIR`, `RT_DEMO_BLESS` and
+//! `CI` as values.
 #![forbid(unsafe_code)]
 
 pub mod coverage;

@@ -1,12 +1,14 @@
-//! Property 23: Ranking completeness and positions (task 5.21).
+//! Property 23: Ranking completeness and positions.
 //!
 //! **Validates: Requirements 12.1, 12.2, 12.3, 12.8, 12.9, 20.2**
 //!
-//! Feature: ruletrace-compiler, Property 23: Ranking completeness and positions.
+//! Feature: ruletrace-compiler, Property 23: Ranking completeness and
+//! positions.
 //!
-//! The Compiled_Rulebook is built with `CompiledRulebook::from_parts` (there is no compiler
-//! yet). The expectation is a simple reference ranking over the generated values: the position
-//! of a participant is 1 plus the number of participants strictly ahead on (key, tie-breaker).
+//! The Compiled_Rulebook is built with `CompiledRulebook::from_parts`. The
+//! expectation is a simple reference ranking over the generated values: the
+//! position of a participant is 1 plus the number of participants strictly
+//! ahead on (key, tie-breaker).
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -41,7 +43,8 @@ fn field(input: u32) -> CompiledNode {
     }
 }
 
-/// `standings` ranks by input `a`, then breaks ties by input `b`, each in its own direction.
+/// `standings` ranks by input `a`, then breaks ties by input `b`, each in its
+/// own direction.
 fn rulebook(key: Direction, tie: Option<Direction>) -> CompiledRulebook {
     let sha = sha256(b"the source document");
     let span = CompiledSpan {
@@ -124,7 +127,8 @@ fn direction() -> impl Strategy<Value = Direction> {
     prop_oneof![Just(Direction::Asc), Just(Direction::Desc)]
 }
 
-/// Few distinct values, so that ties and tied tie-breakers are common; `None` is missing.
+/// Few distinct values, so that ties and tied tie-breakers are common; `None`
+/// is missing.
 fn scores() -> impl Strategy<Value = Scores> {
     let value = prop::option::weighted(0.9, 0..4i32);
     prop::collection::vec((value.clone(), value), 0..9)
@@ -138,8 +142,9 @@ fn ahead(direction: Direction, x: i32, y: i32) -> Ordering {
     }
 }
 
-/// The reference ranking: the positions as `(position, members)`, or `None` when a needed value
-/// is missing (the key of anyone, or the tie-breaker of a participant that shares its key).
+/// The reference ranking: the positions as `(position, members)`, or `None`
+/// when a needed value is missing (the key of anyone, or the tie-breaker of a
+/// participant that shares its key).
 fn reference(
     scores: &Scores,
     key: Direction,
@@ -197,22 +202,26 @@ fn check(scores: &Scores, key: Direction, tie: Option<Direction>) -> Result<(), 
                 .iter()
                 .map(|p| (p.position(), p.members().to_vec()))
                 .collect();
-            // Req 12.9, 20.2: equal to the reference ranking (positions and members).
+            // Req 12.9, 20.2: equal to the reference ranking (positions and
+            // members).
             prop_assert_eq!(&got, &expected);
-            // Req 12.8: every participant holds exactly one position; Tie_Groups are disjoint.
+            // Req 12.8: every participant holds exactly one position;
+            // Tie_Groups are disjoint.
             let all: Vec<&String> = got.iter().flat_map(|(_, m)| m).collect();
             let unique: BTreeSet<&String> = all.iter().copied().collect();
             prop_assert_eq!(all.len(), scores.len());
             prop_assert_eq!(unique.len(), scores.len());
-            // Req 12.2: members are listed in ascending identifier order, and a position is
-            // 1 plus the number of participants in the places before it.
+            // Req 12.2: members are listed in ascending identifier order, and a
+            // position is 1 plus the number of participants in the places
+            // before it.
             let mut before = 0usize;
             for (position, members) in &got {
                 prop_assert!(members.windows(2).all(|w| w[0] < w[1]));
                 prop_assert_eq!(*position as usize, before + 1);
                 before += members.len();
             }
-            // Req 12.2: each Tie_Group is recorded as one group place in the trace.
+            // Req 12.2: each Tie_Group is recorded as one group place in the
+            // trace.
             let groups = e.traces[0]
                 .entries()
                 .iter()
@@ -222,7 +231,8 @@ fn check(scores: &Scores, key: Direction, tie: Option<Direction>) -> Result<(), 
             prop_assert!(e.diagnostics.as_slice().is_empty());
         }
         (Outcome::Indeterminate(_), None) => {
-            // Req 12.4: a missing value that a comparison needs is reported, never defaulted.
+            // Req 12.4: a missing value that a comparison needs is reported,
+            // never defaulted.
             let found = e
                 .diagnostics
                 .as_slice()
@@ -238,7 +248,8 @@ fn check(scores: &Scores, key: Direction, tie: Option<Direction>) -> Result<(), 
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
-    /// Feature: ruletrace-compiler, Property 23: Ranking completeness and positions.
+    /// Feature: ruletrace-compiler, Property 23: Ranking completeness and
+    /// positions.
     #[test]
     fn ranking_is_complete_and_positions_count_those_strictly_ahead(
         s in scores(),

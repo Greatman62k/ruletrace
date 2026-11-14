@@ -1,13 +1,16 @@
 //! The parser of the compiled artifact.
 //!
-//! Strict: an unknown key, a missing key, a wrong JSON type or a failed invariant is a
-//! Diagnostic with a position, and no value is returned. Flag and lifecycle keys are rejected
-//! first with `RT-DGN-0001` to `0003` (Req 22.6), whatever their value.
+//! Strict: an unknown key, a missing key, a wrong JSON type or a failed
+//! invariant is a Diagnostic with a position, and no value is returned. Flag
+//! and lifecycle keys are rejected first with `RT-DGN-0001` to `0003` (Req
+//! 22.6), whatever their value.
 //!
-//! Codes. Syntax and limit faults keep the codes of `rt-json`. A key the format does not define
-//! is `RT-IR-0002`; an unsupported `ir_version` is `RT-IR-0003`; an absent one `RT-IR-0006`; a
-//! number that is not an Exact_Number string is `RT-IR-0004`; a malformed document hash is
-//! `RT-IR-0007`; every other fault, including a failed structural invariant, is `RT-IR-0010`.
+//! Codes. Syntax and limit faults keep the codes of `rt-json`. A key the format
+//! does not define is `RT-IR-0002`; an unsupported `ir_version` is
+//! `RT-IR-0003`; an absent one `RT-IR-0006`; a number that is not an
+//! Exact_Number string is `RT-IR-0004`; a malformed document hash is
+//! `RT-IR-0007`; every other fault, including a failed structural invariant, is
+//! `RT-IR-0010`.
 
 use crate::check::CompiledError;
 use crate::index::{
@@ -49,8 +52,8 @@ const RULE_BASE: [&str; 7] = ["id", "revision", "kind", "target", "type", "spans
 
 /// Parses a compiled artifact.
 ///
-/// # Errors
-/// All Diagnostics found, in canonical order. No value is returned with any of them.
+/// # Errors All Diagnostics found, in canonical order. No value is returned
+/// with any of them.
 pub fn parse_compiled(
     bytes: &[u8],
     input: &InputId,
@@ -96,8 +99,8 @@ fn state(mut diags: Vec<Diagnostic>) -> DiagnosticState {
     s
 }
 
-/// The distinct Target names of `rules`, read before the rules are decoded. A malformed rule
-/// contributes nothing here and is reported when it is decoded.
+/// The distinct Target names of `rules`, read before the rules are decoded. A
+/// malformed rule contributes nothing here and is reported when it is decoded.
 fn scan_targets(root: &Json) -> Vec<String> {
     let mut set = BTreeSet::new();
     let rules = root
@@ -112,8 +115,9 @@ fn scan_targets(root: &Json) -> Vec<String> {
     set.into_iter().collect()
 }
 
-/// The rule identifiers by position in `rules`, read before the rules are decoded so that a
-/// fault in one rule does not make every later reference to it look dangling.
+/// The rule identifiers by position in `rules`, read before the rules are
+/// decoded so that a fault in one rule does not make every later reference to
+/// it look dangling.
 fn scan_ids(root: &Json) -> BTreeMap<String, RuleIdx> {
     let rules = root
         .get("rules")
@@ -168,8 +172,9 @@ impl<'a> Dec<'a> {
         self.push(Code::IrFieldInvalid, at, &e.at, &e.to_string());
     }
 
-    /// An object whose keys are exactly `keys`. Faults are recorded and the members are still
-    /// returned so that decoding continues and every fault of the file is reported.
+    /// An object whose keys are exactly `keys`. Faults are recorded and the
+    /// members are still returned so that decoding continues and every fault of
+    /// the file is reported.
     fn obj<'v>(
         &mut self,
         v: &'v Json,
@@ -227,7 +232,8 @@ impl<'a> Dec<'a> {
         a
     }
 
-    /// Decodes every element, so that all faults are reported. `None` if any element failed.
+    /// Decodes every element, so that all faults are reported. `None` if any
+    /// element failed.
     fn list<T>(
         &mut self,
         v: &Json,
@@ -540,7 +546,8 @@ impl<'a> Dec<'a> {
         })
     }
 
-    /// A literal object: `{"node":"num","value":".."}` and the other kinds of a literal.
+    /// A literal object: `{"node":"num","value":".."}` and the other kinds of a
+    /// literal.
     fn literal(&mut self, v: &Json, path: &str) -> Option<CompiledLiteral> {
         let kind = self.peek(v, "node", path)?;
         let keys: &[&str] = if kind == "enum" {
@@ -552,7 +559,8 @@ impl<'a> Dec<'a> {
         self.literal_payload(m, kind, v, path)
     }
 
-    /// The member `key` of an object as text, for dispatch before the strict key check.
+    /// The member `key` of an object as text, for dispatch before the strict
+    /// key check.
     fn peek<'v>(&mut self, v: &'v Json, key: &str, path: &str) -> Option<&'v str> {
         let Some(members) = v.as_object() else {
             self.bad(*v.pos(), path, "expected an object");

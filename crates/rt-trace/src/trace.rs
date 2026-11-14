@@ -1,7 +1,8 @@
 //! The Decision_Trace data model (design §3.6.3, Req 13).
 //!
-//! Entry sequence numbers are not stored: the n-th entry has `seq = n` (1-based), so the
-//! numbering is always contiguous and a `from` reference can only point at an earlier entry.
+//! Entry sequence numbers are not stored: the n-th entry has `seq = n`
+//! (1-based), so the numbering is always contiguous and a `from` reference can
+//! only point at an earlier entry.
 
 use crate::outcome::{Outcome, Place, TraceValue};
 use rt_foundation::{DiagnosticState, DocumentId, RevisionNumber, RuleId};
@@ -27,8 +28,8 @@ impl DocumentHash {
     }
 }
 
-/// A source span as retained by the Compiled_Rulebook: position and document hash, no text.
-/// It is plain data. The Explainer decides whether it resolves.
+/// A source span as retained by the Compiled_Rulebook: position and document
+/// hash, no text. It is plain data. The Explainer decides whether it resolves.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TraceSpan {
     /// Document identifier.
@@ -45,7 +46,8 @@ pub struct TraceSpan {
     pub column: u32,
 }
 
-/// A rule that applied, with every span the Compiled_Rulebook retains for it (Req 13.2).
+/// A rule that applied, with every span the Compiled_Rulebook retains for it
+/// (Req 13.2).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TraceRule {
     /// Rule identifier.
@@ -107,7 +109,8 @@ pub enum QuestionKind {
     Rank,
 }
 
-/// The question a trace answers. The engine builds it from its own Question type.
+/// The question a trace answers. The engine builds it from its own Question
+/// type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TraceQuestion {
     /// Kind.
@@ -129,7 +132,8 @@ pub struct ReadEntry {
     pub value: TraceValue,
     /// The rule that read it.
     pub rule: RuleId,
-    /// Spans of the declared default when the value came from a default (Req 11.2), else empty.
+    /// Spans of the declared default when the value came from a default (Req
+    /// 11.2), else empty.
     pub default_spans: Vec<TraceSpan>,
 }
 
@@ -245,7 +249,8 @@ pub struct StepEntry {
     pub result: StepResult,
     /// The rule that performed it.
     pub rule: RuleId,
-    /// Collection or field the step ranges over. Required when the result is `Undefined`.
+    /// Collection or field the step ranges over. Required when the result is
+    /// `Undefined`.
     pub field: Option<String>,
 }
 
@@ -260,8 +265,9 @@ pub enum DecisionOp {
     Or,
     /// Kleene NOT of one referenced entry.
     Not,
-    /// A value the engine computed from data that is not in the entries (for example a
-    /// Rank_Position). Replay keeps it as recorded and does not re-derive it.
+    /// A value the engine computed from data that is not in the entries (for
+    /// example a Rank_Position). Replay keeps it as recorded and does not
+    /// re-derive it.
     Recorded,
 }
 
@@ -347,7 +353,8 @@ impl CriterionResult {
 /// One criterion applied to a pair, with both compared values (Req 12.7).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CompareCriterion {
-    /// 0 for the ranking key, then 1, 2, ... for the tie-breakers in declared order.
+    /// 0 for the ranking key, then 1, 2, ... for the tie-breakers in declared
+    /// order.
     pub index: u32,
     /// The ranking rule that declares the criterion.
     pub rule: RuleId,
@@ -361,17 +368,21 @@ pub struct CompareCriterion {
     pub result: CriterionResult,
 }
 
-/// A comparison of two participants adjacent in the final order (design §3.6.3, Ranking 6).
+/// A comparison of two participants adjacent in the final order (design §3.6.3,
+/// Ranking 6).
 ///
-/// `criteria` lists the criteria in declared order up to and including the one that decided, or
-/// all of them when the participants are tied. Replay re-derives every criterion result.
+/// `criteria` lists the criteria in declared order up to and including the one
+/// that decided, or all of them when the participants are tied. Replay
+/// re-derives every criterion result.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CompareEntry {
-    /// The two participants, the one that is ahead (or listed first when tied) first.
+    /// The two participants, the one that is ahead (or listed first when tied)
+    /// first.
     pub between: (String, String),
     /// The criteria applied, in order.
     pub criteria: Vec<CompareCriterion>,
-    /// `true` when the first participant is ahead, `false` when the two are tied.
+    /// `true` when the first participant is ahead, `false` when the two are
+    /// tied.
     pub first_ahead: bool,
 }
 
@@ -386,12 +397,13 @@ pub enum Entry {
     Decision(DecisionEntry),
     /// A comparison of two adjacent participants of a ranking.
     Compare(CompareEntry),
-    /// A position of a ranking: one participant, or one Tie_Group with its members.
+    /// A position of a ranking: one participant, or one Tie_Group with its
+    /// members.
     Place(Place),
 }
 
-/// The pieces of a trace before checking. Public so tests and tools can alter a trace and
-/// rebuild it.
+/// The pieces of a trace before checking. Public so tests and tools can alter a
+/// trace and rebuild it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TraceParts {
     /// The question.
@@ -462,7 +474,8 @@ impl fmt::Display for TraceError {
 
 impl std::error::Error for TraceError {}
 
-/// One Decision_Trace per Outcome (Req 13.1). Holds Locations and hashes, never source text.
+/// One Decision_Trace per Outcome (Req 13.1). Holds Locations and hashes, never
+/// source text.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DecisionTrace {
     question: TraceQuestion,
@@ -475,14 +488,14 @@ pub struct DecisionTrace {
 }
 
 impl DecisionTrace {
-    /// Checks the structure and puts the unordered parts in canonical order: rules and
-    /// not-applied rules by (rule id, revision), missing inputs ascending without repeats,
-    /// Outcome reasons canonical, diagnostics sorted. Entry order is evaluation order and is
-    /// kept.
+    /// Checks the structure and puts the unordered parts in canonical order:
+    /// rules and not-applied rules by (rule id, revision), missing inputs
+    /// ascending without repeats, Outcome reasons canonical, diagnostics
+    /// sorted. Entry order is evaluation order and is kept.
     ///
     /// # Errors
-    /// [`TraceError`] for a forward `from` reference, a read of a missing input, an undefined
-    /// step without a collection name, or too many entries.
+    /// [`TraceError`] for a forward `from` reference, a read of a missing
+    /// input, an undefined step without a collection name, or too many entries.
     pub fn new(parts: TraceParts) -> Result<Self, TraceError> {
         let TraceParts {
             question,
@@ -591,8 +604,9 @@ impl DecisionTrace {
         &self.diagnostics
     }
 
-    /// Every span of the trace: applied rules, then not-applied rules, then default spans, each
-    /// in recorded order. The Explainer verifies exactly these.
+    /// Every span of the trace: applied rules, then not-applied rules, then
+    /// default spans, each in recorded order. The Explainer verifies exactly
+    /// these.
     #[must_use]
     pub fn spans(&self) -> Vec<&TraceSpan> {
         let mut out: Vec<&TraceSpan> = self.rules.iter().flat_map(|r| &r.spans).collect();
