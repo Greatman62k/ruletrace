@@ -1,0 +1,16 @@
+[package]
+name = "rt-xtask"
+description = "Repository checks and generators, development tooling (class tool)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+
+[dependencies]
+rt-foundation = { path = "../rt-foundation" }
+rt-json = { path = "../rt-json" }

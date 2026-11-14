@@ -1,0 +1,22 @@
+[package]
+name = "rt-review"
+description = "Pure review planning for approve and reject, and the only ledger-append function (class core)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rt-foundation = { path = "../rt-foundation" }
+rt-hash = { path = "../rt-hash" }
+rt-json = { path = "../rt-json" }
+rt-ir = { path = "../rt-ir" }
+rt-ledger = { path = "../rt-ledger" }
+rt-validate = { path = "../rt-validate" }
+rt-srcmodel = { path = "../rt-srcmodel" }
+
+[dev-dependencies]

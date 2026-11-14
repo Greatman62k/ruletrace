@@ -1,0 +1,38 @@
+[package]
+name = "rt-cli"
+description = "The `ruletrace` executable: arguments, file I/O, atomic commit, rendering and exit codes (class core)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+name = "rt_cli"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ruletrace"
+path = "src/main.rs"
+
+[dependencies]
+rt-foundation = { path = "../rt-foundation" }
+rt-source = { path = "../rt-source" }
+rt-srcmodel = { path = "../rt-srcmodel" }
+rt-json = { path = "../rt-json" }
+rt-ir = { path = "../rt-ir" }
+rt-ledger = { path = "../rt-ledger" }
+rt-validate = { path = "../rt-validate" }
+rt-compiled = { path = "../rt-compiled" }
+rt-compile = { path = "../rt-compile" }
+rt-data = { path = "../rt-data" }
+rt-trace = { path = "../rt-trace" }
+rt-engine = { path = "../rt-engine" }
+rt-explain = { path = "../rt-explain" }
+rt-review = { path = "../rt-review" }
+rt-hash = { path = "../rt-hash" }
+rt-numeric = { path = "../rt-numeric" }
+
