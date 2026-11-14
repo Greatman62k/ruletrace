@@ -40,3 +40,8 @@
 ## Workflow
 - Small, reviewable changes. Update fixtures deliberately and explain why in the commit.
 - Document each new dependency (purpose, alternatives, maintenance status) in the PR or commit message.
+
+## Task completion
+- Never mark a task complete merely because its tests pass. Show that the tests meaningfully detect the behavior they test.
+- Disclose and justify any weakened assertion, skipped test, changed golden output or changed expected result.
+- A separate reviewer inspects tests and acceptance criteria after the implementation agent finishes. See `testing-integrity-and-anti-gaming.md`.
