@@ -33,12 +33,12 @@ Section numbers (`§n.m`) are used by the traceability table in §10.
 | # | Decision or input | Status | Where designed |
 | --- | --- | --- | --- |
 | 8 | Two thin Application_Layers, `prize-check` and `bracket-check`, each one package with a library (input mapping, Questions, report layout) and a small Demonstration_Executable (UD-33, option B: recommended and applied, user confirmation pending) | Applied | §3.1, §3.3, §8.2 |
-| 9 | Qualification only as a Qualification_Predicate. Both UD-32 options are designed; Rank_Reference is recommended if the confirmed tournament document states rank-based qualification | UD-32 Open | §8.9 |
+| 9 | Qualification only as a Qualification_Predicate. Both UD-32 options are designed; Rank_Reference selected under the gate rule (`tools/decisions/UD-32.md`, reported for confirmation) | UD-32 Confirmed | §8.9 |
 | 10 | The Proposal_Store retains the accepted response bytes and a deterministic export writes the Recorded_Provider_Script (UD-36, option 1: Confirmed) | Applied, Confirmed | §3.7.5, §8.11.7 |
 | 11 | Reproducible offline demonstration with golden files, an acceptance test that executes the runbook, mutation checks, a Coverage_Statement and a Proof_Report | Designed | §8.11 |
 | 12 | Honest-claims statements and a prohibited-phrase scan | Designed | §8.12 |
 | 13 | Demonstration-first phase plan: Demo Slice 0 (hand-authored rules), Slice 1 (mock AI and human approval), Slice 2 (real provider, two applications, published checks, mutation checks) | Designed | §7.5 |
-| Open | UD-34 (which public documents: Confirmed, see `tools/decisions/UD-34.md`), UD-35 (real or synthetic data, Open). The harness is document-agnostic and names no document. UD-32 stays Open for gate 1.11 | UD-34 Confirmed; UD-35 Open | §8.11.1, §9.2 |
+| Open | UD-34 (which public documents: Confirmed, see `tools/decisions/UD-34.md`), UD-35 (real or synthetic data, Open). The harness is document-agnostic and names no document. UD-32: Confirmed, Rank_Reference | UD-34 Confirmed; UD-35 Open | §8.11.1, §9.2 |
 
 ## Architecture
 
@@ -2413,7 +2413,7 @@ The report has no field for a prize, award, amount or allocation (Req 31.6). The
 
 ### 8.9 Qualification (UD-32): both options, in implementable detail
 
-A Qualification_Predicate is an `eligibility` Rule (Req 14.11): `Q: eligibility = cmp(ge, ref(score.total), num 70)`. Both options use `bracket-check --qualification Q`; the application checks only that `Q` is an eligibility Target (RT-APP-0006 otherwise). The options differ in whether a Rule may read a Rank_Position. Status: **Open**; the user decides, after confirming the tournament document (UD-34).
+A Qualification_Predicate is an `eligibility` Rule (Req 14.11): `Q: eligibility = cmp(ge, ref(score.total), num 70)`. Both options use `bracket-check --qualification Q`; the application checks only that `Q` is an eligibility Target (RT-APP-0006 otherwise). The options differ in whether a Rule may read a Rank_Position. Status: **Confirmed**, Rank_Reference (`tools/decisions/UD-32.md`).
 
 **Option Threshold_Only.**
 
@@ -2775,7 +2775,7 @@ Prize allocation, slot-based qualification, seeding, bracket generation, progres
 | R-17 | Demonstration overclaim | Required statements, prohibited phrases, scan on goldens and documents, Coverage_Statement count in the headers (§8.12). Residual: a paraphrased overclaim passes the scan; release review by a person | Mitigated, residual accepted | Maintainer at release review |
 | R-18 | Hidden unsupported clauses | Coverage_Statement generator fails on an unclassified clause and lists Unsupported and Ambiguity with codes; documents are never reworded (manifest hash); conversion recorded (§8.11.8, Property 51) | Mitigated | none |
 | R-19 | Demonstration drift | Runbook JSON block is the executed truth, no other offline command may exist in the Markdown, script and golden hashes, required CI job and release condition (§8.11.12) | Mitigated | none |
-| R-20 | Rank-based qualification gap | Both options designed (§8.9); the Unsupported finding under Threshold_Only or the one added node under Rank_Reference | Open until UD-32 is decided | User |
+| R-20 | Rank-based qualification gap | Both options designed (§8.9); the Unsupported finding under Threshold_Only or the one added node under Rank_Reference | Mitigated: Rank_Reference selected (UD-32) | User |
 
 ### 9.2 Unresolved Decisions register
 
@@ -2817,7 +2817,7 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 | DD-1 (was "UD-32 (new)") | Revision_Number assigned at adoption | Resolved-by-user (decision 1, recommendation adopted) | §3.8.2 | none |
 | DD-2 (was "UD-33 (new)") | Whether Precedence_Declaration needs its own approval | Open | Not in version 1 requirements (RN-3) | User |
 | DD-3 (was "UD-34 (new)") | Rust toolchain version and whether `File::try_lock` is accepted | Open | Decide in Phase 0 | User |
-| UD-32 | Rank-based qualification: Threshold_Only or Rank_Reference | **Open** (requirements: decided by the user) | Both options designed in §8.9. Recommendation: Rank_Reference if the confirmed tournament document states qualification as top places, otherwise Threshold_Only. Decide before the request vocabulary is frozen (Phase 6 authors the script) and at the latest before the live recording (Phase 8) | User, after UD-34 |
+| UD-32 | Rank-based qualification: Threshold_Only or Rank_Reference | **Confirmed**: Rank_Reference, applied under the gate rule and reported back for confirmation (`tools/decisions/UD-32.md`) | Both options designed in §8.9. Recommendation: Rank_Reference if the confirmed tournament document states qualification as top places, otherwise Threshold_Only. Decide before the request vocabulary is frozen (Phase 6 authors the script) and at the latest before the live recording (Phase 8) | User, after UD-34 |
 | UD-33 | Packaging of the Application_Layers | **Recommended-applied**: option B, two Demonstration_Executables `prize-check` and `bracket-check` (§8.2). Option A rejected, option C is the fallback | §3.1, §3.3, §8.2 | User confirms |
 | UD-34 | Demonstration documents | **Open** | Selection criteria in §8.11.1; the harness is document-agnostic; no document is named or assumed suitable; Slice 0 and 1 use a labelled stand-in | User |
 | UD-35 | Demonstration Competition_Data and Published_Results | **Open**; recommendation: real published values where they exist and are licensed, otherwise synthetic and labelled, with one equal and one seeded-difference Published_Result | §8.11.10; the manifest `nature` field supports both | User |
@@ -2914,4 +2914,4 @@ Every requirement is implemented by the sections listed. `§n` is a section of t
 | 33 | Reproducible end-to-end demonstration | §8.1, §8.11, §3.7.5, §3.7.10, §7.5; Properties 48 to 52 |
 | 34 | Honest claims and stated limits | §8.12, §8.11.9 (headers); documentation scan of §3.3 |
 
-Open items that need the user before the dependent phase starts: UD-3 (Phase 1 exit and Phase 2 entry), UD-2 and UD-27 (Phase 2 and 5), UD-15 and DD-3 (Phase 0), UD-9, UD-14, UD-23, UD-26, DD-2. For the demonstration: UD-36 (before Phase 5), UD-33 (before Phase 7), UD-32 (before Phase 6 authors the script, at the latest before Phase 8 records), UD-34 and UD-35 (before Phase 8 and Phase 9). Requirements notes RN-22 to RN-29 each need a confirmation or a wording change; RN-29 affects the mutation check of Req 33.17.
+Open items that need the user before the dependent phase starts: UD-3 (Phase 1 exit and Phase 2 entry), UD-2 and UD-27 (Phase 2 and 5), UD-15 and DD-3 (Phase 0), UD-9, UD-14, UD-23, UD-26, DD-2. For the demonstration: UD-36 (before Phase 5), UD-33 (before Phase 7), UD-34 and UD-35 (before Phase 8 and Phase 9). Requirements notes RN-22 to RN-29 each need a confirmation or a wording change; RN-29 affects the mutation check of Req 33.17.

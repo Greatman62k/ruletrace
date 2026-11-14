@@ -138,7 +138,7 @@ Unchanged requirements: 1 to 6, 8 to 13, 16 to 19, 21, 23, 25, 26, 29, 30 (excep
 
 Mapping of the user's items to the requirements: (a) Introduction, Scope, Glossary, 14.5, 14.11 to 14.14, 15.8, 15.10; (b) 24.12, 27.1, 27.15, 31, 32; (c) 28.21, 33; (d) 34, R-17; (e) 20.26, 20.27.
 
-New decisions: UD-32 (Open), UD-33 (Recommended-pending, applied in 27.1), UD-34 (Open), UD-35 (Open, recommendation given), UD-36 (Confirmed, option 1; see tools/decisions/UD-36.md).
+New decisions: UD-32 (Confirmed, Rank_Reference), UD-33 (Recommended-pending, applied in 27.1), UD-34 (Open), UD-35 (Open, recommendation given), UD-36 (Confirmed, option 1; see tools/decisions/UD-36.md).
 
 ## Gate 1.10 amendment (UD-34 and exit-code ordering)
 
@@ -149,4 +149,8 @@ New decisions: UD-32 (Open), UD-33 (Recommended-pending, applied in 27.1), UD-34
 
 Other sections changed: Unresolved Decisions register (UD-34 entry now Confirmed; its "no document is named" sentence refers to the record); Supersession Record (two entries); design §3.5, §6.1, §8.4 (exit derivation) and the status table row for UD-34.
 
-UD-32 is not changed. It stays Open for gate 1.11, with Rank_Reference recommended, because top-two qualification in the Bracket_Check demonstration depends on it.
+UD-32 is not changed by this amendment. See the gate 1.11 amendment below.
+
+## Gate 1.11 amendment (UD-32)
+
+UD-32 is Confirmed with option Rank_Reference, recorded in `tools/decisions/UD-32.md`. It was applied under the gate rule from the UD-34 scope (top-two qualification) because the user did not name UD-32, and is reported back for confirmation. The Req 14.12 extension applies; Req 14.13 and 32.4 do not. Criteria 14.11 to 14.14 are unchanged except for a status note on 14.12 and 14.13.

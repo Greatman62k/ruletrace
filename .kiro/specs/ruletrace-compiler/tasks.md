@@ -151,14 +151,14 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 23.35, 23.36, 30.2, 27.8 (UD-26)_
     - Design §6.1, §9.2
 
-  - [-] 1.10 Decision gate UD-34 (demonstration documents)
+  - [x] 1.10 Decision gate UD-34 (demonstration documents)
     - Create `tools/decisions/UD-34.md` with the selection criteria of Req 33.3 and design §8.11.1. Do not name or assume any document. Ask the user to supply the documents (or state that the stand-in stays for now), the retrieval text, the licence or permission, and whether transmission to the provider is permitted. If a document is PDF-only, ask for the manual conversion record of Req 33.5. Stop.
     - Observable: record `Confirmed` with the user's references, or `Deferred` with the stand-in named. Only `Confirmed` unblocks tasks 10.8 and 11.1.
     - Blocked by: Slice 0 complete (6.9).
     - _Requirements: 33.1, 33.2, 33.3, 33.4, 33.5, 28.21 (UD-34)_
     - Design §8.11.1, §8.11.3, §9.2
 
-  - [ ] 1.11 Decision gate UD-32 (rank-based qualification: Threshold_Only or Rank_Reference)
+  - [x] 1.11 Decision gate UD-32 (rank-based qualification: Threshold_Only or Rank_Reference)
     - Create `tools/decisions/UD-32.md` with both options of design §8.9 and their effect on the request `vocabulary`, the Rule_IR (one added operation under Rank_Reference, Req 14.12), the Bracket_Check report (Req 32.3, 32.4) and the Request_Identifier (RN-27). Recommend by the rule in the decision table above. Ask the user, then stop.
     - Observable: record `Confirmed` with the selected option. The request builder (8.5) reads the option.
     - Blocked by: 1.10.
