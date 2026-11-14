@@ -1,0 +1,273 @@
+# RuleTrace CI skeleton (task 2.2, design §7.4, Req 21.3, 21.4, 21.7, 21.10, 21.12).
+# Runner labels are pinned per UD-15 (tools/decisions/UD-15.md). No `*-latest` label is used.
+# Jobs marked STUB are filled in by later tasks; they exist now so the required-check set is stable.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: never
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  fmt:
+    name: fmt (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14, windows-2022]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned toolchain
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal --component rustfmt --component clippy
+          rustup default "$channel"
+      - name: cargo fmt --check
+        run: |
+          mkdir -p ci-output
+          set -o pipefail
+          cargo fmt --all --check 2>&1 | tee ci-output/fmt.log
+      - name: Keep failed-check output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fmt-${{ matrix.os }}
+          path: ci-output/
+          if-no-files-found: warn
+
+  clippy:
+    name: clippy (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14, windows-2022]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned toolchain
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal --component rustfmt --component clippy
+          rustup default "$channel"
+      - name: cargo clippy
+        run: |
+          mkdir -p ci-output
+          set -o pipefail
+          cargo clippy --workspace --all-targets --all-features -- -D warnings 2>&1 | tee ci-output/clippy.log
+      - name: Keep failed-check output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clippy-${{ matrix.os }}
+          path: ci-output/
+          if-no-files-found: warn
+
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14, windows-2022]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned toolchain
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      # The live-provider job is separate (Req 21.14); no credential is present here.
+      - name: cargo test
+        run: |
+          mkdir -p ci-output
+          set -o pipefail
+          cargo test --workspace --all-features 2>&1 | tee ci-output/test.log
+      - name: Keep failed-check output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-${{ matrix.os }}
+          path: ci-output/
+          if-no-files-found: warn
+
+  golden:
+    # STUB: fixture byte comparison. The golden tests live in rt-tests-core and are added by later
+    # tasks. A test-name filter that matches nothing passes, so this job is green until they exist.
+    # When filled in, a failure must name the golden file and the platform (Req 21.12).
+    name: golden (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14, windows-2022]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned toolchain
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - name: Golden byte comparison (.gitattributes `* -text` keeps bytes unchanged)
+        env:
+          RULETRACE_CI_PLATFORM: ${{ matrix.os }}
+        run: |
+          mkdir -p ci-output
+          set -o pipefail
+          cargo test -p rt-tests-core --all-features golden 2>&1 | tee ci-output/golden.log
+      - name: Keep failed-check output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-${{ matrix.os }}
+          path: ci-output/
+          if-no-files-found: warn
+
+  toolchain:
+    name: toolchain (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14, windows-2022]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned toolchain
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - name: rustc version equals rust-toolchain.toml
+        run: |
+          mkdir -p ci-output
+          expected=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          actual=$(rustc --version | cut -d' ' -f2)
+          echo "expected=$expected actual=$actual" | tee ci-output/toolchain.log
+          test -n "$expected" && test "$expected" = "$actual"
+      - name: Keep failed-check output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: toolchain-${{ matrix.os }}
+          path: ci-output/
+          if-no-files-found: warn
+
+  graph:
+    # Design §7.4. check-app-layers, check-executables, gen-claims and scan-claims are added by the
+    # tasks that implement them.
+    name: graph (linux)
+    runs-on: ubuntu-24.04
+    steps:
+      # Full history and tags: check-catalogue reads `git tag --list` (Req 7.12).
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Install pinned toolchain
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - name: Build rt-xtask
+        run: cargo build -p rt-xtask
+      - name: rt-xtask checks
+        run: |
+          mkdir -p ci-output
+          set -o pipefail
+          cargo run -q -p rt-xtask -- check-graph check-tree scan-sources scan-api check-decisions check-catalogue check-justification 2>&1 | tee ci-output/graph.log
+      - name: Keep failed-check output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: graph-linux
+          path: ci-output/
+          if-no-files-found: warn
+
+  deny:
+    # STUB: runs cargo-deny against deny.toml. Network and AI crate bans are added in task 10.2.
+    name: deny (linux)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned toolchain
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+      - name: cargo deny check
+        run: |
+          mkdir -p ci-output
+          set -o pipefail
+          cargo deny check 2>&1 | tee ci-output/deny.log
+      - name: Keep failed-check output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deny-linux
+          path: ci-output/
+          if-no-files-found: warn
+
+  core-only:
+    # STUB: later tasks build the core crates and `ruletrace` with auxiliary crates excluded,
+    # check the dependency tree for network and AI crates, and compare output bytes.
+    name: core-only (linux)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned toolchain
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - name: Build workspace (core-only checks are added by later tasks)
+        run: cargo build --workspace
+
+  # Single required check for branch protection. It fails if any job, on any platform, is
+  # failed, skipped or cancelled, and if a platform is missing from a matrix (design §7.4, Req 21.4).
+  gate:
+    name: ci-gate
+    if: ${{ always() }}
+    needs: [fmt, clippy, test, golden, toolchain, graph, deny, core-only]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every job succeeded (no failure, skip or cancel)
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | grep '"result"' | tee /dev/stderr | grep -v '"result": "success"' && {
+            echo "A job did not succeed (failed, skipped or cancelled)." >&2
+            exit 1
+          }
+          exit 0
+      - name: Every platform is present in every three-platform job
+        run: |
+          for label in ubuntu-24.04 macos-14 windows-2022; do
+            n=$(grep -c "os: \[ubuntu-24.04, macos-14, windows-2022\]" .github/workflows/ci.yml)
+            test "$n" -eq 5 || { echo "expected 5 three-platform matrices, found $n" >&2; exit 1; }
+            grep -q "$label" .github/workflows/ci.yml || { echo "missing platform $label" >&2; exit 1; }
+          done

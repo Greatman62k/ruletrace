@@ -1,0 +1,22 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+# Floor: first stable release with File::try_lock (UD-15). The pinned toolchain is in rust-toolchain.toml.
+rust-version = "1.89"
+publish = false
+license = "UNLICENSED"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+# Library-path rules from the Rust engineering steering. Test code is exempted in clippy.toml.
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+indexing_slicing = "deny"

@@ -1,0 +1,6 @@
+# Pinned per UD-15 / DD-3 (tools/decisions/UD-15.md). Full major.minor.patch, no channel alias.
+# Moving the pin is a deliberate, reviewed change.
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

@@ -1,0 +1,8 @@
+# Workspace clippy configuration. Lint levels are in [workspace.lints.clippy] of Cargo.toml.
+# Tests may use unwrap, expect, panic and indexing; library code reachable from input may not.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-indexing-slicing-in-tests = true
+# `disallowed-macros` for the AI crates lives in crates/rt-ai-*/clippy.toml, copied from
+# tools/clippy-ai/clippy.toml when each AI crate is created (Phase 6 onward).
