@@ -1,0 +1,662 @@
+//! The demonstration acceptance test, `hand` profile (task 6.9, design §8.11.12, Req 33.15 to
+//! 33.17, 20.26).
+//!
+//! In order: manifest checks, the runbook step by step against the golden files, every trace
+//! verified, the Proof_Report replayed by an independent decimal reference, the composition of the
+//! data (Req 33.13), the Coverage_Statement, the dependency tree of `ruletrace`, and the smoke
+//! versions of the mutations M1 to M3 (design §8.11.11). Run with `-- --nocapture` for the summary.
+//!
+//! The binaries come from `RT_BIN_DIR` or from a `cargo build` of `rt-cli`. Bless the golden files
+//! with `RT_DEMO_BLESS=1` (refused when `CI` is set). The test uses no network and no credential:
+//! each process runs with an empty environment.
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing,
+    missing_docs
+)]
+
+use rt_demo::{
+    check_manifest, parse_runbook, run_runbook, run_step, Captured, Mode, Runbook, Step,
+};
+use rt_foundation::InputId;
+use rt_json::{parse, Kind, ParseLimits, Position, Value};
+use std::cmp::Ordering;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+type TestResult = Result<(), Box<dyn std::error::Error>>;
+type Json = Value<Position>;
+
+const PROFILE: &str = "hand";
+
+// ---------------------------------------------------------------- environment
+
+fn demo_dir() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../demo/stand-in-hand")
+}
+
+fn repo_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+fn bin_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    if let Some(dir) = std::env::var_os("RT_BIN_DIR") {
+        return Ok(PathBuf::from(dir));
+    }
+    let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let status = Command::new(cargo)
+        .args(["build", "--quiet", "-p", "rt-cli", "--bin", "ruletrace"])
+        .status()?;
+    assert!(status.success(), "building ruletrace failed");
+    let exe = std::env::current_exe()?;
+    let profile_dir = exe
+        .parent()
+        .and_then(Path::parent)
+        .ok_or("no profile directory")?;
+    Ok(profile_dir.to_owned())
+}
+
+/// Removes its directory when dropped, also after a failed assertion.
+struct TempDir(PathBuf);
+
+impl TempDir {
+    fn new(label: &str) -> Self {
+        let dir = std::env::temp_dir().join(format!("rt-demo-{label}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        Self(dir)
+    }
+}
+
+impl Drop for TempDir {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
+
+// ---------------------------------------------------------------- JSON access
+
+fn json(label: &str, bytes: &[u8]) -> Json {
+    let input = InputId::new(label).unwrap();
+    parse(&input, bytes, ParseLimits::new(8 * 1024 * 1024, 64))
+        .unwrap_or_else(|d| panic!("{label}: {}", d.message()))
+}
+
+fn read_json(path: &Path) -> Json {
+    let bytes = std::fs::read(path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+    json("file.json", &bytes)
+}
+
+fn at<'a>(v: &'a Json, key: &str) -> &'a Json {
+    v.get(key)
+        .map(|m| &m.value)
+        .unwrap_or_else(|| panic!("missing key '{key}'"))
+}
+
+fn text(v: &Json) -> &str {
+    v.as_str().expect("a string")
+}
+
+fn items(v: &Json) -> &[Json] {
+    v.as_array().expect("an array")
+}
+
+/// Structural equality that ignores positions.
+fn same(a: &Json, b: &Json) -> bool {
+    match (a.kind(), b.kind()) {
+        (Kind::Null, Kind::Null) => true,
+        (Kind::Bool(x), Kind::Bool(y)) => x == y,
+        (Kind::Integer(x), Kind::Integer(y)) => x == y,
+        (Kind::Number(x), Kind::Number(y)) | (Kind::String(x), Kind::String(y)) => x == y,
+        (Kind::Array(x), Kind::Array(y)) => {
+            x.len() == y.len() && x.iter().zip(y).all(|(p, q)| same(p, q))
+        }
+        (Kind::Object(x), Kind::Object(y)) => {
+            x.len() == y.len()
+                && x.iter()
+                    .zip(y)
+                    .all(|(p, q)| p.key == q.key && same(&p.value, &q.value))
+        }
+        _ => false,
+    }
+}
+
+// ---------------------------------------------------------------- reference decimal arithmetic
+
+/// An exact decimal for the replay: `mantissa / 10^scale`. It is an independent reference model;
+/// it shares no code with `rt-numeric`.
+#[derive(Clone, Copy, Debug)]
+struct Dec {
+    mantissa: i128,
+    scale: u32,
+}
+
+impl Dec {
+    fn parse(s: &str) -> Dec {
+        let (negative, digits) = s.strip_prefix('-').map_or((false, s), |r| (true, r));
+        let (whole, frac) = digits.split_once('.').unwrap_or((digits, ""));
+        let mantissa: i128 = format!("{whole}{frac}")
+            .parse()
+            .unwrap_or_else(|_| panic!("'{s}' is not a decimal"));
+        Dec {
+            mantissa: if negative { -mantissa } else { mantissa },
+            scale: u32::try_from(frac.len()).unwrap(),
+        }
+    }
+
+    fn at_scale(self, scale: u32) -> i128 {
+        self.mantissa * 10_i128.pow(scale - self.scale)
+    }
+
+    fn compare(self, other: Dec) -> Ordering {
+        let s = self.scale.max(other.scale);
+        self.at_scale(s).cmp(&other.at_scale(s))
+    }
+
+    fn mul(self, other: Dec) -> Dec {
+        Dec {
+            mantissa: self.mantissa * other.mantissa,
+            scale: self.scale + other.scale,
+        }
+    }
+
+    fn add(self, other: Dec) -> Dec {
+        let s = self.scale.max(other.scale);
+        Dec {
+            mantissa: self.at_scale(s) + other.at_scale(s),
+            scale: s,
+        }
+    }
+}
+
+/// A recorded trace value.
+#[derive(Clone, Copy, Debug)]
+enum Tv {
+    Num(Dec),
+    Bool(bool),
+    Unknown,
+    /// A value of another type (standings). Only a `recorded` decision carries one.
+    Other,
+}
+
+impl Tv {
+    fn parse(v: &Json) -> Tv {
+        match text(at(v, "type")) {
+            "number" => Tv::Num(Dec::parse(text(at(v, "value")))),
+            "bool" => match at(v, "value").kind() {
+                Kind::Bool(b) => Tv::Bool(*b),
+                other => panic!("bool value expected, found {other:?}"),
+            },
+            "unknown" => Tv::Unknown,
+            _ => Tv::Other,
+        }
+    }
+
+    fn equals(self, other: Tv) -> bool {
+        match (self, other) {
+            (Tv::Num(a), Tv::Num(b)) => a.compare(b) == Ordering::Equal,
+            (Tv::Bool(a), Tv::Bool(b)) => a == b,
+            (Tv::Unknown, Tv::Unknown) | (Tv::Other, Tv::Other) => true,
+            _ => false,
+        }
+    }
+}
+
+fn number(v: Tv) -> Dec {
+    match v {
+        Tv::Num(d) => d,
+        other => panic!("a number was expected, found {other:?}"),
+    }
+}
+
+/// Kleene conjunction.
+fn all_of(values: &[Tv]) -> Tv {
+    if values.iter().any(|v| matches!(v, Tv::Bool(false))) {
+        Tv::Bool(false)
+    } else if values.iter().any(|v| matches!(v, Tv::Unknown)) {
+        Tv::Unknown
+    } else {
+        Tv::Bool(true)
+    }
+}
+
+/// Recomputes every calculation and decision entry of one Proof_Report section from its recorded
+/// operation and operands. Returns the number of entries recomputed.
+fn replay_section(section: &Json) -> usize {
+    let mut recorded: Vec<(u64, Tv)> = Vec::new();
+    for read in items(at(section, "inputs_read")) {
+        recorded.push((
+            at(read, "seq").as_u64().unwrap(),
+            Tv::parse(at(read, "value")),
+        ));
+    }
+    let mut checked = 0;
+    for entry in items(at(section, "calculation_steps")) {
+        let seq = at(entry, "seq").as_u64().unwrap();
+        let op = text(at(entry, "op"));
+        let value = match text(at(entry, "kind")) {
+            "step" => {
+                let operands: Vec<Tv> =
+                    items(at(entry, "operands")).iter().map(Tv::parse).collect();
+                let result = Tv::parse(at(entry, "result"));
+                let expected = match op {
+                    "mul" => {
+                        let [a, b] = operands[..] else {
+                            panic!("seq {seq}: mul needs two operands")
+                        };
+                        Tv::Num(number(a).mul(number(b)))
+                    }
+                    "sum" => Tv::Num(
+                        operands
+                            .iter()
+                            .fold(Dec::parse("0"), |acc, v| acc.add(number(*v))),
+                    ),
+                    "ge" => {
+                        let [a, b] = operands[..] else {
+                            panic!("seq {seq}: ge needs two operands")
+                        };
+                        Tv::Bool(number(a).compare(number(b)) != Ordering::Less)
+                    }
+                    other => panic!("seq {seq}: replay does not know the step operation '{other}'"),
+                };
+                assert!(
+                    expected.equals(result),
+                    "seq {seq}: {op} recomputes to {expected:?}, the report records {result:?}"
+                );
+                result
+            }
+            "decision" => {
+                let value = Tv::parse(at(entry, "value"));
+                let from: Vec<Tv> = items(at(entry, "from"))
+                    .iter()
+                    .map(|n| {
+                        let n = n.as_u64().unwrap();
+                        recorded
+                            .iter()
+                            .find(|(s, _)| *s == n)
+                            .unwrap_or_else(|| panic!("seq {seq} refers to unknown entry {n}"))
+                            .1
+                    })
+                    .collect();
+                let expected = match op {
+                    "and" => all_of(&from),
+                    "pass" => *from.first().expect("pass has one source"),
+                    "recorded" => {
+                        assert!(from.is_empty(), "seq {seq}: recorded has no source");
+                        value
+                    }
+                    other => panic!("seq {seq}: replay does not know the decision '{other}'"),
+                };
+                assert!(
+                    expected.equals(value),
+                    "seq {seq}: {op} recomputes to {expected:?}, the report records {value:?}"
+                );
+                value
+            }
+            other => panic!("seq {seq}: unexpected entry kind '{other}'"),
+        };
+        recorded.push((seq, value));
+        checked += 1;
+    }
+    checked
+}
+
+// ---------------------------------------------------------------- running steps
+
+fn step_by_id<'a>(runbook: &'a Runbook, id: &str) -> &'a Step {
+    runbook
+        .steps_for(PROFILE)
+        .unwrap()
+        .into_iter()
+        .find(|s| s.id == id)
+        .unwrap_or_else(|| panic!("no step {id}"))
+}
+
+fn output_text(c: &Captured) -> String {
+    format!(
+        "{}{}",
+        String::from_utf8_lossy(&c.stdout),
+        String::from_utf8_lossy(&c.stderr)
+    )
+}
+
+fn run_expecting(step: &Step, exit: i32, bin: &Path, dir: &Path) -> Captured {
+    let c = run_step(step, bin, dir).unwrap();
+    assert_eq!(c.exit, exit, "step {}: {}", step.id, output_text(&c));
+    c
+}
+
+fn replace_once(path: &Path, from: &str, to: &str) {
+    let content = std::fs::read_to_string(path).unwrap();
+    assert_eq!(content.matches(from).count(), 1, "'{from}' must occur once");
+    std::fs::write(path, content.replacen(from, to, 1)).unwrap();
+}
+
+/// Index of the traces whose entries read `name` of `participant`.
+fn reads(trace: &Json, participant: &str, name: &str) -> bool {
+    items(at(trace, "entries")).iter().any(|e| {
+        text(at(e, "kind")) == "read"
+            && at(e, "participant").as_str() == Some(participant)
+            && at(e, "name").as_str() == Some(name)
+    })
+}
+
+// ---------------------------------------------------------------- summary
+
+fn describe_outcome(outcome: &Json) -> String {
+    match text(at(outcome, "state")) {
+        "decided" => {
+            let v = at(outcome, "value");
+            match text(at(v, "type")) {
+                "standings" => items(at(v, "places"))
+                    .iter()
+                    .map(|p| {
+                        let members: Vec<&str> = items(at(p, "members")).iter().map(text).collect();
+                        format!(
+                            "{}:{}",
+                            at(p, "position").as_u64().unwrap(),
+                            members.join("=")
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" "),
+                _ => match at(v, "value").kind() {
+                    Kind::Bool(b) => b.to_string(),
+                    Kind::String(s) => s.clone(),
+                    other => format!("{other:?}"),
+                },
+            }
+        }
+        state => state.to_owned(),
+    }
+}
+
+fn question_label(q: &Json) -> String {
+    let target = text(at(q, "target"));
+    at(q, "participant")
+        .as_str()
+        .map_or_else(|| target.to_owned(), |p| format!("{target} {p}"))
+}
+
+fn print_summary(runbook: &Runbook, work: &Path) {
+    println!("\nstep  exit  command");
+    for s in runbook.steps_for(PROFILE).unwrap() {
+        let words: Vec<&str> = s.argv.iter().take(2).map(String::as_str).collect();
+        println!("{:<5} {:<5} {}", s.id, s.expect_exit, words.join(" "));
+    }
+    let results = read_json(&work.join("work/results.json"));
+    println!("\nquestion                outcome");
+    for (t, o) in items(at(&results, "traces"))
+        .iter()
+        .zip(items(at(&results, "outcomes")))
+    {
+        println!(
+            "{:<23} {}",
+            question_label(at(t, "question")),
+            describe_outcome(o)
+        );
+    }
+    let proof = std::fs::read_to_string(work.join("work/proof.txt")).unwrap();
+    let first = proof.split("\nDECISION 2 ").next().unwrap_or(&proof);
+    println!("\nfirst Proof_Report section:\n{first}");
+}
+
+// ---------------------------------------------------------------- the test
+
+#[test]
+fn hand_profile_acceptance() -> TestResult {
+    let demo = demo_dir();
+    let bin = bin_dir()?;
+
+    // 1. Manifest checks (Req 33.2, 33.13).
+    let manifest_bytes = std::fs::read(demo.join("manifest.json"))?;
+    let manifest = check_manifest(&manifest_bytes, &|p| std::fs::read(demo.join(p)).ok())?;
+    assert_eq!(manifest.name, "stand-in-hand");
+    let manifest_json = json("manifest.json", &manifest_bytes);
+    assert!(matches!(
+        at(&manifest_json, "stand_in").kind(),
+        Kind::Bool(true)
+    ));
+
+    // 2 to 4. The runbook, step by step: exit codes and every output byte against its golden file.
+    let runbook = parse_runbook(&std::fs::read_to_string(demo.join("RUNBOOK.md"))?)?;
+    let bless = std::env::var("RT_DEMO_BLESS").ok();
+    let ci = std::env::var("CI").ok();
+    let mode = Mode::from_env_values(bless.as_deref(), ci.as_deref())?;
+    let base = TempDir::new("acceptance");
+    run_runbook(&runbook, PROFILE, &demo, &base.0, &bin, mode)?;
+    let work = &base.0;
+
+    // 5a. Every Decision_Trace is verified by the Explainer.
+    let results = read_json(&work.join("work/results.json"));
+    let verification = items(at(&results, "verification"));
+    let traces = items(at(&results, "traces"));
+    assert_eq!(verification.len(), traces.len());
+    assert!(!traces.is_empty());
+    assert!(
+        verification
+            .iter()
+            .all(|v| text(at(v, "status")) == "verified"),
+        "a Decision_Trace is not verified"
+    );
+
+    // 5b. The Proof_Report replays: each calculation recomputed from operation and operands.
+    let proof = read_json(&work.join("work/proof.json"));
+    let header = at(&proof, "header");
+    let sections = items(at(&proof, "decisions"));
+    assert_eq!(
+        at(header, "decisions").as_u64(),
+        Some(sections.len() as u64)
+    );
+    assert_eq!(
+        at(header, "verified_traces").as_u64(),
+        Some(sections.len() as u64)
+    );
+    assert!(sections
+        .iter()
+        .all(|s| text(at(at(s, "verification"), "status")) == "verified"));
+    let replayed: usize = sections.iter().map(replay_section).sum();
+    assert!(replayed >= 40, "only {replayed} entries were replayed");
+
+    // 5c. The data holds the participants and results of Req 33.13.
+    let outcome_of = |i: usize| items(at(&results, "outcomes")).get(i).unwrap();
+    let eligibility = |wanted: &str| {
+        traces.iter().enumerate().any(|(i, t)| {
+            let q = at(t, "question");
+            text(at(q, "target")) == "eligible"
+                && text(at(outcome_of(i), "state")) == wanted
+                && (wanted != "decided" || describe_outcome(outcome_of(i)) == "true")
+        })
+    };
+    assert!(eligibility("decided"), "no eligible participant");
+    assert!(
+        traces.iter().enumerate().any(|(i, t)| {
+            text(at(at(t, "question"), "target")) == "eligible"
+                && describe_outcome(outcome_of(i)) == "false"
+        }),
+        "no ineligible participant"
+    );
+    assert!(
+        eligibility("indeterminate"),
+        "no Indeterminate eligibility Outcome from a Missing_Value"
+    );
+    assert!(
+        traces.iter().enumerate().any(|(i, _)| {
+            let o = outcome_of(i);
+            text(at(o, "state")) == "decided"
+                && at(at(o, "value"), "type").as_str() == Some("standings")
+                && items(at(at(o, "value"), "places"))
+                    .iter()
+                    .any(|p| items(at(p, "members")).len() > 1)
+        }),
+        "no Tie_Group in a ranking"
+    );
+    let published: Vec<&str> = sections
+        .iter()
+        .map(|s| text(at(at(s, "published"), "state")))
+        .collect();
+    assert!(
+        published.contains(&"equal"),
+        "no Published_Result equal to the computed result"
+    );
+    assert!(published
+        .iter()
+        .all(|p| ["equal", "not_compared"].contains(p)));
+    let seeded = items(at(&manifest_json, "data"))
+        .iter()
+        .filter(|d| matches!(at(d, "seeded_difference").kind(), Kind::Bool(true)))
+        .count();
+    assert_eq!(seeded, 1, "exactly one data file is labelled as seeded");
+    let s06b = std::fs::read_to_string(demo.join("golden/steps/s06b.stderr"))?;
+    assert!(
+        s06b.contains("warning RT-EXE-0011"),
+        "the seeded difference is not reported"
+    );
+
+    // 5d. The Coverage_Statement classifies every clause of the fresh Candidate_Clause list as an
+    // approved rule (the generator itself is tested in tests/coverage.rs).
+    let candidates = read_json(&work.join("work/candidates.json"));
+    let statement = read_json(&demo.join("golden/artifacts/coverage-statement.json"));
+    let clauses = items(at(&candidates, "clauses"));
+    let entries = items(at(&statement, "entries"));
+    assert_eq!(clauses.len(), entries.len());
+    for (c, e) in clauses.iter().zip(entries) {
+        for key in ["document", "start", "end"] {
+            assert!(
+                same(at(c, key), at(e, key)),
+                "coverage entry differs in '{key}'"
+            );
+        }
+        assert_eq!(text(at(e, "class")), "rule_approved");
+    }
+
+    // 5e. The dependency tree of `ruletrace` has no network, provider or AI crate.
+    let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let metadata = Command::new(cargo)
+        .args([
+            "metadata",
+            "--format-version",
+            "1",
+            "--all-features",
+            "--offline",
+        ])
+        .current_dir(repo_root())
+        .output()?;
+    assert!(metadata.status.success(), "cargo metadata failed");
+    let members = rt_xtask::run_graph_check(
+        &repo_root().canonicalize()?,
+        &metadata.stdout,
+        rt_xtask::GraphCheck::Tree,
+    )?;
+    assert!(members > 0);
+
+    print_summary(&runbook, work);
+
+    // 6. Mutations M1 to M3, smoke versions (design §8.11.11).
+
+    // M1: one source byte inside the span of the first approved rule.
+    let m1 = TempDir::new("m1");
+    rt_demo::copy_demo(work, &m1.0)?;
+    let compiled = read_json(&work.join("work/compiled.json"));
+    let first_rule = items(at(&compiled, "rules")).first().unwrap();
+    let first_span = items(at(first_rule, "spans")).first().unwrap();
+    let (start, end) = (
+        usize::try_from(at(first_span, "start").as_u64().unwrap())?,
+        usize::try_from(at(first_span, "end").as_u64().unwrap())?,
+    );
+    let doc_path = m1.0.join("documents/stand-in-rules.md");
+    let mut doc = std::fs::read(&doc_path)?;
+    let at_byte = doc
+        .get(start..end)
+        .and_then(|s| s.iter().position(u8::is_ascii_lowercase))
+        .map(|i| start + i)
+        .ok_or("no lowercase byte in the span")?;
+    let slot = doc.get_mut(at_byte).ok_or("byte outside the document")?;
+    *slot = if *slot == b'x' { b'y' } else { b'x' };
+    std::fs::write(&doc_path, &doc)?;
+    run_expecting(step_by_id(&runbook, "s01"), 0, &bin, &m1.0);
+    // The canonical data holds an Indeterminate Outcome, and `evaluate` ranks stage 6 (exit 4)
+    // before the provenance rows of stage 7 (exit 2), see crates/rt-cli/src/evaluate.rs.
+    let c = run_expecting(step_by_id(&runbook, "s06"), 4, &bin, &m1.0);
+    assert!(
+        output_text(&c).contains("RT-PRV-0002"),
+        "{}",
+        output_text(&c)
+    );
+    let m1_results = read_json(&m1.0.join("work/results.json"));
+    let m1_verification = items(at(&m1_results, "verification"));
+    assert_eq!(m1_verification.len(), traces.len(), "Outcomes are complete");
+    for v in m1_verification {
+        assert_eq!(text(at(v, "status")), "not_verified");
+        assert!(items(at(v, "spans"))
+            .iter()
+            .all(|s| at(s, "code").as_str() == Some("RT-PRV-0002")));
+    }
+    assert!(same(at(&m1_results, "outcomes"), at(&results, "outcomes")));
+
+    // M2: one data value; only Outcomes that read it may change.
+    let m2 = TempDir::new("m2");
+    rt_demo::copy_demo(work, &m2.0)?;
+    replace_once(
+        &m2.0.join("data/canonical/data.json"),
+        "\"judges\": \"8\"",
+        "\"judges\": \"9\"",
+    );
+    run_expecting(step_by_id(&runbook, "s06"), 4, &bin, &m2.0);
+    let m2_results = read_json(&m2.0.join("work/results.json"));
+    let (mut changed, mut unchanged) = (0, 0);
+    for (i, t) in traces.iter().enumerate() {
+        let after_trace = items(at(&m2_results, "traces")).get(i).unwrap();
+        let identical = same(t, after_trace)
+            && same(
+                outcome_of(i),
+                items(at(&m2_results, "outcomes")).get(i).unwrap(),
+            );
+        if reads(t, "p1", "judges") {
+            changed += usize::from(!identical);
+        } else {
+            assert!(
+                identical,
+                "Outcome {i} does not read p1 judges and must not change"
+            );
+            unchanged += 1;
+        }
+    }
+    assert!(changed >= 1, "no dependent Outcome changed");
+    assert!(unchanged >= 1, "no independent Outcome was checked");
+
+    // M3: one approved Rule_Content literal edited without a new approval (RN-29, option a).
+    let m3 = TempDir::new("m3");
+    rt_demo::copy_demo(work, &m3.0)?;
+    std::fs::remove_file(m3.0.join("work/validation.json"))?;
+    std::fs::remove_file(m3.0.join("work/compiled.json"))?;
+    replace_once(
+        &m3.0.join("rulebook/hand-authored.json"),
+        "\"value\": \"16\"",
+        "\"value\": \"17\"",
+    );
+    let c = run_expecting(step_by_id(&runbook, "s04"), 3, &bin, &m3.0);
+    assert!(
+        output_text(&c).contains("RT-APR-0001"),
+        "{}",
+        output_text(&c)
+    );
+    assert!(
+        m3.0.join("work/validation.json").exists(),
+        "validate writes the artifact (RN-29)"
+    );
+    let c = run_expecting(step_by_id(&runbook, "s05"), 3, &bin, &m3.0);
+    assert!(
+        output_text(&c).contains("RT-APR-0001"),
+        "{}",
+        output_text(&c)
+    );
+    assert!(
+        !m3.0.join("work/compiled.json").exists(),
+        "no Compiled_Rulebook is written"
+    );
+
+    println!("\nmutations: M1 source byte, M2 data value, M3 rule literal: all detected");
+    Ok(())
+}

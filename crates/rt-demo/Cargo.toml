@@ -20,4 +20,6 @@ rt-ledger = { path = "../rt-ledger" }
 rt-validate = { path = "../rt-validate" }
 
 [dev-dependencies]
+# The acceptance test calls the `check-tree` library function (design §8.11.12 step 5).
+rt-xtask = { path = "../rt-xtask" }
 proptest = { version = "1", default-features = false, features = ["std"] }
