@@ -1,0 +1,62 @@
+{
+  "format": "ruletrace-rulebook",
+  "ir_version": "1",
+  "name": "coastal-cup",
+  "version": "2026.1",
+  "documents": [
+    {
+      "id": "rules.md",
+      "sha256": "ddb2c3a8122f35c3e7424f4c4d2a946d4e8c5e8de1703a9204dc4f1020850bf1"
+    }
+  ],
+  "types": {
+    "inputs": [
+      {
+        "name": "age",
+        "type": "number"
+      }
+    ],
+    "enums": [],
+    "sets": [],
+    "collections": []
+  },
+  "rules": [
+    {
+      "id": "elig.age",
+      "revision": 1,
+      "origin": {
+        "kind": "manual",
+        "author": null
+      },
+      "kind": "eligibility",
+      "target": "eligible",
+      "type": "boolean",
+      "expr": {
+        "node": "cmp",
+        "t": "boolean",
+        "op": "ge",
+        "left": {
+          "node": "field",
+          "t": "number",
+          "name": "age"
+        },
+        "right": {
+          "node": "num",
+          "t": "number",
+          "value": "16"
+        }
+      },
+      "markers": [],
+      "spans": [
+        {
+          "document": "rules.md",
+          "start": 21,
+          "end": 71,
+          "line": 3,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "precedence": []
+}

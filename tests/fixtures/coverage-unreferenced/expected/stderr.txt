@@ -1,0 +1,2 @@
+warning RT-ING-0006: the Candidate_Clause at bytes 72..117 of document 'rules.md' is referenced by no rule
+  at source rules.md:72-117 (line 4, column 1)

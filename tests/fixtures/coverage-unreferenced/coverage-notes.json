@@ -1,0 +1,13 @@
+{
+  "format": "ruletrace-coverage-notes",
+  "version": 1,
+  "notes": [
+    {
+      "document": "rules.md",
+      "start": 72,
+      "end": 117,
+      "origin": "authored",
+      "reason": "A scheduling statement with no computed outcome, so no rule is written for it."
+    }
+  ]
+}

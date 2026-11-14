@@ -1,0 +1,44 @@
+{
+  "format": "ruletrace-source-model",
+  "version": 1,
+  "document": "rules.md",
+  "kind": "markdown",
+  "sha256": "ddb2c3a8122f35c3e7424f4c4d2a946d4e8c5e8de1703a9204dc4f1020850bf1",
+  "bytes": 118,
+  "content": "# Coastal Cup Rules\n\n1. A competitor is eligible if age is at least 16.\n2. Entries close seven days before the event.\n",
+  "elements": [
+    {
+      "id": 0,
+      "kind": "heading",
+      "level": 1,
+      "label": null,
+      "start": 0,
+      "end": 19,
+      "line": 1,
+      "column": 1,
+      "parent": null
+    },
+    {
+      "id": 1,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 21,
+      "end": 71,
+      "line": 3,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 2,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 72,
+      "end": 117,
+      "line": 4,
+      "column": 1,
+      "parent": 0
+    }
+  ]
+}
