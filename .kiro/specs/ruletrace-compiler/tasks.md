@@ -729,7 +729,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 20.27, 21.3, 21.13, 33.16, 33.15_
     - Design §7.4
 
-  - [~] 6.11 Checkpoint - Phase 4 and Demo Slice 0 exit
+  - [x] 6.11 Checkpoint - Phase 4 and Demo Slice 0 exit
     - Run `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, and every existing `rt-xtask` check.
     - Exit criteria: the `hand` profile acceptance test passes on three platforms with identical goldens; every Decision_Trace of the demonstration is Verified; the Proof_Report replays; the three mutations pass as a smoke check; `check-tree` shows no network or AI crate in the `ruletrace` tree; Properties 15 (single-file), 51 and 52 pass.
     - Ensure all tests pass, ask the user if questions arise.
