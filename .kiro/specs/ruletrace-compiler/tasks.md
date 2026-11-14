@@ -740,7 +740,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Phase 5: Proposals and adoption (`rt-proposals`, adoption in `rt-review`, `FaultFs`; Demo Slice 1 begins)
-  - [ ] 7.1 Implement `rt-proposals` (Proposal_Store data model)
+  - [-] 7.1 Implement `rt-proposals` (Proposal_Store data model)
     - Define the batch file model (`format`, `version`, `request_id`, `response_sha256`, provider, model, adapter version, AI identities, `created_at`, proposals with `proposal_id = SHA-256(request_id ":" index)`, kind, proposer, evidence, rule draft with Draft hash, Semantic_Outcome Diagnostics), its parser and printer, and the Pending_Proposal derivation (a `rule_suggestion` whose id is not referenced by an Origin in the Rulebook). Store the accepted response as the `response` member (`completion` and exact `payload`) as the UD-36 record says. Reject flag and lifecycle keys with the RT-DGN codes. No AI logic and no network dependency.
     - Observable: a batch round-trips byte-identically, and a batch with a `has_errors` key is rejected with `RT-DGN-0001`.
     - Blocked by: 1.8, 4.6, 6.11.
