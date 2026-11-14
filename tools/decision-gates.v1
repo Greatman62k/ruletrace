@@ -1,0 +1,9 @@
+# format: ruletrace-decision-gates v1
+# gate <decision-id> crates <crate...>
+# A crate listed here may be a workspace member only if tools/decisions/<id>.md has `status: Confirmed`.
+# A missing record counts as Pending. Written once in task 2.1; no later task edits this file.
+gate UD-2  crates rt-json
+gate UD-3  crates rt-numeric
+gate UD-27 crates rt-ledger rt-review
+gate UD-33 crates prize-check bracket-check
+gate UD-36 crates rt-proposals

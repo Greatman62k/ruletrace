@@ -1,0 +1,10 @@
+# format: ruletrace-contracts v1
+# Public stage signatures (parameter and result type names) compared by `rt-xtask scan-api`.
+# Entries are added with each stage function (design 3.4.3).
+# No entries yet.
+contract rt-ledger parse_ledger (&InputId, &[u8], ParseLimits) -> Result<ApprovalLedger, Vec<Diagnostic>>
+contract rt-ledger print_ledger (&ApprovalLedger) -> String
+contract rt-engine evaluate (&CompiledRulebook, &CompetitionData, &[Question], Option<&PublishedResult>) -> Evaluation
+contract rt-validate validate_content (&Rulebook, &RuleDraft, &SourceModels) -> DiagnosticState
+contract rt-review plan_review (&Rulebook, &ApprovalLedger, &ReviewDecision, &SourceModels) -> Result<CommitPlan, Rejected>
+contract rt-compile compile (&ValidationResult) -> StageResult<CompiledRulebook>

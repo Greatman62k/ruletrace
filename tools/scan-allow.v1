@@ -1,0 +1,8 @@
+# format: ruletrace-scan-allow v1
+# One entry per line: allow <crate>/<file relative to the crate>[:<line>] <token> reason <text>. The reason is mandatory.
+# Example: allow rt-cli/src/io.rs std::fs reason reads input files named on the command line
+# <token> is one of the names `rt-xtask scan-sources` prints (for example `std::fs`, `HashMap`, `static mut`).
+# Only rt-cli I/O modules, application io.rs/main.rs and auxiliary crates may be listed.
+allow rt-cli/src/io.rs std::fs reason StdFs is the only code of the ruletrace executable that reads and writes files named on the command line (task 4.9, design §3.9, §6.2.4)
+allow rt-cli/src/main.rs std::env reason reads the process arguments, which are the only environment input of the executable (task 4.9, Req 17.7)
+allow rt-cli/src/main.rs std::process reason returns the exit code of the command from main (task 4.9, Req 16.15)

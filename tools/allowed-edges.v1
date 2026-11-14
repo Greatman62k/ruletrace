@@ -1,0 +1,50 @@
+# format: ruletrace-allowed-edges v1
+# class: core | aux | app | tool | test. deps lists allowed internal dependencies (design 3.1, 3.3).
+crate rt-hash        class core   deps -
+crate rt-foundation  class core   deps -
+crate rt-numeric     class core   deps -
+crate rt-json        class core   deps rt-foundation
+crate rt-srcmodel    class core   deps rt-foundation rt-hash rt-json
+crate rt-source      class core   deps rt-foundation rt-hash rt-json rt-srcmodel
+crate rt-ir          class core   deps rt-foundation rt-hash rt-json rt-numeric
+crate rt-ledger      class core   deps rt-foundation rt-hash rt-json rt-ir
+crate rt-proposals   class core   deps rt-foundation rt-hash rt-json rt-ir
+crate rt-validate    class core   deps rt-foundation rt-numeric rt-hash rt-json rt-srcmodel rt-ir rt-ledger
+crate rt-compiled    class core   deps rt-foundation rt-numeric rt-hash rt-json rt-ir
+crate rt-compile     class core   deps rt-foundation rt-numeric rt-hash rt-ir rt-ledger rt-validate rt-compiled rt-json rt-srcmodel
+crate rt-data        class core   deps rt-foundation rt-json rt-numeric
+crate rt-trace       class core   deps rt-foundation rt-numeric rt-json
+crate rt-engine      class core   deps rt-foundation rt-numeric rt-compiled rt-data rt-trace rt-ir rt-hash
+crate rt-explain     class core   deps rt-foundation rt-srcmodel rt-trace rt-json rt-numeric
+crate rt-review      class core   deps rt-foundation rt-hash rt-json rt-ir rt-ledger rt-proposals rt-validate rt-srcmodel rt-explain
+crate rt-cli         class core   deps rt-foundation rt-hash rt-json rt-numeric rt-srcmodel rt-source rt-ir rt-ledger rt-proposals rt-validate rt-compiled rt-compile rt-data rt-trace rt-engine rt-explain rt-review
+crate rt-ai-adapter  class aux    deps rt-foundation rt-hash rt-json
+crate rt-ai-mock     class aux    deps rt-ai-adapter rt-foundation rt-json
+crate rt-ai-openai   class aux    deps rt-ai-adapter rt-foundation rt-json rt-hash
+crate rt-ai-tool     class aux    deps rt-ai-adapter rt-ai-mock rt-ai-openai rt-foundation rt-hash rt-json rt-srcmodel rt-ir rt-ledger rt-validate rt-proposals
+crate prize-check    class app    deps rt-foundation rt-numeric rt-data rt-compiled rt-engine rt-explain rt-srcmodel
+crate bracket-check  class app    deps rt-foundation rt-numeric rt-data rt-compiled rt-engine rt-explain rt-srcmodel
+crate rt-demo        class tool   deps rt-foundation rt-json rt-hash rt-srcmodel rt-ir rt-ledger rt-proposals rt-validate rt-trace rt-explain rt-xtask
+crate rt-xtask       class tool   deps rt-foundation rt-json rt-proposals
+crate rt-tests-core  class test   deps rt-hash rt-foundation rt-numeric rt-json rt-srcmodel rt-source rt-ir rt-ledger rt-proposals rt-validate rt-compiled rt-compile rt-data rt-trace rt-engine rt-explain rt-review rt-cli prize-check bracket-check
+crate rt-tests-ai    class test   deps rt-hash rt-foundation rt-numeric rt-json rt-srcmodel rt-source rt-ir rt-ledger rt-proposals rt-validate rt-compiled rt-compile rt-data rt-trace rt-engine rt-explain rt-review rt-cli rt-ai-adapter rt-ai-mock rt-ai-openai rt-ai-tool
+stage rt-srcmodel 1
+stage rt-source 1
+stage rt-ir 3
+stage rt-validate 4
+stage rt-compile 5
+stage rt-engine 6
+stage rt-explain 7
+forbid-class core -> aux
+forbid-class core -> app
+forbid-class aux  -> app
+forbid-class app  -> aux
+forbid-class app  -> tool
+forbid-transitive prize-check bracket-check -> rt-cli rt-review rt-ledger rt-validate rt-compile rt-source rt-proposals rt-ai-* rt-demo rt-xtask
+forbid-name  prize-check -> bracket-check
+forbid-name  bracket-check -> prize-check
+forbid-name  rt-ai-* -> rt-compile rt-engine rt-review rt-cli rt-compiled
+forbid-name  rt-engine -> rt-explain
+forbid-external ureq rustls hyper reqwest h2 tokio openssl native-tls curl isahc attohttpc ring except-under rt-ai-openai
+# external <crate> allowed-in <crate...>   (dev-only entries are marked dev)
+external sha2 allowed-in rt-hash
