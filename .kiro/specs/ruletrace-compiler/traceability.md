@@ -569,6 +569,6 @@ Deviations and limits:
 
 - The flat schema has no single `root` member. Each expression field of a rule holds its own node index (design 3.7.3, implementation notes).
 - `Required` is the name used for what the orders of this task called `Requirements`, as in design 3.4.5.
-- The lowered draft of a version "2" response is decoded with the decoder depth cap (512), not the response container limit of 32, so an expression above 16 levels reaches the validator as `RT-LIM-0003`. A decoder error inside a lowered draft is located at the rule, with the inner field path of the lowered text.
+- The lowered draft of a version "2" response is decoded with a cap of 61 containers (the batch limit of 64 less the three around a stored rule), not the response container limit of 32, so an expression above 16 levels reaches the validator as `RT-LIM-0003` and a rule above 61 containers is refused with `RT-LIM-0003` before storage. A decoder error inside a lowered draft is located at the rule, with the inner field path of the lowered text.
 - The depth of the generated schema is 10 when each `anyOf` alternative, `items` and property counts as a level. The Meta documentation does not say how it counts. If it counts differently, the schema stays within 10 in this stricter count.
 - Not verified here: the three-platform CI run, the Windows runs of the new tests (a `cargo check` for `x86_64-pc-windows-gnu` was run), and that the Meta API accepts the generated schema (a live step, not run).

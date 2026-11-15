@@ -11,10 +11,10 @@
 use rt_ai_adapter::Completion;
 use rt_foundation::{
     escape_controls, Code, Diagnostic, DocumentId, InputId, InputLocation, Location,
-    RevisionNumber, RuleId,
+    RevisionNumber, RuleId, MAX_CONTAINER_DEPTH,
 };
 use rt_hash::Sha256Hex;
-use rt_ir::{parse_draft, Identity, Origin, RuleContent, DECODER_DEPTH_CAP};
+use rt_ir::{parse_draft, Identity, Origin, RuleContent};
 use rt_json::{parse_keeping_duplicates, Kind, Member, ParseLimits, Position, Value};
 
 /// The nested schema version, which the mock provider and recorded
@@ -29,6 +29,12 @@ pub const MAX_PROPOSALS: usize = 100;
 pub const MAX_EVIDENCE: usize = 16;
 /// Container nesting limit of a response (Req 23.5).
 pub const MAX_DEPTH: u32 = 32;
+
+/// The most containers a lowered rule may nest. A stored batch holds the
+/// rule three containers down (batch, proposal array, proposal), and the
+/// batch reader refuses more than `MAX_CONTAINER_DEPTH` containers, so
+/// anything accepted can be read back.
+const STORED_RULE_DEPTH_CAP: u32 = MAX_CONTAINER_DEPTH - 3;
 
 /// Names that carry an approval or validation state. Present at any depth
 /// they reject the response, whatever the value (Req 23.4, 30.9, 22.16).
@@ -385,6 +391,34 @@ type Entry<'a> = (
     Option<usize>,
     Option<(&'a str, Position)>,
 );
+
+/// The most containers that nest in `json`, which is valid JSON text.
+/// Iterative, so the depth of the text cannot exhaust the stack.
+pub(crate) fn container_depth(json: &str) -> u32 {
+    let (mut depth, mut deepest) = (0u32, 0u32);
+    let (mut in_string, mut escaped) = (false, false);
+    for b in json.bytes() {
+        if in_string {
+            match (escaped, b) {
+                (true, _) => escaped = false,
+                (false, b'\\') => escaped = true,
+                (false, b'"') => in_string = false,
+                _ => {}
+            }
+            continue;
+        }
+        match b {
+            b'"' => in_string = true,
+            b'{' | b'[' => {
+                depth = depth.saturating_add(1);
+                deepest = deepest.max(depth);
+            }
+            b'}' | b']' => depth = depth.saturating_sub(1),
+            _ => {}
+        }
+    }
+    deepest
+}
 
 /// Finds, in document order, the first forbidden key, the key at the
 /// line and column `repeat` and the first container nested deeper than
@@ -782,9 +816,24 @@ impl Dec<'_> {
             closed::check(value, path).map(|()| rt_json::write_compact(value))
         };
         let json = lowered.map_err(|b| self.violation(b.pos, &b.path, b.message))?;
+        // Checked before the decoder, which recurses on the container depth.
+        if flat && container_depth(&json) > STORED_RULE_DEPTH_CAP {
+            return Err(Diagnostic::new(
+                Code::LimitExpressionTooDeep,
+                format!(
+                    "the rule nests containers deeper than {STORED_RULE_DEPTH_CAP}, \
+                     which a stored batch cannot hold"
+                ),
+                self.at.at(*value.pos(), path),
+            ));
+        }
         // A lowered draft has a different shape from the response text, so
         // only a nested draft can map a decoder position back to its key.
-        let depth = if flat { DECODER_DEPTH_CAP } else { MAX_DEPTH };
+        let depth = if flat {
+            STORED_RULE_DEPTH_CAP
+        } else {
+            MAX_DEPTH
+        };
         let origin = Origin::Manual { author: None };
         let draft = parse_draft(
             json.as_bytes(),

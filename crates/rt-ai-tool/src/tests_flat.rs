@@ -13,7 +13,7 @@ use crate::tests_response::{col, fail, parse_with, rid, shape, LIMIT};
 use crate::vocab::Ud32Option;
 use proptest::prelude::*;
 use rt_ai_adapter::Completion;
-use rt_foundation::{Code, ExitCode, InputId, Severity};
+use rt_foundation::{Code, Diagnostic, ExitCode, InputId, Severity};
 use rt_hash::sha256;
 use rt_ir::{parse_rulebook, Rulebook};
 use rt_json::{Kind, Position, Value};
@@ -21,7 +21,7 @@ use rt_json::{Kind, Position, Value};
 const SPAN: &str = r#"{"document":"rules.md","start":12,"end":27,"line":2,"column":1}"#;
 const QUOTE: &str = "Gamma δ delta.";
 
-fn rulebook() -> Rulebook {
+pub(crate) fn rulebook() -> Rulebook {
     let text = format!(
         r#"{{"format":"ruletrace-rulebook","ir_version":"1","name":"n","version":"1","documents":[{{"id":"rules.md","sha256":"{RULES_HASH}"}}],"types":{{"inputs":[{{"name":"age","type":"number"}}],"enums":[],"sets":[],"collections":[]}},"rules":[],"precedence":[]}}"#
     );
@@ -49,14 +49,20 @@ fn suggestion(rule: &str) -> String {
     )
 }
 
-fn payload(version: &str, rule: &str) -> String {
+pub(crate) fn payload(version: &str, rule: &str) -> String {
     format!(
         r#"{{"schema_version":"{version}","proposals":[{}]}}"#,
         suggestion(rule)
     )
 }
 
-fn accepted(text: &str) -> AcceptedBatch {
+/// Runs the real acceptance path on `text`.
+pub(crate) fn try_accept(text: &str) -> Result<AcceptedBatch, Vec<Diagnostic>> {
+    try_accept_within(text, LIMIT)
+}
+
+/// As [`try_accept`], with an explicit response size limit.
+pub(crate) fn try_accept_within(text: &str, limit: u64) -> Result<AcceptedBatch, Vec<Diagnostic>> {
     let id = rid();
     let rb = rulebook();
     let all = models();
@@ -71,14 +77,17 @@ fn accepted(text: &str) -> AcceptedBatch {
         request_id: &req,
         completion: Completion::Complete,
         payload: text.as_bytes(),
-        response_limit: LIMIT,
+        response_limit: limit,
         models: &all,
         clauses: &clauses,
         declarations: &rb,
         redactor: &Redactor::no_credential(),
         revise_rule: None,
     })
-    .unwrap_or_else(|d| panic!("rejected: {d:?}"))
+}
+
+fn accepted(text: &str) -> AcceptedBatch {
+    try_accept(text).unwrap_or_else(|d| panic!("rejected: {d:?}"))
 }
 
 #[derive(Clone, Debug)]
@@ -757,7 +766,11 @@ fn a_hostile_chain_of_twenty_thousand_nodes_is_refused_without_overflow() {
         .collect();
     let text = flat_payload(&table_rule(&nodes.join(",")));
     let d = fail(&text);
-    assert_eq!(d.code(), Code::AiResponseSchemaViolation);
+    assert_eq!(d.code(), Code::LimitExpressionTooDeep);
     assert_eq!(d.severity(), Severity::Error);
-    assert!(d.message().contains("not valid Rule_IR"), "{}", d.message());
+    assert!(
+        d.message().contains("nests containers deeper than 61"),
+        "{}",
+        d.message()
+    );
 }

@@ -74,6 +74,8 @@ mod tests_exit_order_property;
 #[cfg(test)]
 mod tests_flat;
 #[cfg(test)]
+mod tests_flat_depth;
+#[cfg(test)]
 mod tests_gate_failures;
 #[cfg(test)]
 mod tests_gate_rig;
