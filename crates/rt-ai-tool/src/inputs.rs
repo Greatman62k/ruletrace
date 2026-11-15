@@ -3,7 +3,8 @@
 //! The tool reads only the files its arguments and its configuration name.
 //! It never opens a ledger file: no function here takes a ledger path.
 
-use crate::cli::ProposeArgs;
+use crate::cli::{at_argument, ProposeArgs, ReviseArgs};
+use crate::revise::{ReviseContext, Unknown, MAX_FEEDBACK_BYTES};
 use rt_ai_mock::RecordedScript;
 use rt_foundation::{
     escape_controls, Code, Diagnostic, DocumentId, InputId, InputLocation, Location,
@@ -26,6 +27,8 @@ pub(crate) struct Inputs {
     pub(crate) rulebook: Rulebook,
     pub(crate) models: SourceModels,
     pub(crate) candidates: Vec<CandidateClause>,
+    /// The revision request, when the command line carries one.
+    pub(crate) revise: Option<ReviseContext>,
     /// Warnings of the Rulebook parser. They never block.
     pub(crate) warnings: Vec<Diagnostic>,
 }
@@ -87,12 +90,22 @@ pub(crate) fn load_inputs(args: &ProposeArgs) -> Result<Inputs, Vec<Diagnostic>>
     let candidates = models
         .as_ref()
         .and_then(|m| load_candidates(&args.candidates, m, &mut problems));
-    match (rulebook, models, candidates) {
-        (Some((rulebook, warnings)), Some(models), Some(candidates)) if problems.is_empty() => {
+    let revise = args.revise.as_ref().and_then(|wanted| match &rulebook {
+        Some((rulebook, _)) => load_revise(wanted, rulebook, &mut problems),
+        None => {
+            let _ = load_feedback(wanted, &mut problems);
+            None
+        }
+    });
+    match (rulebook, models, candidates, revise) {
+        (Some((rulebook, warnings)), Some(models), Some(candidates), revise)
+            if problems.is_empty() =>
+        {
             Ok(Inputs {
                 rulebook,
                 models,
                 candidates,
+                revise,
                 warnings,
             })
         }
@@ -125,6 +138,91 @@ fn load_rulebook(
         Ok(found) => Some(found),
         Err(found) => {
             problems.extend(found);
+            None
+        }
+    }
+}
+
+fn refused(wanted_at: usize, option: &str, message: String) -> Diagnostic {
+    Diagnostic::new(
+        Code::AiRequestInvalid,
+        message,
+        at_argument(wanted_at, Some(option)),
+    )
+}
+
+// The feedback is untrusted text: it must be UTF-8, not empty and at most
+// MAX_FEEDBACK_BYTES, and it is kept byte for byte.
+fn load_feedback(wanted: &ReviseArgs, problems: &mut Vec<Diagnostic>) -> Option<String> {
+    let at = input_location(&wanted.feedback);
+    let bytes = match read_bounded(&wanted.feedback, MAX_FEEDBACK_BYTES as u64) {
+        Ok(bytes) => bytes,
+        Err(d) => {
+            problems.push(d);
+            return None;
+        }
+    };
+    let why = if bytes.len() > MAX_FEEDBACK_BYTES {
+        Some(format!(
+            "the feedback file given by --feedback-file is larger than {MAX_FEEDBACK_BYTES} bytes"
+        ))
+    } else if bytes.is_empty() {
+        Some("the feedback file given by --feedback-file is empty".to_owned())
+    } else {
+        None
+    };
+    if let Some(message) = why {
+        problems.push(invalid_request(message, at));
+        return None;
+    }
+    match String::from_utf8(bytes) {
+        Ok(text) => Some(text),
+        Err(_) => {
+            problems.push(invalid_request(
+                "the feedback file given by --feedback-file is not valid UTF-8".to_owned(),
+                at,
+            ));
+            None
+        }
+    }
+}
+
+fn load_revise(
+    wanted: &ReviseArgs,
+    rulebook: &Rulebook,
+    problems: &mut Vec<Diagnostic>,
+) -> Option<ReviseContext> {
+    let feedback = load_feedback(wanted, problems);
+    let read = feedback.is_some();
+    let resolved = ReviseContext::resolve(
+        rulebook,
+        &wanted.rule,
+        wanted.revision,
+        feedback.unwrap_or_default(),
+    );
+    match resolved {
+        Ok(context) => read.then_some(context),
+        Err(Unknown::Rule) => {
+            problems.push(refused(
+                wanted.rule_at,
+                "--revise-rule",
+                format!(
+                    "--revise-rule names rule '{}', which the Rulebook does not contain",
+                    escape_controls(wanted.rule.as_str())
+                ),
+            ));
+            None
+        }
+        Err(Unknown::Revision) => {
+            problems.push(refused(
+                wanted.revision_at,
+                "--revise-revision",
+                format!(
+                    "--revise-revision names revision {} of rule '{}', which the Rulebook does not contain",
+                    wanted.revision.get(),
+                    escape_controls(wanted.rule.as_str())
+                ),
+            ));
             None
         }
     }

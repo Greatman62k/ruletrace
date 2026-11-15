@@ -389,6 +389,7 @@ fn plan(spec: &Spec, config: &AiConfig, rig: &Rig, candidates: &[CandidateClause
         candidates,
         rulebook: &rulebook_of(&spec.decls),
         option: option(spec.rank),
+        revise: None,
         candidates_at: Location::Cli(CliLocation::Argument {
             position: 5,
             name: Some("--candidates".to_owned()),
@@ -688,6 +689,7 @@ fn an_empty_clause_list_is_rejected_with_the_exact_diagnostic() {
         candidates: &[],
         rulebook: &empty_rulebook(),
         option: Ud32Option::ThresholdOnly,
+        revise: None,
         candidates_at: at.clone(),
     })
     .unwrap_err();
@@ -729,6 +731,7 @@ fn golden_request_matches_hand_written_bytes_and_external_digest() {
         candidates: &[clause],
         rulebook: &empty_rulebook(),
         option: Ud32Option::ThresholdOnly,
+        revise: None,
         candidates_at: Location::Cli(CliLocation::Argument {
             position: 5,
             name: Some("--candidates".to_owned()),

@@ -1235,6 +1235,7 @@ fn harness(redactor: Redactor) -> Harness {
         candidates: &candidates,
         rulebook: &rulebook,
         option: Ud32Option::RankReference,
+        revise: None,
         candidates_at: Location::Cli(CliLocation::Argument {
             position: 5,
             name: Some("--candidates".to_owned()),

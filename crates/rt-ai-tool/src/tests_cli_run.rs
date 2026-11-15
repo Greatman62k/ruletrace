@@ -101,7 +101,7 @@ fn a_run_opens_no_ledger_file_and_writes_no_file_but_the_store_and_the_log() {
 #[test]
 fn the_command_sources_name_no_ledger_and_the_crate_depends_on_no_approval_crate() {
     let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src/");
-    for file in ["cli.rs", "command.rs", "inputs.rs", "main.rs"] {
+    for file in ["cli.rs", "command.rs", "inputs.rs", "main.rs", "revise.rs"] {
         let text = std::fs::read_to_string(format!("{dir}{file}")).unwrap();
         let code: Vec<&str> = text
             .lines()

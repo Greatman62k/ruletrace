@@ -283,3 +283,11 @@ User decisions and corrections of the 8.15 review.
 | 23 | AI-Assisted Proposal Pipeline | Unchanged | - | - | `--dry-run` does not apply the provider-link check or the store check: it sends nothing. Design 3.9.2 |
 | 5 | Approval and Review State | Unchanged | - | - | User decision (8.16 review): a proposal that reads a sibling's declaration is stored with RT-VAL-0002 and RT-AI-0305 and refused by `review approve` with RT-APR-0205 until the sibling is adopted. Documented in `docs/user-guide/review-order.md`; sibling-aware checking is listed in the design as a possible later feature; task 8.17 carries a note |
 | 7 | Diagnostics Model | Unchanged | - | - | User decision: new task 8.22 removes the invented `position: 0` of `CliLocation::Argument` in review diagnostics (Req 7.14). Cli_Location has no numbered requirement of its own: it is a Glossary term, governed by 7.1, 7.13 and 20.13 |
+
+
+## Task 8.21: revision requests of `ruletrace-ai propose`
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 23 | AI-Assisted Proposal Pipeline | Unchanged | - | - | 23.16: the three options give the `revise` member of design 3.7.2 item 4. Adoption already assigns the next Revision_Number of the rule that the draft names (rt-review `prospective_adoption`), so no review change was needed. Nothing checks that the provider's draft names the revised rule, because 23.16 does not ask for it. Reported to the user |
+| 28 | AI Configuration, Credentials, and Transmission Consent | Unchanged | - | - | 28.7 and 28.14: the feedback is not a Source_Document, so `--consent` names no extra identifier for it, and 28.14 lists only the Clause_Context and the task as request content. 23.16 adds the revision content and the feedback to that context. 28.14 should say so. Task 8.21 now lists 28.7, 28.8 and 28.14 |

@@ -947,8 +947,8 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: a run with the three options sends a request whose context holds the named revision and the feedback, stores a Proposal with Origin AI_Proposal, and leaves the Rulebook and the Approval_Ledger unchanged. A run with one or two of the options, an unknown Rule identifier or an unknown revision is refused with a Diagnostic that names the option, and sends nothing.
     - Blocked by: 8.8.
     - Must land before 8.17.
-    - _Requirements: 23.16, 23.1, 23.2, 23.9, 27.4_
-    - Design §3.9.2
+    - _Requirements: 23.16, 23.1, 23.2, 23.9, 27.4, 28.7, 28.8, 28.14_
+    - Design §3.7.2, §3.9.2
 
   - [ ] 8.22 Fix fabricated CLI argument positions in review diagnostics
     - A review refusal that names an argument, for example `--reviewer`, builds a `CliLocation::Argument` with `position: 0`, so the rendered Location reads `at argument 0 (--reviewer)` even when the argument sits elsewhere on the command line. That position is invented, which Req 7.14 forbids. Either make `CliLocation::Argument.position` optional, so a Diagnostic that knows only the name carries no position, or have the CLI pass the real argv index to the review crates. Fix the four sites: `rt-ledger/src/reviewer.rs:63`, `rt-review/src/plan.rs:103`, `rt-review/src/adopt.rs:34` and `rt-cli/src/review.rs:386`. Keep the rendering and the canonical order of Req 7.10 and 7.13 stable for locations that have a position.

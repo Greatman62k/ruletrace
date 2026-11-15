@@ -76,6 +76,7 @@ pub(crate) fn plan_of(config: &AiConfig, which: &[usize]) -> RunPlan {
         candidates: &candidates,
         rulebook: &rulebook(),
         option: Ud32Option::RankReference,
+        revise: None,
         candidates_at: Location::Cli(CliLocation::Argument {
             position: 5,
             name: Some("--candidates".to_owned()),

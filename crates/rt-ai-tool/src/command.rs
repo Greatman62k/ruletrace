@@ -27,7 +27,7 @@ use crate::txlog::{FileLog, TransmissionLog};
 use crate::vocab::Ud32Option;
 use rt_ai_adapter::{AiAdapter, AttemptReport, MonotonicClock, ProviderRequest};
 use rt_ai_mock::ReplayProvider;
-use rt_foundation::{CliLocation, Code, Diagnostic, DocumentId, ExitCode, Location, Severity};
+use rt_foundation::{Code, Diagnostic, DocumentId, ExitCode, Severity};
 use rt_ir::Identity;
 use std::collections::BTreeSet;
 use std::ffi::OsString;
@@ -62,10 +62,6 @@ impl<O: Write, E: Write> Reporter<'_, O, E> {
         self.diagnostics(diagnostics);
         exit_of(diagnostics)
     }
-}
-
-fn command_at() -> Location {
-    Location::Cli(CliLocation::Command("propose".to_owned()))
 }
 
 fn read_config(path: &Path) -> Result<String, Diagnostic> {
@@ -251,13 +247,6 @@ fn propose<O: Write, E: Write>(
         Ok(args) => args,
         Err(problems) => return report.fail(&problems),
     };
-    if args.revise.is_some() {
-        return report.fail(&[Diagnostic::new(
-            Code::CliArgumentInvalid,
-            "proposing a revision of a Rule_Revision is not implemented in this build".to_owned(),
-            command_at(),
-        )]);
-    }
     let text = match read_config(&args.config) {
         Ok(text) => text,
         Err(d) => return report.fail(&[d]),
@@ -308,6 +297,7 @@ fn propose<O: Write, E: Write>(
         rulebook: &inputs.rulebook,
         option: Ud32Option::CONFIRMED,
         candidates_at: input_location(&args.candidates),
+        revise: inputs.revise.as_ref(),
     }) {
         Ok(plan) => plan,
         Err(found) => return report.fail(&found),
@@ -392,6 +382,7 @@ fn dry<O: Write, E: Write>(
         rulebook: &inputs.rulebook,
         option: Ud32Option::CONFIRMED,
         candidates_at: input_location(&args.candidates),
+        revise: inputs.revise.as_ref(),
     }) {
         Ok(plan) => plan,
         Err(found) => return report.fail(&found),

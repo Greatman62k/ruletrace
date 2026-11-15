@@ -40,6 +40,12 @@ pub struct ReviseArgs {
     pub revision: RevisionNumber,
     /// The reviewer feedback file.
     pub feedback: PathBuf,
+    /// Command-line position of the `--revise-rule` value.
+    pub rule_at: usize,
+    /// Command-line position of the `--revise-revision` value.
+    pub revision_at: usize,
+    /// Command-line position of the `--feedback-file` value.
+    pub feedback_at: usize,
 }
 
 /// The parsed arguments of `ruletrace-ai propose`.
@@ -65,7 +71,7 @@ pub struct ProposeArgs {
     pub revise: Option<ReviseArgs>,
 }
 
-fn at_argument(index: usize, name: Option<&str>) -> Location {
+pub(crate) fn at_argument(index: usize, name: Option<&str>) -> Location {
     Location::Cli(CliLocation::Argument {
         position: u32::try_from(index).unwrap_or(u32::MAX),
         name: name.map(str::to_owned),
@@ -195,7 +201,7 @@ fn revise_of(given: &Given<'_>, problems: &mut Vec<Diagnostic>) -> Option<Revise
     for name in names.iter().filter(|n| !given.contains_key(*n)) {
         problems.push(missing(name));
     }
-    let (Some((rule_at, rule)), Some((rev_at, rev)), Some((_, feedback))) = (
+    let (Some((rule_at, rule)), Some((rev_at, rev)), Some((feedback_at, feedback))) = (
         given.get("--revise-rule"),
         given.get("--revise-revision"),
         given.get("--feedback-file"),
@@ -229,6 +235,9 @@ fn revise_of(given: &Given<'_>, problems: &mut Vec<Diagnostic>) -> Option<Revise
         rule: rule.ok()?,
         revision: revision.ok()?,
         feedback: PathBuf::from(feedback),
+        rule_at: *rule_at,
+        revision_at: *rev_at,
+        feedback_at: *feedback_at,
     })
 }
 

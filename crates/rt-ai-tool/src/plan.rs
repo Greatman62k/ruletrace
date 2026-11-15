@@ -3,6 +3,7 @@
 
 use crate::config::AiConfig;
 use crate::decls::declarations;
+use crate::revise::ReviseContext;
 use crate::txlog::LogContext;
 use crate::vocab::{vocabulary, Ud32Option};
 use rt_ai_adapter::{ProviderRequest, RequestId};
@@ -47,6 +48,8 @@ pub struct PlanInput<'a> {
     pub option: Ud32Option,
     /// Location of the candidates input, for `RT-AI-0304`.
     pub candidates_at: Location,
+    /// The revision request, put into every request of the run.
+    pub revise: Option<&'a ReviseContext>,
 }
 
 /// One Provider_Request with its canonical bytes and identifier.
@@ -212,6 +215,7 @@ struct Shared {
     config: AiConfig,
     declarations: Value<()>,
     vocabulary: Value<()>,
+    revise: Value<()>,
 }
 
 impl Shared {
@@ -224,7 +228,7 @@ impl Shared {
                 ("clauses".to_owned(), Value::array(clauses)),
                 ("declarations".to_owned(), self.declarations.clone()),
                 ("vocabulary".to_owned(), self.vocabulary.clone()),
-                ("revise".to_owned(), Value::null()),
+                ("revise".to_owned(), self.revise.clone()),
             ],
         }
     }
@@ -301,10 +305,15 @@ pub fn build_plan(input: &PlanInput<'_>) -> Result<RunPlan, Vec<Diagnostic>> {
     else {
         return Err(cannot_build(at));
     };
+    let revise = match input.revise {
+        None => Value::null(),
+        Some(context) => context.value().ok_or_else(|| cannot_build(at))?,
+    };
     let shared = Shared {
         config: input.config.clone(),
         declarations,
         vocabulary,
+        revise,
     };
     // Size of the object with no clauses; each clause adds its own bytes and
     // one comma between neighbours.
@@ -313,6 +322,12 @@ pub fn build_plan(input: &PlanInput<'_>) -> Result<RunPlan, Vec<Diagnostic>> {
         .canonical_bytes()
         .ok_or_else(|| cannot_build(at))?
         .len();
+    if empty > MAX_REQUEST_BYTES {
+        return Err(vec![invalid(
+            at,
+            format!("the request has {empty} bytes before any clause, above {MAX_REQUEST_BYTES}"),
+        )]);
+    }
     let max_clauses = usize::try_from(input.config.max_clauses_per_request).unwrap_or(usize::MAX);
     let mut chunks: Vec<Vec<(Checked<'_>, Value<()>)>> = Vec::new();
     let mut current: Vec<(Checked<'_>, Value<()>)> = Vec::new();

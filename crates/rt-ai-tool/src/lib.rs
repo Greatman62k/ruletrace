@@ -28,6 +28,7 @@ mod raw;
 mod reader;
 mod redact;
 pub mod response;
+mod revise;
 mod run;
 mod scan;
 mod secret;
@@ -94,6 +95,8 @@ mod tests_response_closed;
 #[cfg(test)]
 mod tests_response_objects;
 #[cfg(test)]
+mod tests_revise;
+#[cfg(test)]
 mod tests_rig;
 #[cfg(test)]
 mod tests_run;
@@ -131,6 +134,7 @@ pub use plan::{
     TASK,
 };
 pub use redact::{Redactor, REDACTED};
+pub use revise::{ReviseContext, MAX_FEEDBACK_BYTES};
 pub use run::{run_requests, RunInput, RunReport};
 pub use store::{
     already_stored_warning, batch_exists, batch_path, store_batch, FailureOutcome, StoreFailure,

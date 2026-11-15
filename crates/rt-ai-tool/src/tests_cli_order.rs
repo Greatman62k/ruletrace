@@ -192,19 +192,3 @@ fn an_earlier_stage_decides_when_a_later_stage_also_fails() {
     let ran = run_std(&fixture.consented());
     assert_eq!(ran.codes(), ["RT-CLI-0003"]);
 }
-
-#[test]
-fn a_revision_request_is_refused_because_this_build_has_no_revision_proposals() {
-    let fixture = Fixture::new("order-revise");
-    let ran = run_std(&fixture.args(&[
-        "--revise-rule",
-        "r.1",
-        "--revise-revision",
-        "1",
-        "--feedback-file",
-        "f.txt",
-    ]));
-    assert_eq!(ran.code, ExitCode::InvalidInput);
-    assert_eq!(ran.codes(), ["RT-CLI-0004"]);
-    assert_nothing_written(&fixture);
-}

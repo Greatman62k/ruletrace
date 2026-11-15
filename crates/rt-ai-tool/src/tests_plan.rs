@@ -22,10 +22,10 @@ const RULES_HASH: &str = "55887559197c793ed287815f2b33d45f454d0a045b92edf84d7d60
 const ID_RANK: &str = "caa07c4e3a8015480edcb28b348329db8acef723c12e144fca7a417e6027d952";
 const ID_THRESHOLD: &str = "354981454504a7648334cde6dfc516cbe143ea114c51cc9bbc740365f079e38d";
 
-const HEAD: &str = r#"{"v":1,"task":"propose_rules","model":"model-1","limits":{"deadline_s":60,"attempt_s":20,"retries":2,"response_bytes":1048576},"clauses":["#;
+pub(crate) const HEAD: &str = r#"{"v":1,"task":"propose_rules","model":"model-1","limits":{"deadline_s":60,"attempt_s":20,"retries":2,"response_bytes":1048576},"clauses":["#;
 const DECLS: &str = r#","declarations":{"ir_version":"1","inputs":[{"name":"age","type":"number"}],"enums":[],"sets":[],"collections":[],"highest_revision":{}},"#;
 const TAIL: &str = r#","revise":null}"#;
-const VOCAB_RANK: &str = r#""vocabulary":{"rule_kinds":["eligibility","derived","weighted_score","ranking","default"],"operations":["add","sub","mul","div","eq","ne","lt","le","gt","ge","and","or","not","in","field","ref","sum","min","max","count","round","rank_reference"],"types":["number","boolean","text","date","enum"],"rounding_modes":["half_even","half_away_from_zero","toward_zero"],"unsupported":[{"name":"bracket_generation","capability":"bracket generation"},{"name":"prize_allocation","capability":"prize allocation"},{"name":"progression","capability":"tournament progression"},{"name":"seeding","capability":"seeding"},{"name":"slot_allocation","capability":"slot-based qualification"}]}"#;
+pub(crate) const VOCAB_RANK: &str = r#""vocabulary":{"rule_kinds":["eligibility","derived","weighted_score","ranking","default"],"operations":["add","sub","mul","div","eq","ne","lt","le","gt","ge","and","or","not","in","field","ref","sum","min","max","count","round","rank_reference"],"types":["number","boolean","text","date","enum"],"rounding_modes":["half_even","half_away_from_zero","toward_zero"],"unsupported":[{"name":"bracket_generation","capability":"bracket generation"},{"name":"prize_allocation","capability":"prize allocation"},{"name":"progression","capability":"tournament progression"},{"name":"seeding","capability":"seeding"},{"name":"slot_allocation","capability":"slot-based qualification"}]}"#;
 const VOCAB_THRESHOLD: &str = r#""vocabulary":{"rule_kinds":["eligibility","derived","weighted_score","ranking","default"],"operations":["add","sub","mul","div","eq","ne","lt","le","gt","ge","and","or","not","in","field","ref","sum","min","max","count","round"],"types":["number","boolean","text","date","enum"],"rounding_modes":["half_even","half_away_from_zero","toward_zero"],"unsupported":[{"name":"bracket_generation","capability":"bracket generation"},{"name":"prize_allocation","capability":"prize allocation"},{"name":"progression","capability":"tournament progression"},{"name":"rank_reference","capability":"rank reference"},{"name":"seeding","capability":"seeding"},{"name":"slot_allocation","capability":"slot-based qualification"}]}"#;
 
 fn clauses_text() -> String {
@@ -133,6 +133,7 @@ fn plan_for(
         candidates,
         rulebook: rb,
         option,
+        revise: None,
         candidates_at: candidates_at(),
     })
 }
