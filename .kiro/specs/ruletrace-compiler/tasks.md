@@ -820,7 +820,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 23.35, 23.36, 30.1, 30.2, 27.8_
     - Design §9.3
 
-  - [-] 8.4 Implement `rt-ai-tool` configuration, consent, credential and redaction
+  - [x] 8.4 Implement `rt-ai-tool` configuration, consent, credential and redaction
     - Parse the TOML AI_Configuration with `toml_edit` (parse-only, with line and column spans) and record the dependency justification. Run the checks in the exact order of Req 28 criterion 17: inline-secret and key-like field rejection (`RT-AI-0003`), limit ranges (`0005`), endpoint https except loopback (`0004`), enabled state (`0001`), provider (`0006`), consent equal to the documents of the run (`0008`), then credential (`0007`) read last from the named environment variable only. Support the `mock-replay` provider kind with no endpoint and no credential.
     - Implement `Credential` (redacted `Debug`, no `Display`), the single `Out` type applying `Redactor` (also the `Bearer <value>` form), the Transmission_Log append before every attempt (no text, no credential, `RT-AI-0010` on failure), and the permission Warning.
     - Observable: a config with an inline secret exits 2 with `RT-AI-0003` and sends nothing, and a canary credential appears in no output.
