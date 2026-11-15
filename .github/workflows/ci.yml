@@ -264,6 +264,21 @@ jobs:
             cargo test --workspace --all-features --no-fail-fast $AUX_EXCLUDE --target-dir target/core-only \
               -- --skip ai_profile_
           } 2>&1 | tee ci-output/core-only.log
+      - name: Core-only build holds no ruletrace-ai
+        # The Property 41 cells with the tool present use an inert file when the real executable is
+        # absent. This step makes sure that the core-only build really has no real one.
+        run: |
+          test -x target/core-only/debug/ruletrace
+          for name in ruletrace-ai ruletrace-ai.exe; do
+            if [ -e "target/core-only/debug/$name" ]; then
+              echo "target/core-only/debug/$name exists: the core-only build holds ruletrace-ai" >&2
+              exit 1
+            fi
+          done
+          if ls target/core-only/debug/deps 2>/dev/null | grep -Eq '^(ruletrace_ai|rt_ai_tool)'; then
+            echo "an AI tool artifact is in the core-only build" >&2
+            exit 1
+          fi
       - name: Resolved tree has no network or AI crate (check-tree)
         run: |
           set -o pipefail

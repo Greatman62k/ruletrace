@@ -689,12 +689,14 @@ fn the_cells_differ_in_what_is_visible_to_ruletrace() -> TestResult {
 
 /// A real run of the cell with a credential, as the starting point of the
 /// tests of the checks themselves.
-fn credential_cell() -> Result<(TempDir, Setup, Tree, Surfaces), Box<dyn std::error::Error>> {
+fn credential_cell(
+    label: &str,
+) -> Result<(TempDir, Setup, Tree, Surfaces), Box<dyn std::error::Error>> {
     let demo = demo_dir();
     let runbook = parse_runbook(&fs::read_to_string(demo.join("RUNBOOK.md"))?)?;
     let steps = runbook.steps_for("hand")?;
     let source_bin = bin_dir()?;
-    let base = TempDir::new("mutant");
+    let base = TempDir::new(label);
     let cell = Cell {
         tool: false,
         config: true,
@@ -712,7 +714,7 @@ fn credential_cell() -> Result<(TempDir, Setup, Tree, Surfaces), Box<dyn std::er
 
 #[test]
 fn the_canary_check_detects_a_leak_into_standard_error_a_file_and_a_path() -> TestResult {
-    let (_base, _setup, _before, clean) = credential_cell()?;
+    let (_base, _setup, _before, clean) = credential_cell("mutant-canary")?;
     assert_eq!(find_leaks(&clean), Vec::<String>::new(), "a clean run");
 
     let mut stderr_leak = Surfaces {
@@ -775,7 +777,7 @@ fn the_canary_check_detects_a_leak_into_standard_error_a_file_and_a_path() -> Te
 
 #[test]
 fn the_planted_file_check_detects_a_changed_a_removed_and_a_new_file() -> TestResult {
-    let (_base, setup, before, run) = credential_cell()?;
+    let (_base, setup, before, run) = credential_cell("mutant-planted")?;
     assert_eq!(changed_planted(&before, &run.after), Vec::<String>::new());
     let new = produced(&before, &run.after);
     assert!(new.files.contains_key("root/work/ledger.jsonl"));
