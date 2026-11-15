@@ -75,7 +75,7 @@ UD-3 final choice and sub-option (R-128 or R-Big; preferred bounded rational, pe
 | 29 | 16.15 (no other exit code from ruletrace) | Application exit codes | No conflict. The Demonstration_Executables are separate executables with their own table (31.12), which returns the same code as ruletrace evaluate for the same inputs. |
 | 30 | 24.3 (no file access in Core_Crates) | Application binaries read and write files | No conflict. Application_Layer library crates get the same restrictions (31.11). Only the Demonstration_Executables open the files that their arguments name. |
 | 31 | 28.11 (public documents only) | Real documents in the Demo_Corpus | Kept, extended by 28.21 and 33.2 to 33.5. |
-| 32 | 30.1 and 23.x (a rejected Provider_Response is never stored; no raw response is kept) | A Recorded_Provider_Script needs the unmodified response bytes | Not silently changed. UD-36 (Recommended-pending) records three capture options. 27.3 stays unchanged under the recommended option 1. |
+| 32 | 30.1 and 23.x (a rejected Provider_Response is never stored; no raw response is kept) | A Recorded_Provider_Script needs the unmodified response bytes | Not silently changed. UD-36 (Confirmed, option 1; see tools/decisions/UD-36.md) records three capture options. 27.3 stays unchanged under the recommended option 1. |
 | 33 | 18.x and 27.9 (ruletrace independent of AI) | Demonstration flow uses ruletrace-ai and ruletrace together | No conflict. The flow uses the existing executables only. The acceptance test also asserts the dependency tree of ruletrace (33.15). |
 
 ### 5.2 Checks
@@ -86,7 +86,7 @@ UD-3 final choice and sub-option (R-128 or R-Big; preferred bounded rational, pe
 
 ### 5.3 Open points that need the user
 
-UD-32 (rank-based qualification: Threshold_Only or Rank_Reference), UD-34 (choice of the real public documents), UD-35 (real or synthetic Competition_Data), UD-33 (confirm the separate Demonstration_Executables), UD-36 (capture of the recorded provider response).
+UD-32 (rank-based qualification: Threshold_Only or Rank_Reference), UD-34 (choice of the real public documents), UD-35 (real or synthetic Competition_Data), UD-33 (confirm the separate Demonstration_Executables), UD-36 (capture of the recorded provider response; now Confirmed, option 1, see `tools/decisions/UD-36.md`).
 
 ### 5.4 Follow-up for later phases (not done here)
 
