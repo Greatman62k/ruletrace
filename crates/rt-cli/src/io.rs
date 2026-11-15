@@ -348,6 +348,87 @@ fn restore(fs: &dyn Fs, files: &[(&Path, &[u8])], previous: &[Option<Vec<u8>>], 
     }
 }
 
+/// A scratch directory under the cargo target directory, for the tests of the
+/// adoption commit on the real file system. It lives here because `io.rs` is
+/// the only module that may touch files.
+#[cfg(test)]
+pub(crate) mod target_scratch {
+    use std::collections::BTreeMap;
+    use std::path::{Path, PathBuf};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static NEXT: AtomicUsize = AtomicUsize::new(0);
+
+    /// A scratch directory that is removed again when dropped.
+    pub(crate) struct Dir(pub(crate) PathBuf);
+
+    impl Dir {
+        pub(crate) fn new(label: &str) -> Dir {
+            let n = NEXT.fetch_add(1, Ordering::SeqCst);
+            // Cargo runs unit tests with the package directory as the working
+            // directory, so this stays under the workspace target directory.
+            // The path is absolute because the tests rebase absolute names.
+            let path = std::path::absolute("../../target/rt-cli-real-fs-tests")
+                .unwrap()
+                .join(format!("{}-{label}-{n}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&path);
+            std::fs::create_dir_all(&path).unwrap();
+            Dir(path)
+        }
+
+        /// Writes the files of an in-memory state to this directory.
+        pub(crate) fn load(&self, state: &BTreeMap<PathBuf, Vec<u8>>) {
+            for (name, bytes) in state {
+                let path = self.0.join(name);
+                std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+                std::fs::write(path, bytes).unwrap();
+            }
+        }
+
+        /// Every regular file of this directory except lock files, by
+        /// relative name.
+        pub(crate) fn state(&self) -> BTreeMap<PathBuf, Vec<u8>> {
+            fn walk(root: &Path, dir: &Path, out: &mut BTreeMap<PathBuf, Vec<u8>>) {
+                for entry in std::fs::read_dir(dir).unwrap() {
+                    let path = entry.unwrap().path();
+                    if path.is_dir() {
+                        walk(root, &path, out);
+                    } else if path.extension().is_none_or(|e| e != "lock")
+                        && !path
+                            .file_name()
+                            .unwrap()
+                            .to_string_lossy()
+                            .starts_with("out-")
+                    {
+                        let name = path.strip_prefix(root).unwrap().to_path_buf();
+                        out.insert(name, std::fs::read(&path).unwrap());
+                    }
+                }
+            }
+            let mut out = BTreeMap::new();
+            walk(&self.0, &self.0, &mut out);
+            out
+        }
+
+        /// Every entry name of this directory, lock files and outputs
+        /// included.
+        pub(crate) fn names(&self) -> Vec<String> {
+            let mut names: Vec<String> = std::fs::read_dir(&self.0)
+                .unwrap()
+                .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+                .collect();
+            names.sort();
+            names
+        }
+    }
+
+    impl Drop for Dir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+}
+
 /// A scratch directory on the real file system, for tests of [`StdFs`]. It
 /// lives here because `io.rs` is the only module that may touch files.
 #[cfg(test)]

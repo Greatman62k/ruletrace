@@ -29,7 +29,6 @@ use rt_proposals::{
 
 const CASES: u32 = 512;
 const SEED: [u8; 32] = *b"ruletrace-property-16-seed-0001!";
-const SEED_VARIABLE: &str = "RT_PROPTEST_SEED";
 const JOURNAL: &str = "ledger.jsonl.journal";
 const CLAUSE1: &str = "1. A competitor is eligible if age is at least 16 and holds a licence.";
 
@@ -512,17 +511,10 @@ fn strategy() -> impl Strategy<Value = (Params, Vec<RawFault>)> {
     (params, faults)
 }
 
-/// The generator seed. The default is fixed so that a run reproduces; the
-/// environment variable is read here only, to explore other seeds, and a
-/// value is hashed to 32 bytes so any text works.
+/// The generator seed. It is fixed so that a run reproduces; vary it by
+/// changing the `SEED` constant.
 fn seed() -> ([u8; 32], String) {
-    let Ok(text) = std::env::var(SEED_VARIABLE) else {
-        return (SEED, format!("default (set {SEED_VARIABLE} to override)"));
-    };
-    let hex = sha256(text.as_bytes());
-    let mut bytes = [0u8; 32];
-    bytes.copy_from_slice(&hex.as_str().as_bytes()[..32]);
-    (bytes, format!("{SEED_VARIABLE}={text}"))
+    (SEED, "fixed".to_string())
 }
 
 /// Property 16 over generated proposals and one or two generated faults.

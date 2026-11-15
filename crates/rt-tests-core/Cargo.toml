@@ -27,7 +27,6 @@ rt-ir = { path = "../rt-ir" }
 rt-hash = { path = "../rt-hash" }
 rt-json = { path = "../rt-json" }
 rt-ledger = { path = "../rt-ledger" }
-rt-review = { path = "../rt-review" }
 rt-proposals = { path = "../rt-proposals" }
 rt-validate = { path = "../rt-validate" }
 rt-compile = { path = "../rt-compile" }

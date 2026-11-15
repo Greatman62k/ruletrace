@@ -334,6 +334,31 @@ fn revision_exhaustion_is_rt_apr_0210() {
 }
 
 #[test]
+fn exhaustion_leaves_the_rulebook_unchanged() {
+    let rb = base();
+    let b = batch_with(&rb, "req-7b", &[("elig.basic", "eligible")]);
+    let mut full = rb.clone();
+    full.revisions[0].key.revision = RevisionNumber::new(u32::MAX).unwrap();
+    let before = full.clone();
+    let pending = rt_proposals::pending_proposals(std::slice::from_ref(&b), &full);
+    assert_eq!(pending.len(), 1);
+    let err = prospective_adoption(&full, &pending[0]).unwrap_err();
+    assert_eq!(err.code(), Code::ReviewRevisionExhausted);
+    assert_eq!(full, before);
+}
+
+#[test]
+fn one_below_the_highest_revision_number_still_adopts_as_the_highest() {
+    let rb = base();
+    let b = batch_with(&rb, "req-7c", &[("elig.basic", "eligible")]);
+    let mut near = rb.clone();
+    near.revisions[0].key.revision = RevisionNumber::new(u32::MAX - 1).unwrap();
+    let pending = rt_proposals::pending_proposals(std::slice::from_ref(&b), &near);
+    let ok = prospective_adoption(&near, &pending[0]).unwrap();
+    assert_eq!(ok.revision.get(), u32::MAX);
+}
+
+#[test]
 fn an_existing_revision_still_changes_only_the_ledger() {
     let rb = base();
     let b = batch_with(&rb, "req-8", &[("elig.new", "eligible2")]);

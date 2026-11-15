@@ -432,7 +432,6 @@ dependencies = [
  "rt-ledger",
  "rt-numeric",
  "rt-proposals",
- "rt-review",
  "rt-source",
  "rt-srcmodel",
  "rt-trace",

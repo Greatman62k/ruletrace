@@ -13,62 +13,14 @@ use super::commit_tests::{
 };
 use super::fault_tests::{Fault, FaultFs};
 use super::*;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use crate::io::target_scratch::Dir;
+use std::sync::atomic::Ordering;
 use std::sync::{Barrier, Mutex};
 
 const JOURNAL: &str = "ledger.jsonl.journal";
 const NAMES: [&str; 4] = ["rb.json", "ledger.jsonl", "model.json", "store"];
 
-static NEXT: AtomicUsize = AtomicUsize::new(0);
-
-/// A scratch directory that is removed again when dropped.
-struct Dir(PathBuf);
-
 impl Dir {
-    fn new(label: &str) -> Dir {
-        let n = NEXT.fetch_add(1, Ordering::SeqCst);
-        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../target/rt-cli-real-fs-tests")
-            .join(format!("{}-{label}-{n}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&path);
-        std::fs::create_dir_all(&path).unwrap();
-        Dir(path)
-    }
-
-    /// Writes the files of an in-memory state to this directory.
-    fn load(&self, state: &BTreeMap<PathBuf, Vec<u8>>) {
-        for (name, bytes) in state {
-            let path = self.0.join(name);
-            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-            std::fs::write(path, bytes).unwrap();
-        }
-    }
-
-    /// Every regular file of this directory except lock files, by relative
-    /// name.
-    fn state(&self) -> BTreeMap<PathBuf, Vec<u8>> {
-        fn walk(root: &Path, dir: &Path, out: &mut BTreeMap<PathBuf, Vec<u8>>) {
-            for entry in std::fs::read_dir(dir).unwrap() {
-                let path = entry.unwrap().path();
-                if path.is_dir() {
-                    walk(root, &path, out);
-                } else if path.extension().is_none_or(|e| e != "lock")
-                    && !path
-                        .file_name()
-                        .unwrap()
-                        .to_string_lossy()
-                        .starts_with("out-")
-                {
-                    let name = path.strip_prefix(root).unwrap().to_path_buf();
-                    out.insert(name, std::fs::read(&path).unwrap());
-                }
-            }
-        }
-        let mut out = BTreeMap::new();
-        walk(&self.0, &self.0, &mut out);
-        out
-    }
-
     /// The arguments with the file names of the fixture placed in this
     /// directory.
     fn args(&self, args: &[OsString]) -> Vec<OsString> {
@@ -87,22 +39,6 @@ impl Dir {
 
     fn run(&self, args: &[OsString]) -> Outcome {
         run(&self.args(args), &StdFs)
-    }
-
-    /// Every entry name of this directory, lock files and outputs included.
-    fn names(&self) -> Vec<String> {
-        let mut names: Vec<String> = std::fs::read_dir(&self.0)
-            .unwrap()
-            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
-            .collect();
-        names.sort();
-        names
-    }
-}
-
-impl Drop for Dir {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.0);
     }
 }
 
