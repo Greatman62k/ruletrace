@@ -1,7 +1,9 @@
 //! Tests of `plan_review`.
 
 use super::*;
-use rt_foundation::{Code, DocumentId, InputId, RevisionNumber, RuleId, Severity};
+use rt_foundation::{
+    CliLocation, Code, DocumentId, InputId, Location, RevisionNumber, RuleId, Severity,
+};
 use rt_hash::{sha256, Sha256Hex};
 use rt_ir::{parse_rulebook, rule_content_hash, Rulebook};
 use rt_json::ParseLimits;
@@ -77,6 +79,26 @@ fn hash_of(rb: &Rulebook, id: &str) -> Sha256Hex {
     rule_content_hash(&rb.ir_version, rev, &rb.documents).unwrap()
 }
 
+fn site(position: u32, name: &str) -> Location {
+    Location::Cli(CliLocation::Argument {
+        position,
+        name: Some(name.to_owned()),
+    })
+}
+
+/// Distinct, non-zero positions, so that a refusal that picks the wrong one,
+/// or none, is detected.
+fn sites() -> DecisionSites {
+    DecisionSites {
+        rule: site(9, "--rule"),
+        revision: site(11, "--revision"),
+        content_hash: site(13, "--content-hash"),
+        reviewer: site(15, "--reviewer"),
+        time: site(17, "--time"),
+        reason: site(19, "--reason"),
+    }
+}
+
 fn request(rb: &Rulebook, id: &str, action: ReviewAction) -> ReviewDecision {
     ReviewDecision {
         rule: RuleId::new(id).unwrap(),
@@ -86,6 +108,7 @@ fn request(rb: &Rulebook, id: &str, action: ReviewAction) -> ReviewDecision {
         time: "2026-11-14T09:00:00Z".to_owned(),
         action,
         batch_identities: AiIdentitySet::default(),
+        sites: sites(),
     }
 }
 
@@ -183,6 +206,7 @@ fn stale_hash_is_one_diagnostic_and_no_bytes() {
     let d = refusal(plan_review(&rb, &ApprovalLedger::empty(), &req, &sources()));
     assert_eq!(d.code(), Code::ReviewStaleHash);
     assert_eq!(d.severity(), Severity::Error);
+    assert_eq!(d.primary(), &site(13, "--content-hash"));
 }
 
 #[test]
@@ -192,6 +216,7 @@ fn missing_target_revision_and_rule() {
     req.revision = RevisionNumber::new(2).unwrap();
     let d = refusal(plan_review(&rb, &ApprovalLedger::empty(), &req, &sources()));
     assert_eq!(d.code(), Code::ReviewTargetNotFound);
+    assert_eq!(d.primary(), &site(9, "--rule"));
     let mut req = request(&rb, "elig.basic", ReviewAction::Approve);
     req.rule = RuleId::new("nope").unwrap();
     let d = refusal(plan_review(&rb, &ApprovalLedger::empty(), &req, &sources()));
@@ -212,6 +237,7 @@ fn reviewer_must_be_valid_and_not_an_ai_identity() {
         req.reviewer = name.to_owned();
         let d = refusal(plan_review(&rb, &ApprovalLedger::empty(), &req, &sources()));
         assert_eq!(d.code(), code, "reviewer {name:?}");
+        assert_eq!(d.primary(), &site(15, "--reviewer"), "reviewer {name:?}");
     }
     // Exact comparison: a different spelling is accepted (UD-23, R-8).
     let mut req = request(&rb, "elig.ai", ReviewAction::Approve);
@@ -232,6 +258,7 @@ fn reason_and_time_are_checked() {
         let req = request(&rb, "elig.basic", ReviewAction::Reject { reason });
         let d = refusal(plan_review(&rb, &ApprovalLedger::empty(), &req, &sources()));
         assert_eq!(d.code(), Code::ReviewReasonInvalid);
+        assert_eq!(d.primary(), &site(19, "--reason"));
     }
     let ok = request(
         &rb,
@@ -245,6 +272,7 @@ fn reason_and_time_are_checked() {
     req.time = "yesterday".to_owned();
     let d = refusal(plan_review(&rb, &ApprovalLedger::empty(), &req, &sources()));
     assert_eq!(d.code(), Code::CliArgumentInvalid);
+    assert_eq!(d.primary(), &site(17, "--time"));
 }
 
 #[test]
@@ -260,6 +288,7 @@ fn a_decided_revision_cannot_be_decided_again() {
             &sources(),
         ));
         assert_eq!(d.code(), Code::ReviewInvalidTransition);
+        assert_eq!(d.primary(), &site(11, "--revision"));
     }
     let rejected = plan_review(
         &rb,
@@ -316,6 +345,7 @@ fn blocking_diagnostic_of_the_rule_refuses_approval_but_not_rejection() {
         &sources(),
     ));
     assert_eq!(d.code(), Code::ReviewBlockingDiagnostic);
+    assert_eq!(d.primary(), &site(9, "--rule"));
     assert!(plan_review(
         &rb,
         &ApprovalLedger::empty(),

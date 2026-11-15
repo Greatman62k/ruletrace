@@ -305,3 +305,80 @@ fn list_of_an_unknown_rule_is_exit_2() {
     assert_eq!(out.code.value(), 2);
     assert!(out.stderr.contains("RT-APR-0206"), "{}", out.stderr);
 }
+
+/// The first rendered `at ...` location line of a refusal.
+fn location_line(stderr: &str) -> &str {
+    stderr
+        .lines()
+        .find(|l| l.trim_start().starts_with("at "))
+        .unwrap_or("")
+        .trim()
+}
+
+fn index_of(args: &[&str], option: &str) -> usize {
+    args.iter().position(|a| *a == option).unwrap()
+}
+
+fn assert_refused_at(fs: &MemFs, args: &[&str], option: &str) {
+    let out = run(&os(args), fs);
+    assert_ne!(out.code.value(), 0, "{option}: {}", out.stderr);
+    let line = location_line(&out.stderr);
+    assert!(
+        !line.contains(&format!("at argument 0 ({option})")),
+        "{option}: fabricated position in {line:?}"
+    );
+    // Value diagnostics point at the value, the argument after the option.
+    let real = index_of(args, option) + 1;
+    assert_eq!(line, format!("at argument {real} ({option})"));
+}
+
+#[test]
+fn a_refusal_that_names_an_option_carries_its_real_argv_index() {
+    let hash = content_hash();
+    let wrong = "0".repeat(64);
+
+    let args = decide("approve", &hash, "");
+    assert_refused_at(&files(), &args, "--reviewer");
+
+    let mut args = decide("approve", &hash, "A. Reviewer");
+    let at = index_of(&args, "--time");
+    args[at + 1] = "yesterday";
+    assert_refused_at(&files(), &args, "--time");
+
+    let args = decide("approve", &wrong, "A. Reviewer");
+    assert_refused_at(&files(), &args, "--content-hash");
+
+    let mut args = decide("reject", &hash, "A. Reviewer");
+    let at = index_of(&args, "--reason");
+    args[at + 1] = "";
+    assert_refused_at(&files(), &args, "--reason");
+
+    let mut args = decide("approve", &hash, "A. Reviewer");
+    let at = index_of(&args, "--rule");
+    args[at + 1] = "nope.x";
+    assert_refused_at(&files(), &args, "--rule");
+}
+
+#[test]
+fn a_second_decision_names_the_real_index_of_revision() {
+    let fs = files();
+    let hash = content_hash();
+    let args = decide("approve", &hash, "A. Reviewer");
+    assert_eq!(run(&os(&args), &fs).code.value(), 0);
+    assert_refused_at(&fs, &args, "--revision");
+}
+
+#[test]
+fn a_refused_list_rule_names_its_real_argv_index() {
+    let list = [
+        "review",
+        "list",
+        "--rulebook",
+        "rb.json",
+        "--ledger",
+        "ledger.jsonl",
+        "--rule",
+        "nope",
+    ];
+    assert_refused_at(&files(), &list, "--rule");
+}

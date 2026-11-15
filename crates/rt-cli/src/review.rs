@@ -75,7 +75,11 @@ fn failed_one(d: Diagnostic) -> Done {
 /// Runs the command.
 pub(crate) fn run(args: &ReviewArgs, fs: &dyn Fs) -> Done {
     match &args.command {
-        ReviewCommand::List { rule, revision } => list(args, rule.as_ref(), *revision, fs),
+        ReviewCommand::List {
+            rule,
+            rule_at,
+            revision,
+        } => list(args, rule.as_ref(), rule_at.as_deref(), *revision, fs),
         ReviewCommand::Decide(decide_args) => decide(args, decide_args, fs),
     }
 }
@@ -276,6 +280,7 @@ fn decide_locked(
         // its batch, so no further set is passed. The slice-ai attack test
         // refuses each of them as a Reviewer.
         batch_identities: AiIdentitySet::new(Vec::<String>::new()),
+        sites: (*d.sites).clone(),
     };
     let plan = match plan_review_with_store(
         &loaded.rulebook,
@@ -331,6 +336,7 @@ fn decide_locked(
 fn list(
     args: &ReviewArgs,
     rule: Option<&RuleId>,
+    rule_at: Option<&Location>,
     revision: Option<RevisionNumber>,
     fs: &dyn Fs,
 ) -> Done {
@@ -346,6 +352,12 @@ fn list(
     };
     let rb = &loaded.rulebook;
     let statuses = derive_statuses(rb, &loaded.ledger);
+    // Without `--rule` no argument names the rule, so a refused proposal is
+    // placed at the store it came from.
+    let adoption_at = rule_at.cloned().unwrap_or_else(|| match &args.proposals {
+        Some(dir) => input_location(dir),
+        None => Location::None(Code::ReviewProposalStoreInvalid),
+    });
     // Pending_Proposals are derived from the store and the Rulebook only
     // (Req 26.28). A selection keeps the proposals of that rule, and a
     // revision selection keeps those whose prospective number matches.
@@ -358,7 +370,7 @@ fn list(
                     .as_ref()
                     .is_some_and(|(d, _)| rule.is_none_or(|id| &d.id == id))
             })
-            .map(|p| (p, prospective_adoption(rb, &p)))
+            .map(|p| (p, prospective_adoption(rb, &p, &adoption_at)))
             .filter(|(_, r)| match (revision, r) {
                 (Some(n), Ok(prospective)) => prospective.revision == n,
                 (Some(_), Err(_)) => false,
@@ -382,10 +394,7 @@ fn list(
                 return failed_one(Diagnostic::new(
                     Code::ReviewTargetNotFound,
                     format!("rule '{id}'{which} does not exist in the Rulebook"),
-                    Location::Cli(rt_foundation::CliLocation::Argument {
-                        position: 0,
-                        name: Some("--rule".to_owned()),
-                    }),
+                    adoption_at,
                 ));
             }
             found

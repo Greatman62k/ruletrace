@@ -171,7 +171,7 @@ fn pending_statuses(work: &Work) -> (usize, Vec<ApprovalStatus>, usize, usize) {
     let count = pending.len();
     let adopted: Vec<_> = pending
         .iter()
-        .map(|p| prospective_adoption(&rulebook, p).unwrap().adopted)
+        .map(|p| prospective_adoption(&rulebook, p, &here()).unwrap().adopted)
         .collect();
     rulebook.revisions.extend(adopted);
     let ledger = parse_ledger(&InputId::new(LEDGER).unwrap(), &work.read(LEDGER), limits).unwrap();
@@ -482,4 +482,8 @@ fn a_response_member_that_sets_a_status_is_rejected_whole_and_stores_nothing() {
             std::fs::read(fixture("ledger.empty.jsonl")).unwrap()
         );
     }
+}
+
+fn here() -> rt_foundation::Location {
+    rt_foundation::Location::Cli(rt_foundation::CliLocation::Command("review".to_owned()))
 }

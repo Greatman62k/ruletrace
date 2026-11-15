@@ -90,6 +90,7 @@ fn adoption(rule: &str, revision: u32, hash: Sha256Hex, action: ReviewAction) ->
         time: "2026-11-14T09:00:00Z".to_owned(),
         action,
         batch_identities: AiIdentitySet::default(),
+        sites: sites(),
     }
 }
 
@@ -99,7 +100,7 @@ fn base() -> Rulebook {
 
 fn prospective_of(rb: &Rulebook, b: &Batch, index: usize) -> Prospective {
     let pending = rt_proposals::pending_proposals(std::slice::from_ref(b), rb);
-    prospective_adoption(rb, &pending[index]).unwrap()
+    prospective_adoption(rb, &pending[index], &sites().rule).unwrap()
 }
 
 #[test]
@@ -254,6 +255,7 @@ fn wrong_revision_is_target_not_found_and_wrong_hash_is_stale() {
         store,
     ));
     assert_eq!(d.code(), Code::ReviewTargetNotFound);
+    assert_eq!(d.primary(), &sites().rule);
     let d = refusal(plan_review_with_store(
         &rb,
         &l,
@@ -262,6 +264,7 @@ fn wrong_revision_is_target_not_found_and_wrong_hash_is_stale() {
         store,
     ));
     assert_eq!(d.code(), Code::ReviewStaleHash);
+    assert_eq!(d.primary(), &sites().content_hash);
     let d = refusal(plan_review_with_store(
         &rb,
         &l,
@@ -316,9 +319,10 @@ fn a_draft_hashed_for_another_document_hash_is_refused_at_adoption() {
     other.documents[0].sha256 = sha256(b"a different document");
     assert_ne!(other.documents[0].sha256, rb.documents[0].sha256);
     let pending = rt_proposals::pending_proposals(std::slice::from_ref(&b), &other);
-    let direct = prospective_adoption(&other, &pending[0]).unwrap_err();
+    let direct = prospective_adoption(&other, &pending[0], &sites().rule).unwrap_err();
     assert_eq!(direct.code(), Code::ReviewProposalStoreInvalid);
     assert_eq!(direct.code().id(), "RT-APR-0213");
+    assert_eq!(direct.primary(), &sites().rule);
     assert!(
         direct.message().contains("differs from the recomputed"),
         "{}",
@@ -342,7 +346,7 @@ fn a_draft_that_names_revision_or_origin_does_not_decode() {
         d.json = d.json.replacen("\"kind\"", "\"revision\":9,\"kind\"", 1);
     }
     let pending = rt_proposals::pending_proposals(std::slice::from_ref(&b), &rb);
-    let err = prospective_adoption(&rb, &pending[0]).unwrap_err();
+    let err = prospective_adoption(&rb, &pending[0], &sites().rule).unwrap_err();
     assert_eq!(err.code(), Code::ReviewProposalStoreInvalid);
 }
 
@@ -355,9 +359,10 @@ fn revision_exhaustion_is_rt_apr_0210() {
     top.key.revision = RevisionNumber::new(u32::MAX).unwrap();
     full.revisions.push(top);
     let pending = rt_proposals::pending_proposals(std::slice::from_ref(&b), &full);
-    let err = prospective_adoption(&full, &pending[0]).unwrap_err();
+    let err = prospective_adoption(&full, &pending[0], &sites().rule).unwrap_err();
     assert_eq!(err.code(), Code::ReviewRevisionExhausted);
     assert_eq!(err.code().id(), "RT-APR-0210");
+    assert_eq!(err.primary(), &sites().rule);
 }
 
 #[test]
@@ -369,7 +374,7 @@ fn exhaustion_leaves_the_rulebook_unchanged() {
     let before = full.clone();
     let pending = rt_proposals::pending_proposals(std::slice::from_ref(&b), &full);
     assert_eq!(pending.len(), 1);
-    let err = prospective_adoption(&full, &pending[0]).unwrap_err();
+    let err = prospective_adoption(&full, &pending[0], &sites().rule).unwrap_err();
     assert_eq!(err.code(), Code::ReviewRevisionExhausted);
     assert_eq!(full, before);
 }
@@ -381,7 +386,7 @@ fn one_below_the_highest_revision_number_still_adopts_as_the_highest() {
     let mut near = rb.clone();
     near.revisions[0].key.revision = RevisionNumber::new(u32::MAX - 1).unwrap();
     let pending = rt_proposals::pending_proposals(std::slice::from_ref(&b), &near);
-    let ok = prospective_adoption(&near, &pending[0]).unwrap();
+    let ok = prospective_adoption(&near, &pending[0], &sites().rule).unwrap();
     assert_eq!(ok.revision.get(), u32::MAX);
 }
 
@@ -449,7 +454,7 @@ fn adoption_hashes_equal_the_hand_derived_golden_values() {
         *h = golden(DRAFT_GOLDEN);
     }
     let pending = rt_proposals::pending_proposals(std::slice::from_ref(&b), &rb);
-    let p = prospective_adoption(&rb, &pending[0]).unwrap();
+    let p = prospective_adoption(&rb, &pending[0], &sites().rule).unwrap();
     assert_eq!(p.revision.get(), 1);
     assert_eq!(p.content_hash, golden(REV1_GOLDEN));
     let plan = plan_review_with_store(
@@ -477,7 +482,7 @@ fn a_wrong_stored_draft_hash_is_not_accepted_as_the_golden_one() {
         *h = golden(REV1_GOLDEN);
     }
     let pending = rt_proposals::pending_proposals(std::slice::from_ref(&b), &rb);
-    let err = prospective_adoption(&rb, &pending[0]).unwrap_err();
+    let err = prospective_adoption(&rb, &pending[0], &sites().rule).unwrap_err();
     assert_eq!(err.code(), Code::ReviewProposalStoreInvalid);
 }
 
@@ -529,7 +534,7 @@ fn next_number_is_one_plus_the_maximum_of_this_rule_only() {
     .unwrap();
     let b = batch_with(&rb, "req-m", &[("elig.new", "eligible2")]);
     let pending = rt_proposals::pending_proposals(std::slice::from_ref(&b), &rb);
-    let p = prospective_adoption(&rb, &pending[0]).unwrap();
+    let p = prospective_adoption(&rb, &pending[0], &sites().rule).unwrap();
     assert_eq!(p.revision.get(), 4);
     assert_eq!(p.content_hash, golden(REV4_GOLDEN));
     let plan = plan_review_with_store(

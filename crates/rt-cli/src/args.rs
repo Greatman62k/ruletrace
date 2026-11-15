@@ -8,6 +8,7 @@
 
 use rt_foundation::{CliLocation, Code, Diagnostic, DocumentId, Location, RevisionNumber, RuleId};
 use rt_hash::Sha256Hex;
+use rt_review::DecisionSites;
 use rt_srcmodel::DocumentKind;
 use std::collections::BTreeMap;
 use std::ffi::OsString;
@@ -50,6 +51,8 @@ pub enum ReviewCommand {
     List {
         /// Show only this rule, when given.
         rule: Option<RuleId>,
+        /// Where `--rule` stands on the command line, when given.
+        rule_at: Option<Box<Location>>,
         /// Show only this revision of the rule, when given (needs `rule`).
         revision: Option<RevisionNumber>,
     },
@@ -75,6 +78,8 @@ pub struct DecideArgs {
     pub create_ledger: bool,
     /// The reason of a rejection. `None` for an approval.
     pub reject_reason: Option<String>,
+    /// Where each option stands on the command line.
+    pub sites: Box<DecisionSites>,
 }
 
 /// How Diagnostics are written to standard error (`--output-format`).
@@ -899,16 +904,37 @@ fn parse_review(text: &[String]) -> Result<Invocation, Vec<Diagnostic>> {
     match (problems.is_empty(), rulebook, ledger) {
         (true, Some((_, rulebook)), Some((_, ledger))) => {
             let command = if kind == 0 {
-                ReviewCommand::List { rule, revision }
+                ReviewCommand::List {
+                    rule,
+                    rule_at: rule_given.map(|(at, _)| Box::new(at_argument(at, Some("--rule")))),
+                    revision,
+                }
             } else {
                 match (rule, revision, content_hash, reviewer_given, time_given) {
                     (
                         Some(rule),
                         Some(revision),
                         Some(content_hash),
-                        Some((_, r)),
-                        Some((_, t)),
+                        Some((rs, r)),
+                        Some((ts, t)),
                     ) => ReviewCommand::Decide(DecideArgs {
+                        sites: Box::new(DecisionSites {
+                            rule: at_argument(rule_given.map_or(0, |(at, _)| at), Some("--rule")),
+                            revision: at_argument(
+                                revision_given.map_or(0, |(at, _)| at),
+                                Some("--revision"),
+                            ),
+                            content_hash: at_argument(
+                                hash_given.map_or(0, |(at, _)| at),
+                                Some("--content-hash"),
+                            ),
+                            reviewer: at_argument(rs, Some("--reviewer")),
+                            time: at_argument(ts, Some("--time")),
+                            reason: at_argument(
+                                reason_given.map_or(0, |(at, _)| at),
+                                Some("--reason"),
+                            ),
+                        }),
                         rule,
                         revision,
                         content_hash,

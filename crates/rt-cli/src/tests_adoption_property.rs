@@ -152,7 +152,7 @@ fn build(p: &Params) -> (Fixture, Built) {
         }],
     };
     let pending = pending_proposals(std::slice::from_ref(&batch), &rb);
-    let hash = rt_review::prospective_adoption(&rb, &pending[0])
+    let hash = rt_review::prospective_adoption(&rb, &pending[0], &here())
         .unwrap()
         .content_hash
         .to_string();
@@ -627,4 +627,8 @@ fn the_state_check_rejects_a_mixed_pair_and_an_unguarded_journal() {
     assert_eq!(observe(&fs, &clean.before, &clean.after, "old"), Ok(()));
     let fs = FaultFs::from_map(clean.after.clone());
     assert_eq!(observe(&fs, &clean.before, &clean.after, "new"), Ok(()));
+}
+
+fn here() -> rt_foundation::Location {
+    rt_foundation::Location::Cli(rt_foundation::CliLocation::Command("review".to_owned()))
 }

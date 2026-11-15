@@ -2,7 +2,7 @@
 //! Rulebook bytes (design §3.8.2).
 
 use rt_foundation::{
-    CliLocation, Code, Diagnostic, InputId, Location, RevisionNumber, MAX_CONTAINER_DEPTH,
+    Code, Diagnostic, InputId, Location, RevisionNumber, MAX_CONTAINER_DEPTH,
     MAX_PROPOSAL_BATCH_BYTES, MAX_RULEBOOK_BYTES,
 };
 use rt_hash::Sha256Hex;
@@ -29,19 +29,13 @@ pub(crate) struct Adopted {
     pub bytes: Vec<u8>,
 }
 
-fn arg(name: &str) -> Location {
-    Location::Cli(CliLocation::Argument {
-        position: 0,
-        name: Some(name.to_owned()),
-    })
-}
-
-fn store_invalid(why: String) -> Diagnostic {
-    Diagnostic::new(Code::ReviewProposalStoreInvalid, why, arg("--rule"))
+fn store_invalid(why: String, rule_at: &Location) -> Diagnostic {
+    Diagnostic::new(Code::ReviewProposalStoreInvalid, why, rule_at.clone())
 }
 
 /// Computes the prospective revision and Rule_Content_Hash of a
-/// Pending_Proposal against the current Rulebook.
+/// Pending_Proposal against the current Rulebook. `rule_at` is where the
+/// caller read the rule name, and is the location of every refusal.
 ///
 /// # Errors
 /// `RT-APR-0210` when the next number exceeds 4,294,967,295, and
@@ -52,13 +46,14 @@ fn store_invalid(why: String) -> Diagnostic {
 pub fn prospective_adoption(
     rulebook: &Rulebook,
     pending: &PendingProposal<'_>,
+    rule_at: &Location,
 ) -> Result<Prospective, Diagnostic> {
     let proposal = pending.proposal;
     let Some((draft, stored_hash)) = &proposal.rule else {
-        return Err(store_invalid(format!(
-            "proposal {} carries no rule draft",
-            proposal.proposal_id
-        )));
+        return Err(store_invalid(
+            format!("proposal {} carries no rule draft", proposal.proposal_id),
+            rule_at,
+        ));
     };
     let highest = rulebook
         .revisions
@@ -78,7 +73,7 @@ pub fn prospective_adoption(
                 "rule '{}' has no next revision number after 4294967295",
                 draft.id
             ),
-            arg("--rule"),
+            rule_at.clone(),
         )
     })?;
     let batch = pending.batch;
@@ -93,7 +88,7 @@ pub fn prospective_adoption(
         ai_identities: batch.ai_identities.clone(),
     });
     let input = InputId::new("proposal-store")
-        .map_err(|_| store_invalid("the proposal input name is invalid".to_owned()))?;
+        .map_err(|_| store_invalid("the proposal input name is invalid".to_owned(), rule_at))?;
     let parsed = parse_draft(
         draft.json.as_bytes(),
         &input,
@@ -108,17 +103,23 @@ pub fn prospective_adoption(
             .as_slice()
             .first()
             .map_or_else(|| "unknown".to_owned(), |d| d.message().to_owned());
-        store_invalid(format!(
-            "the stored draft of proposal {} does not decode: {first}",
-            proposal.proposal_id
-        ))
+        store_invalid(
+            format!(
+                "the stored draft of proposal {} does not decode: {first}",
+                proposal.proposal_id
+            ),
+            rule_at,
+        )
     })?;
     let adopted = parsed.into_parts().0;
     if adopted.key.id != draft.id {
-        return Err(store_invalid(format!(
-            "the draft of proposal {} names rule '{}', not '{}'",
-            proposal.proposal_id, adopted.key.id, draft.id
-        )));
+        return Err(store_invalid(
+            format!(
+                "the draft of proposal {} names rule '{}', not '{}'",
+                proposal.proposal_id, adopted.key.id, draft.id
+            ),
+            rule_at,
+        ));
     }
     let unbound = |why: &dyn std::fmt::Debug| {
         Diagnostic::new(
@@ -127,7 +128,7 @@ pub fn prospective_adoption(
                 "the draft of rule '{}' has no approval binding: {why:?}",
                 draft.id
             ),
-            arg("--rule"),
+            rule_at.clone(),
         )
     };
     let recomputed = draft_hash(
@@ -138,10 +139,13 @@ pub fn prospective_adoption(
     )
     .map_err(|e| unbound(&e))?;
     if &recomputed != stored_hash {
-        return Err(store_invalid(format!(
-            "the stored Draft hash {stored_hash} of proposal {} differs from the recomputed {recomputed}",
-            proposal.proposal_id
-        )));
+        return Err(store_invalid(
+            format!(
+                "the stored Draft hash {stored_hash} of proposal {} differs from the recomputed {recomputed}",
+                proposal.proposal_id
+            ),
+            rule_at,
+        ));
     }
     let content_hash = rule_content_hash(&rulebook.ir_version, &adopted, &rulebook.documents)
         .map_err(|e| unbound(&e))?;
@@ -152,11 +156,11 @@ pub fn prospective_adoption(
     })
 }
 
-fn not_found(key: &RuleKey, note: &str) -> Diagnostic {
+fn not_found(key: &RuleKey, note: &str, rule_at: &Location) -> Diagnostic {
     Diagnostic::new(
         Code::ReviewTargetNotFound,
         format!("rule '{}' has no revision {}{note}", key.id, key.revision),
-        arg("--rule"),
+        rule_at.clone(),
     )
     .with_rules(vec![rt_foundation::RuleRef {
         rule: key.id.clone(),
@@ -173,6 +177,7 @@ pub(crate) fn adopt(
     key: &RuleKey,
     named_hash: &Sha256Hex,
     batches: &[Batch],
+    rule_at: &Location,
 ) -> Result<Option<Adopted>, Diagnostic> {
     if rb.revision(key).is_some() {
         return Ok(None);
@@ -187,12 +192,12 @@ pub(crate) fn adopt(
         })
         .collect();
     if candidates.is_empty() {
-        return Err(not_found(key, ""));
+        return Err(not_found(key, "", rule_at));
     }
     let mut found: Vec<Prospective> = Vec::new();
     let mut first_error: Option<Diagnostic> = None;
     for candidate in &candidates {
-        match prospective_adoption(rb, candidate) {
+        match prospective_adoption(rb, candidate, rule_at) {
             Ok(p) => found.push(p),
             Err(e) => {
                 first_error.get_or_insert(e);
@@ -200,7 +205,7 @@ pub(crate) fn adopt(
         }
     }
     if found.is_empty() {
-        return Err(first_error.unwrap_or_else(|| not_found(key, "")));
+        return Err(first_error.unwrap_or_else(|| not_found(key, "", rule_at)));
     }
     let at_revision: Vec<&Prospective> = found
         .iter()
@@ -216,17 +221,27 @@ pub(crate) fn adopt(
         return Err(not_found(
             key,
             &format!("; the next revision to adopt is {next}"),
+            rule_at,
         ));
     };
     let mut next = rb.clone();
     next.revisions.push(chosen.adopted.clone());
-    let text = print_pretty(&next)
-        .map_err(|_| store_invalid("the adopted Rulebook exceeds a count limit".to_owned()))?;
+    let text = print_pretty(&next).map_err(|_| {
+        store_invalid(
+            "the adopted Rulebook exceeds a count limit".to_owned(),
+            rule_at,
+        )
+    })?;
     let bytes = text.into_bytes();
     let input = InputId::new("rulebook")
-        .map_err(|_| store_invalid("the rulebook input name is invalid".to_owned()))?;
+        .map_err(|_| store_invalid("the rulebook input name is invalid".to_owned(), rule_at))?;
     let reparsed = parse_rulebook(&bytes, &input, MAX_RULEBOOK_BYTES, MAX_CONTAINER_DEPTH)
-        .map_err(|_| store_invalid("the adopted Rulebook does not parse back".to_owned()))?
+        .map_err(|_| {
+            store_invalid(
+                "the adopted Rulebook does not parse back".to_owned(),
+                rule_at,
+            )
+        })?
         .into_parts()
         .0;
     Ok(Some(Adopted {

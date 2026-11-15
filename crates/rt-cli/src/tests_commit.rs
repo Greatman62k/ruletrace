@@ -102,7 +102,7 @@ pub(super) fn fixture() -> Fixture {
         }],
     };
     let pending = pending_proposals(std::slice::from_ref(&batch), &rb);
-    let prospective = rt_review::prospective_adoption(&rb, &pending[0]).unwrap();
+    let prospective = rt_review::prospective_adoption(&rb, &pending[0], &here()).unwrap();
     Fixture {
         batch: print_batch(&batch).into_bytes(),
         hash: prospective.content_hash.to_string(),
@@ -642,4 +642,8 @@ fn a_refusal_before_the_commit_leaves_every_file_byte_identical() {
     assert_eq!(out.code.value(), 3, "{}", out.stderr);
     assert!(out.stderr.contains("RT-APR-0203"), "{}", out.stderr);
     assert_eq!(fs.snapshot(), before);
+}
+
+fn here() -> rt_foundation::Location {
+    rt_foundation::Location::Cli(rt_foundation::CliLocation::Command("review".to_owned()))
 }

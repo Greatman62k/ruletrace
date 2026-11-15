@@ -3,8 +3,8 @@
 use crate::adopt::{adopt, Adopted};
 use crate::line::{record_line, NewRecord};
 use rt_foundation::{
-    CliLocation, Code, Diagnostic, DiagnosticState, Location, Rejected, RevisionNumber, RuleId,
-    RuleRef, MAX_CONTAINER_DEPTH, MAX_LEDGER_BYTES,
+    Code, Diagnostic, DiagnosticState, Location, Rejected, RevisionNumber, RuleId, RuleRef,
+    MAX_CONTAINER_DEPTH, MAX_LEDGER_BYTES,
 };
 use rt_hash::Sha256Hex;
 use rt_ir::{rule_content_hash, ApprovalStatus, RuleKey, RuleRevision, Rulebook};
@@ -34,6 +34,24 @@ pub enum ReviewAction {
     },
 }
 
+/// Where the caller read each option of a decision. A refusal that names an
+/// option carries that location, so the library never invents a position.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DecisionSites {
+    /// The `--rule` option.
+    pub rule: Location,
+    /// The `--revision` option.
+    pub revision: Location,
+    /// The `--content-hash` option.
+    pub content_hash: Location,
+    /// The `--reviewer` option.
+    pub reviewer: Location,
+    /// The `--time` option.
+    pub time: Location,
+    /// The `--reason` option.
+    pub reason: Location,
+}
+
 /// One Review_Decision, as the command line states it. Nothing here is read
 /// from the environment, and `time` is the caller-supplied text (Req 5.11).
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -53,6 +71,8 @@ pub struct ReviewDecision {
     /// AI identities recorded outside the Origin, for example in a
     /// Proposal_Store batch.
     pub batch_identities: AiIdentitySet,
+    /// Where each option was read.
+    pub sites: DecisionSites,
 }
 
 /// The result of planning: the exact new bytes of the ledger. Nothing has been
@@ -96,13 +116,6 @@ impl CommitPlan {
     pub fn record_hash(&self) -> &Sha256Hex {
         &self.record_hash
     }
-}
-
-fn arg(name: &str) -> Location {
-    Location::Cli(CliLocation::Argument {
-        position: 0,
-        name: Some(name.to_owned()),
-    })
 }
 
 fn refuse(d: Diagnostic) -> Rejected {
@@ -208,21 +221,21 @@ fn plan(
         id: d.rule.clone(),
         revision: d.revision,
     };
-    let adopted: Option<Adopted> = adopt(rb, &key, &d.content_hash, batches)?;
+    let adopted: Option<Adopted> = adopt(rb, &key, &d.content_hash, batches, &d.sites.rule)?;
     let rb = adopted.as_ref().map_or(rb, |a| &a.rulebook);
     let rev = rb.revision(&key).ok_or_else(|| {
         Diagnostic::new(
             Code::ReviewTargetNotFound,
             format!("rule '{}' has no revision {}", d.rule, d.revision),
-            arg("--rule"),
+            d.sites.rule.clone(),
         )
         .with_rules(rule_ref(&key))
     })?;
 
     // 2. Reviewer (Req 23.15, UD-23).
-    let reviewer = Reviewer::new(&d.reviewer)?;
+    let reviewer = Reviewer::new(&d.reviewer, &d.sites.reviewer)?;
     let known = AiIdentitySet::from_origin(&rev.origin).union(&d.batch_identities);
-    reviewer.check_not_ai(&known)?;
+    reviewer.check_not_ai(&known, &d.sites.reviewer)?;
 
     // 3. Time shape (Req 5.11). The time is stored verbatim and no clock is
     //    read.
@@ -230,7 +243,7 @@ fn plan(
         return Err(Diagnostic::new(
             Code::CliArgumentInvalid,
             "the time must have the shape YYYY-MM-DDTHH:MM:SSZ".to_owned(),
-            arg("--time"),
+            d.sites.time.clone(),
         ));
     }
 
@@ -242,7 +255,7 @@ fn plan(
                 return Err(Diagnostic::new(
                     Code::ReviewReasonInvalid,
                     format!("the reason must have 1 to {MAX_REASON_CHARS} characters"),
-                    arg("--reason"),
+                    d.sites.reason.clone(),
                 )
                 .with_rules(rule_ref(&key)));
             }
@@ -258,7 +271,7 @@ fn plan(
                 "revision {} of rule '{}' is already decided; Approved and Rejected are terminal",
                 d.revision, d.rule
             ),
-            arg("--revision"),
+            d.sites.revision.clone(),
         )
         .with_rules(rule_ref(&key)));
     }
@@ -274,7 +287,7 @@ fn plan(
                 "revision {} of rule '{}' names an undeclared document or one with two hashes, so it has no approval binding",
                 d.revision, d.rule
             ),
-            arg("--rule"),
+            d.sites.rule.clone(),
         )
         .with_rules(rule_ref(&key)));
     };
@@ -285,7 +298,7 @@ fn plan(
                 "the content hash {} differs from the current hash {current}; list the revision again",
                 d.content_hash
             ),
-            arg("--content-hash"),
+            d.sites.content_hash.clone(),
         )
         .with_rules(rule_ref(&key)));
     }
@@ -375,7 +388,7 @@ fn plan(
                     codes.join(", "),
                     first.message()
                 ),
-                arg("--rule"),
+                d.sites.rule.clone(),
             )
             .with_related(blocking.iter().map(|x| x.primary().clone()).collect())
             .with_rules(rule_ref(&key)));

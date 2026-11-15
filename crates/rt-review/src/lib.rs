@@ -36,7 +36,9 @@ mod line;
 mod plan;
 
 pub use adopt::{prospective_adoption, Prospective};
-pub use plan::{plan_review, plan_review_with_store, CommitPlan, ReviewAction, ReviewDecision};
+pub use plan::{
+    plan_review, plan_review_with_store, CommitPlan, DecisionSites, ReviewAction, ReviewDecision,
+};
 
 #[cfg(test)]
 mod tests;

@@ -1,6 +1,6 @@
 //! The `Reviewer` identity (design §3.4.4, UD-23; Req 26.17).
 
-use rt_foundation::{CliLocation, Code, Diagnostic, Location};
+use rt_foundation::{Code, Diagnostic, Location};
 use rt_ir::{Identity, Origin};
 use std::collections::BTreeSet;
 
@@ -58,26 +58,20 @@ impl AiIdentitySet {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Reviewer(Identity);
 
-fn reviewer_location() -> Location {
-    Location::Cli(CliLocation::Argument {
-        position: 0,
-        name: Some("--reviewer".to_owned()),
-    })
-}
-
 impl Reviewer {
-    /// Validates the Reviewer name.
+    /// Validates the Reviewer name. `at` is where the caller read the name,
+    /// so that no position is invented here.
     ///
     /// # Errors
     /// `REVIEW_REVIEWER_INVALID` (`RT-APR-0202`) for empty text or more than
     /// 200 scalar values.
     #[allow(clippy::result_large_err)] // The design §3.4.4 signature returns a Diagnostic.
-    pub fn new(raw: &str) -> Result<Self, Diagnostic> {
+    pub fn new(raw: &str, at: &Location) -> Result<Self, Diagnostic> {
         Identity::new(raw).map(Self).map_err(|e| {
             Diagnostic::new(
                 Code::ReviewReviewerInvalid,
                 format!("reviewer is invalid: {e:?}"),
-                reviewer_location(),
+                at.clone(),
             )
         })
     }
@@ -88,18 +82,19 @@ impl Reviewer {
         self.0.as_str()
     }
 
-    /// Refuses a Reviewer equal to an AI identity.
+    /// Refuses a Reviewer equal to an AI identity. `at` is where the caller
+    /// read the Reviewer name.
     ///
     /// # Errors
     /// `REVIEW_SELF_APPROVAL` (`RT-APR-0201`).
     #[allow(clippy::result_large_err)] // The design §3.4.4 signature returns a Diagnostic.
-    pub fn check_not_ai(&self, known: &AiIdentitySet) -> Result<(), Diagnostic> {
+    pub fn check_not_ai(&self, known: &AiIdentitySet, at: &Location) -> Result<(), Diagnostic> {
         if known.contains(self.as_str()) {
             return Err(Diagnostic::new(
                 Code::ReviewSelfApproval,
                 "the reviewer equals a proposer, provider, model or AI identity of the target"
                     .to_owned(),
-                reviewer_location(),
+                at.clone(),
             ));
         }
         Ok(())
@@ -109,21 +104,32 @@ impl Reviewer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rt_foundation::CliLocation;
+
+    fn at() -> Location {
+        Location::Cli(CliLocation::Argument {
+            position: 14,
+            name: Some("--reviewer".to_owned()),
+        })
+    }
 
     #[test]
     fn reviewer_length_bounds() {
-        assert!(Reviewer::new("").is_err_and(|d| d.code() == Code::ReviewReviewerInvalid));
-        assert!(Reviewer::new(&"é".repeat(200)).is_ok());
-        assert!(Reviewer::new(&"é".repeat(201)).is_err());
+        let invalid = Reviewer::new("", &at()).unwrap_err();
+        assert_eq!(invalid.code(), Code::ReviewReviewerInvalid);
+        assert_eq!(invalid.primary(), &at());
+        assert!(Reviewer::new(&"é".repeat(200), &at()).is_ok());
+        assert!(Reviewer::new(&"é".repeat(201), &at()).is_err());
     }
 
     #[test]
     fn exact_comparison_only() {
         let known = AiIdentitySet::new(["gpt-x"]);
-        assert!(Reviewer::new("GPT-X").unwrap().check_not_ai(&known).is_ok());
-        assert!(Reviewer::new("gpt-x")
-            .unwrap()
-            .check_not_ai(&known)
-            .is_err_and(|d| d.code() == Code::ReviewSelfApproval));
+        let upper = Reviewer::new("GPT-X", &at()).unwrap();
+        assert!(upper.check_not_ai(&known, &at()).is_ok());
+        let same = Reviewer::new("gpt-x", &at()).unwrap();
+        let refused = same.check_not_ai(&known, &at()).unwrap_err();
+        assert_eq!(refused.code(), Code::ReviewSelfApproval);
+        assert_eq!(refused.primary(), &at());
     }
 }
