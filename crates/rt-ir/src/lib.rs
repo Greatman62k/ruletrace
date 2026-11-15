@@ -35,7 +35,7 @@ pub use hash::{draft_hash, rule_content_hash, ContentHashError};
 pub use loc::Loc;
 pub use names::{Date, DateError, Identity, IdentityError, Name, NameError, OpaqueName};
 pub use parse::{parse_draft, parse_rulebook, DECODER_DEPTH_CAP, NODE_FIELDS};
-pub use print::{print_compact, print_pretty};
+pub use print::{print_compact, print_draft, print_pretty};
 pub use rule::{
     AiOrigin, DefaultValue, Direction, Marker, Origin, RuleBody, RuleContent, RuleKey,
     RuleRevision, Span, TieBreaker, Ties, WeightedTerm,

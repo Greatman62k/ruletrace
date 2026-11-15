@@ -147,3 +147,38 @@ fn an_oversized_draft_is_refused_by_the_byte_limit() {
         Code::LimitFileTooLarge
     );
 }
+
+const SHUFFLED: &str = r#"
+{ "spans" : [ { "column":1, "line":3, "end":59, "start":9, "document":"rules.md" } ],
+  "markers" : [ ],
+  "expr" : { "right":{"value":"16","t":"number","node":"num"}, "op":"ge",
+             "left":{"name":"age","t":"number","node":"field"},
+             "t":"boolean", "node":"cmp" },
+  "type":"boolean", "target":"eligible2", "kind":"eligibility",
+  "id":"elig.new" }"#;
+
+const UNRECOGNIZED: &str = r#"{"id":"elig.new","kind":"unrecognized","name":"rank_reference","detail":"the top four qualify","target":"eligible2","type":"boolean","markers":[],"spans":[{"document":"rules.md","start":9,"end":59,"line":3,"column":1}]}"#;
+
+const UNRECOGNIZED_CANONICAL: &str = r#"{"id":"elig.new","kind":"unrecognized","target":"eligible2","type":"boolean","name":"rank_reference","detail":"the top four qualify","markers":[],"spans":[{"document":"rules.md","start":9,"end":59,"line":3,"column":1}]}"#;
+
+fn printed(text: &str) -> String {
+    let rev = parse(text, 1, 64).unwrap();
+    print_draft(&rev.key.id, &rev.content)
+}
+
+#[test]
+fn a_printed_draft_is_the_canonical_compact_text_whatever_the_input_order() {
+    assert_eq!(printed(DRAFT), DRAFT);
+    assert_eq!(printed(SHUFFLED), DRAFT);
+}
+
+#[test]
+fn a_printed_draft_decodes_to_the_same_content() {
+    for text in [DRAFT, SHUFFLED, UNRECOGNIZED] {
+        let first = parse(text, 1, 64).unwrap();
+        let again = parse(&print_draft(&first.key.id, &first.content), 1, 64).unwrap();
+        assert_eq!(again.content, first.content);
+    }
+    assert_eq!(printed(UNRECOGNIZED), UNRECOGNIZED_CANONICAL);
+    assert_eq!(printed(UNRECOGNIZED_CANONICAL), UNRECOGNIZED_CANONICAL);
+}

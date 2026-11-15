@@ -13,13 +13,14 @@
 
 use crate::expr::{Expr, ExprKind, Literal, OpaqueConstruct, Rounding};
 use crate::rule::{
-    AiOrigin, DefaultValue, Marker, Origin, RuleBody, RuleRevision, Span, TieBreaker, WeightedTerm,
+    AiOrigin, DefaultValue, Marker, Origin, RuleBody, RuleContent, RuleRevision, Span, TieBreaker,
+    WeightedTerm,
 };
 use crate::rulebook::{DocumentDecl, Precedence, Rulebook, FORMAT_NAME};
 use crate::types::TypeDecls;
 use rt_foundation::{
-    Code, Diagnostic, InputId, Location, MAX_REVISIONS_PER_RULEBOOK, MAX_RULES_PER_RULEBOOK,
-    MAX_SPANS_PER_RULE,
+    Code, Diagnostic, InputId, Location, RuleId, MAX_REVISIONS_PER_RULEBOOK,
+    MAX_RULES_PER_RULEBOOK, MAX_SPANS_PER_RULE,
 };
 use rt_json::{Kind, ParseLimits, Position, Value};
 use std::collections::BTreeSet;
@@ -400,6 +401,36 @@ fn revision_out(rev: &RuleRevision) -> Out {
         Out::Arr(c.spans.iter().map(span_out).collect()),
     ));
     Out::Obj(members)
+}
+
+fn draft_out(id: &RuleId, c: &RuleContent) -> Out {
+    let mut members: Vec<(String, Out)> = vec![
+        ("id".to_owned(), s(id.as_str())),
+        ("kind".to_owned(), s(c.body.kind_name())),
+        ("target".to_owned(), s(c.target.as_str())),
+    ];
+    if let Some(t) = &c.ty {
+        members.push(("type".to_owned(), Out::Str(t.text())));
+    }
+    members.extend(body_members(&c.body));
+    members.push((
+        "markers".to_owned(),
+        Out::Arr(c.markers.iter().map(marker_out).collect()),
+    ));
+    members.push((
+        "spans".to_owned(),
+        Out::Arr(c.spans.iter().map(span_out).collect()),
+    ));
+    Out::Obj(members)
+}
+
+/// Prints a rule draft in the canonical compact form: the rule object of the
+/// Rulebook without `revision` and `origin`, in the key order of design
+/// §4.1.2. Equal content gives equal bytes whatever key order or spacing the
+/// draft was read from, and [`parse_draft`](crate::parse_draft) accepts it.
+#[must_use]
+pub fn print_draft(id: &RuleId, content: &RuleContent) -> String {
+    write(&draft_out(id, content), false)
 }
 
 /// The kind-specific members that follow `type` in a rule, in canonical order.
