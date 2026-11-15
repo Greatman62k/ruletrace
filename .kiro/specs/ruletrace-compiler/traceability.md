@@ -269,3 +269,17 @@ Other sections changed: design 3.7.5, 3.7.7 and the incomplete-run property.
 A `rule_suggestion` whose rule draft has no `markers` member is accepted and stored with empty markers. The Rule_IR decoder (`rt-ir`, `parse.rs`) treats an absent `markers` as an empty list, and the stored draft is the canonical text with `"markers":[]`, equal in text and Draft hash to the draft that spells the empty list. Test: `tests_accept::a_rule_with_no_markers_member_is_stored_as_the_rule_with_empty_markers`. A mutant that makes `markers` required is killed by it.
 
 Decision (user, 8.8 review): keep the local parser lenient. Req 23.5 now states that the local parser is authoritative (design 3.7.3) and accepts an absent `markers` as empty, while the provider strict schema requires it. The requirement text gained one note and no criterion changed its verdict.
+
+
+## Task 8.15 final follow-ups
+
+User decisions and corrections of the 8.15 review.
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 23 | AI-Assisted Proposal Pipeline | Unchanged | - | - | 23.17: every Provider_Failure message states the attempts made. RT-AI-0104, 0105 and 0108 had no count and now read `<n> attempt(s) failed; the last was <MNEMONIC> (<detail>)`. Code fix, no criterion change |
+| 23 | AI-Assisted Proposal Pipeline | Unchanged | - | - | 23.33 row 4 and 16.17 step 4: a batch whose file stem is not its internal `request_id` is a malformed store entry, `RT-AI-0302` at that file, exit 2, no provider call (user decision). An oversize batch file is `RT-AI-0302`, not `RT-LIM-0001`. Design 3.7.5 |
+| 16 | Minimum End-to-End Vertical Slice | Unchanged | - | - | 16.17 step 4 is "Input load and idempotency check": an input file with a Req 22 key ends the run before the store is read. The 23.33 row order (store before Req 22) is not read as a precedence. Design 3.7.5. Needs user confirmation of this reading |
+| 23 | AI-Assisted Proposal Pipeline | Unchanged | - | - | `--dry-run` does not apply the provider-link check or the store check: it sends nothing. Design 3.9.2 |
+| 5 | Approval and Review State | Unchanged | - | - | User decision (8.16 review): a proposal that reads a sibling's declaration is stored with RT-VAL-0002 and RT-AI-0305 and refused by `review approve` with RT-APR-0205 until the sibling is adopted. Documented in `docs/user-guide/review-order.md`; sibling-aware checking is listed in the design as a possible later feature; task 8.17 carries a note |
+| 7 | Diagnostics Model | Unchanged | - | - | User decision: new task 8.22 removes the invented `position: 0` of `CliLocation::Argument` in review diagnostics (Req 7.14). Cli_Location has no numbered requirement of its own: it is a Glossary term, governed by 7.1, 7.13 and 20.13 |

@@ -920,6 +920,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Under `demo/<name>/`, add `provider/authored-script.json` keyed by the Request_Identifiers that `ruletrace-ai propose --dry-run` prints for the stand-in, every entry labelled `authored` (never described as provider output), `ai/mock-replay.toml`, and the `ai` profile steps of the runbook (s02 `propose`; s03 `review list` then one `approve` or `reject` per proposal, with `--create-ledger` on the first; the same s04 to s07). Include one unsupported clause (so it reaches the Coverage_Statement as `unsupported`) and one rejected proposal with a reason. Extend `classify` to read the store batches and the ledger rejection records. Bless the goldens, including the proposal store and the Transmission_Log.
     - Observable: the `ai` profile acceptance test passes, and the Coverage_Statement classifies every clause or names the unclassified clause.
     - Blocked by: 8.16, 8.21, 6.7, 1.11.
+    - Carried from 8.16 review: the runbook approves proposals in dependency order; a rule reading a sibling's declaration is refused with RT-APR-0205 until that sibling is adopted.
     - _Requirements: 33.6, 33.7, 33.8, 33.9, 33.11, 33.12, 23.25_
     - Design §8.11.4, §8.11.7, §8.11.8, §7.5 (Slice 1)
 
@@ -948,6 +949,14 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Must land before 8.17.
     - _Requirements: 23.16, 23.1, 23.2, 23.9, 27.4_
     - Design §3.9.2
+
+  - [ ] 8.22 Fix fabricated CLI argument positions in review diagnostics
+    - A review refusal that names an argument, for example `--reviewer`, builds a `CliLocation::Argument` with `position: 0`, so the rendered Location reads `at argument 0 (--reviewer)` even when the argument sits elsewhere on the command line. That position is invented, which Req 7.14 forbids. Either make `CliLocation::Argument.position` optional, so a Diagnostic that knows only the name carries no position, or have the CLI pass the real argv index to the review crates. Fix the four sites: `rt-ledger/src/reviewer.rs:63`, `rt-review/src/plan.rs:103`, `rt-review/src/adopt.rs:34` and `rt-cli/src/review.rs:383`. Keep the rendering and the canonical order of Req 7.10 and 7.13 stable for locations that have a position.
+    - Write the regression test first. It runs `ruletrace review approve` with an invalid `--reviewer` and asserts that the rendered Location does not contain `at argument 0 (--reviewer)`, and that it carries either no position or the real argv index. Show that it fails on the current code with exactly that text, then fix and show it passes.
+    - Observable: no review Diagnostic renders an argument position that was not on the command line, and the regression test fails before the fix and passes after.
+    - Blocked by: 8.8.
+    - _Requirements: 7.14, 7.1, 7.13_
+    - Design §3.8, §3.9.1
 
 - [ ] 9. Phase 7: Application layers (`rt-data::tabular`, `prize-check`, `bracket-check`; Demo Slice 2 begins)
   - [ ] 9.1 Implement `rt-data::tabular` (CSV parsing and schema-driven mapping)

@@ -911,6 +911,10 @@ Write algorithm (all within `rt-ai-tool`, via its own `Fs` trait):
 
 If any step before the link fails: remove tmp, `RT-AI-0303`, exit 70, no file in `batches/` (Req 29.19). A temp file that cannot be removed gives the Warning `RT-AI-0307` and changes no outcome. With all eight temp names taken, the `RT-AI-0303` message lists the eight paths so the operator can delete the stale ones. The final file appears whole or not at all. A malformed existing store (unparseable batch file) gives `RT-AI-0302` exit 2 before any provider call.
 
+Batch file name and size (user decision, 8.15 follow-up). A batch is found by the name `batches/<request_id>.json`, so a file whose stem is not its own internal `request_id` would be missed by the idempotency check and a second batch for the same request could be stored beside it. Such a file is a malformed entry: `RT-AI-0302` at that file, exit 2, no provider call. A file larger than `MAX_PROPOSAL_BATCH_BYTES` (16 MiB) is also `RT-AI-0302` and not `RT-LIM-0001`, because Req 23.33 row 4 lists exactly `AI_STORE_INVALID` for a malformed store; a file of exactly the limit is not oversize. The check reads each file with one byte more than the limit so that the parser can see the excess.
+
+Order inside step 4. Req 16.17 names step 4 "Input load and idempotency check" and the table above lists `load_inputs` before `idempotency_check`. The inputs are therefore loaded first, and a Req 22 flag or lifecycle key in an input file (`RT-DGN-0001` to `0003`) ends the run before the store is read. The 23.33 table lists the store row before the Req 22 row, but that row order is not read as a precedence among the failures of one step. Test: `tests_store_invalid::a_lifecycle_key_in_an_input_file_precedes_a_malformed_store`.
+
 #### 3.7.6 Retry and deadline state machine
 
 Pure function `next_step(policy, history, elapsed)`; the loop in the tool calls it, then `clock.wait(d)` and `adapter.attempt(..)`. Defaults: deadline 60 s, per-attempt 20 s, retries 2, waits 2 s then 8 s, no jitter.
@@ -1205,7 +1209,7 @@ max_retries = 2
 max_response_bytes = 1048576
 ```
 
-`--dry-run` builds the Provider_Requests and prints each Request_Identifier, the clauses, the document identifiers and the byte count that a real run would send, then exits 0. It opens no network connection, reads no credential, writes no file (not the store and not the Transmission_Log) and needs no consent because nothing is sent. It lets a person review what would be transmitted and lets an author key an authored script entry (§8.11.7). No requirement forbids it, and Req 27.3 is unaffected (RN-24).
+`--dry-run` builds the Provider_Requests and prints each Request_Identifier, the clauses, the document identifiers and the byte count that a real run would send, then exits 0. It opens no network connection, reads no credential, writes no file (not the store and not the Transmission_Log) and needs no consent because nothing is sent. It lets a person review what would be transmitted and lets an author key an authored script entry (§8.11.7). Because it sends nothing, it does not apply the provider-link check (`RT-AI-0006`) or the Proposal_Store check (`RT-AI-0302`): both checks exist to prevent a provider call (Req 23.33, "no provider call"), and a dry run makes none. A dry run therefore succeeds for a provider kind that this build does not link and for a malformed store, and the real run reports both. No requirement forbids it, and Req 27.3 is unaffected (RN-24).
 
 The offline demonstration uses `provider = "mock-replay"`:
 
@@ -2992,3 +2996,5 @@ Every requirement is implemented by the sections listed. `§n` is a section of t
 | 34 | Honest claims and stated limits | §8.12, §8.11.9 (headers); documentation scan of §3.3 |
 
 Open items that need the user before the dependent phase starts: UD-3 (Phase 1 exit and Phase 2 entry), UD-2 and UD-27 (Phase 2 and 5), UD-15 and DD-3 (Phase 0), UD-9, UD-14, UD-23, UD-26, DD-2. For the demonstration: UD-36 (before Phase 5), UD-33 (before Phase 7), UD-34 and UD-35 (before Phase 8 and Phase 9). Requirements notes RN-22 to RN-29 each need a confirmation or a wording change; RN-29 affects the mutation check of Req 33.17.
+
+Possible later features (not needed by any phase): sibling-aware checking of proposals. A proposal that reads a field declared by a sibling proposal is stored with `RT-VAL-0002` and `RT-AI-0305` and is refused by `review approve` with `RT-APR-0205` until the sibling is adopted (user decision, 8.16 review; `docs/user-guide/review-order.md`). A later version could validate a batch against the declarations of its own proposals and report the dependency at proposal time.
