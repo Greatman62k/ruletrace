@@ -171,6 +171,10 @@ pub struct ParsedRule {
 /// `RT-AI-0201` (not UTF-8 or not parseable), `RT-AI-0205` (refusal or
 /// incomplete), `RT-AI-0204` (forbidden field), `RT-AI-0202` (every other
 /// violation, including a repeated key and nesting beyond [`MAX_DEPTH`]).
+///
+/// The Diagnostic can quote text of the untrusted payload, such as an
+/// unknown key, and so can contain the credential. A caller that prints or
+/// stores it goes through [`crate::accept_batch`] or a [`crate::Redactor`].
 pub fn parse_response(
     response_id: &InputId,
     completion: Completion,

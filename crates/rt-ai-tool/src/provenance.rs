@@ -21,6 +21,10 @@ use rt_srcmodel::{SourceModel, SourceModels};
 /// in ascending proposal index and then evidence index. An empty result
 /// means every span verified.
 ///
+/// A Diagnostic can name a document id taken from the untrusted payload
+/// and so can contain the credential. A caller that prints or stores it
+/// goes through [`crate::accept_batch`] or a [`crate::Redactor`].
+///
 /// `response_id` names the response in every Diagnostic location, and
 /// `clauses` are those of the Provider_Request that produced the response.
 #[must_use]

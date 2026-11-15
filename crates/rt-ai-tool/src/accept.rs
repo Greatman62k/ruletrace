@@ -7,6 +7,7 @@
 //! the first three rejects the whole batch. Semantic findings are data and
 //! never reject it.
 
+use crate::out::render_diagnostic;
 use crate::plan::ClauseId;
 use crate::provenance::verify_provenance;
 use crate::redact::Redactor;
@@ -121,6 +122,14 @@ impl AcceptedBatch {
 
 /// Parses, checks and validates one provider response.
 ///
+/// No `Err` value carries the credential. Every rejection passes through
+/// one scrub: if the message, the location or the rendered form of any
+/// Diagnostic contains the credential, the whole list is replaced by a
+/// single `RT-AI-0206` that names the nearest credential-free field path.
+/// The batch is rejected either way, so replacing is simpler than
+/// rewriting text in each stage's Diagnostics, and it holds for stages
+/// added later.
+///
 /// # Errors
 /// The Diagnostics of the earliest failing stage, which rejects the whole
 /// batch: one Diagnostic from [`parse_response`] (`RT-AI-0201` to
@@ -128,6 +137,10 @@ impl AcceptedBatch {
 /// `RT-PRV-0104`, exit 3), or `RT-AI-0206` (exit 6) when the payload or any
 /// text of the batch contains the credential value.
 pub fn accept_batch(input: &AcceptInput<'_>) -> Result<AcceptedBatch, Vec<Diagnostic>> {
+    accept_unscrubbed(input).map_err(|found| scrub(input, found))
+}
+
+fn accept_unscrubbed(input: &AcceptInput<'_>) -> Result<AcceptedBatch, Vec<Diagnostic>> {
     let parsed = parse_response(
         input.response_id,
         input.completion,
@@ -168,6 +181,46 @@ pub fn accept_batch(input: &AcceptInput<'_>) -> Result<AcceptedBatch, Vec<Diagno
         payload,
         proposals,
     })
+}
+
+// Replaces a rejection that echoes the credential. Stage Diagnostics copy
+// unknown keys, kinds and document ids from the untrusted response.
+fn scrub(input: &AcceptInput<'_>, found: Vec<Diagnostic>) -> Vec<Diagnostic> {
+    let Some(leaking) = found.iter().find(|d| echoes(input.redactor, d)) else {
+        return found;
+    };
+    let field = match leaking.primary() {
+        Location::Input(at) => at.field.as_deref(),
+        _ => None,
+    };
+    let leak = Leak {
+        redactor: input.redactor,
+        id: input.response_id,
+    };
+    vec![leak.found(clean_ancestor(input.redactor, field))]
+}
+
+fn echoes(redactor: &Redactor, d: &Diagnostic) -> bool {
+    [
+        format!("{d:?}"),
+        d.message().to_owned(),
+        render_diagnostic(d),
+    ]
+    .iter()
+    .any(|text| redactor.finds(text))
+}
+
+// The longest prefix of `field` that ends before a `.` or `[` and does not
+// contain the credential, or the fixed name `response`.
+fn clean_ancestor(redactor: &Redactor, field: Option<&str>) -> String {
+    let mut path = field.unwrap_or("response");
+    while redactor.finds(path) {
+        match path.rfind(['.', '[']) {
+            Some(cut) => path = &path[..cut],
+            None => return "response".to_owned(),
+        }
+    }
+    path.to_owned()
 }
 
 fn stored(
