@@ -156,13 +156,20 @@ fn unavailable_provider(config: &AiConfig) -> Diagnostic {
             "this build links no integration for the provider kind '{}'",
             config.provider.name()
         ),
-        command_at(),
+        config.provider_at.clone(),
     )
 }
 
 /// Where a run gets its provider adapter and the adapter version that the
 /// stored batches record.
 pub trait Providers {
+    /// Whether this build can build an adapter for `kind`. It is asked
+    /// at configuration time, so an unlinked kind is `RT-AI-0006` before
+    /// consent, credential and input checks (Req 16.17, 28.17).
+    fn is_linked(&self, _kind: ProviderKind) -> bool {
+        true
+    }
+
     /// The adapter for `config`. `credential` is present exactly when the
     /// provider kind needs one.
     ///
@@ -182,6 +189,10 @@ pub trait Providers {
 pub struct BuiltInProviders;
 
 impl Providers for BuiltInProviders {
+    fn is_linked(&self, kind: ProviderKind) -> bool {
+        kind == ProviderKind::MockReplay
+    }
+
     fn adapter<'a>(
         &self,
         config: &AiConfig,
@@ -261,6 +272,13 @@ fn propose<O: Write, E: Write>(
     }
     let consented = args.consent.named_documents();
     let documents = run_documents(&inputs, &consented);
+    match load_config(&config_input, &text) {
+        Ok(config) if !providers.is_linked(config.provider) => {
+            return report.fail(&[unavailable_provider(&config)]);
+        }
+        Ok(_) => {}
+        Err(found) => return report.fail(&found),
+    }
     let authorized = match load(&config_input, &text, &args.consent, &documents, env) {
         Ok(authorized) => authorized,
         Err(found) => return report.fail(&found),

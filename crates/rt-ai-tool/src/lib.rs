@@ -79,6 +79,8 @@ mod tests_provenance;
 #[cfg(test)]
 mod tests_provenance_property;
 #[cfg(test)]
+mod tests_provider_link;
+#[cfg(test)]
 mod tests_redact;
 #[cfg(test)]
 mod tests_redact_fragments;

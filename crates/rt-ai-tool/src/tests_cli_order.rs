@@ -3,7 +3,8 @@
 //! written by hand from the catalogue.
 
 use crate::tests::MapEnv;
-use crate::tests_cli_rig::{run_std, run_with, Fixture};
+use crate::tests_cli_rig::{run_std, Fixture};
+use crate::tests_gate_rig::{run_providers, Steps};
 use crate::StdFs;
 use rt_foundation::ExitCode;
 
@@ -115,7 +116,8 @@ fn step_3_missing_consent_exits_2_and_reads_no_credential() {
     let fixture = Fixture::new("order-consent");
     fixture.write_config(&fixture.real_config(""));
     let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", "canary-0123456789")]);
-    let ran = run_with(&fixture.args(&[]), &env, &StdFs);
+    let (providers, _) = Steps::new(Vec::new());
+    let ran = run_providers(&fixture.args(&[]), &env, &providers, &StdFs);
     assert_eq!(ran.code, ExitCode::InvalidInput);
     assert_eq!(ran.codes(), ["RT-AI-0008"]);
     assert!(env.reads().is_empty(), "{:?}", env.reads());
@@ -139,7 +141,8 @@ fn step_3_consent_for_another_document_exits_2() {
 fn step_3_a_missing_credential_exits_2_after_consent_passed() {
     let fixture = Fixture::new("order-credential");
     fixture.write_config(&fixture.real_config(""));
-    let ran = run_with(&fixture.consented(), &MapEnv::new(&[]), &StdFs);
+    let (providers, _) = Steps::new(Vec::new());
+    let ran = run_providers(&fixture.consented(), &MapEnv::new(&[]), &providers, &StdFs);
     assert_eq!(ran.code, ExitCode::InvalidInput);
     assert_eq!(ran.codes(), ["RT-AI-0007"]);
     assert_nothing_written(&fixture);
