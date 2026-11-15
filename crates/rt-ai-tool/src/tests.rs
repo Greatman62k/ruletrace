@@ -164,6 +164,19 @@ fn mock_replay_refuses_endpoint_and_credential_fields() {
 }
 
 #[test]
+fn relative_script_and_log_paths_are_kept_as_written() {
+    // Resolution against the working directory is left to the file
+    // system. The loader must not join them to the configuration's own
+    // directory.
+    let text = MOCK
+        .replace("recorded.json", "provider/recorded.json")
+        .replace("tx.jsonl", "work/tx.jsonl");
+    let ok = run(&text, &MapEnv::new(&[])).unwrap();
+    assert_eq!(ok.config.script.as_deref(), Some("provider/recorded.json"));
+    assert_eq!(ok.config.transmission_log, "work/tx.jsonl");
+}
+
+#[test]
 fn real_provider_refuses_script_and_requires_endpoint_and_credential_name() {
     let env = env_ok();
     let d = one(

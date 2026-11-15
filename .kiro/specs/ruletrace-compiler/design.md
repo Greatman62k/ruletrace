@@ -1221,6 +1221,8 @@ transmission_log = "work/transmission.log.jsonl"
 max_clauses_per_request = 20
 ```
 
+Relative `script` and `transmission_log` paths are resolved against the working directory of the `ruletrace-ai` process, not against the directory of the configuration file. The loader keeps them as written.
+
 `endpoint` and `credential_env_var` are required for a real provider kind and absent for `mock-replay`; the configuration checks of Req 28 (inline secret, limits, consent, log) still run, so the offline flow exercises the same consent and logging path. It names no real provider and needs no credential (Req 33.9).
 
 Enforcement by crate dependency: `ruletrace` (rt-cli) has no edge to any `rt-ai-*` crate or network crate; `ruletrace-ai` (rt-ai-tool) has no edge to `rt-review`, `rt-compile`, `rt-engine`. Both are checked by `rt-xtask check-graph` and `check-tree`.

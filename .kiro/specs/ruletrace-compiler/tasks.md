@@ -919,7 +919,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
   - [ ] 8.17 Author the provider script and add the `ai` profile with the full Coverage_Statement
     - Under `demo/<name>/`, add `provider/authored-script.json` keyed by the Request_Identifiers that `ruletrace-ai propose --dry-run` prints for the stand-in, every entry labelled `authored` (never described as provider output), `ai/mock-replay.toml`, and the `ai` profile steps of the runbook (s02 `propose`; s03 `review list` then one `approve` or `reject` per proposal, with `--create-ledger` on the first; the same s04 to s07). Include one unsupported clause (so it reaches the Coverage_Statement as `unsupported`) and one rejected proposal with a reason. Extend `classify` to read the store batches and the ledger rejection records. Bless the goldens, including the proposal store and the Transmission_Log.
     - Observable: the `ai` profile acceptance test passes, and the Coverage_Statement classifies every clause or names the unclassified clause.
-    - Blocked by: 8.16, 6.7, 1.11.
+    - Blocked by: 8.16, 8.21, 6.7, 1.11.
     - _Requirements: 33.6, 33.7, 33.8, 33.9, 33.11, 33.12, 23.25_
     - Design §8.11.4, §8.11.7, §8.11.8, §7.5 (Slice 1)
 
@@ -940,6 +940,14 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Run `cargo test -p rt-demo --test acceptance ai -- --nocapture` and show the user: the proposals (each with its source span and Request_Identifier), the human `review approve` and `review reject` steps with the rejection reason, the Coverage_Statement (every clause classified, including the unsupported one), and the equality of the `ai` and `hand` compiled artifacts. State that the script entries are authored and that the document is still the stand-in.
     - Observable: the user sees AI-shaped proposals pass through human approval to a proved decision with nothing hidden. Then stop for the user's review before gates 1.12 and 1.13.
     - Ensure all tests pass, ask the user if questions arise.
+
+  - [ ] 8.21 Implement `ruletrace-ai propose` revision options (`--revise-rule`, `--revise-revision`, `--feedback-file`)
+    - Accept the three options together or not at all. `--revise-rule` names a Rule identifier of the supplied Rulebook, `--revise-revision` names one of its Revision_Numbers, and `--feedback-file` names a Reviewer feedback text. Include the named Rule_Revision's content and the feedback text in the Clause_Context as additional context, pass the resulting Proposal through steps 1 to 8 of Req 23.1, and store it as a new Rule_Revision with Origin AI_Proposal. The feedback text is untrusted and is sent only under the same consent as the clauses. Reading the Rulebook stays declarations-only for approval: the tool opens no ledger. Today the parser refuses these options with `RT-CLI-0004`. Leave that refusal in place until this task lands, then replace it.
+    - Observable: a run with the three options sends a request whose context holds the named revision and the feedback, stores a Proposal with Origin AI_Proposal, and leaves the Rulebook and the Approval_Ledger unchanged. A run with one or two of the options, an unknown Rule identifier or an unknown revision is refused with a Diagnostic that names the option, and sends nothing.
+    - Blocked by: 8.8.
+    - Must land before 8.17.
+    - _Requirements: 23.16, 23.1, 23.2, 23.9, 27.4_
+    - Design §3.9.2
 
 - [ ] 9. Phase 7: Application layers (`rt-data::tabular`, `prize-check`, `bracket-check`; Demo Slice 2 begins)
   - [ ] 9.1 Implement `rt-data::tabular` (CSV parsing and schema-driven mapping)
@@ -1106,6 +1114,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
   - [ ] 10.5 Wire the provider into `ruletrace-ai` and add the `live-openai` job
     - Select `rt-ai-openai` when the configuration names `openai-responses`, keeping the mock providers for tests. Add the non-required `live-openai` CI job that runs only with a repository secret and is skipped otherwise. Ask the user with the user_input tool which secret name to document, and record it in the UD-15 record.
     - Observable: CI passes without credentials, and the live job runs when the secret exists.
+    - Carried from the 8.8 review: until this task links `rt-ai-openai`, `ruletrace-ai` reuses `RT-AI-0006` (AI_PROVIDER_UNKNOWN) for a configured hosted provider that is not linked. Remove that interim arm in this task, so that `openai-responses` selects the provider and `RT-AI-0006` is left for a kind that no provider implements.
     - Blocked by: 10.3.
     - _Requirements: 21.14, 23.27, 28.12_
     - Design §7.4
