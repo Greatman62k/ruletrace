@@ -246,3 +246,20 @@ User decision of 2026-11-15. The writer keeps its eight temporary names. A tempo
 
 Other sections changed: design catalogue table (section 4.3).
 
+## Directory sync failure after the hard link (8.7 follow-up)
+
+User decision of 2026-11-15. The store writer keeps the whole batch file when the directory sync after the link fails, and the code stays `RT-AI-0303` (exit 70). The Run_Summary now says so.
+
+- The clauses of that batch are listed under a fourth heading, `stored, durability not confirmed`, and not as unprocessed. A separate list was chosen over a marker on `stored` entries, because the `stored` list keeps its meaning (a durable batch, subset of processed) and the section is absent from every run that has no such batch. The summary says `incomplete` while the list is not empty.
+- `RT-AI-0305` follows such a batch with blocking findings, because the batch is stored (Req 30 criterion 3). `RT-AI-0306` does not follow because of it: Req 23 criterion 37 names the batch of an earlier request, and the failing request's own file is announced by the `RT-AI-0303` message.
+- Amended: Req 23 criteria 36 and 38, Req 29 criterion 19, the `RT-AI-0303` row of the Req 7.17 table. Design 3.7.5 (step 4 and the failure paragraph), 3.7.7 (failure table, Run_Summary paragraph) and the property on incomplete runs.
+- Not amended, for a user decision: Req 23 criterion 35 ("byte-identical to its state after the last successful write of the run"), the byte-identical rules of Req 18.17, 27.8, 29.17 and 30.1 and 30.11, and the mirrored text in `.kiro/steering/technical-architecture.md`. They hold for every `RT-AI-0303` except a failed directory sync, and none of them names that case.
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 23 | AI-Assisted Proposal Pipeline | Changed | 23.36, 23.38 | - | User decision on the directory sync failure |
+| 29 | Provider Call Policy and Proposal_Store | Changed | 29.19 | - | User decision on the directory sync failure |
+| 7 | Diagnostic_Catalogue | Changed | 7.17 row RT-AI-0303 | - | Same decision |
+
+Other sections changed: design 3.7.5, 3.7.7 and the incomplete-run property.
+
