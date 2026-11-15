@@ -165,14 +165,14 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 14.12, 14.13, 32.3, 32.4 (UD-32)_
     - Design §8.9, §9.2, §9.4 (RN-27)
 
-  - [-] 1.12 Decision gate UD-33 (packaging of the Application_Layers)
+  - [ ] 1.12 Decision gate UD-33 (packaging of the Application_Layers)
     - Create `tools/decisions/UD-33.md` with options A, B and C of design §8.2. Recommend B (two small Demonstration_Executables, one package each). Record that choosing C turns both packages into library-only packages with `examples/` targets and reverts the executable-set test of Req 27.15 to two names. Ask the user, then stop. `prize-check` and `bracket-check` are registered against UD-33 in task 2.1.
     - Observable: record `Confirmed`.
     - Blocked by: Slice 1 complete (8.18).
     - _Requirements: 27.1, 27.15, 31.3 (UD-33)_
     - Design §8.2, §9.2
 
-  - [-] 1.13 Decision gate UD-35 (demonstration data and Published_Results)
+  - [ ] 1.13 Decision gate UD-35 (demonstration data and Published_Results)
     - Create `tools/decisions/UD-35.md` with the recommendation (real published values where licensed, otherwise synthetic and labelled, with one equal and one seeded-difference Published_Result) and the `nature` manifest field of design §8.11.3. Ask the user which data is real and which is synthetic, then stop.
     - Observable: record `Confirmed`.
     - Blocked by: Slice 1 complete (8.18).
@@ -286,7 +286,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: any permutation of a generated list sorts to identical bytes.
     - **Validates: Requirements 7.10, 7.22, 6.12, 17.12**
 
-  - [~] 2.14 Checkpoint - Phase 0 exit
+  - [ ] 2.14 Checkpoint - Phase 0 exit
     - Run `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, and `rt-xtask check-graph check-tree scan-sources scan-api check-catalogue check-justification check-decisions`.
     - Exit criteria: Properties 4 and 7 pass; graph and scan negative fixtures pass; the catalogue generator and its freshness check pass; CI is green on three platforms.
     - Ensure all tests pass, ask the user if questions arise.
@@ -469,7 +469,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 20.4, 21.11, 21.12, 28.11, 1.7_
     - Design §7.3
 
-  - [~] 4.18 Checkpoint - Phase 2 exit
+  - [ ] 4.18 Checkpoint - Phase 2 exit
     - Run the full gate set. Confirm `rt-ledger` has no append function and that `check-decisions` passes.
     - Exit criteria: Properties 1, 5 (Rulebook and ledger), 9, 12, 13, 14 pass; the worked-example hash is reproduced; the ingest golden is byte stable on three platforms.
     - Ensure all tests pass, ask the user if questions arise.
@@ -652,7 +652,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7, 20.4, 20.5, 20.6, 21.11, 21.12, 13.7, 13.15_
     - Design §7.3
 
-  - [~] 5.28 Checkpoint - Phase 3 exit
+  - [ ] 5.28 Checkpoint - Phase 3 exit
     - Run the full gate set and the `core-only` job. The core must be usable without AI: ingest, validate, compile and evaluate work from a ledger and a Rulebook written by hand. Exit codes 0, 2, 3, 4 occur as specified.
     - Exit criteria: Properties 2, 8, 10, 11, 20, 23, 24, 25, 26, 30 and 40 pass; the five slice fixtures are green on three platforms with identical bytes.
     - Ensure all tests pass, ask the user if questions arise.
@@ -734,7 +734,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Exit criteria: the `hand` profile acceptance test passes on three platforms with identical goldens; every Decision_Trace of the demonstration is Verified; the Proof_Report replays; the three mutations pass as a smoke check; `check-tree` shows no network or AI crate in the `ruletrace` tree; Properties 15 (single-file), 51 and 52 pass.
     - Ensure all tests pass, ask the user if questions arise.
 
-  - [~] 6.12 Demonstration checkpoint - Demo Slice 0
+  - [ ] 6.12 Demonstration checkpoint - Demo Slice 0
     - Run `cargo build --workspace --bins` and `cargo test -p rt-demo --test acceptance hand -- --nocapture` and show the user the printed summary: the stand-in document, the human approvals recorded by `ruletrace review`, the Outcomes (including the Indeterminate one and the Tie_Group), and the first Proof_Report section with the source text and the replayed calculation. State plainly that the document is a stand-in and that no AI was used.
     - Observable: the user sees one hand-authored rulebook go from source text to a proved decision. Then stop for the user's review before the Slice 1 gates 1.8 to 1.10.
     - Ensure all tests pass, ask the user if questions arise.
@@ -909,14 +909,14 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Blocked by: 8.8.
     - _Requirements: 20.7, 20.8, 20.9, 23.17, 23.33, 23.38, 29.14_
 
-  - [~] 8.16 Add the `slice-ai` fixture and approval-gating tests
+  - [ ] 8.16 Add the `slice-ai` fixture and approval-gating tests
     - End to end with the Mock_Provider: propose, `review approve`, validate, compile, evaluate. The compiled output is byte-identical to the manually authored equivalent (Req 16.18). Add the self-approval attempt (Reviewer equal to the proposer, provider, model or an AI identity) and the prompt-injection fixture (clause text instructing approval). Neither may change any ledger, status or Diagnostic code. Required.
     - Observable: the fixture is green on three platforms, and both attack fixtures leave the ledger unchanged.
     - Blocked by: 8.8, 8.12.
     - _Requirements: 16.18, 18.6, 18.14, 18.16, 23.14, 23.15, 26.17, 20.20_
     - Design §7.3
 
-  - [~] 8.17 Author the provider script and add the `ai` profile with the full Coverage_Statement
+  - [ ] 8.17 Author the provider script and add the `ai` profile with the full Coverage_Statement
     - Under `demo/<name>/`, add `provider/authored-script.json` keyed by the Request_Identifiers that `ruletrace-ai propose --dry-run` prints for the stand-in, every entry labelled `authored` (never described as provider output), `ai/mock-replay.toml`, and the `ai` profile steps of the runbook (s02 `propose`; s03 `review list` then one `approve` or `reject` per proposal, with `--create-ledger` on the first; the same s04 to s07). Include one unsupported clause (so it reaches the Coverage_Statement as `unsupported`) and one rejected proposal with a reason. Extend `classify` to read the store batches and the ledger rejection records. Bless the goldens, including the proposal store and the Transmission_Log.
     - Observable: the `ai` profile acceptance test passes, and the Coverage_Statement classifies every clause or names the unclassified clause.
     - Blocked by: 8.16, 8.21, 6.7, 1.11.
@@ -924,7 +924,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 33.6, 33.7, 33.8, 33.9, 33.11, 33.12, 23.25_
     - Design §8.11.4, §8.11.7, §8.11.8, §7.5 (Slice 1)
 
-  - [~] 8.18 Write the AI-independence and origin-independence tests
+  - [ ] 8.18 Write the AI-independence and origin-independence tests
     - **Property 41: AI tool and CLI are independent**
     - For every combination of presence of `ruletrace-ai`, an AI_Configuration file and the credential variable, `ruletrace` stdout, stderr, files and exit code are byte identical for the same inputs, and equal between a full build and a core-only build (all AI crates and `rt-tests-ai` excluded). Run `check-tree` for `rt-cli` and every core crate. In the acceptance test, assert that the `hand` and `ai` profiles compile to byte-identical artifacts when their Rule_Content is equal. Required.
     - Observable: the `core-only` job still passes with the AI crates present in the workspace, and the origin-independence assertion passes.
@@ -932,12 +932,12 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - **Validates: Requirements 17.7, 17.8, 18.1, 20.16, 27.9, 16.18**
     - _Also: 21.8, 21.13, 27.5, 27.6_
 
-  - [~] 8.19 Checkpoint - Phase 6 exit and Demo Slice 1 exit
+  - [ ] 8.19 Checkpoint - Phase 6 exit and Demo Slice 1 exit
     - Run the full gate set including `core-only`. Confirm the steering decision of 8.3 is recorded.
     - Exit criteria: Properties 31, 32, 33, 34, 37, 38 and 41 pass; the `slice-ai` fixture and the `ai` profile are green on three platforms; a script entry is keyed by the identifier that `--dry-run` prints and the accepted response bytes sit in the stored batch; every clause is classified or named; steering items 1 to 4 are merged or declined.
     - Ensure all tests pass, ask the user if questions arise.
 
-  - [~] 8.20 Demonstration checkpoint - Demo Slice 1
+  - [ ] 8.20 Demonstration checkpoint - Demo Slice 1
     - Run `cargo test -p rt-demo --test acceptance ai -- --nocapture` and show the user: the proposals (each with its source span and Request_Identifier), the human `review approve` and `review reject` steps with the rejection reason, the Coverage_Statement (every clause classified, including the unsupported one), and the equality of the `ai` and `hand` compiled artifacts. State that the script entries are authored and that the document is still the stand-in.
     - Observable: the user sees AI-shaped proposals pass through human approval to a proved decision with nothing hidden. Then stop for the user's review before gates 1.12 and 1.13.
     - Ensure all tests pass, ask the user if questions arise.
@@ -958,7 +958,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 7.1, 7.13, 20.13, 7.14_
     - Design §3.8, §3.9.1
 
-  - [-] 8.23 Report an oversize Proposal_Store batch in the review path as RT-LIM-0001 with the true size
+  - [ ] 8.23 Report an oversize Proposal_Store batch in the review path as RT-LIM-0001 with the true size
     - Req 19.8 applies Req 19.3 to Proposal_Store files. `ruletrace-ai` already reports an oversize batch file as `RT-LIM-0001` with the size from file metadata (`rt-ai-tool/src/store_check.rs`). The review path does not: `rt-cli/src/review.rs` (about lines 119 to 131) reads the file with a limit of `MAX_PROPOSAL_BATCH_BYTES` plus one and hands the bytes to `rt-proposals::parse_batch`, which reports a size fault of the bytes it is given as `RT-AI-0302` with the size of the bounded read. Take the size from the file metadata before reading, refuse a file above the limit with `RT-LIM-0001` in the message format of the other size refusals (`input file '<path>' is <size> bytes, larger than the effective limit of <limit> bytes`), and read no content of it. Make the size mapping of `rt-proposals::parse_batch` consistent with that, so that a caller that passes bytes above the limit also gets `RT-LIM-0001` and not `RT-AI-0302`, with the length of the bytes it was given. Keep a file of exactly the limit accepted (Req 19.9).
     - Write the regression test first. It runs `ruletrace review list` over a store whose batch file is the limit plus one byte, and over one that is much larger, and asserts the exact code `RT-LIM-0001`, the exact size in the message and exit code 2. Add a test of exactly the limit, which must still be parsed, and a `parse_batch` test with bytes above the limit. Show that the new tests fail on the current code with `RT-AI-0302`, then fix and show that they pass. A mutant that takes the size from the bounded read must be killed by the much larger file.
     - Observable: the review commands and `ruletrace-ai` report an oversize batch file identically, with the true size, and a batch of exactly the limit is still accepted.
@@ -967,139 +967,139 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Design §3.7.5, §3.8
 
 - [ ] 9. Phase 7: Application layers (`rt-data::tabular`, `prize-check`, `bracket-check`; Demo Slice 2 begins)
-  - [~] 9.1 Implement `rt-data::tabular` (CSV parsing and schema-driven mapping)
+  - [ ] 9.1 Implement `rt-data::tabular` (CSV parsing and schema-driven mapping)
     - Implement the CSV parser with line and column positions, the typed mapping to Competition_Data and Published_Result driven by the input schema of the Compiled_Rulebook (field names and types come from the schema passed in, never from the crate), the canonical serialization of the three file kinds, and the Application_Input_Format of design §8.3. An empty CSV cell, an absent JSON member and a JSON null are Missing_Values; an explicit zero, false or text stays that value. Return one Diagnostic per violation with `APP_INPUT_MALFORMED`, `APP_INPUT_FIELD_MISSING`, `APP_INPUT_DUPLICATE_PARTICIPANT` or `APP_INPUT_VALUE_INVALID` and an Input_Location (file, line, column, field name). A numeric literal with an exponent or read by a float conversion is `APP_INPUT_VALUE_INVALID`.
     - Observable: a CSV with a missing column, a duplicate participant and a bad number gives three Diagnostics with exact codes and positions, and calls no engine.
     - Blocked by: 5.6, 6.11.
     - _Requirements: 31.8, 31.9, 22.22, 7.23, 8.27, 11.5_
     - Design §8.3, §8.4, §3.1
 
-  - [~] 9.2 Implement published-rank annotation and the two extra difference kinds in the engine
+  - [ ] 9.2 Implement published-rank annotation and the two extra difference kinds in the engine
     - Make the engine report, for a Published_Result with positions and ties, each difference of the kinds in design §3.6.3: a value that differs, a published tie that the computed result does not have, and a computed Tie_Group that the published file splits. Each difference carries the published value, the computed value and the reference to the Decision_Trace entry. No tolerance and no rounding of its own. If the user has not amended Req 13.12 (RN-26), record the amendment text in `docs/requirements-amendments.md` for the user and implement the design behaviour.
     - Observable: a published ordering that gives different positions to participants of one computed Tie_Group yields a difference for each such participant, and the equal case yields none.
     - Blocked by: 5.10.
     - _Requirements: 13.12, 13.20, 31.7, 32.6_
     - Design §3.6.3 (Published comparison), §9.4 (RN-26)
 
-  - [~] 9.3 Implement the UD-32 qualification option
+  - [ ] 9.3 Implement the UD-32 qualification option
     - If the record of 1.11 is Rank_Reference: add the one `rank_reference` expression operation to `rt-ir`, the Validator (type Exact_Number, `RANK_REFERENCE_CYCLE` with Severity Error and the primary location of the first Source_Span of the rule that closes the cycle), the Compiler and the Engine, with the rules of Req 14.12 (a to d) and the Tie_Group behaviour (every member gets the same Outcome). If the record is Threshold_Only: make the Validator return one `Unsupported` Diagnostic naming the capability `rank reference` for every occurrence (Req 14.13), and add no operation.
     - Observable: under Rank_Reference, a Tie_Group straddling a threshold gives every member the same Outcome and the trace shows the Rank_Position read. Under Threshold_Only, a rank-based clause gives `RT-VAL-0003` and the Coverage_Statement classifies it `unsupported`.
     - Blocked by: 1.11, 5.10, 5.2.
     - _Requirements: 14.11, 14.12, 14.13, 14.14, 32.3, 32.4, 7.23_
     - Design §8.9
 
-  - [~] 9.4 Implement the report model and writers in `rt-explain::report`
+  - [ ] 9.4 Implement the report model and writers in `rt-explain::report`
     - Implement the report document model, the human writer and the machine writer (field and element order fixed, no timestamp, no random value, no absolute path), and the field set of each report kind (design §8.5 to §8.7): entries in the order of the Outcomes the engine returned, Tie_Group members in ascending participant id for serialization only and marked as carrying no ranking meaning, Prize_Check fields (eligibility, exact weighted score, Rank_Position or Tie_Group, each Indeterminate with the missing input, published-result differences) and Bracket_Check fields (Standings, tie-breaking criteria with compared values, Qualification_Predicate Outcomes with rule id, revision, span and inputs read). No pairing, round, bracket position, seed, slot, advancement, elimination, prize, award or amount field. A report with no Source_Model states `provenance not verified` and carries `PROV_NOT_VERIFIED_NO_SOURCES`.
     - Observable: the writers produce byte-identical output on repeated runs, and the documented field set is exported as a constant that tests compare against.
     - Blocked by: 5.12.
     - _Requirements: 31.6, 31.13, 31.14, 32.1, 32.2, 32.5_
     - Design §8.5, §8.6, §8.7
 
-  - [~] 9.5 Implement the `prize-check` package library
+  - [ ] 9.5 Implement the `prize-check` package library
     - Create the package `prize-check` (library target) with `mapping.rs`, `questions.rs` and `report.rs`. It maps the input file through `rt-data::tabular`, builds one Question per requested Target and participant, calls the engine once for the whole Question list, and lays the report out through `rt-explain::report`. It reads every parameter from the Compiled_Rulebook, contains no arithmetic, ordering, ranking or literal parameter, and performs no file, network, clock, random or environment access. A Target that is not declared or has an unreportable kind gives `APP_TARGET_NOT_DECLARED` or `APP_TARGET_KIND_MISMATCH` with a Cli_Location and calls no engine. Its dependencies are limited to `rt-foundation`, `rt-numeric`, `rt-data`, `rt-compiled`, `rt-engine`, `rt-explain` and `rt-srcmodel`, as its line in `tools/allowed-edges.v1` says.
     - Observable: a library test maps a CSV, evaluates, and returns a report whose entries equal the engine's Outcomes in order.
     - Blocked by: 1.12, 9.1, 9.4.
     - _Requirements: 31.1, 31.2, 31.4, 31.6, 31.7, 31.8, 31.9, 31.11, 31.14, 24.12, 15.5, 15.6_
     - Design §8.2, §8.4, §8.6
 
-  - [~] 9.6 Implement the `bracket-check` package library
+  - [ ] 9.6 Implement the `bracket-check` package library
     - Create the package `bracket-check` (library target, same file layout and allowed edges as 9.5). It reports Standings per ranking Target, each Tie_Group as one entry with its members, each Indeterminate position with the missing input, the tie-breaking criteria applied with the compared values, and each requested Qualification_Predicate and participant as true, false or Indeterminate with rule id, revision, span and inputs read. A published-standings file is mapped to a Published_Result and each difference the engine returns is reported. Under Rank_Reference a Tie_Group at the threshold reports every member with the same Outcome and states that the count of true Outcomes can exceed the numeric threshold N. The library applies no tie-breaking and no seeding of its own.
     - Observable: a library test shows a Tie_Group as one entry, an Indeterminate position with the missing input named, and a qualification Outcome per participant.
     - Blocked by: 1.12, 9.1, 9.3, 9.4.
     - _Requirements: 32.1, 32.2, 32.3, 32.4, 32.5, 32.6, 31.1, 31.2, 31.8, 24.12_
     - Design §8.7, §8.9
 
-  - [~] 9.7 Implement the two Demonstration_Executables
+  - [ ] 9.7 Implement the two Demonstration_Executables
     - In each package add `src/main.rs` (argument parsing) and `src/io.rs` (read the named files, write the named report files by temp file and rename). Only `io.rs` and `main.rs` may open files, read arguments, exit or write standard streams. Options: `--compiled`, `--input`, the Targets, `[--published]`, `[--source-model...]`, `--report-human`, `--report-json`, and `--emit-data`, `--emit-questions`, `--emit-published`, `--emit-results` (the canonical data and results, for the byte-identity comparison). Exit codes: 0 when the report is complete and no Outcome is Indeterminate, 4 when at least one is, 2 for invalid input (including a Source_Model that is missing or whose hash differs), 70 for an internal error, equal to the code of `ruletrace evaluate` for the same inputs, and no partial report on failure. Read no environment variable, no AI_Configuration and no credential, open no network connection and start no subprocess. Extend Property 30 to both executables.
     - Observable: `prize-check` on the stand-in CSV writes the report and exits 4 because of the Indeterminate case, with the same exit code as `ruletrace evaluate`.
     - Blocked by: 9.5, 9.6.
     - _Requirements: 31.3, 31.11, 31.12, 31.13, 27.15_
     - Design §8.2, §8.4
 
-  - [~] 9.8 Implement `rt-xtask check-app-layers` and `check-executables`
+  - [ ] 9.8 Implement `rt-xtask check-app-layers` and `check-executables`
     - `check-app-layers`: a source scan of the application packages that fails with crate, file and line on an operator or call that adds, subtracts, multiplies, divides, rounds, compares or aggregates Exact_Number values, a sorting, ordering, minimum, maximum or ranking function over participants, scores or Outcomes, a tie-breaking rule, a literal weight, threshold or rounding mode, or a field name of a specific competition. It also fails on any file, network, clock, random, environment or subprocess use outside `io.rs` and `main.rs`, and on any edge outside the application allowed list, directly or transitively (including `rt-cli`, `rt-review`, `rt-ledger`, `rt-validate`, `rt-compile`, `rt-source`, `rt-proposals`, every `rt-ai-*`, the other application, `rt-demo`, `rt-xtask`). `check-executables`: the set of executables the workspace builds equals `ruletrace`, `ruletrace-ai`, `prize-check` and `bracket-check` and names any other (`rt-xtask` is a development binary that is not delivered, RN-25). Add one negative fixture per violation class; each must fail with the expected file and line. Required.
     - Observable: both commands pass on the workspace, and each negative fixture fails as specified.
     - Blocked by: 9.7.
     - _Requirements: 31.10, 31.11, 24.12, 27.15, 15.8, 15.10, 20.17_
     - Design §3.3, §8.10
 
-  - [~] 9.9 Write property test for mapping preserving missing values
+  - [ ] 9.9 Write property test for mapping preserving missing values
     - **Property 44: Mapping preserves missing values and reports each violation once**
     - Required: a missing value must never become zero, false or empty.
     - Observable: for generated tables each empty cell, absent member and null maps to a Missing_Value, and each violation gives one Diagnostic with exact code and Location.
     - **Validates: Requirements 31.8, 31.9, 31.15, 11.5**
 
-  - [~] 9.10 Write property test for application byte identity
+  - [ ] 9.10 Write property test for application byte identity
     - **Property 42: Application layers are byte-identical to `ruletrace evaluate`**
     - For at least 256 generated Competition_Data sets, the results written by each application equal the bytes `ruletrace evaluate` writes for the same Compiled_Rulebook, canonical data, Questions, Published_Result and Source_Models, with the same exit code. Required.
     - Observable: the byte comparison passes for every generated set and for each Fixture.
     - **Validates: Requirements 31.5, 31.12, 15.7**
 
-  - [~] 9.11 Write property test for parameters read only from the Compiled_Rulebook
+  - [ ] 9.11 Write property test for parameters read only from the Compiled_Rulebook
     - **Property 43: Applications read every business parameter from the Compiled_Rulebook**
     - The metamorphic test of Req 31.4: change exactly one weight, one threshold and the order of two tie-breaking criteria in the Rulebook, compile each variant with a test ledger that approves it, run the unchanged application, and assert that the Outcomes equal those of `ruletrace evaluate` for the variant and differ from the unchanged Rulebook where the change is observable. Required (no duplicated business logic).
     - Observable: each variant's application output equals the engine's, and the observable change appears.
     - **Validates: Requirements 31.4, 15.6, 31.10**
 
-  - [~] 9.12 Extend the contradictory-flag test to the application input kinds
+  - [ ] 9.12 Extend the contradictory-flag test to the application input kinds
     - **Property 5: Contradictory flag input is rejected**
     - Extend the generator to Application_Input_Format files, Published_Result files, the Recorded_Provider_Script and the Demo_Corpus manifest (`has_errors`, `no_errors`, a validation status or a lifecycle flag, agreeing or not), each exit code 2 with the code of Req 22.22. Required.
     - Observable: each input kind rejects each key with the specified code and no later stage runs.
     - **Validates: Requirements 22.22, 22.12, 22.13, 22.9, 20.25**
 
-  - [~] 9.13 Write property test for published differences
+  - [ ] 9.13 Write property test for published differences
     - **Property 46: Published differences are exactly the engine's differences**
     - Required: the applications must apply no comparison of their own.
     - Observable: the differences rendered by each application equal the differences the engine returned, with published value, computed value and trace reference, and an equal Published_Result gives none.
     - **Validates: Requirements 31.7, 32.6, 13.12, 13.20**
 
-  - [~] 9.14 Write property test for report determinism and closed field set
+  - [ ] 9.14 Write property test for report determinism and closed field set
     - **Property 47: Reports are deterministic, closed and carry no independent validity field**
     - Required for the honest-claims and no-hidden-logic checks.
     - Observable: repeated runs give identical bytes; the machine-readable field set equals the documented set and fails on any additional field; no report has a stored validity flag.
     - **Validates: Requirements 31.13, 31.14, 32.5, 22.1**
 
-  - [~] 9.15 Write property test for rank reference and Tie_Group outcomes
+  - [ ] 9.15 Write property test for rank reference and Tie_Group outcomes
     - **Property 45: Rank reference gives every Tie_Group member one Outcome and never truncates the group**
     - Only if the record of 1.11 is Rank_Reference. Otherwise record in the task that the option is Threshold_Only and add the negative test that every rank-based clause gives one Unsupported Diagnostic naming `rank reference`.
     - Observable: for generated rankings with ties at the threshold every member has the same Outcome, and a rank reference cycle gives `RANK_REFERENCE_CYCLE`.
     - Blocked by: 9.3, 9.6.
     - **Validates: Requirements 14.12, 14.13, 32.3, 32.4**
 
-  - [~] 9.16 Add application fixtures with golden reports
+  - [ ] 9.16 Add application fixtures with golden reports
     - Create Fixtures with golden machine-readable and human reports for each application: eligibility, a weighted score, a ranking with a Tie_Group, an Indeterminate Outcome from a Missing_Value, a published result that equals the computed result, a published result that differs (this includes the `published-differs` fixture), Standings with a Tie_Group, Standings with an Indeterminate position, a Qualification_Predicate over a weighted score, a Tie_Group at the threshold (under Rank_Reference over the Rank_Position), a published standings file that equals the computed Standings, and one that breaks a computed tie. Add the unit tests for each mapping error of Req 31.9 with exact code and Location. Compare bytes in the `golden` job on all three platforms.
     - Observable: all application fixtures are green on three platforms with identical bytes.
     - Blocked by: 9.7, 9.2, 9.10.
     - _Requirements: 31.15, 32.7, 31.9, 31.14, 20.4_
     - Design §7.3, §8.5
 
-  - [~] 9.17 Write the two-application isolation and process-independence tests
+  - [ ] 9.17 Write the two-application isolation and process-independence tests
     - Isolation: run `prize-check` and `bracket-check` in the same process over two different Compiled_Rulebooks in any order and interleaved, and assert each result equals its result run alone. Process test: run each executable under at least two values of the clock, the working directory and the locale, with and without `ruletrace`, `ruletrace-ai`, an AI_Configuration file and a credential variable present, and assert byte-identical stdout, stderr, report files and exit code. Required.
     - Observable: both tests pass on the three platforms.
     - Blocked by: 9.7.
     - _Requirements: 31.11, 31.15, 20.6, 27.15_
 
-  - [~] 9.18 Add step s08 to the stand-in demonstration
+  - [ ] 9.18 Add step s08 to the stand-in demonstration
     - Extend the runbook of the stand-in demonstration with s08 (`prize-check` and `bracket-check` on the CSV files with the `--emit-*` and `--report-*` options) and the extra step for `standings-missing.csv`. Assert in the acceptance test that the emitted canonical data, questions, published result and results equal the committed canonical files and the output of s06 (byte identity with `ruletrace evaluate`), and that the application reports equal their goldens. Bless the new goldens.
     - Observable: the `hand` and `ai` profiles both include s08 and pass on three platforms.
     - Blocked by: 9.16, 8.17.
     - _Requirements: 33.7, 33.15, 31.5_
     - Design §8.10, §8.11.4
 
-  - [~] 9.19 Apply the steering updates of design §9.3 items 6 to 8
+  - [ ] 9.19 Apply the steering updates of design §9.3 items 6 to 8
     - Prepare the patch for items 6, 7 and 8 (two small demonstration executables beside the two RuleTrace executables, the application-layer dependency rule, the I/O wording for `io.rs` and `main.rs`, the quality gates for the acceptance test and the application scan, the isolation test of two applications). Show it to the user with the user_input tool and apply it only after the user confirms.
     - Observable: the steering files carry the confirmed wording, or the task records that the user declined.
     - Blocked by: 9.8.
     - _Requirements: 27.1, 27.15, 24.12, 31.10_
     - Design §9.3
 
-  - [~] 9.20 Checkpoint - Phase 7 exit
+  - [ ] 9.20 Checkpoint - Phase 7 exit
     - Run the full gate set, `check-app-layers` and `check-executables`, and the `demo-offline` job with the extended runbook.
     - Exit criteria: Properties 42, 43, 44, 46, 47 pass (45 if Rank_Reference); the application scan negative fixtures pass; the two-application isolation test and the process test pass; application results are byte-identical to `ruletrace evaluate`.
     - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 10. Phase 8: OpenAI integration and recording (`rt-ai-openai`, `export-script`)
-  - [~] 10.1 Implement OpenAI request building and response mapping
+  - [ ] 10.1 Implement OpenAI request building and response mapping
     - Confirm that `tools/decisions/UD-15.md` is `Confirmed`. Implement the deterministic request body: `POST {endpoint}/v1/responses` with `text.format = {"type":"json_schema","name":..,"schema":..,"strict":true}`, `"store": false`, no `tools`, `max_output_tokens` a crate constant, and the strict-mode schema (all properties required, `additionalProperties:false`, recursion by `$ref` and `$defs`) that includes the `unrecognized` variants. The model and provider come only from configuration.
     - Map the envelope: require `status == "completed"` with exactly one output message and one `output_text`; map refusal and incomplete to `Completion::Refused` or `Incomplete`; 401 and 403 to `AuthFailed`, TLS errors to `TlsFailed`, 429 with an integer `Retry-After` of 1 to 9 digits to `RateLimited`, 5xx and connection errors to `Unavailable`, 3xx and other 4xx to `Other`. Read at most `response_bytes + 1` bytes. The credential is read only in this crate, from the named environment variable, and is redacted from every output.
     - Observable: a canned envelope for each status maps to its `Completion` or `ProviderFailure` in a unit test.
@@ -1108,28 +1108,28 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 23.27, 23.28, 23.29, 23.30, 23.31, 28.12, 28.13, 28.14_
     - Design §3.7.3
 
-  - [~] 10.2 Implement the HTTPS transport, monotonic clock and dependency bans
+  - [ ] 10.2 Implement the HTTPS transport, monotonic clock and dependency bans
     - Use `ureq` with `rustls` and the embedded root store, redirects disabled, proxy auto-detection disabled, per-attempt timeout, a real `MonotonicClock`, and no option to disable certificate or host verification. Record `ureq`, `rustls` and `webpki-roots` in `tools/dependencies.v1`. Add the `deny.toml` `bans` section listing network and AI crates with `wrappers = ["rt-ai-openai"]`, and update `forbid-external` in `check-graph`.
     - Observable: `cargo deny check` and `check-tree` pass, and `check-tree` still shows no network crate under `ruletrace`.
     - Blocked by: 10.1.
     - _Requirements: 28.6, 28.19, 21.5, 21.6, 21.7_
     - Design §3.2, §3.7.3, §9.1 (R-D6)
 
-  - [~] 10.3 Write loopback stub-server tests with a canary credential
+  - [ ] 10.3 Write loopback stub-server tests with a canary credential
     - Using a `std::net::TcpListener` on `127.0.0.1:0` and hand-written HTTP/1.1 responses, test success, 503, a slow body, 429 with `Retry-After`, 401, an oversize body, malformed JSON, a 302 redirect (not followed, no credential or text sent) and a refusal. Assert `"store": false`, no credential in the body, the credential only in the authorization header, behaviour with `HTTPS_PROXY` set, and that the canary appears in no output. Required for credential safety, and needs no external network.
     - Observable: all stub tests pass offline on three platforms.
     - Blocked by: 10.2.
     - _Requirements: 23.27, 23.28, 28.9, 28.13, 28.19, 28.20, 21.8_
     - Design §3.7.10
 
-  - [~] 10.4 Write the strict-schema nesting-depth test
+  - [ ] 10.4 Write the strict-schema nesting-depth test
     - Check that the generated strict-mode schema stays within 10 nesting levels and 5,000 properties, and that expression depth 16 round-trips through the schema. If not, switch to the flat node-table form lowered to the same IR (design risk R-D1).
     - Observable: the test passes, or the flat form is recorded as the chosen schema.
     - Blocked by: 10.1.
     - _Requirements: 23.4, 23.27_
     - Design §9.1 (R-D1)
 
-  - [~] 10.5 Wire the provider into `ruletrace-ai` and add the `live-openai` job
+  - [ ] 10.5 Wire the provider into `ruletrace-ai` and add the `live-openai` job
     - Select `rt-ai-openai` when the configuration names `openai-responses`, keeping the mock providers for tests. Add the non-required `live-openai` CI job that runs only with a repository secret and is skipped otherwise. Ask the user with the user_input tool which secret name to document, and record it in the UD-15 record.
     - Observable: CI passes without credentials, and the live job runs when the secret exists.
     - Carried from the 8.8 review: until this task links `rt-ai-openai`, `ruletrace-ai` reuses `RT-AI-0006` (AI_PROVIDER_UNKNOWN) for a configured hosted provider that is not linked. Remove that interim arm in this task, so that `openai-responses` selects the provider and `RT-AI-0006` is left for a kind that no provider implements.
@@ -1137,76 +1137,76 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 21.14, 23.27, 28.12_
     - Design §7.4
 
-  - [~] 10.6 Implement `rt-xtask export-script` and the script checks
+  - [ ] 10.6 Implement `rt-xtask export-script` and the script checks
     - Implement `rt_proposals::export_script` (pure: batches in, canonical bytes out) and `rt-xtask export-script --store <dir> --provider <kind> --model <id> --captured "<text>" --out <file>`: entries ordered by `request_id`, `origin: "recorded"`, each `response_sha256` recomputed from the payload and compared with the stored hash, and the credential-looking-string scan of Req 28.15 over the payload refusing to write a matching script. Add the script tests: a hash that differs from the recorded hash fails naming file and Request_Identifier, a credential-looking string fails, and a Request_Identifier the script lacks gives `RT-AI-0105` through the mock replay. Equal stores give equal bytes.
     - Observable: exporting the store of the `ai` profile and replaying the exported script reproduces the same batches.
     - Blocked by: 1.8, 7.1, 8.8.
     - _Requirements: 33.8, 28.15, 23.25, 16.16_
     - Design §8.11.7
 
-  - [~] 10.7 Add the live-flow support to the demonstration harness
+  - [ ] 10.7 Add the live-flow support to the demonstration harness
     - Add `ai/openai.example.toml` (credential named by variable only), the optional live commands in the runbook marked as live steps, and the harness rules: the live flow writes its store only to a location outside the golden files, never replaces a golden file or the Recorded_Provider_Script, and the harness refuses to run `ruletrace-ai` for a document whose `transmission_permitted` is not `true`. The consent names each transmitted document.
     - Observable: a test shows that the live profile refuses a document without permission and writes only outside `golden/`.
     - Blocked by: 10.5, 6.5.
     - _Requirements: 33.10, 28.21, 28.11, 33.2_
     - Design §8.11.6
 
-  - [~] 10.8 Live recording of provider responses (user-run gate)
+  - [ ] 10.8 Live recording of provider responses (user-run gate)
     - Prepare the exact commands for the user: `ruletrace-ai propose --config <local openai config> --consent <documents> --store target/demo-live/store ...` for the documents confirmed in 1.10, with the request vocabulary frozen by 1.11. Stop and ask the user to run them with their own credential and to report the result. After the user confirms, inspect the batches, run `rt-xtask export-script`, and commit the candidate script only in a deliberate commit that states the provider kind, model identifier and capture date text the user supplies, with the new response hashes.
     - Observable: `demo/<name>/provider/recorded-script.json` exists with `origin: "recorded"` entries and hashes, and no golden file changed automatically.
     - Blocked by: 1.10, 1.11, 10.6, 10.7.
     - _Requirements: 33.8, 33.10, 28.21, 23.27_
     - Design §8.11.6, §8.11.7
 
-  - [~] 10.9 Checkpoint - Phase 8 exit
+  - [ ] 10.9 Checkpoint - Phase 8 exit
     - Run the full gate set and confirm that `check-tree` still passes for `rt-cli` and every core crate.
     - Exit criteria: stub tests are green with no external network; the canary tests pass; the live job is runnable but not required; the recorded script is committed with its hashes, or the user has deferred the recording.
     - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 11. Phase 9: Final demonstration (real documents, data, published checks, mutation checks, honest claims)
-  - [~] 11.1 Commit the Demo_Corpus documents and manifest
+  - [ ] 11.1 Commit the Demo_Corpus documents and manifest
     - Using only the documents the user confirmed in 1.10, commit each as `demo/<name>/documents/<doc-id>.md`, byte-identical to the confirmed text (and, for a converted file, the conversion record of Req 33.5), with the manifest entry of design §8.11.3: title, publisher, address, retrieval text, SHA-256, licence or permission, `transmission_permitted`, the UD-34 confirmation reference and a coverage note. Do not invent, extend or paraphrase document text. Run the manifest test.
     - Observable: the manifest test passes, and altering one byte of a document fails it with the document id and field.
     - Blocked by: 1.10, 6.5.
     - _Requirements: 33.1, 33.2, 33.3, 33.4, 33.5, 28.21_
     - Design §8.11.1, §8.11.3
 
-  - [~] 11.2 Commit the demonstration Competition_Data and Published_Results
+  - [ ] 11.2 Commit the demonstration Competition_Data and Published_Results
     - Using the answers of 1.13, commit `data/participants.csv`, `collections.csv`, `published.csv`, `published-seeded.csv` and `standings-missing.csv` with manifest entries stating `real` or `synthetic` for each file and `seeded_difference: true` for the seeded one, and the canonical JSON forms. The data holds one eligible and one ineligible participant, one Missing_Value on an eligibility input, one Tie_Group, one Published_Result equal to the computed result and one with a seeded difference. The assertion of these facts is added in 11.6.
     - Observable: the manifest test passes for the data files and labels every file.
     - Blocked by: 1.13, 11.1.
     - _Requirements: 33.13_
     - Design §8.11.10
 
-  - [~] 11.3 Author the seed Rulebook and coverage notes for the real documents
+  - [ ] 11.3 Author the seed Rulebook and coverage notes for the real documents
     - Write `rulebook/seed.json` (declarations and document hashes only, no rules) for the confirmed documents, `coverage-notes.json` (human-authored reasons for clauses that are not rules, labelled authored), and the full runbook with steps s01 to s08, the second evaluate with the seeded Published_Result, the `standings-missing` step and the live steps marked as live. The runbook's machine-readable block is what the acceptance test executes.
     - Observable: the runbook parses, and every offline command in the Markdown is inside the machine-readable block.
     - Blocked by: 11.2, 10.8.
     - _Requirements: 33.7, 33.12, 33.6_
     - Design §8.11.2, §8.11.4, §8.11.12
 
-  - [~] 11.4 Human review decisions on the real proposals (user-run gate)
+  - [ ] 11.4 Human review decisions on the real proposals (user-run gate)
     - Show the user the proposals through `ruletrace review list` and stop. The user runs `ruletrace review approve` or `reject` for each proposal with their own Reviewer identity (not an AI identity) and times, and gives a reason for each rejection. Record the exact commands, reviewer and times in the runbook. The ledger is generated only by these commands and is never written by hand. The runbook states that the offline flow replays these recorded decisions.
     - Observable: the committed ledger verifies with the hash chain, and every executable rule has an approval record bound to its Rule_Content_Hash.
     - Blocked by: 11.3.
     - _Requirements: 33.11, 5.8, 26.17, 18.14_
     - Design §8.11.4
 
-  - [~] 11.5 Generate and bless the goldens for the real corpus
+  - [ ] 11.5 Generate and bless the goldens for the real corpus
     - Run the offline flow with `RT_DEMO_BLESS=1` (not under `CI`) to write every golden: Source_Models, Candidate_Clauses, Proposal_Store, Rulebook, ledger, Validation_Result, Compiled_Rulebook, Outcomes, Decision_Traces, Proof_Report, application reports, Coverage_Statement, and step transcripts. Explain each golden in the commit message. Do not alter any document text to make classification succeed.
     - Observable: a second run without bless mode reproduces every golden byte-for-byte.
     - Blocked by: 11.4, 9.18.
     - _Requirements: 33.9, 33.6, 33.14, 20.4_
     - Design §8.11.12
 
-  - [~] 11.6 Write the full demonstration acceptance test and the reproducibility property
+  - [ ] 11.6 Write the full demonstration acceptance test and the reproducibility property
     - **Property 48: The offline demonstration is reproducible in every environment**
     - Extend the acceptance test to every assertion of Req 33.15: every artifact equals its golden with the failing step and first differing byte offset reported; expected exit codes; every Decision_Trace Verified; the Proof_Report replays; the data composition of Req 33.13 (an eligible and an ineligible participant, a Missing_Value giving Indeterminate, a Tie_Group, an equal and a seeded-difference Published_Result); the Coverage_Statement; the manifest and script checks; the `ruletrace` dependency tree has no network, provider or AI crate; application results equal `ruletrace evaluate`. Run it under two clocks, two working directories and two locales, with no network and no credential. Required.
     - Observable: the test passes offline on Linux, macOS and Windows, and a deliberately changed golden reports step name, file and byte offset.
     - Blocked by: 11.5.
     - **Validates: Requirements 33.9, 33.12, 33.15, 33.16, 20.26, 20.27, 21.12**
 
-  - [~] 11.7 Implement the three mutation checks
+  - [ ] 11.7 Implement the three mutation checks
     - **Property 49: A data mutation changes only the Outcomes that read the value**
     - **Property 50: A source or content mutation is detected and blocks**
     - Implement M1, M2 and M3 of design §8.11.11 in the acceptance test: one byte of a Source_Document gives `PROV_HASH_MISMATCH`, marks the affected traces not verified (exit 2, complete outcomes still written); one data value changes only the Outcomes whose golden trace has a `read` of that participant and field; one approved Rule_Content literal edited without new approval gives `APPROVAL_UNRESOLVED` from `validate` and exit 3 from `compile` with no Compiled_Rulebook (as the RN-29 record says). Required.
@@ -1214,132 +1214,132 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Blocked by: 11.6.
     - **Validates: Requirements 33.17, 13.18, 25.6, 26.12, 9.13**
 
-  - [~] 11.8 Implement the claims lists and `gen-claims` and `scan-claims`
+  - [ ] 11.8 Implement the claims lists and `gen-claims` and `scan-claims`
     - Commit `claims/required-statements.v1.json` (an identifier for each statement of Req 34 criteria 2 to 6), `claims/prohibited-phrases.v1.json` and `claims/scan-targets.v1` (the demonstration's own documents: README, runbook, reports, goldens and the boundary document; the committed Source_Documents are excluded, RN-28). Implement `rt-xtask gen-claims` and `scan-claims`, which fail with file, line and statement identifier or phrase when a required statement is missing or a prohibited phrase appears. Add negative fixtures for each. Required.
     - Observable: both commands pass on the repository, and each negative fixture fails as specified.
     - Blocked by: 11.5.
     - _Requirements: 34.1, 34.7_
     - Design §8.12
 
-  - [~] 11.9 Add the honest-claims statements to the reports and the runbook
+  - [ ] 11.9 Add the honest-claims statements to the reports and the runbook
     - Add to the header of the Proof_Report and of each application report, and to the Demo_Runbook, the statements of Req 34: only capabilities inside the First_Version_Support_Boundary, human approval of the exact revision through `ruletrace review`, a Proposal is untrusted until approval, the offline demonstration replays recorded Reviewer decisions, validation checks internal consistency and not fidelity to the regulation (with the undetected Conflict classes), what verified means, that a live provider can return different proposals, the number and identifiers of Unsupported and Ambiguity clauses (zero stated when none), and that synthetic data is synthetic. Re-bless the goldens and run `scan-claims`.
     - Observable: `scan-claims` passes and every header carries the statement identifiers.
     - Blocked by: 11.8.
     - _Requirements: 34.1, 34.2, 34.3, 34.4, 34.5, 34.6, 33.13_
     - Design §8.12
 
-  - [~] 11.10 Write the support-boundary document and the demonstration README
+  - [ ] 11.10 Write the support-boundary document and the demonstration README
     - Create `docs/support-boundary.md` (supported rule kinds, operators, types, rounding modes, the Qualification_Predicate, the UD-32 option that applies, the limits of the Application_Layers of Req 31 and 32, the unsupported list of design §8, the Conflict classes validation cannot detect) and `demo/README.md` (what is real, what is stand-in or synthetic, how to run the offline flow, and the claims of Req 34). No document is described as a full Prize Check or Bracket Check application. Scan both with `scan-claims`.
     - Observable: both files pass `scan-claims`, and the boundary document names every item of Req 14 criteria 1 to 5, 11 and 12 or 13.
     - Blocked by: 11.9, 9.3.
     - _Requirements: 14.8, 34.1, 34.8, 33.12_
     - Design §8.12, §8.13
 
-  - [~] 11.11 Make `demo-offline` required and add `demo-live`
+  - [ ] 11.11 Make `demo-offline` required and add `demo-live`
     - Mark the `demo-offline` job required on the three platforms with the `ai` profile (and the `hand` profile in `core-only`), running with no network and no credential, and a condition of a release tag. Add the non-required `demo-live` job on Linux that runs the live step with a repository secret, writes outside the goldens and never replaces a golden or the script. Add `rt-xtask gen-claims scan-claims check-app-layers check-executables` to the `graph` job.
     - Observable: the workflow file defines both jobs as in design §7.4, and the required-job list includes `demo-offline`.
     - Blocked by: 11.6, 11.8.
     - _Requirements: 20.26, 20.27, 33.15, 33.16, 21.14, 21.3_
     - Design §7.4
 
-  - [~] 11.12 Apply the remaining steering updates
+  - [ ] 11.12 Apply the remaining steering updates
     - Prepare the patch for the steering text still open after tasks 8.3 and 9.19: design §9.3 item 10 (demonstration documents state the boundary, the meaning of verified, the need for approval and the number of unsupported clauses, enforced by a scan) and the replay sentence of item 7. Show it to the user with the user_input tool and apply it only after confirmation. Item 5 stays open until DD-2 is decided.
     - Observable: steering files carry the confirmed wording, or the task records that the user declined.
     - Blocked by: 11.9.
     - _Requirements: 34.7, 33.8_
     - Design §9.3
 
-  - [~] 11.13 Checkpoint - Phase 9 and Demo Slice 2 exit
+  - [ ] 11.13 Checkpoint - Phase 9 and Demo Slice 2 exit
     - Run the full gate set including `demo-offline` on all three platforms and the `rt-xtask` checks (`check-graph`, `check-tree`, `scan-sources`, `check-app-layers`, `check-executables`, `check-catalogue`, `check-justification`, `check-decisions`, `gen-claims`, `scan-claims`).
     - Exit criteria: Properties 48 to 52 pass; the acceptance test passes all assertions of Req 33.15 and 33.17 offline from the committed files; the Proof_Report headers state the limits and the number of Unsupported clauses; application results are byte-identical to `ruletrace evaluate`; the user has run the live flow once and its script was committed deliberately.
     - Ensure all tests pass, ask the user if questions arise.
 
-  - [~] 11.14 Demonstration checkpoint - Demo Slice 2
+  - [ ] 11.14 Demonstration checkpoint - Demo Slice 2
     - Run `cargo build --workspace --bins` and `cargo test -p rt-demo --test acceptance -- --nocapture` and show the user the whole story on the real documents: the manifest (source, licence, hash), the recorded proposals with their provider kind and model, the human decisions, the Coverage_Statement, the Outcomes, one Proof_Report section with source text and replayed calculation, the `prize-check` and `bracket-check` reports and their byte identity with `ruletrace evaluate`, the published-result equal and seeded-difference comparisons, and the three mutation results.
     - Observable: the user can follow one decision from the source clause to the proved outcome without trusting an AI statement. Then stop for the user's review before Phase 10.
     - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 12. Phase 10: Hardening and release
-  - [~] 12.1 Write the no-panic parser property tests
+  - [ ] 12.1 Write the no-panic parser property tests
     - **Property 39: Content is data and limits are exact**
     - For `rt-json`, the Rulebook, ledger, Source_Model, compiled artifact, data, proposal store, provider response, AI configuration, Application_Input_Format, manifest and script parsers, arbitrary bytes and mutated valid inputs return a typed result or Diagnostics and never panic, overflow or hang, including size-limit and nesting-depth boundary cases. Required.
     - Observable: no panic, overflow or hang on the generated corpus.
     - **Validates: Requirements 19.1, 19.2, 19.3, 19.4, 19.6, 19.9, 19.11**
 
-  - [~] 12.2 Write property test for single-fault parse diagnostics
+  - [ ] 12.2 Write property test for single-fault parse diagnostics
     - **Property 6: Single-fault parse diagnostics**
     - Observable: one injected fault gives exactly one Diagnostic with its specified code and position.
     - **Validates: Requirements 3.8, 3.15, 3.17, 4.2, 4.3, 4.4, 4.7, 4.8**
 
-  - [~] 12.3 Write property test for three-valued logic
+  - [ ] 12.3 Write property test for three-valued logic
     - **Property 21: Three-valued logic**
     - Observable: AND, OR and NOT agree with the Kleene tables for all operand combinations, including a Fault operand.
     - **Validates: Requirements 11.4, 8.5, 8.6**
 
-  - [~] 12.4 Write property test for empty aggregation and add the remaining numeric fixtures
+  - [ ] 12.4 Write property test for empty aggregation and add the remaining numeric fixtures
     - **Property 22: Empty aggregation**
     - Add the `empty-aggregate` fixture (min and max of an empty collection give Indeterminate with `RT-DGN-0005`, count and sum give 0) and the `thirds` fixture (1/3 weights, fraction output from the confirmed representation) with goldens on three platforms.
     - Observable: the property passes and both fixtures are green.
     - **Validates: Requirements 8.15, 8.29, 8.30, 8.31**
 
-  - [~] 12.5 Write property test for conflict detection and precedence
+  - [ ] 12.5 Write property test for conflict detection and precedence
     - **Property 27: Conflict detection and precedence**
     - Observable: every injected conflict class is reported with all rules named, and a valid precedence resolves only the three classes of Req 6.20.
     - **Validates: Requirements 6.7, 6.8, 6.16, 6.17, 6.18, 6.19, 6.20, 6.21, 6.23, 12.10, 14.10**
 
-  - [~] 12.6 Write property test for execution-time conflict handling
+  - [ ] 12.6 Write property test for execution-time conflict handling
     - **Property 28: Execution-time conflict handling**
     - Uses a test-only Compiled_Rulebook built in test code.
     - Observable: incompatible results without precedence give Indeterminate with one `RT-DGN-0004` and exit code 4.
     - **Validates: Requirements 12.5, 12.11, 12.12, 16.23**
 
-  - [~] 12.7 Write property test for unsupported and incomplete constructs
+  - [ ] 12.7 Write property test for unsupported and incomplete constructs
     - **Property 29: Unsupported and incomplete constructs are explicit**
     - Observable: every construct outside the boundary gives one Unsupported Diagnostic naming its capability, and nothing compiles.
     - **Validates: Requirements 6.4, 6.5, 6.6, 14.6, 14.7, 10.9**
 
-  - [~] 12.8 Write property test for idempotent and concurrent batch storage
+  - [ ] 12.8 Write property test for idempotent and concurrent batch storage
     - **Property 35: Idempotent and concurrent batch storage**
     - Observable: repeated and concurrent runs with one Request_Identifier leave exactly one batch.
     - **Validates: Requirements 29.10, 29.11, 29.17, 29.19, 23.20**
 
-  - [~] 12.9 Write property test for Run_Summary partitioning
+  - [ ] 12.9 Write property test for Run_Summary partitioning
     - **Property 36: Run_Summary partitions the requested clauses**
     - Observable: processed, stored and unprocessed lists partition the requested clauses for every failing position.
     - **Validates: Requirements 23.35, 23.36, 23.37, 23.38, 16.24, 27.8**
 
-  - [~] 12.10 Write the full mock-provider failure matrix and simulated-timer tests
+  - [ ] 12.10 Write the full mock-provider failure matrix and simulated-timer tests
     - Cover each Provider_Failure kind, each failure of Req 23.5 to 23.8 and 23.33, forbidden-field and instruction responses, Semantic_Outcomes with Ambiguity, Unsupported and Error stored as non-executable, and three-request runs failing the second request with `RT-PRV-0101`, `RT-AI-0106`, `RT-AI-0202` and `RT-AI-0303`. Simulated-timer tests: `Retry-After` that fits and does not fit, exhaustion, deadline, a late response never stored, success after one and two retries with one stored batch, and repeated and concurrent runs.
     - Observable: every cell of the matrix gives its specified code, store state, Run_Summary and exit code.
     - _Requirements: 20.7, 20.8, 20.9, 23.17, 23.33, 23.38, 29.14_
 
-  - [~] 12.11 Write a negative test for every provokable catalogue code
+  - [ ] 12.11 Write a negative test for every provokable catalogue code
     - One test per `RT-VAL` and other catalogue code that can be provoked, asserting code, Severity, primary Location and exit code, with every Location variant and the four conflict classes. A test fails if a provokable code has no negative test.
     - Observable: the coverage check lists no untested provokable code.
     - _Requirements: 6.1, 6.2, 6.3, 20.3, 20.12, 20.13_
 
-  - [~] 12.12 Commit the catalogue baseline and enable the baseline check
+  - [ ] 12.12 Commit the catalogue baseline and enable the baseline check
     - Write the first-release `catalogue/baseline.v1.json` and enable `check-catalogue` to fail on a removed, renumbered or severity-changed code.
     - Observable: removing one catalogue row makes `check-catalogue` fail naming the code.
     - Blocked by: 12.11.
     - _Requirements: 7.11, 7.12, 7.16, 7.17_
     - Design §4.3
 
-  - [~] 12.13 Add the support-boundary consistency test and the security-limit document
+  - [ ] 12.13 Add the support-boundary consistency test and the security-limit document
     - Create `docs/security-limits.md` (R-8 reviewer authentication, no cross-filesystem guarantee, residual ledger limits of Req 26.22). Add a test that every rule kind, node name, rounding mode and unsupported construct known to the validator appears in `docs/support-boundary.md`, and that both documents exist.
     - Observable: adding a node name to the validator without documenting it fails the test.
     - Blocked by: 11.10.
     - _Requirements: 14.8, 14.9, 6.22, 26.22, 20.1_
     - Design §8, §9.1
 
-  - [~] 12.14 Final full-matrix gate verification
+  - [ ] 12.14 Final full-matrix gate verification
     - Verify the required jobs in `ci.yml`: `fmt`, `clippy`, `test`, `golden`, `toolchain`, `demo-offline` on three platforms and `graph`, `deny`, `core-only` on Linux. Verify `tools/allowed-edges.v1` covers every crate of design §3.1 and that every `tools/decisions/*.md` referenced by `tools/decision-gates.v1` is `Confirmed`. List any decision that is still `Pending` or `Deferred` in the final output.
     - Observable: a printed list of the required jobs and of the open decisions.
     - Blocked by: 12.12, 12.13, 11.11.
     - _Requirements: 21.3, 21.4, 21.9, 21.10, 21.12, 24.9, 20.26_
     - Design §7.4
 
-  - [~] 12.15 Final checkpoint - all required jobs green
+  - [ ] 12.15 Final checkpoint - all required jobs green
     - Run the full gate set locally. Exit criteria: all required jobs green; baseline committed; boundary documents present; the release checklist of Req 20.26, 14.8 and 34.8 satisfied. Tagging a release is not a coding task and is left to the user.
     - Ensure all tests pass, ask the user if questions arise.
 
