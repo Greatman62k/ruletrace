@@ -218,3 +218,16 @@ User decision of 2026-11-15: the Proposal_Store writer fails closed, as the Appr
 | 29 | Provider Call Policy and Proposal_Store | Unchanged | - | - | User decision on the 8.7 store design |
 
 Other sections changed: design section 3.7.5, risk R-D5, task 8.7 text.
+
+## Proposal_Store writer details (8.7)
+
+Choices made while implementing the writer. Each is stated in design section 3.7.5 or 3.7.7 and pinned by a test. None changes a requirement criterion.
+
+- A temp file left by an interrupted run is never reused or removed, because a live run may own it. The writer takes the first free name from `<id>.tmp` to `<id>.7.tmp` with `create_new`. A rerun after a crash therefore stores the batch.
+- A failed directory sync after the link keeps the whole batch file and reports `RT-AI-0303`. Removing it could contradict a concurrent run that already reported `RT-AI-0301`. Req 29.19 forbids a partial batch file, and the file is whole.
+- `RT-AI-0306` follows a failure only when this run stored an earlier batch. A request that found its batch already stored wrote nothing and does not count.
+- Writers that copy text from inputs (Transmission_Log, Run_Summary, run Diagnostics) use `Redactor::redact_fragments`, which also removes any run of 8 or more characters that shares an 8-character window with the credential (Req 28.9).
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 29 | Provider Call Policy and Proposal_Store | Unchanged | - | - | Implementation choices of the store writer |
