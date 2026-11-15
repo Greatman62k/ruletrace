@@ -102,7 +102,7 @@ jobs:
         run: |
           mkdir -p ci-output
           set -o pipefail
-          cargo test --workspace --all-features 2>&1 | tee ci-output/test.log
+          cargo test --workspace --all-features --no-fail-fast 2>&1 | tee ci-output/test.log
       - name: Keep failed-check output
         if: failure()
         uses: actions/upload-artifact@v4
@@ -261,7 +261,7 @@ jobs:
           set -o pipefail
           {
             cargo build --workspace $AUX_EXCLUDE --bins --target-dir target/core-only
-            cargo test --workspace --all-features $AUX_EXCLUDE --target-dir target/core-only
+            cargo test --workspace --all-features --no-fail-fast $AUX_EXCLUDE --target-dir target/core-only
           } 2>&1 | tee ci-output/core-only.log
       - name: Resolved tree has no network or AI crate (check-tree)
         run: |
