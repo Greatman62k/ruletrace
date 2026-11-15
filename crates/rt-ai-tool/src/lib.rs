@@ -40,6 +40,8 @@ mod tests_accept;
 #[cfg(test)]
 mod tests_accept_credential;
 #[cfg(test)]
+mod tests_batch_property;
+#[cfg(test)]
 mod tests_config_order;
 #[cfg(test)]
 mod tests_identifier_property;
