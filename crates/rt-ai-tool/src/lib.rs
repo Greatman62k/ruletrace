@@ -103,8 +103,8 @@ pub use plan::{
 pub use redact::{Redactor, REDACTED};
 pub use run::{run_requests, RunInput, RunReport};
 pub use store::{
-    already_stored_warning, batch_exists, batch_path, store_batch, StoreFailure, StoreMeta,
-    StoreOutcome, StoreReport,
+    already_stored_warning, batch_exists, batch_path, store_batch, FailureOutcome, StoreFailure,
+    StoreMeta, StoreOutcome, StoreReport,
 };
 pub use summary::RunSummary;
 pub use txlog::{FileLog, LogContext, LogSink, TransmissionLog};

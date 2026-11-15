@@ -12,8 +12,8 @@ use std::time::Duration;
 
 const SCRATCH_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/test-scratch");
 
-/// An empty directory that is removed again when the guard drops, also
-/// when an assertion fails.
+// An empty directory that is removed again when the guard drops, also
+// when an assertion fails.
 pub(crate) struct ScratchDir(PathBuf);
 
 impl ScratchDir {
@@ -35,10 +35,10 @@ impl Drop for ScratchDir {
     }
 }
 
-/// The real file system with one forced interleaving: the first two
-/// `hard_link` calls wait for each other, so both runs have passed the
-/// existence check and written a temporary file before either links. The
-/// second link therefore always meets an existing target.
+// The real file system with one forced interleaving: the first two
+// `hard_link` calls wait for each other, so both runs have passed the
+// existence check and written a temporary file before either links. The
+// second link therefore always meets an existing target.
 pub(crate) struct GateFs {
     arrivals: Mutex<usize>,
     both_here: Condvar,
@@ -54,13 +54,13 @@ impl GateFs {
         }
     }
 
-    /// How many `hard_link` calls failed with `AlreadyExists`.
+    // How many `hard_link` calls failed with `AlreadyExists`.
     pub(crate) fn link_target_existed(&self) -> usize {
         self.link_target_existed.load(Ordering::SeqCst)
     }
 
-    /// Whether two calls were at the gate together. A bounded wait keeps a
-    /// run that never reaches the gate from hanging the test.
+    // Whether two calls were at the gate together. A bounded wait keeps a
+    // run that never reaches the gate from hanging the test.
     fn rendezvous(&self) -> bool {
         let Ok(mut here) = self.arrivals.lock() else {
             return false;

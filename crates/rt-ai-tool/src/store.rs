@@ -63,10 +63,19 @@ pub struct StoreFailure {
     pub error: Diagnostic,
     /// Warnings `RT-AI-0307` that arose while the write was undone.
     pub warnings: Vec<Diagnostic>,
-    /// True only when the complete batch file stays at its final name
-    /// because the directory sync after the link failed. The batch is
-    /// then stored, and its durability is not confirmed.
-    pub kept: bool,
+    /// What the refusal left in the store.
+    pub outcome: FailureOutcome,
+}
+
+/// What a refused write left in the Proposal_Store.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FailureOutcome {
+    /// The store holds no part of the batch.
+    Refused,
+    /// The complete batch file stays at its final name because the
+    /// directory sync after the link failed. The batch is stored and its
+    /// durability is not confirmed.
+    KeptUnconfirmed,
 }
 
 impl StoreFailure {
@@ -74,7 +83,7 @@ impl StoreFailure {
         Self {
             error,
             warnings: Vec::new(),
-            kept: false,
+            outcome: FailureOutcome::Refused,
         }
     }
 }
@@ -187,7 +196,7 @@ fn refuse(fs: &dyn StoreFs, temp: &Path, error: Diagnostic) -> StoreFailure {
     StoreFailure {
         error,
         warnings: remove_temp(fs, temp).into_iter().collect(),
-        kept: false,
+        outcome: FailureOutcome::Refused,
     }
 }
 
@@ -251,7 +260,8 @@ fn open_temp(
 /// `RT-AI-0303` (exit 70) when any step fails. No partial file remains at
 /// the final name, and the temporary file is removed. The one exception
 /// is a failed directory sync after the link: the complete batch file
-/// stays and [`StoreFailure::kept`] is true.
+/// stays and [`StoreFailure::outcome`] is
+/// [`FailureOutcome::KeptUnconfirmed`].
 pub fn store_batch(
     fs: &dyn StoreFs,
     root: &Path,
@@ -319,7 +329,7 @@ pub fn store_batch(
                     d.primary().clone(),
                 ),
                 warnings,
-                kept: true,
+                outcome: FailureOutcome::KeptUnconfirmed,
             })
         }
     }

@@ -12,7 +12,9 @@ use crate::config::AiConfig;
 use crate::fs::StoreFs;
 use crate::plan::{ClauseId, PlannedRequest, RunPlan};
 use crate::redact::Redactor;
-use crate::store::{already_stored_warning, batch_exists, store_batch, StoreMeta, StoreOutcome};
+use crate::store::{
+    already_stored_warning, batch_exists, store_batch, FailureOutcome, StoreMeta, StoreOutcome,
+};
 use crate::summary::RunSummary;
 use crate::txlog::{LogSink, TransmissionLog};
 use rt_ai_adapter::{
@@ -66,9 +68,7 @@ struct Done {
 
 struct Failed {
     diagnostics: Vec<Diagnostic>,
-    // The complete batch file is in the store and its durability is not
-    // confirmed.
-    kept: bool,
+    outcome: FailureOutcome,
 }
 
 fn input_at(id: &str) -> Location {
@@ -228,14 +228,14 @@ impl Loop<'_, '_> {
                     "the request or response identifier could not be built".to_owned(),
                     request,
                 )],
-                kept: false,
+                outcome: FailureOutcome::Refused,
             });
         };
         match batch_exists(fs, root, &request_id) {
             Err(d) => {
                 return Err(Failed {
                     diagnostics: vec![d],
-                    kept: false,
+                    outcome: FailureOutcome::Refused,
                 })
             }
             Ok(true) => {
@@ -252,7 +252,7 @@ impl Loop<'_, '_> {
                 notes.push(d);
                 return Err(Failed {
                     diagnostics: notes,
-                    kept: false,
+                    outcome: FailureOutcome::Refused,
                 });
             }
         };
@@ -273,7 +273,7 @@ impl Loop<'_, '_> {
                 notes.extend(found);
                 return Err(Failed {
                     diagnostics: notes,
-                    kept: false,
+                    outcome: FailureOutcome::Refused,
                 });
             }
         };
@@ -301,13 +301,13 @@ impl Loop<'_, '_> {
                 notes.extend(failure.warnings);
                 // A kept batch is in the store, so a reviewer will meet its
                 // blocking findings and the Warning says so.
-                if failure.kept {
+                if failure.outcome == FailureOutcome::KeptUnconfirmed {
                     notes.extend(accepted.blocking_warning());
                 }
                 notes.push(failure.error);
                 Err(Failed {
                     diagnostics: notes,
-                    kept: failure.kept,
+                    outcome: failure.outcome,
                 })
             }
         }
@@ -377,7 +377,7 @@ pub fn run_requests<S: LogSink>(
                 }
             }
             Err(failed) => {
-                if failed.kept {
+                if failed.outcome == FailureOutcome::KeptUnconfirmed {
                     unconfirmed.extend(request.clauses().iter().cloned());
                 }
                 exit = failed

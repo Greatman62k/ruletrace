@@ -9,7 +9,7 @@ use crate::tests_memfs::{Faults, Link, MemFs};
 use crate::tests_response::LIMIT;
 use crate::tests_rig::{payload, Harness, ROOT};
 use crate::tests_scratch::{GateFs, ScratchDir};
-use crate::{store_batch, StoreFailure, StoreOutcome, StoreReport};
+use crate::{store_batch, FailureOutcome, StoreFailure, StoreOutcome, StoreReport};
 use rt_foundation::{Code, Diagnostic, ExitCode, InputId, Location, Severity};
 use rt_hash::{sha256, Sha256Hex};
 use rt_proposals::parse_batch;
@@ -293,7 +293,7 @@ fn a_failed_directory_sync_reports_the_failure_and_keeps_the_whole_file() {
         ..Faults::default()
     });
     let failure = store_full(&h, &fs, &accepted(&h, 0)).unwrap_err();
-    assert!(failure.kept);
+    assert_eq!(failure.outcome, FailureOutcome::KeptUnconfirmed);
     let err = failure.error;
     expect_failure(&err, &h.batch_file(0));
     assert!(err.message().contains("complete batch file stays in place"));
@@ -340,7 +340,7 @@ fn a_failed_removal_after_a_failed_write_is_a_warning_beside_the_error() {
         ..Faults::default()
     });
     let failure = store_full(&h, &fs, &accepted(&h, 0)).unwrap_err();
-    assert!(!failure.kept);
+    assert_eq!(failure.outcome, FailureOutcome::Refused);
     expect_failure(&failure.error, &h.batch_file(0));
     assert_eq!(
         failure.error.message(),
