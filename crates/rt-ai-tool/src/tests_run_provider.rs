@@ -10,7 +10,7 @@ use crate::tests_run_support::{shapes, VecSink};
 use crate::RunReport;
 use rt_ai_adapter::{MonotonicClock, ProviderFailure};
 use rt_ai_mock::MockProvider;
-use rt_foundation::{Code, ExitCode, InputId, Location, Severity};
+use rt_foundation::{Code, ExitCode, InputId, InputLocation, Location, Severity};
 use rt_proposals::parse_batch;
 
 fn single() -> Harness {
@@ -39,6 +39,16 @@ fn unavailable() -> ProviderFailure {
     ProviderFailure::Unavailable
 }
 
+// Req 23.17: line 3 of the shared configuration text is `provider = ...`.
+fn provider_field() -> Location {
+    Location::Input(InputLocation {
+        input: InputId::new("ai.toml").unwrap(),
+        line: Some(3),
+        column: Some(1),
+        field: Some("provider".to_owned()),
+    })
+}
+
 #[test]
 fn rt_ai_0101_unavailable_warns_and_retries_after_two_seconds() {
     let (r, fs, p, h) = run_one(vec![fail(unavailable(), 0), ok(0)]);
@@ -47,10 +57,7 @@ fn rt_ai_0101_unavailable_warns_and_retries_after_two_seconds() {
         r.diagnostics[0].message(),
         "attempt 1 failed: AI_PROVIDER_UNAVAILABLE"
     );
-    match r.diagnostics[0].primary() {
-        Location::Input(at) => assert_eq!(at.input.as_str(), format!("request-{}", h.id(0))),
-        other => panic!("{other:?}"),
-    }
+    assert_eq!(r.diagnostics[0].primary(), &provider_field());
     assert_eq!(r.exit, ExitCode::Success);
     assert_eq!(p.steps_consumed(), 2);
     assert_eq!(clock_ms(&p), 2_000 + 100);
@@ -295,4 +302,39 @@ fn the_failing_code_decides_the_exit_code() {
     let (r, _, _, _) = run_one(vec![fail(ProviderFailure::AuthFailed, 0)]);
     assert_eq!(r.diagnostics[0].code(), Code::AiProviderAuthFailed);
     assert_eq!(r.diagnostics[0].code().exit_code(), r.exit);
+}
+
+#[test]
+fn every_provider_failure_diagnostic_is_located_at_the_provider_field() {
+    let other = ProviderFailure::Other { http_status: None };
+    let cases: Vec<(Vec<rt_ai_mock::Step>, Vec<&str>)> = vec![
+        (
+            vec![
+                fail(unavailable(), 0),
+                fail(unavailable(), 0),
+                fail(unavailable(), 0),
+            ],
+            vec!["RT-AI-0101", "RT-AI-0101", "RT-AI-0101", "RT-AI-0106"],
+        ),
+        (
+            vec![fail(ProviderFailure::Timeout, 20_000); 3],
+            vec!["RT-AI-0102", "RT-AI-0102", "RT-AI-0107"],
+        ),
+        (
+            vec![fail(ProviderFailure::AuthFailed, 0)],
+            vec!["RT-AI-0104"],
+        ),
+        (
+            vec![fail(ProviderFailure::TlsFailed, 0)],
+            vec!["RT-AI-0108"],
+        ),
+        (vec![fail(other, 0)], vec!["RT-AI-0105"]),
+    ];
+    for (steps, want) in cases {
+        let (r, _, _, _) = run_one(steps);
+        assert_eq!(codes(&r), want);
+        for d in &r.diagnostics {
+            assert_eq!(d.primary(), &provider_field(), "{}", d.code().id());
+        }
+    }
 }

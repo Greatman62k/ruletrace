@@ -89,6 +89,8 @@ pub struct AiConfig {
     pub policy: RetryPolicy,
     /// Location of the `transmission_log` field.
     pub transmission_log_at: Location,
+    /// Location of the `provider` field.
+    pub provider_at: Location,
     credential_at: Option<Location>,
 }
 
@@ -381,6 +383,7 @@ fn build(
         limits: limits.request,
         policy: limits.policy,
         transmission_log_at: log.at.clone(),
+        provider_at: provider.at.clone(),
         credential_at: raw.credential_env_var.as_ref().map(|f| f.at.clone()),
     })
 }

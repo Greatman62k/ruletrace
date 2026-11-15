@@ -99,19 +99,25 @@ impl Loop<'_, '_> {
         Diagnostic::new(code, self.safe(&message), at)
     }
 
+    // Req 23.17: a provider failure is located at the `provider` field of
+    // the configuration, not at the request.
+    fn provider_failure(&self, code: Code, message: String) -> Diagnostic {
+        let at = self.input.config.provider_at.clone();
+        Diagnostic::new(code, self.safe(&message), at)
+    }
+
     fn attempt_warning(
         &self,
         failure: ProviderFailure,
         attempt: usize,
         detail: Option<&str>,
-        request: &PlannedRequest,
     ) -> Diagnostic {
         let code = transient_code(failure);
         let mut message = format!("attempt {attempt} failed: {}", code.mnemonic());
         if let Some(detail) = detail {
             message.push_str(&format!(" ({detail})"));
         }
-        self.diagnostic(code, message, request)
+        self.provider_failure(code, message)
     }
 
     // One request's attempts. Per-attempt Warnings are pushed to `notes` as
@@ -153,12 +159,7 @@ impl Loop<'_, '_> {
                         }
                         AttemptOutcome::Failure(f) => {
                             if f.is_transient() {
-                                let w = self.attempt_warning(
-                                    f,
-                                    attempt,
-                                    report.detail.as_deref(),
-                                    request,
-                                );
+                                let w = self.attempt_warning(f, attempt, report.detail.as_deref());
                                 last_warning = Some(w.code());
                                 notes.push(w);
                             }
@@ -177,24 +178,22 @@ impl Loop<'_, '_> {
                     });
                 }
                 RetryStep::Stop(RetryStop::Exhausted { attempts }) => {
-                    return Err(self.diagnostic(
+                    return Err(self.provider_failure(
                         Code::AiProviderRetryExhausted,
                         format!(
                             "{attempts} attempts failed; the last was {}",
                             last_name(last_warning)
                         ),
-                        request,
                     ));
                 }
                 RetryStep::Stop(RetryStop::DeadlineExceeded { attempts }) => {
-                    return Err(self.diagnostic(
+                    return Err(self.provider_failure(
                         Code::AiProviderDeadlineExceeded,
                         format!(
                             "the deadline cannot fit another attempt after {attempts}; \
                              the last failure was {}",
                             last_name(last_warning)
                         ),
-                        request,
                     ));
                 }
                 RetryStep::Stop(RetryStop::NonTransient(f)) => {
@@ -203,7 +202,7 @@ impl Loop<'_, '_> {
                         Some(detail) => format!("{} ({detail})", code.mnemonic()),
                         None => code.mnemonic().to_owned(),
                     };
-                    return Err(self.diagnostic(code, message, request));
+                    return Err(self.provider_failure(code, message));
                 }
             }
         }
