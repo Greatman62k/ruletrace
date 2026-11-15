@@ -1,0 +1,37 @@
+{
+  "format": "ruletrace-rulebook",
+  "ir_version": "1",
+  "name": "spring-open",
+  "version": "2026.1",
+  "documents": [
+    {
+      "id": "rules.md",
+      "sha256": "17d6fc59d80472ef609d53b3838a8eebe7928c5663dabd5784c94f372d95a6d1"
+    }
+  ],
+  "types": {
+    "inputs": [
+      {
+        "name": "age",
+        "type": "number"
+      },
+      {
+        "name": "licence",
+        "type": "boolean"
+      },
+      {
+        "name": "judges",
+        "type": "number"
+      },
+      {
+        "name": "technical",
+        "type": "number"
+      }
+    ],
+    "enums": [],
+    "sets": [],
+    "collections": []
+  },
+  "rules": [],
+  "precedence": []
+}

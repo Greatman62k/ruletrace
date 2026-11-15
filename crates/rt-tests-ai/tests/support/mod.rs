@@ -62,3 +62,7 @@ pub fn wrap(proposals: &[String]) -> String {
         proposals.join(",")
     )
 }
+
+mod rig;
+#[allow(unused_imports)]
+pub use rig::*;

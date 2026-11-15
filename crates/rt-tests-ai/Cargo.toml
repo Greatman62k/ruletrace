@@ -13,12 +13,14 @@ workspace = true
 [dev-dependencies]
 rt-ai-adapter = { path = "../rt-ai-adapter" }
 rt-ai-tool = { path = "../rt-ai-tool" }
+rt-cli = { path = "../rt-cli" }
 rt-foundation = { path = "../rt-foundation" }
 rt-hash = { path = "../rt-hash" }
 rt-ir = { path = "../rt-ir" }
 rt-json = { path = "../rt-json" }
 rt-ledger = { path = "../rt-ledger" }
 rt-proposals = { path = "../rt-proposals" }
+rt-review = { path = "../rt-review" }
 rt-srcmodel = { path = "../rt-srcmodel" }
 rt-validate = { path = "../rt-validate" }
 proptest = { version = "1", default-features = false, features = ["std"] }
