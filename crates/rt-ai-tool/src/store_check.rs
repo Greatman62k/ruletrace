@@ -4,7 +4,8 @@
 //! The files of `batches/` that end in `.json` are the batches. Every one
 //! is read and parsed before the first request, so a store that a reviewer
 //! could not load stops the run before anything is sent. Files in `.tmp/`
-//! and names with another ending are not batches and are never read.
+//! and names with another ending are not batches and are never read. A
+//! batch whose file stem is not its own `request_id` is malformed too.
 
 use crate::fs::StoreFs;
 use rt_foundation::{
@@ -18,15 +19,19 @@ fn input_for(path: &Path) -> Option<InputId> {
     InputId::new(escape_controls(&path.to_string_lossy())).ok()
 }
 
-fn unreadable(path: &Path, what: &str, error: &io::Error) -> Diagnostic {
-    let at = input_for(path).map_or(Location::None(Code::AiStoreInvalid), |input| {
+fn at_file(path: &Path) -> Location {
+    input_for(path).map_or(Location::None(Code::AiStoreInvalid), |input| {
         Location::Input(InputLocation {
             input,
             line: None,
             column: None,
             field: None,
         })
-    });
+    })
+}
+
+fn unreadable(path: &Path, what: &str, error: &io::Error) -> Diagnostic {
+    let at = at_file(path);
     Diagnostic::new(
         Code::AiStoreInvalid,
         format!(
@@ -68,7 +73,20 @@ pub fn check_store(fs: &dyn StoreFs, root: &Path) -> Result<(), Vec<Diagnostic>>
                 Location::None(Code::AiStoreInvalid),
             )]);
         };
-        parse_batch(&input, &bytes)?;
+        let batch = parse_batch(&input, &bytes)?;
+        // A batch is found by `batches/<request_id>.json`, so a file under
+        // another name would be missed by the idempotence check.
+        let stem = path.file_stem().and_then(|s| s.to_str());
+        if stem != Some(batch.request_id.as_str()) {
+            return Err(vec![Diagnostic::new(
+                Code::AiStoreInvalid,
+                format!(
+                    "the batch file is not named after its request_id {}",
+                    batch.request_id
+                ),
+                at_file(&path),
+            )]);
+        }
     }
     Ok(())
 }

@@ -203,3 +203,123 @@ fn a_store_that_does_not_exist_yet_is_empty() {
     assert_eq!(ran.code, ExitCode::Success, "{}", ran.stderr);
     assert_eq!(probe.attempts(), 1);
 }
+
+// A valid batch stored by one real run, then moved to `target_name`.
+fn run_then_rename(label: &str, target_name: &str) -> (Fixture, String) {
+    let fixture = Fixture::new(label);
+    std::fs::create_dir_all(fixture.path("work")).unwrap();
+    fixture.write_script(&payload(0));
+    let id = fixture.request_id();
+    assert_eq!(run_std(&fixture.consented()).code, ExitCode::Success);
+    let from = fixture.path(&format!("store/batches/{id}.json"));
+    let to = fixture.path(&format!("store/batches/{target_name}"));
+    std::fs::rename(from, to).unwrap();
+    (fixture, id)
+}
+
+#[test]
+fn a_batch_whose_file_stem_is_not_its_request_id_is_rt_ai_0302() {
+    for target in [name("e"), "renamed.json".to_owned()] {
+        let (fixture, id) = run_then_rename("store-stem-mismatch", &target);
+        let (providers, probe) = Steps::new(vec![ok(0)]);
+        let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", CREDENTIAL)]);
+        let ran = run_providers(&fixture.consented(), &env, &providers, &StdFs);
+        assert_eq!(ran.code, ExitCode::InvalidInput, "{target}: {}", ran.stderr);
+        assert_eq!(ran.codes(), ["RT-AI-0302"], "{target}: {}", ran.stderr);
+        assert!(ran.stderr.contains(&target), "{target}: {}", ran.stderr);
+        assert!(ran.stderr.contains(&id), "{target}: {}", ran.stderr);
+        assert_eq!(probe.attempts(), 0, "{target}");
+        assert_eq!(ran.stdout, "", "{target}");
+    }
+}
+
+#[test]
+fn a_batch_whose_file_stem_is_its_request_id_is_accepted() {
+    let fixture = Fixture::new("store-stem-match");
+    std::fs::create_dir_all(fixture.path("work")).unwrap();
+    fixture.write_script(&payload(0));
+    let id = fixture.request_id();
+    assert_eq!(run_std(&fixture.consented()).code, ExitCode::Success);
+    assert!(fixture.path(&format!("store/batches/{id}.json")).exists());
+    let (providers, probe) = Steps::new(vec![ok(0)]);
+    let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", CREDENTIAL)]);
+    let ran = run_providers(&fixture.consented(), &env, &providers, &StdFs);
+    assert_eq!(ran.code, ExitCode::Success, "{}", ran.stderr);
+    assert!(!ran.codes().contains(&"RT-AI-0302".to_owned()));
+    assert_eq!(probe.attempts(), 0);
+}
+
+// Req 23.33 row 4 lists RT-AI-0302 for a malformed store, and Req 16.17
+// step 4 puts it at exit 2, so an oversize batch is not RT-LIM-0001.
+#[test]
+fn an_oversize_batch_file_is_rt_ai_0302_and_a_file_at_the_limit_is_not_oversize() {
+    let limit = usize::try_from(rt_foundation::MAX_PROPOSAL_BATCH_BYTES).unwrap();
+    for (size, oversize) in [(limit + 1, true), (limit, false)] {
+        let fixture = hosted("store-oversize");
+        let path = fixture.path(&format!("store/batches/{}", name("a")));
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, vec![b' '; size]).unwrap();
+        assert_eq!(std::fs::metadata(&path).unwrap().len(), size as u64);
+        let (providers, probe) = Steps::new(vec![ok(0)]);
+        let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", CREDENTIAL)]);
+        let ran = run_providers(&fixture.consented(), &env, &providers, &StdFs);
+        assert_eq!(ran.code, ExitCode::InvalidInput, "{size}: {}", ran.stderr);
+        assert_eq!(ran.codes(), ["RT-AI-0302"], "{size}: {}", ran.stderr);
+        assert_eq!(probe.attempts(), 0);
+        let said_size = ran.stderr.contains("larger than the effective limit");
+        assert_eq!(said_size, oversize, "{size}: {}", ran.stderr);
+        assert!(ran.stderr.contains(&name("a")), "{size}");
+    }
+}
+
+// Req 16.17 step 4 is "Input load and idempotency check" and design 3.7.1
+// lists `load_inputs` before `idempotency_check`. A Req 22 lifecycle key in
+// an input file therefore ends the run before the store is read.
+fn flag_the_rulebook(fixture: &Fixture) {
+    let path = fixture.path("rulebook.json");
+    let text = std::fs::read_to_string(&path).unwrap();
+    let flagged = text.replacen(r#""name":"n""#, r#""approval_status":"x","name":"n""#, 1);
+    assert_ne!(text, flagged);
+    std::fs::write(path, flagged).unwrap();
+}
+
+#[test]
+fn a_lifecycle_key_in_an_input_file_precedes_a_malformed_store() {
+    let fixture = hosted("store-order-flag");
+    flag_the_rulebook(&fixture);
+    garbage(&fixture, &name("a"), "{");
+    let (providers, probe) = Steps::new(vec![ok(0)]);
+    let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", CREDENTIAL)]);
+    let ran = run_providers(&fixture.consented(), &env, &providers, &StdFs);
+    assert_eq!(ran.code, ExitCode::InvalidInput, "{}", ran.stderr);
+    assert_eq!(ran.codes(), ["RT-DGN-0003"], "{}", ran.stderr);
+    assert!(!ran.stderr.contains(&name("a")), "{}", ran.stderr);
+    assert_eq!(probe.attempts(), 0);
+}
+
+#[test]
+fn a_lifecycle_key_in_an_input_file_is_reported_alone_with_a_clean_store() {
+    let fixture = hosted("store-order-flag-clean");
+    flag_the_rulebook(&fixture);
+    let (providers, probe) = Steps::new(vec![ok(0)]);
+    let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", CREDENTIAL)]);
+    let ran = run_providers(&fixture.consented(), &env, &providers, &StdFs);
+    assert_eq!(ran.code, ExitCode::InvalidInput, "{}", ran.stderr);
+    assert_eq!(ran.codes(), ["RT-DGN-0003"], "{}", ran.stderr);
+    assert_eq!(probe.attempts(), 0);
+}
+
+// Design 3.9.2: `--dry-run` sends nothing, so neither the provider-link
+// check nor the store check of Req 23.33 applies to it.
+#[test]
+fn dry_run_neither_checks_the_store_nor_the_provider_link() {
+    let fixture = hosted("store-dry-run");
+    garbage(&fixture, &name("a"), "{");
+    let ran = run_std(&fixture.args(&["--dry-run"]));
+    assert_eq!(ran.code, ExitCode::Success, "{}", ran.stderr);
+    assert!(ran.codes().is_empty(), "{}", ran.stderr);
+    assert_eq!(ran.stdout.lines().count(), 1, "{}", ran.stdout);
+    let real = run_std(&fixture.consented());
+    assert_eq!(real.code, ExitCode::InvalidInput, "{}", real.stderr);
+    assert_eq!(real.codes(), ["RT-AI-0006"], "{}", real.stderr);
+}
