@@ -333,28 +333,42 @@ fn a_forbidden_name_after_a_repeated_key_in_a_proposal_is_0204() {
 fn a_forbidden_name_after_a_repeated_key_inside_the_rule_is_0204() {
     let draft = DRAFT.replace(
         r#""target":"eligible2""#,
-        r#""target":"eligible2","target":"x""#,
+        r#""target":"eligible2","target":"x","validation_result":"ok""#,
     );
-    let one = rule_proposal(&draft);
-    let head = one.strip_suffix('}').unwrap();
-    let text = wrap(&[format!(r#"{head},"validation_result":"ok"}}"#)]);
+    let text = wrap(&[rule_proposal(&draft)]);
     expect(
         &text,
         Code::AiResponseForbiddenField,
         r#""validation_result""#,
-        "proposals[0].validation_result",
+        "proposals[0].rule.validation_result",
     );
 }
 
 #[test]
-fn a_forbidden_name_inside_a_repeated_key_object_is_found_in_every_copy() {
-    let text = r#"{"x":{"a":1},"x":{"passed":true},"schema_version":"1","proposals":[]}"#;
-    expect(
-        text,
-        Code::AiResponseForbiddenField,
-        r#""passed""#,
-        "x.passed",
-    );
+fn an_escaped_spelling_of_a_forbidden_name_is_0204() {
+    for (spelled, field) in [
+        (r#""\u0073tatus""#, "status"),
+        (r#""stat\u0075s""#, "status"),
+        (r#""\u0061pproval""#, "approval"),
+        (r#""is\u005fapproved""#, "is_approved"),
+    ] {
+        let text = format!(r#"{{{spelled}:"x","schema_version":"1","proposals":[]}}"#);
+        expect(&text, Code::AiResponseForbiddenField, spelled, field);
+    }
+}
+
+#[test]
+fn a_forbidden_name_inside_either_copy_of_a_repeated_key_is_found() {
+    let in_first = r#"{"x":{"passed":true},"x":{"a":1},"schema_version":"1","proposals":[]}"#;
+    let in_second = r#"{"x":{"a":1},"x":{"passed":true},"schema_version":"1","proposals":[]}"#;
+    for text in [in_first, in_second] {
+        expect(
+            text,
+            Code::AiResponseForbiddenField,
+            r#""passed""#,
+            "x.passed",
+        );
+    }
 }
 
 #[test]

@@ -6,6 +6,7 @@ use crate::response::{parse_response, ParsedResponse, ProposalKind, FORBIDDEN_FI
 use proptest::prelude::*;
 use rt_ai_adapter::Completion;
 use rt_foundation::{Code, Diagnostic, InputId, Location, Severity};
+use rt_json::{parse_keeping_duplicates, Kind, ParseLimits, Position, Value};
 
 /// The thirteen names of design 3.7.4 step 1, written out independently of
 /// the production list.
@@ -876,6 +877,23 @@ fn forbidden_outranks_excess_nesting() {
 }
 
 #[test]
+fn a_hundred_thousand_nested_arrays_are_0202_without_exhausting_the_stack() {
+    let n = 100_000;
+    let text = format!("{}{}", "[".repeat(n), "]".repeat(n));
+    let d = parse_with(Completion::Complete, text.as_bytes(), 1 << 21).unwrap_err();
+    assert_eq!(
+        shape(&d),
+        (
+            Code::AiResponseSchemaViolation,
+            Severity::Error,
+            Some(1),
+            Some(33),
+            Some("[0]".repeat(32))
+        )
+    );
+}
+
+#[test]
 fn flags_that_agree_with_the_validator_are_still_rejected() {
     // A clean candidate_test agrees with has_errors:false, no_errors:true,
     // status:"proposed" and approval_status:"Proposed".
@@ -903,6 +921,20 @@ fn a_failure_returns_no_partial_result() {
     let result = parse(&wrap(&[good, bad]));
     assert!(result.is_err());
     assert_eq!(result.unwrap_err().code(), Code::AiResponseSchemaViolation);
+}
+
+/// Every decoded key of `value`, in document order.
+fn decoded_keys(value: &Value<Position>, out: &mut Vec<String>) {
+    match value.kind() {
+        Kind::Array(items) => items.iter().for_each(|v| decoded_keys(v, out)),
+        Kind::Object(members) => {
+            for m in members {
+                out.push(m.key.clone());
+                decoded_keys(&m.value, out);
+            }
+        }
+        _ => {}
+    }
 }
 
 const TOKENS: [&str; 16] = [
@@ -973,7 +1005,8 @@ proptest! {
 
     /// A mutated valid payload never panics. A rejection is exactly one
     /// Severity Error diagnostic with an AI response code and a location in
-    /// the response. An accepted payload has no forbidden key spelled out.
+    /// the response. An accepted payload has no forbidden key once every
+    /// key is decoded, whatever escapes spell it.
     #[test]
     fn mutated_payloads_never_panic_and_fail_with_an_ai_error(
         base in 0usize..5,
@@ -998,9 +1031,12 @@ proptest! {
             }
             Ok(_) => {
                 prop_assert_eq!(completion, Completion::Complete);
-                let text = String::from_utf8(payload).unwrap();
+                let parsed = parse_keeping_duplicates(&rid(), &payload, ParseLimits::new(LIMIT, 64))
+                    .expect("an accepted payload parses");
+                let mut keys = Vec::new();
+                decoded_keys(&parsed.tree, &mut keys);
                 for name in FORBIDDEN_NAMES {
-                    prop_assert!(!text.contains(&format!(r#""{name}":"#)), "{name}");
+                    prop_assert!(!keys.iter().any(|k| k == name), "{name}");
                 }
             }
         }
@@ -1027,4 +1063,55 @@ proptest! {
         )]);
         prop_assert_eq!(fail(&text).code(), Code::AiResponseForbiddenField);
     }
+
+    /// Repeated keys, in any spelling, before a forbidden name never hide
+    /// it: the answer is RT-AI-0204 at the forbidden key, not RT-AI-0202.
+    #[test]
+    fn repeated_keys_in_any_spelling_never_hide_a_forbidden_name(
+        index in 0..FORBIDDEN_NAMES.len(),
+        escape_first in any::<bool>(),
+        groups in proptest::collection::vec(
+            (0..KEY_SPELLINGS.len(), proptest::collection::vec(0usize..4, 2..6)),
+            1..4,
+        ),
+    ) {
+        let name = FORBIDDEN_NAMES[index];
+        let spelled = if escape_first {
+            let first = name.chars().next().unwrap();
+            format!(r#""\u{:04x}{}""#, u32::from(first), &name[1..])
+        } else {
+            format!(r#""{name}""#)
+        };
+        let mut prefix = String::new();
+        for (family, spellings) in &groups {
+            let family = &KEY_SPELLINGS[*family];
+            for (n, pick) in spellings.iter().enumerate() {
+                let key = family[pick % family.len()];
+                prefix.push_str(&format!(r#"{key}:{n},"#));
+            }
+        }
+        let text = wrap(&[proposal("candidate_test").replace(
+            r#""rationale":"why""#,
+            &format!(r#""rationale":"why",{prefix}{spelled}:true"#),
+        )]);
+        prop_assert_eq!(
+            shape(&fail(&text)),
+            (
+                Code::AiResponseForbiddenField,
+                Severity::Error,
+                Some(1),
+                col(&text, &spelled),
+                Some(format!("proposals[0].{name}"))
+            ),
+            "{}", text
+        );
+    }
 }
+
+/// Spellings of one decoded key: plain, escaped and non-ASCII forms.
+const KEY_SPELLINGS: [&[&str]; 4] = [
+    &[r#""a""#, r#""\u0061""#],
+    &[r#""é""#, r#""\u00e9""#, r#""\u00E9""#],
+    &[r#""a\"""#, r#""a\u0022""#],
+    &["\"😀\"", r#""\ud83d\ude00""#, r#""\uD83D\uDE00""#],
+];

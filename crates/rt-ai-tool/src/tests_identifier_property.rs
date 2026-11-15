@@ -307,6 +307,8 @@ fn limits() -> impl Strategy<Value = RequestLimits> {
     })
 }
 
+// Duplicate clauses are rejected by RT-AI-0304 in the plan tests, so the
+// identifier properties above use distinct clauses only.
 fn spec() -> impl Strategy<Value = Spec> {
     let raw = proptest::collection::vec((0usize..2, any::<u8>(), any::<u8>()), 1..=7);
     (
@@ -673,8 +675,6 @@ proptest! {
     }
 }
 
-// Duplicate clauses are rejected by RT-AI-0304 in the plan tests, so the
-// identifier properties above use distinct clauses only.
 #[test]
 fn an_empty_clause_list_is_rejected_with_the_exact_diagnostic() {
     let at = Location::Cli(CliLocation::Argument {

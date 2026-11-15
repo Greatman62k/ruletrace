@@ -726,6 +726,14 @@ mod tests {
     }
 
     #[test]
+    fn strict_parse_reports_the_repeat_before_a_later_syntax_error() {
+        let d = fail(b"{\"a\":1,\"a\":2,}");
+        assert_eq!(d.code(), Code::IrSyntaxError);
+        assert_eq!(at(&d), (1, 8));
+        assert!(d.message().contains("duplicate object key"));
+    }
+
+    #[test]
     fn keeping_duplicates_returns_every_member_and_the_first_repeat() {
         let text = b"{\"a\":1,\n \"b\":2, \"a\":3, \"a\":4}";
         let lenient = parse_keeping_duplicates(&id(), text, lim()).unwrap();

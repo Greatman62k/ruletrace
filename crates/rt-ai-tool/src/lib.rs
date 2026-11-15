@@ -44,6 +44,8 @@ mod tests_response;
 #[cfg(test)]
 mod tests_response_closed;
 #[cfg(test)]
+mod tests_response_objects;
+#[cfg(test)]
 mod tests_scan;
 
 pub use config::{
