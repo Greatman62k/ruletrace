@@ -1,4 +1,4 @@
-//! Property 12: Rule_Content_Hash sensitivity (task 4.13, design §3.8.2,
+//! Property 12: Rule_Content_Hash sensitivity (design §3.8.2,
 //! §4.1.7).
 //!
 //! A revision and its declared documents are generated, then exactly one part
