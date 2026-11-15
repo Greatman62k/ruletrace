@@ -150,3 +150,76 @@ fn a_match_in_the_feedback_is_input_and_has_no_advice() {
     );
     assert_eq!(advice(Source::Input), "");
 }
+
+fn with_input_type(mut request: ProviderRequest, ty: &str) -> ProviderRequest {
+    let declared = object(vec![
+        ("ir_version", Value::string("1")),
+        (
+            "inputs",
+            Value::array(vec![object(vec![
+                ("name", Value::string("age")),
+                ("type", Value::string(ty)),
+            ])]),
+        ),
+        (
+            "highest_revision",
+            object(vec![("r.one", Value::integer(1))]),
+        ),
+    ]);
+    for (name, value) in &mut request.context {
+        if name == "declarations" {
+            *value = declared.clone();
+        }
+    }
+    request
+}
+
+#[test]
+fn a_match_in_the_model_name_names_the_model_and_has_its_own_advice() {
+    let mut request = request("age", "elig.basic", 2, "shorter");
+    request.model = "acme-reasoner-2025-01".to_owned();
+    assert_eq!(
+        scan("acme-reasoner-2025-01", &request),
+        ("requests[0].model".to_owned(), Source::Model)
+    );
+    assert_eq!(
+        scan("sk-acme-reasoner-2025-01-tail", &request),
+        ("requests[0].model".to_owned(), Source::Model)
+    );
+    assert_eq!(
+        advice(Source::Model),
+        "; the credential or part of it occurs in the model name set in the AI \
+         configuration"
+    );
+}
+
+#[test]
+fn a_match_in_a_member_is_named_before_the_model() {
+    let mut request = request("age", "elig.basic", 2, "use zebra_stripes please");
+    request.model = "zebra_stripes".to_owned();
+    assert_eq!(
+        scan("zebra_stripes", &request),
+        ("requests[0].revise.feedback".to_owned(), Source::Input)
+    );
+}
+
+#[test]
+fn a_type_token_is_fixed_text_and_only_the_enum_name_is_user_text() {
+    let bare = with_input_type(request("age", "elig.basic", 2, "x"), "boolean");
+    assert_eq!(
+        scan("boolean", &bare),
+        ("requests[0].declarations".to_owned(), Source::Fixed)
+    );
+    let named = with_input_type(request("age", "elig.basic", 2, "x"), "enum:Division");
+    for (credential, expected) in [
+        ("Division", Source::Declarations),
+        ("enum:Division", Source::Declarations),
+        ("enum", Source::Fixed),
+    ] {
+        assert_eq!(
+            scan(credential, &named),
+            ("requests[0].declarations".to_owned(), expected),
+            "{credential}"
+        );
+    }
+}

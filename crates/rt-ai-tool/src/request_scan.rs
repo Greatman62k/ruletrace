@@ -27,6 +27,8 @@ pub(crate) enum Source {
     ReviseRule,
     // The `--revise-revision` value.
     ReviseRevision,
+    // The model name of the AI configuration.
+    Model,
     // Text that RuleTrace writes: the fixed head, keys and the vocabulary.
     Fixed,
 }
@@ -43,26 +45,48 @@ fn member_rank(name: &str) -> usize {
         .unwrap_or(MEMBER_ORDER.len())
 }
 
-// Whether a string value of the declarations, or a rule identifier of
-// `highest_revision`, holds the match. A match that only crosses keys or
-// punctuation of the fixed layout is not user text.
+// The type tokens that RuleTrace writes for the declared types.
+const TYPE_TOKENS: [&str; 6] = ["number", "boolean", "text", "date", "ranking", "error"];
+const ENUM_PREFIX: &str = "enum:";
+
+// Whether the declared type `text` holds user text. A bare token, and the
+// `enum:` prefix of an enumeration type, are fixed; the name after the
+// prefix is the user's.
+fn type_holds_user_text(redactor: &Redactor, text: &str) -> bool {
+    if TYPE_TOKENS.contains(&text) {
+        return false;
+    }
+    if text.starts_with(ENUM_PREFIX) {
+        return hit(redactor, text) && !hit(redactor, ENUM_PREFIX);
+    }
+    hit(redactor, text)
+}
+
+// Whether a name, a member or a type name of the declarations, or a rule
+// identifier of `highest_revision`, holds the match. A match that only
+// crosses keys, type tokens or punctuation of the fixed layout is not user
+// text.
 fn declarations_hold_user_text(redactor: &Redactor, declarations: &Value<()>) -> bool {
-    fn walk(redactor: &Redactor, value: &Value<()>) -> bool {
+    fn walk(redactor: &Redactor, key: &str, value: &Value<()>) -> bool {
         if let Some(text) = value.as_str() {
-            return hit(redactor, text);
+            return if matches!(key, "type" | "element_type") {
+                type_holds_user_text(redactor, text)
+            } else {
+                hit(redactor, text)
+            };
         }
         if let Some(items) = value.as_array() {
-            return items.iter().any(|item| walk(redactor, item));
+            return items.iter().any(|item| walk(redactor, key, item));
         }
         value
             .as_object()
-            .is_some_and(|members| members.iter().any(|m| walk(redactor, &m.value)))
+            .is_some_and(|members| members.iter().any(|m| walk(redactor, &m.key, &m.value)))
     }
     let rule_ids = declarations
         .get("highest_revision")
         .and_then(|m| m.value.as_object())
         .is_some_and(|members| members.iter().any(|m| hit(redactor, &m.key)));
-    rule_ids || walk(redactor, declarations)
+    rule_ids || walk(redactor, "", declarations)
 }
 
 // The member of the request that holds the match, as a path of names that
@@ -107,6 +131,9 @@ pub(crate) fn member_path(
         let path = format!("{base}.{}", inner.unwrap_or_else(|| name.clone()));
         return (path, source);
     }
+    if hit(redactor, &request.model) {
+        return (format!("{base}.model"), Source::Model);
+    }
     (base.to_owned(), Source::Fixed)
 }
 
@@ -123,6 +150,10 @@ pub(crate) fn advice(source: Source) -> &'static str {
         Source::ReviseRevision => {
             "; the credential or part of it occurs in the revision target given \
              with --revise-revision"
+        }
+        Source::Model => {
+            "; the credential or part of it occurs in the model name set in the \
+             AI configuration"
         }
         Source::Fixed => {
             "; the credential or part of it occurs in fixed request text, so it \

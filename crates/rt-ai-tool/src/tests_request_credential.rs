@@ -293,3 +293,54 @@ fn a_dry_run_reads_no_credential_and_is_not_refused() {
     assert_eq!(code, ExitCode::Success, "{stderr}");
     assert_eq!(stdout.lines().count(), 1, "{stdout}");
 }
+
+const MODEL_ADVICE: &str = "the credential or part of it occurs in the model name set \
+     in the AI configuration";
+
+fn run_with_model(
+    name: &str,
+    model: &str,
+    credential: &str,
+) -> (Fixture, Vec<String>, (Ran, Probe)) {
+    let fixture = clause_fixture(name, "Alpha beta.");
+    let config = fixture.real_config("").replace("model-1", model);
+    assert!(config.contains(&format!("model = \"{model}\"")));
+    fixture.write_config(&config);
+    let before = fixture.files();
+    let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", credential)]);
+    let (providers, probe) = Steps::new(Vec::new());
+    let ran = run_providers(&fixture.consented(), &env, &providers, &StdFs);
+    (fixture, before, (ran, probe))
+}
+
+// The model name comes from the AI configuration, so the advice about
+// fixed request text, which suggests a credential that is too short or too
+// common, would point at the wrong cause.
+#[test]
+fn a_credential_in_the_configured_model_name_names_the_model() {
+    let cases = [
+        ("acme-reasoner-2025-01", "acme-reasoner-2025-01"),
+        ("acme-reasoner-2025-01", "sk-acme-reasoner-2025-01-tail"),
+    ];
+    for (i, (model, credential)) in cases.into_iter().enumerate() {
+        let (fixture, before, got) =
+            run_with_model(&format!("req-cred-model-{i}"), model, credential);
+        assert_advised(&got, &fixture, &before, "requests[0].model", MODEL_ADVICE);
+    }
+}
+
+// The type tokens are text that RuleTrace writes. Only the name after
+// `enum:` is the user's.
+#[test]
+fn a_credential_equal_to_a_type_token_is_fixed_text_not_a_declaration() {
+    let fixture = clause_fixture("req-cred-type-token", "Alpha beta.");
+    let before = fixture.files();
+    let got = run_hosted(&fixture, "number", &fixture.consented());
+    assert_advised(
+        &got,
+        &fixture,
+        &before,
+        "requests[0].declarations",
+        FIXED_ADVICE,
+    );
+}
