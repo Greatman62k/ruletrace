@@ -477,3 +477,19 @@ fn a_proposal_for_an_existing_rule_lists_and_adopts_revision_two() {
         "{after}"
     );
 }
+
+#[test]
+fn list_without_rule_places_an_unadoptable_draft_at_the_store_directory() {
+    let mut batch = batch_of("d.b", "b");
+    batch.proposals[0].rule.as_mut().unwrap().1 = sha256(b"some other draft");
+    let fs = fs_with(&rulebook_text(), &batch);
+    let out = run(&list_args(&["--proposals", "store"]), &fs);
+    assert_eq!(out.code.value(), 0, "{}", out.stderr);
+    let text = String::from_utf8(out.stdout).unwrap();
+    let lines: Vec<&str> = pending_block(&text).lines().collect();
+    assert!(
+        lines[1].starts_with("  diagnostic: error RT-APR-0213: "),
+        "{text}"
+    );
+    assert_eq!(lines[2], "  diagnostic:   at input 'store'", "{text}");
+}
