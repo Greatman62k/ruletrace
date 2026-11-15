@@ -27,8 +27,9 @@ use crate::commit::{
 use crate::io::{commit_files, input_location, sibling, Fs};
 use crate::validate::{collect, exit_code_of, input_id, load_sources, read_input};
 use rt_foundation::{
-    escape_controls, Code, Diagnostic, DiagnosticState, ExitCode, Location, RevisionNumber, RuleId,
-    MAX_CONTAINER_DEPTH, MAX_LEDGER_BYTES, MAX_PROPOSAL_BATCH_BYTES, MAX_RULEBOOK_BYTES,
+    escape_controls, Code, Diagnostic, DiagnosticState, ExitCode, InputId, Location,
+    RevisionNumber, RuleId, MAX_CONTAINER_DEPTH, MAX_LEDGER_BYTES, MAX_PROPOSAL_BATCH_BYTES,
+    MAX_RULEBOOK_BYTES,
 };
 use rt_ir::{rule_content_hash, ApprovalStatus, Origin, RuleKey, RuleRevision, Rulebook};
 use rt_json::ParseLimits;
@@ -95,6 +96,19 @@ fn store_invalid(path: &Path, why: String) -> Diagnostic {
     Diagnostic::new(Code::ReviewProposalStoreInvalid, why, input_location(path))
 }
 
+/// A batch file above the limit (Req 19.3, 19.8). The size is the size of the
+/// file, taken before any of its content is read.
+fn oversize_batch(path: &Path, input: &InputId, size: u64) -> Diagnostic {
+    Diagnostic::new(
+        Code::LimitFileTooLarge,
+        format!(
+            "input file '{input}' is {size} bytes, larger than the effective limit of \
+             {MAX_PROPOSAL_BATCH_BYTES} bytes"
+        ),
+        input_location(path),
+    )
+}
+
 /// Reads every `batches/*.json` of a Proposal_Store (design §3.7.5). The store
 /// is only read here (D-8).
 fn load_batches(dir: &Path, fs: &dyn Fs, problems: &mut DiagnosticState) -> Vec<Batch> {
@@ -117,15 +131,22 @@ fn load_batches(dir: &Path, fs: &dyn Fs, problems: &mut DiagnosticState) -> Vec<
     {
         let step = || -> Result<Batch, Vec<Diagnostic>> {
             let input = input_id(path).map_err(|d| vec![*d])?;
+            let shown = || escape_controls(&path.display().to_string());
+            let size = fs.len(path).map_err(|e| {
+                vec![store_invalid(
+                    path,
+                    format!("the batch '{}' cannot be read: {e}", shown()),
+                )]
+            })?;
+            if size > MAX_PROPOSAL_BATCH_BYTES {
+                return Err(vec![oversize_batch(path, &input, size)]);
+            }
             let bytes = fs
                 .read(path, MAX_PROPOSAL_BATCH_BYTES.saturating_add(1))
                 .map_err(|e| {
                     vec![store_invalid(
                         path,
-                        format!(
-                            "the batch '{}' cannot be read: {e}",
-                            escape_controls(&path.display().to_string())
-                        ),
+                        format!("the batch '{}' cannot be read: {e}", shown()),
                     )]
                 })?;
             parse_batch(&input, &bytes)
@@ -136,7 +157,11 @@ fn load_batches(dir: &Path, fs: &dyn Fs, problems: &mut DiagnosticState) -> Vec<
                 // A batch that does not parse makes the whole store invalid, so
                 // that no proposal is adopted from a store that is not trusted.
                 for d in ds {
-                    problems.push(store_invalid(path, d.message().to_owned()));
+                    if d.code() == Code::LimitFileTooLarge {
+                        problems.push(d);
+                    } else {
+                        problems.push(store_invalid(path, d.message().to_owned()));
+                    }
                 }
             }
         }

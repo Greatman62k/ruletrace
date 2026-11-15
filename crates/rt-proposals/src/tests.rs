@@ -180,3 +180,31 @@ fn pending_proposals_are_unadopted_rule_suggestions() {
     assert_eq!(ids(&none), vec![0, 2]);
     assert_eq!(ids(&rulebook_adopting(&adopted)), vec![2]);
 }
+
+// The limit is 16 MiB, 16777216 bytes, written out and not read from the
+// constant under test.
+const LIMIT_BYTES: usize = 16_777_216;
+
+#[test]
+fn bytes_above_the_limit_are_rt_lim_0001_with_the_length_given() {
+    for len in [LIMIT_BYTES + 1, 3 * LIMIT_BYTES + 5] {
+        let diags = parse_batch(&input(), &vec![b'x'; len]).unwrap_err();
+        assert_eq!(diags.len(), 1);
+        assert_eq!(diags[0].code(), Code::LimitFileTooLarge);
+        assert_eq!(
+            diags[0].message(),
+            format!(
+                "input file 'batches/x.json' is {len} bytes, larger than the effective \
+                 limit of 16777216 bytes"
+            )
+        );
+    }
+}
+
+#[test]
+fn bytes_of_exactly_the_limit_are_parsed_and_not_a_size_fault() {
+    let diags = parse_batch(&input(), &vec![b'x'; LIMIT_BYTES]).unwrap_err();
+    assert_eq!(diags.len(), 1);
+    assert_eq!(diags[0].code(), Code::AiStoreInvalid);
+    assert!(!diags[0].message().contains("larger than"));
+}

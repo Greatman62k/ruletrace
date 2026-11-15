@@ -681,6 +681,17 @@ impl Fs for PairFs<'_> {
         }
     }
 
+    fn len(&self, path: &Path) -> io::Result<u64> {
+        let held = [&self.rulebook, &self.ledger]
+            .into_iter()
+            .find(|(held, _)| held == path);
+        match held {
+            None => self.inner.len(path),
+            Some((_, Seen::Failed(kind))) => Err((*kind).into()),
+            Some((_, Seen::Bytes(bytes))) => Ok(u64::try_from(bytes.len()).unwrap_or(u64::MAX)),
+        }
+    }
+
     fn list_dir(&self, dir: &Path) -> io::Result<Vec<PathBuf>> {
         self.inner.list_dir(dir)
     }

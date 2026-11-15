@@ -18,6 +18,8 @@ mod pipeline_tests;
 mod reader_window_tests;
 #[path = "tests_review_adopt.rs"]
 mod review_adopt_tests;
+#[path = "tests_review_oversize.rs"]
+mod review_oversize_tests;
 #[path = "tests_review.rs"]
 mod review_tests;
 #[path = "tests_validate.rs"]
@@ -42,6 +44,8 @@ struct MemFs {
     fail_create: Cell<bool>,
     /// Another process holds the exclusive review lock.
     lock_held: Cell<bool>,
+    /// Fail every `len`.
+    fail_len: Cell<bool>,
 }
 
 /// A lock that holds nothing in memory: `MemFs` has one lock state only.
@@ -66,6 +70,15 @@ impl MemFs {
 }
 
 impl Fs for MemFs {
+    fn len(&self, path: &Path) -> io::Result<u64> {
+        if self.fail_len.get() {
+            return Err(io::Error::other("injected len failure"));
+        }
+        match self.files.borrow().get(path) {
+            Some(b) => Ok(u64::try_from(b.len()).unwrap_or(u64::MAX)),
+            None => Err(io::ErrorKind::NotFound.into()),
+        }
+    }
     fn read(&self, path: &Path, max_bytes: u64) -> io::Result<Vec<u8>> {
         match self.files.borrow().get(path) {
             Some(b) => Ok(b

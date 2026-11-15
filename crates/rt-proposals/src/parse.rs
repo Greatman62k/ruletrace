@@ -377,9 +377,13 @@ fn invalid(
 /// Parses one batch file.
 ///
 /// # Errors
+/// - `RT-LIM-0001` when `bytes` is longer than `MAX_PROPOSAL_BATCH_BYTES`,
+///   with the length of `bytes`. A caller that reads a bounded prefix must
+///   check the size of the file first, because this length is only the
+///   length it was given.
 /// - `RT-DGN-0001`, `0002` or `0003` when any object has a flag or
 ///   lifecycle key. No other check runs first.
-/// - `RT-AI-0302` for any other defect: syntax, size, depth, an unknown or
+/// - `RT-AI-0302` for any other defect: syntax, depth, an unknown or
 ///   missing member, a proposal identifier that is not
 ///   `SHA-256(request_id ":" index)`, a payload that does not match
 ///   `response_sha256`, or bytes that are not the canonical form.
@@ -387,8 +391,13 @@ fn invalid(
 /// No batch is returned on error.
 pub fn parse_batch(input: &InputId, bytes: &[u8]) -> Result<Batch, Vec<Diagnostic>> {
     let limits = ParseLimits::new(MAX_PROPOSAL_BATCH_BYTES, MAX_CONTAINER_DEPTH);
-    let root =
-        parse(input, bytes, limits).map_err(|d| invalid(input, None, None, None, d.message()))?;
+    let root = parse(input, bytes, limits).map_err(|d| {
+        if d.code() == Code::LimitFileTooLarge {
+            vec![*d]
+        } else {
+            invalid(input, None, None, None, d.message())
+        }
+    })?;
     check_flag_keys(input, &root)?;
     let batch = decode(&root).map_err(|f| {
         invalid(

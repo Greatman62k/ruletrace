@@ -306,6 +306,15 @@ impl FaultFs {
 }
 
 impl Fs for FaultFs {
+    // A size query is not a counted operation, so the fault schedules of the
+    // tests that number every read, write and rename stay as they are.
+    fn len(&self, path: &Path) -> io::Result<u64> {
+        match self.inner.borrow().files.get(path) {
+            Some(b) => Ok(u64::try_from(b.len()).unwrap_or(u64::MAX)),
+            None => Err(io::ErrorKind::NotFound.into()),
+        }
+    }
+
     fn read(&self, path: &Path, max_bytes: u64) -> io::Result<Vec<u8>> {
         let act = self.tick("read", path, None);
         if matches!(act, Act::Fail | Act::Torn) {

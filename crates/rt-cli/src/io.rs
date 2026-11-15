@@ -20,6 +20,19 @@ pub trait Fs {
     /// Any I/O error, including a missing file or a directory.
     fn read(&self, path: &Path, max_bytes: u64) -> io::Result<Vec<u8>>;
 
+    /// The size in bytes of the file, without reading its content where the
+    /// file system allows it.
+    ///
+    /// The default reads the whole file, which is only fit for in-memory
+    /// test file systems; `StdFs` asks the file metadata.
+    ///
+    /// # Errors
+    /// Any I/O error, including a missing file.
+    fn len(&self, path: &Path) -> io::Result<u64> {
+        self.read(path, u64::MAX)
+            .map(|bytes| u64::try_from(bytes.len()).unwrap_or(u64::MAX))
+    }
+
     /// Whether a directory entry of this name exists. A symbolic link counts
     /// as existing even when its target does not.
     ///
@@ -132,6 +145,10 @@ impl Fs for StdFs {
         let mut bytes = Vec::new();
         file.take(max_bytes).read_to_end(&mut bytes)?;
         Ok(bytes)
+    }
+
+    fn len(&self, path: &Path) -> io::Result<u64> {
+        std::fs::metadata(path).map(|m| m.len())
     }
 
     fn exists(&self, path: &Path) -> io::Result<bool> {
@@ -374,6 +391,14 @@ pub(crate) mod target_scratch {
             let _ = std::fs::remove_dir_all(&path);
             std::fs::create_dir_all(&path).unwrap();
             Dir(path)
+        }
+
+        /// Creates a file of `len` bytes that holds no data blocks, so that a
+        /// size far above a limit costs no disk space.
+        pub(crate) fn sparse(&self, name: &str, len: u64) {
+            let path = self.0.join(name);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::File::create(path).unwrap().set_len(len).unwrap();
         }
 
         /// Writes the files of an in-memory state to this directory.
