@@ -851,6 +851,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
   - [ ] 8.7 Implement the Proposal_Store writer, call loop and Run_Summary
     - Implement the idempotency check, the temp-file write with `sync_all`, create-if-absent by hard link with the `create_new` plus rename fallback, `RT-AI-0301` when a batch exists or a concurrent run wins, and `RT-AI-0303` on any write failure with no partial batch file. Implement the call loop using `next_step` and the adapter, per-attempt Warnings, final codes (`RT-AI-0101` to `0108`), sequential requests with no request after the first failure, the Run_Summary lists (`processed`, `stored`, `unprocessed`) and `RT-AI-0306` when an earlier batch was kept.
     - Observable: a three-request run whose second request fails keeps the first batch, lists the remaining clauses as unprocessed and never claims completeness.
+    - Carried from 8.6 review: emit `RT-AI-0305` (`AcceptedBatch::blocking_warning()`) only after a successful store write, with a test that a failed write emits none. The store writer accepts only `AcceptedBatch`, never a bare `Batch` or `Proposal`. The Run_Summary writer and the Transmission_Log writer each get their own canary test (`sk-canary-Zq7x93LmN` absent from every written byte and every Diagnostic).
     - Blocked by: 1.9, 8.6.
     - _Requirements: 23.20, 23.35, 23.36, 23.37, 23.38, 29.7, 29.8, 29.10, 29.11, 29.12, 29.17, 29.19_
     - Design §3.7.5, §3.7.6, §3.7.7
