@@ -142,6 +142,9 @@ impl fmt::Display for RuleId {
 pub struct RevisionNumber(u32);
 
 impl RevisionNumber {
+    /// The first revision of a rule.
+    pub const FIRST: Self = Self(1);
+
     /// Builds a revision number.
     ///
     /// # Errors
@@ -230,6 +233,8 @@ mod tests {
     fn revision_range() {
         assert_eq!(RevisionNumber::new(0), Err(IdError::RevisionOutOfRange));
         assert_eq!(RevisionNumber::new(1).map(RevisionNumber::get), Ok(1));
+        assert_eq!(RevisionNumber::new(1), Ok(RevisionNumber::FIRST));
+        assert_eq!(RevisionNumber::FIRST.get(), 1);
         assert_eq!(
             RevisionNumber::new(u32::MAX).map(RevisionNumber::get),
             Ok(u32::MAX)

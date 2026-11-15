@@ -12,6 +12,6 @@ mod value;
 mod write;
 
 pub use flags::{check_flag_keys, FLAG_KEYS, LIFECYCLE_KEYS};
-pub use parse::{parse, ParseLimits};
+pub use parse::{parse, parse_keeping_duplicates, Lenient, ParseLimits};
 pub use value::{DuplicateKey, Kind, Member, Position, Value, MAX_SAFE_INTEGER};
 pub use write::{write_compact, write_pretty};

@@ -60,6 +60,52 @@ pub fn parse(
     bytes: &[u8],
     limits: ParseLimits,
 ) -> Result<Value<Position>, Box<Diagnostic>> {
+    let (tree, duplicate) = parse_inner(input, bytes, limits, false)?;
+    match duplicate {
+        Some(d) => Err(d),
+        None => Ok(tree),
+    }
+}
+
+/// The result of [`parse_keeping_duplicates`].
+#[derive(Debug)]
+pub struct Lenient {
+    /// The whole document, with every repeated key kept as its own member.
+    pub tree: Value<Position>,
+    /// The diagnostic that [`parse`] would have returned for the first
+    /// repeated key, if the document has one.
+    pub first_duplicate: Option<Box<Diagnostic>>,
+}
+
+/// Parses like [`parse`] but keeps repeated object keys instead of failing.
+///
+/// For callers that must inspect a document that [`parse`] rejects. Every
+/// other check, order of checks and limit is the same as in [`parse`]. The
+/// tree may hold objects with repeated keys and must not be used as a
+/// decoded value.
+///
+/// # Errors
+/// The errors of [`parse`] other than the repeated-key error.
+pub fn parse_keeping_duplicates(
+    input: &InputId,
+    bytes: &[u8],
+    limits: ParseLimits,
+) -> Result<Lenient, Box<Diagnostic>> {
+    let (tree, first_duplicate) = parse_inner(input, bytes, limits, true)?;
+    Ok(Lenient {
+        tree,
+        first_duplicate,
+    })
+}
+
+type Parsed = (Value<Position>, Option<Box<Diagnostic>>);
+
+fn parse_inner(
+    input: &InputId,
+    bytes: &[u8],
+    limits: ParseLimits,
+    keep_duplicates: bool,
+) -> Result<Parsed, Box<Diagnostic>> {
     let actual = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
     let effective = limits.max_bytes.min(u64::from(u32::MAX));
     if actual > effective {
@@ -105,8 +151,11 @@ pub fn parse(
         line: 1,
         col: 1,
         max_depth: limits.max_depth,
+        keep_duplicates,
+        duplicate: None,
     };
-    parser.document()
+    let tree = parser.document()?;
+    Ok((tree, parser.duplicate))
 }
 
 /// Position of the end of `prefix`, which is where the next byte would be.
@@ -174,6 +223,8 @@ struct Parser<'a> {
     line: u32,
     col: u32,
     max_depth: u32,
+    keep_duplicates: bool,
+    duplicate: Option<Box<Diagnostic>>,
 }
 
 impl Parser<'_> {
@@ -379,7 +430,13 @@ impl Parser<'_> {
         let key_pos = self.pos();
         let key = self.string()?;
         if !keys.insert(key.clone()) {
-            return Err(syntax(self.input, key_pos, "duplicate object key"));
+            let error = syntax(self.input, key_pos, "duplicate object key");
+            if !self.keep_duplicates {
+                return Err(error);
+            }
+            if self.duplicate.is_none() {
+                self.duplicate = Some(error);
+            }
         }
         self.skip_ws();
         if self.peek() != Some(b':') {
@@ -666,6 +723,45 @@ mod tests {
         assert_eq!(at(&d), (2, 9));
         // The same key in different objects is fine.
         ok("{\"a\":{\"a\":1},\"b\":{\"a\":2}}");
+    }
+
+    #[test]
+    fn keeping_duplicates_returns_every_member_and_the_first_repeat() {
+        let text = b"{\"a\":1,\n \"b\":2, \"a\":3, \"a\":4}";
+        let lenient = parse_keeping_duplicates(&id(), text, lim()).unwrap();
+        let keys: Vec<&str> = lenient
+            .tree
+            .as_object()
+            .unwrap()
+            .iter()
+            .map(|m| m.key.as_str())
+            .collect();
+        assert_eq!(keys, ["a", "b", "a", "a"]);
+        let first = lenient.first_duplicate.unwrap();
+        assert_eq!(first.code(), Code::IrSyntaxError);
+        assert_eq!(at(&first), (2, 9));
+        assert_eq!(*first, fail(text));
+    }
+
+    #[test]
+    fn keeping_duplicates_reports_nothing_for_a_clean_document() {
+        let lenient = parse_keeping_duplicates(&id(), b"{\"a\":{\"a\":1}}", lim()).unwrap();
+        assert!(lenient.first_duplicate.is_none());
+    }
+
+    #[test]
+    fn keeping_duplicates_still_fails_on_a_later_syntax_error() {
+        let d = *parse_keeping_duplicates(&id(), b"{\"a\":1,\"a\":2,}", lim()).unwrap_err();
+        assert_eq!(d.code(), Code::IrSyntaxError);
+        assert_eq!(at(&d), (1, 14));
+        assert!(!d.message().contains("duplicate"));
+    }
+
+    #[test]
+    fn keeping_duplicates_applies_the_depth_limit() {
+        let l = ParseLimits::new(1 << 20, 2);
+        let d = *parse_keeping_duplicates(&id(), b"{\"a\":1,\"a\":[[1]]}", l).unwrap_err();
+        assert_eq!(d.code(), Code::LimitNestingTooDeep);
     }
 
     #[test]

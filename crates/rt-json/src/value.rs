@@ -40,7 +40,8 @@ pub enum Kind<P> {
     String(String),
     /// An array.
     Array(Vec<Value<P>>),
-    /// An object. Members keep document order and keys are unique.
+    /// An object. Members keep document order. Keys are unique, except in a
+    /// tree from `parse_keeping_duplicates`.
     Object(Vec<Member<P>>),
 }
 
