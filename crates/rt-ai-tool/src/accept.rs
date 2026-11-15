@@ -124,8 +124,9 @@ impl AcceptedBatch {
 ///
 /// No `Err` value carries the credential. Every rejection passes through
 /// one scrub: if the message, the location or the rendered form of any
-/// Diagnostic contains the credential, the whole list is replaced by a
-/// single `RT-AI-0206` that names the nearest credential-free field path.
+/// Diagnostic contains the credential, or any run of eight characters of
+/// it, the whole list is replaced by a single `RT-AI-0206`. Its field path
+/// keeps only the leading segments that RuleTrace itself writes.
 /// The batch is rejected either way, so replacing is simpler than
 /// rewriting text in each stage's Diagnostics, and it holds for stages
 /// added later.
@@ -187,7 +188,8 @@ fn accept_unscrubbed(input: &AcceptInput<'_>) -> Result<AcceptedBatch, Vec<Diagn
 }
 
 // Replaces a rejection that echoes the credential. Stage Diagnostics copy
-// unknown keys, kinds and document ids from the untrusted response.
+// unknown keys, kinds and document ids from the untrusted response, and
+// some of them show only the start of a long value.
 fn scrub(input: &AcceptInput<'_>, found: Vec<Diagnostic>) -> Vec<Diagnostic> {
     let Some(leaking) = found.iter().find(|d| echoes(input.redactor, d)) else {
         return found;
@@ -200,7 +202,7 @@ fn scrub(input: &AcceptInput<'_>, found: Vec<Diagnostic>) -> Vec<Diagnostic> {
         redactor: input.redactor,
         id: input.response_id,
     };
-    vec![leak.found(clean_ancestor(input.redactor, field))]
+    vec![leak.found(structural_prefix(input.redactor, field))]
 }
 
 fn echoes(redactor: &Redactor, d: &Diagnostic) -> bool {
@@ -210,20 +212,51 @@ fn echoes(redactor: &Redactor, d: &Diagnostic) -> bool {
         render_diagnostic(d),
     ]
     .iter()
-    .any(|text| redactor.finds(text))
+    .any(|text| redactor.finds(text) || redactor.finds_fragment(text))
 }
 
-// The longest prefix of `field` that ends before a `.` or `[` and does not
-// contain the credential, or the fixed name `response`.
-fn clean_ancestor(redactor: &Redactor, field: Option<&str>) -> String {
-    let mut path = field.unwrap_or("response");
-    while redactor.finds(path) {
-        match path.rfind(['.', '[']) {
-            Some(cut) => path = &path[..cut],
-            None => return "response".to_owned(),
+// Names that the response schema fixes, so a path made of them never holds
+// text the provider chose.
+const FIXED_SEGMENTS: [&str; 8] = [
+    "kind",
+    "proposer",
+    "rationale",
+    "rule",
+    "expr",
+    "node",
+    "document",
+    "quote",
+];
+
+// True for `name[digits]`, an index that RuleTrace counted itself.
+fn is_indexed(segment: &str) -> bool {
+    ["proposals", "evidence", "outcome"].iter().any(|name| {
+        segment
+            .strip_prefix(name)
+            .and_then(|rest| rest.strip_prefix('['))
+            .and_then(|rest| rest.strip_suffix(']'))
+            .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+    })
+}
+
+// The leading segments of `field` that are fixed names or counted indexes.
+// A key that holds `.` or `[` splits into pieces that fail this test, so
+// the path never ends inside provider text. The result is also checked
+// against the credential, because a short credential can equal a name.
+fn structural_prefix(redactor: &Redactor, field: Option<&str>) -> String {
+    let mut kept: Vec<&str> = field
+        .unwrap_or("")
+        .split('.')
+        .take_while(|s| FIXED_SEGMENTS.contains(s) || is_indexed(s))
+        .collect();
+    while !kept.is_empty() {
+        let path = kept.join(".");
+        if !redactor.finds(&path) && !redactor.finds_fragment(&path) {
+            return path;
         }
+        kept.pop();
     }
-    path.to_owned()
+    "response".to_owned()
 }
 
 fn stored(

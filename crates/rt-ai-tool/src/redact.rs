@@ -2,9 +2,14 @@
 
 use crate::credential::Credential;
 use rt_foundation::escape_controls;
+use std::collections::BTreeSet;
 
 /// The replacement text.
 pub const REDACTED: &str = "[REDACTED]";
+
+/// The length in characters of the smallest credential fragment that
+/// [`Redactor::finds_fragment`] reports.
+pub const FRAGMENT_CHARS: usize = 8;
 
 /// A byte pattern with its Knuth-Morris-Pratt failure table.
 #[derive(Clone)]
@@ -60,6 +65,7 @@ impl Needle {
 #[derive(Clone)]
 pub struct Redactor {
     needles: Vec<Needle>,
+    fragments: BTreeSet<Vec<char>>,
 }
 
 fn json_escaped(value: &str) -> String {
@@ -97,7 +103,17 @@ impl Redactor {
             .flat_map(|f| [format!("Bearer {f}"), f.clone()])
             .map(|f| Needle::new(&f))
             .collect();
-        Self { needles }
+        let fragments = forms
+            .iter()
+            .flat_map(|f| {
+                let chars: Vec<char> = f.chars().collect();
+                chars
+                    .windows(FRAGMENT_CHARS)
+                    .map(<[char]>::to_vec)
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        Self { needles, fragments }
     }
 
     /// A redactor that changes nothing, for a run that has no credential
@@ -106,6 +122,7 @@ impl Redactor {
     pub fn no_credential() -> Self {
         Self {
             needles: Vec::new(),
+            fragments: BTreeSet::new(),
         }
     }
 
@@ -118,6 +135,21 @@ impl Redactor {
             n.find_all(text.as_bytes(), &mut spans);
             !spans.is_empty()
         })
+    }
+
+    /// True when `text` contains any run of [`FRAGMENT_CHARS`] characters
+    /// of the credential, in its plain, JSON-escaped or control-escaped
+    /// form. A credential shorter than that has no fragments, and
+    /// [`Redactor::finds`] covers it whole.
+    ///
+    /// Text that cuts or truncates untrusted input can show a part of the
+    /// credential that [`Redactor::finds`] does not match.
+    #[must_use]
+    pub fn finds_fragment(&self, text: &str) -> bool {
+        let chars: Vec<char> = text.chars().collect();
+        chars
+            .windows(FRAGMENT_CHARS)
+            .any(|w| self.fragments.contains(w))
     }
 
     /// `text` with every occurrence replaced.
