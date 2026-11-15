@@ -76,8 +76,9 @@ pub struct DecideArgs {
     pub time: String,
     /// Create the ledger when the file does not exist.
     pub create_ledger: bool,
-    /// The reason of a rejection. `None` for an approval.
-    pub reject_reason: Option<String>,
+    /// Where the reason of a rejection stands, and the reason. `None` for
+    /// an approval.
+    pub reject_reason: Option<(Location, String)>,
     /// Where each option stands on the command line.
     pub sites: Box<DecisionSites>,
 }
@@ -910,30 +911,26 @@ fn parse_review(text: &[String]) -> Result<Invocation, Vec<Diagnostic>> {
                     revision,
                 }
             } else {
-                match (rule, revision, content_hash, reviewer_given, time_given) {
+                match (
+                    (rule, rule_given),
+                    (revision, revision_given),
+                    (content_hash, hash_given),
+                    reviewer_given,
+                    time_given,
+                ) {
                     (
-                        Some(rule),
-                        Some(revision),
-                        Some(content_hash),
+                        (Some(rule), Some((rule_at, _))),
+                        (Some(revision), Some((revision_at, _))),
+                        (Some(content_hash), Some((hash_at, _))),
                         Some((rs, r)),
                         Some((ts, t)),
                     ) => ReviewCommand::Decide(DecideArgs {
                         sites: Box::new(DecisionSites {
-                            rule: at_argument(rule_given.map_or(0, |(at, _)| at), Some("--rule")),
-                            revision: at_argument(
-                                revision_given.map_or(0, |(at, _)| at),
-                                Some("--revision"),
-                            ),
-                            content_hash: at_argument(
-                                hash_given.map_or(0, |(at, _)| at),
-                                Some("--content-hash"),
-                            ),
+                            rule: at_argument(rule_at, Some("--rule")),
+                            revision: at_argument(revision_at, Some("--revision")),
+                            content_hash: at_argument(hash_at, Some("--content-hash")),
                             reviewer: at_argument(rs, Some("--reviewer")),
                             time: at_argument(ts, Some("--time")),
-                            reason: at_argument(
-                                reason_given.map_or(0, |(at, _)| at),
-                                Some("--reason"),
-                            ),
                         }),
                         rule,
                         revision,
@@ -941,7 +938,8 @@ fn parse_review(text: &[String]) -> Result<Invocation, Vec<Diagnostic>> {
                         reviewer: r.to_owned(),
                         time: t.to_owned(),
                         create_ledger: given.contains_key("--create-ledger"),
-                        reject_reason: reason_given.map(|(_, v)| v.to_owned()),
+                        reject_reason: reason_given
+                            .map(|(at, v)| (at_argument(at, Some("--reason")), v.to_owned())),
                     }),
                     _ => return Err(problems),
                 }

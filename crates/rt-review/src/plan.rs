@@ -31,6 +31,8 @@ pub enum ReviewAction {
     Reject {
         /// The reason, stored verbatim.
         reason: String,
+        /// The `--reason` option, named by a refusal of the reason.
+        site: Location,
     },
 }
 
@@ -48,8 +50,6 @@ pub struct DecisionSites {
     pub reviewer: Location,
     /// The `--time` option.
     pub time: Location,
-    /// The `--reason` option.
-    pub reason: Location,
 }
 
 /// One Review_Decision, as the command line states it. Nothing here is read
@@ -250,12 +250,12 @@ fn plan(
     // 4. Reason (Req 23.14).
     let reason = match &d.action {
         ReviewAction::Approve => None,
-        ReviewAction::Reject { reason } => {
+        ReviewAction::Reject { reason, site } => {
             if reason.is_empty() || reason.chars().nth(MAX_REASON_CHARS).is_some() {
                 return Err(Diagnostic::new(
                     Code::ReviewReasonInvalid,
                     format!("the reason must have 1 to {MAX_REASON_CHARS} characters"),
-                    d.sites.reason.clone(),
+                    site.clone(),
                 )
                 .with_rules(rule_ref(&key)));
             }

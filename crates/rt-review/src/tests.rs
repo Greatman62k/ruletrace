@@ -95,7 +95,6 @@ fn sites() -> DecisionSites {
         content_hash: site(13, "--content-hash"),
         reviewer: site(15, "--reviewer"),
         time: site(17, "--time"),
-        reason: site(19, "--reason"),
     }
 }
 
@@ -115,6 +114,7 @@ fn request(rb: &Rulebook, id: &str, action: ReviewAction) -> ReviewDecision {
 fn reject_action() -> ReviewAction {
     ReviewAction::Reject {
         reason: "not a rule".to_owned(),
+        site: site(19, "--reason"),
     }
 }
 
@@ -255,7 +255,14 @@ fn reviewer_must_be_valid_and_not_an_ai_identity() {
 fn reason_and_time_are_checked() {
     let rb = basic();
     for reason in [String::new(), "r".repeat(2001)] {
-        let req = request(&rb, "elig.basic", ReviewAction::Reject { reason });
+        let req = request(
+            &rb,
+            "elig.basic",
+            ReviewAction::Reject {
+                reason,
+                site: site(19, "--reason"),
+            },
+        );
         let d = refusal(plan_review(&rb, &ApprovalLedger::empty(), &req, &sources()));
         assert_eq!(d.code(), Code::ReviewReasonInvalid);
         assert_eq!(d.primary(), &site(19, "--reason"));
@@ -265,6 +272,7 @@ fn reason_and_time_are_checked() {
         "elig.basic",
         ReviewAction::Reject {
             reason: "r".repeat(2000),
+            site: site(19, "--reason"),
         },
     );
     assert!(plan_review(&rb, &ApprovalLedger::empty(), &ok, &sources()).is_ok());

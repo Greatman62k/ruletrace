@@ -272,8 +272,9 @@ fn decide_locked(
         time: d.time.clone(),
         action: match &d.reject_reason {
             None => ReviewAction::Approve,
-            Some(reason) => ReviewAction::Reject {
+            Some((site, reason)) => ReviewAction::Reject {
                 reason: reason.clone(),
+                site: site.clone(),
             },
         },
         // The adopted revision's Origin already names the AI identities of
