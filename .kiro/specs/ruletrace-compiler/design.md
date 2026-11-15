@@ -1645,7 +1645,7 @@ The catalogue is one file, `catalogue/diagnostics.v1.json` (RT-JSON array of `{c
 | RT-AI-0203 (R) | AI_RESPONSE_TOO_LARGE | Error | Response above the limit | 6 | ai |
 | RT-AI-0204 (R) | AI_RESPONSE_FORBIDDEN_FIELD | Error | Approval, reviewer, status, `has_errors`, `no_errors` or similar field | 6 | ai |
 | RT-AI-0205 (R) | AI_RESPONSE_INCOMPLETE | Error | Refusal, incomplete or non-completed status | 6 | ai |
-| RT-AI-0206 (N) | AI_RESPONSE_CREDENTIAL_ECHO | Error | Response payload contains the credential value; batch not stored (UD-36) | 6 | ai |
+| RT-AI-0206 (N) | AI_RESPONSE_CREDENTIAL_ECHO | Error | Response payload contains the credential value or a run of at least 8 consecutive characters of it; batch not stored (UD-36) | 6 | ai |
 | RT-AI-0301 (R) | AI_BATCH_ALREADY_STORED | Warning | Batch with this request id exists | 0 | ai |
 | RT-AI-0302 (R) | AI_STORE_INVALID | Error | Existing Proposal_Store malformed | 2 | ai |
 | RT-AI-0303 (R) | AI_STORE_WRITE_FAILED | Error | Atomic store write failed | 70 | ai |

@@ -267,7 +267,7 @@ pub enum Code {
     AiResponseForbiddenField,
     /// `RT-AI-0205`: Refusal, incomplete or non-completed status
     AiResponseIncomplete,
-    /// `RT-AI-0206`: Response payload contains the credential value; batch not stored (UD-36)
+    /// `RT-AI-0206`: Response payload contains the credential value or a run of at least 8 consecutive characters of it; batch not stored (UD-36)
     AiResponseCredentialEcho,
     /// `RT-AI-0301`: Batch with this request id exists
     AiBatchAlreadyStored,

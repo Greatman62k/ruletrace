@@ -397,7 +397,9 @@ impl Leak<'_> {
     fn found(&self, field: String) -> Diagnostic {
         Diagnostic::new(
             Code::AiResponseCredentialEcho,
-            "the response contains the credential value and is not stored".to_owned(),
+            "the response contains the credential value or a run of at least 8 \
+             consecutive characters of it and is not stored"
+                .to_owned(),
             plain(self.id, Some(field)),
         )
     }
