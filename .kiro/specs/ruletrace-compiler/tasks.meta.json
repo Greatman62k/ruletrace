@@ -115,6 +115,10 @@
     "7.5 Extend the review-refusal property test to adoption": {
       "status": "passed",
       "lastRunTimestamp": 1794706836180
+    },
+    "8.10 Write property test for the retry decision function": {
+      "status": "passed",
+      "lastRunTimestamp": 1794714207707
     }
   },
   "executionHistory": {
@@ -1861,6 +1865,11 @@
         "executionId": "24a94c1c-968a-451e-9605-46484c9d6a38",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794654920541
+      },
+      {
+        "executionId": "9ef9c8c9-f906-4073-87f7-f03a4b69d163",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794713996963
       }
     ],
     "8.3 Apply the steering updates of design §9.3 items 1 to 4 and 9": [
@@ -1868,6 +1877,11 @@
         "executionId": "24a94c1c-968a-451e-9605-46484c9d6a38",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794654920556
+      },
+      {
+        "executionId": "9ef9c8c9-f906-4073-87f7-f03a4b69d163",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794713998178
       }
     ],
     "8.4 Implement `rt-ai-tool` configuration, consent, credential and redaction": [
@@ -1917,6 +1931,16 @@
         "executionId": "24a94c1c-968a-451e-9605-46484c9d6a38",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794654920658
+      },
+      {
+        "executionId": "9ef9c8c9-f906-4073-87f7-f03a4b69d163",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794713998702
+      },
+      {
+        "executionId": "9ef9c8c9-f906-4073-87f7-f03a4b69d163",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794717346192
       }
     ],
     "8.11 Write property test for whole-batch rejection and strict acceptance": [

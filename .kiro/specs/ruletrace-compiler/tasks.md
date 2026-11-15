@@ -806,14 +806,14 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 29.1, 29.2, 29.3, 29.4, 29.5, 29.6, 29.13, 29.15, 29.18, 18.9_
     - Design §3.4.5, §3.7.6
 
-  - [ ] 8.2 Implement `rt-ai-mock` with step scripts and replay mode
-    - Implement the Mock_Provider with the `ruletrace-mock-script` format (steps with `elapsed_ms` and a `response` or `failure` result), a `SimulatedClock` that advances only on `wait`, and `ScriptExhausted`. Add the replay mode (`provider = "mock-replay"`) over the Recorded_Provider_Script format of design §8.11.7: `attempt` computes the Request_Identifier, returns the entry's payload with zero elapsed time, and returns `ProviderFailure::Other` naming the Request_Identifier if no entry matches. No network, clock, randomness or environment.
+  - [-] 8.2 Implement `rt-ai-mock` with step scripts and replay mode
+    - Implement the Mock_Provider with the `ruletrace-mock-script` format (steps with `elapsed_ms` and a `response` or `failure` result), a `SimulatedClock` that advances only on `wait`, and `ScriptExhausted`. Add the replay mode (`provider = "mock-replay"`) over the Recorded_Provider_Script format of design §8.11.7: `attempt` computes the Request_Identifier, returns the entry's payload with zero elapsed time, and returns `ProviderFailure::Other` with the Request_Identifier in `AttemptReport.detail` if no entry matches. No network, clock, randomness or environment.
     - Observable: a request whose identifier is not in the script yields `RT-AI-0105` with the identifier in the detail, and a matching one yields the stored payload.
     - Blocked by: 8.1.
     - _Requirements: 23.25, 29.14, 20.8, 33.8_
     - Design §3.7.10, §8.11.7
 
-  - [ ] 8.3 Apply the steering updates of design §9.3 items 1 to 4 and 9
+  - [-] 8.3 Apply the steering updates of design §9.3 items 1 to 4 and 9
     - Prepare the patch for items 1 to 4 (incomplete-run exception for `ruletrace-ai`, I/O wording, numeric decision from 1.3, revision number assigned at adoption) and item 9 (the Proposal_Store retains the accepted response, per UD-36) for `.kiro/steering/`. Show the patch to the user with the user_input tool and apply it only after the user confirms. Leave item 5 untouched (DD-2 is open). Items 6 to 8 and 10 are applied in tasks 9.19 and 11.12.
     - Observable: the steering files contain the confirmed wording, or the task records that the user declined.
     - Blocked by: 1.9, 8.1.
@@ -863,7 +863,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: equal requests give equal identifiers and every change changes them.
     - **Validates: Requirements 23.2, 23.3, 23.32, 29.7, 29.9, 29.16**
 
-  - [ ] 8.10 Write property test for the retry decision function
+  - [x] 8.10 Write property test for the retry decision function
     - **Property 32: Retry decision function**
     - Required: a pure function over a simulated timer.
     - Observable: retries only on transient failures, on the 2 s and 8 s schedule, never beyond the deadline.

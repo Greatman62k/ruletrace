@@ -540,7 +540,7 @@ pub trait AiAdapter {
 }
 pub trait MonotonicClock { fn now(&self) -> Duration; fn wait(&self, d: Duration); }
 
-pub struct AttemptReport { pub outcome: AttemptOutcome, pub elapsed: Duration }
+pub struct AttemptReport { pub outcome: AttemptOutcome, pub elapsed: Duration, pub detail: Option<String> }
 pub enum AttemptOutcome {
     Response(ProviderResponse),
     Failure(ProviderFailure),
@@ -989,7 +989,7 @@ Script, RT-JSON, versioned:
 
 Other `result` forms: `{"failure":"unavailable"}`, `auth_failed`, `tls_failed`, `{"failure":"other","http_status":400}`, and `payload_file` (relative path, read by the test harness, never by the mock). Each `attempt` consumes the next step, returns its `elapsed`, advances the `SimulatedClock`, and fails with a `ScriptExhausted` internal error if there are no steps left. `clock.wait(d)` advances simulated time only. No network, clock, randomness or environment (Req 23.25). Identical script and request give identical results.
 
-Recorded replay mode (Req 33.8). `provider = "mock-replay"` reads a Recorded_Provider_Script keyed by Request_Identifier (format in §8.11.7). `attempt` computes `request.request_id()`, returns the matching entry's payload with zero elapsed time, and returns `ProviderFailure::Other` carrying the Request_Identifier when no entry matches, which `ruletrace-ai` reports as AI_PROVIDER_ERROR (RT-AI-0105, exit 5). A replay goes through the same parse, schema, provenance, semantic validation and store steps as a live response, so the offline demonstration exercises the real pipeline and not a shortcut.
+Recorded replay mode (Req 33.8). `provider = "mock-replay"` reads a Recorded_Provider_Script keyed by Request_Identifier (format in §8.11.7). `attempt` computes `request.request_id()`, returns the matching entry's payload with zero elapsed time, and returns `ProviderFailure::Other` with the Request_Identifier in `AttemptReport.detail` when no entry matches, which `ruletrace-ai` reports as AI_PROVIDER_ERROR (RT-AI-0105, exit 5). A replay goes through the same parse, schema, provenance, semantic validation and store steps as a live response, so the offline demonstration exercises the real pipeline and not a shortcut.
 
 Stub server tests (`rt-tests-ai`): a `std::net::TcpListener` bound to `127.0.0.1:0` for one test, hand-written HTTP/1.1 responses (success, 503, slow body, 429 with `Retry-After`, 401, oversize body, malformed JSON, 302 redirect, refusal). The endpoint is `http://127.0.0.1:<port>` (loopback exception, Req 28.6). The stub records the request so tests assert `store:false`, no credential in body, credential only in the authorization header, no follow of redirect. The only crate with a listener is the test code (Req 21.8). Live tests: a separate non-required CI job.
 
@@ -2671,7 +2671,7 @@ Recorded_Provider_Script format (`rt-ai-mock`, RT-JSON):
                "response_sha256":"<64 hex of payload bytes>","payload":"<exact response text>"} ] }
 ```
 
-`rt-ai-mock` gains a replay mode (`provider = "mock-replay"`): `attempt` computes `request.request_id()`, returns the entry's payload with `elapsed` zero, and returns `ProviderFailure::Other` with the Request_Identifier in its detail if no entry matches. `ruletrace-ai` then reports AI_PROVIDER_ERROR (RT-AI-0105, exit 5) under Req 16.16, as Req 33.8 requires. The Request_Identifier covers the request's model, limits, clauses, declarations and `vocabulary`, so any change to the request builder, the vocabulary (including the UD-32 option) or the declarations invalidates the script. This is deliberate: the test fails with "no entry for request <id>" and a deliberate re-record is required (RN-27, R-D10). Entries of origin `authored` (Slice 1) carry the label in the file, in the manifest `origins` count and in the Proof_Report header; no document calls an authored entry provider output (Req 33.8).
+`rt-ai-mock` gains a replay mode (`provider = "mock-replay"`): `attempt` computes `request.request_id()`, returns the entry's payload with `elapsed` zero, and returns `ProviderFailure::Other` with the Request_Identifier in `AttemptReport.detail` if no entry matches. `ruletrace-ai` then reports AI_PROVIDER_ERROR (RT-AI-0105, exit 5) under Req 16.16, as Req 33.8 requires. The Request_Identifier covers the request's model, limits, clauses, declarations and `vocabulary`, so any change to the request builder, the vocabulary (including the UD-32 option) or the declarations invalidates the script. This is deliberate: the test fails with "no entry for request <id>" and a deliberate re-record is required (RN-27, R-D10). Entries of origin `authored` (Slice 1) carry the label in the file, in the manifest `origins` count and in the Proof_Report header; no document calls an authored entry provider output (Req 33.8).
 
 #### 8.11.8 Coverage_Statement generator (Req 33.6)
 
