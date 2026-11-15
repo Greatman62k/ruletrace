@@ -100,6 +100,8 @@ mod tests_response_objects;
 #[cfg(test)]
 mod tests_revise;
 #[cfg(test)]
+mod tests_revise_target;
+#[cfg(test)]
 mod tests_rig;
 #[cfg(test)]
 mod tests_run;

@@ -22,7 +22,7 @@ use rt_ai_adapter::{
     RetryStep, RetryStop,
 };
 use rt_foundation::{
-    CliLocation, Code, Diagnostic, ExitCode, InputId, InputLocation, Location, Severity,
+    CliLocation, Code, Diagnostic, ExitCode, InputId, InputLocation, Location, RuleId, Severity,
 };
 use rt_hash::Sha256Hex;
 use rt_ir::Rulebook;
@@ -48,6 +48,8 @@ pub struct RunInput<'a> {
     pub meta: &'a StoreMeta,
     /// Caller-supplied time written to each Transmission_Log entry.
     pub log_time: &'a str,
+    /// The Rule identifier of a revision run, `None` for any other run.
+    pub revise_rule: Option<&'a RuleId>,
 }
 
 /// The result of a run.
@@ -279,6 +281,7 @@ impl Loop<'_, '_> {
             clauses: request.clauses(),
             declarations: self.input.declarations,
             redactor: self.input.redactor,
+            revise_rule: self.input.revise_rule,
         });
         let accepted = match accepted {
             Ok(a) => a,

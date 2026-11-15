@@ -21,6 +21,7 @@ use crate::perm::{file_mode, permission_warning};
 use crate::plan::{build_plan, PlanInput, RunPlan};
 use crate::redact::Redactor;
 use crate::request_scan::refuse_credential;
+use crate::revise::ReviseContext;
 use crate::run::{run_requests, RunInput};
 use crate::store::StoreMeta;
 use crate::store_check::check_store;
@@ -343,6 +344,7 @@ fn propose<O: Write, E: Write>(
             store_root: &args.store,
             meta: &meta,
             log_time: &args.created_at,
+            revise_rule: inputs.revise.as_ref().map(ReviseContext::rule),
         },
         &mut announcing,
         &mut log,

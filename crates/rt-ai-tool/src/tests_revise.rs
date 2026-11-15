@@ -33,7 +33,7 @@ use std::time::Duration;
 
 const CREDENTIAL: &str = "credential-value-0123456789";
 pub(crate) const FEEDBACK: &str = "Raise the age to 21.\nCite \"clause 1\".";
-const NEW_CONTENT: &str = r#"{"id":"elig.basic","kind":"eligibility","target":"eligible","type":"boolean","expr":{"node":"cmp","t":"boolean","op":"ge","left":{"node":"field","t":"number","name":"age"},"right":{"node":"num","t":"number","value":"21"}},"markers":[],"spans":[{"document":"rules.md","start":0,"end":11,"line":1,"column":1}]}"#;
+pub(crate) const NEW_CONTENT: &str = r#"{"id":"elig.basic","kind":"eligibility","target":"eligible","type":"boolean","expr":{"node":"cmp","t":"boolean","op":"ge","left":{"node":"field","t":"number","name":"age"},"right":{"node":"num","t":"number","value":"21"}},"markers":[],"spans":[{"document":"rules.md","start":0,"end":11,"line":1,"column":1}]}"#;
 
 // sha256sum of the bytes of `expected_bytes(1, FEEDBACK)`, escaped by an
 // independent JSON writer.
@@ -105,13 +105,13 @@ fn expected_bytes(revision: u32, feedback: &str) -> String {
     )
 }
 
-fn expected_id(revision: u32, feedback: &str) -> String {
+pub(crate) fn expected_id(revision: u32, feedback: &str) -> String {
     sha256(expected_bytes(revision, feedback).as_bytes())
         .as_str()
         .to_owned()
 }
 
-fn revised_payload() -> String {
+pub(crate) fn revised_payload() -> String {
     format!(
         r#"{{"schema_version":"1","proposals":[{{"kind":"rule_suggestion","proposer":"model-1","rationale":"raise the age","evidence":[{}],"rule":{NEW_CONTENT}}}]}}"#,
         evidence(0)

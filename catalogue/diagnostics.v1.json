@@ -130,6 +130,7 @@
   {"code": "RT-AI-0204", "mnemonic": "AI_RESPONSE_FORBIDDEN_FIELD", "severity": "Error", "meaning": "A response member named by one of the thirteen approval and validity field names of design 3.7.4", "exit": 6, "executable": "ai"},
   {"code": "RT-AI-0205", "mnemonic": "AI_RESPONSE_INCOMPLETE", "severity": "Error", "meaning": "Refusal, incomplete or non-completed status", "exit": 6, "executable": "ai"},
   {"code": "RT-AI-0206", "mnemonic": "AI_RESPONSE_CREDENTIAL_ECHO", "severity": "Error", "meaning": "Response payload contains the credential value or a run of at least 8 consecutive characters of it; batch not stored (UD-36)", "exit": 6, "executable": "ai"},
+  {"code": "RT-AI-0207", "mnemonic": "AI_REVISION_TARGET_MISMATCH", "severity": "Error", "meaning": "A rule suggestion of a revision run names a Rule identifier other than the one given by --revise-rule; the whole batch is rejected", "exit": 6, "executable": "ai"},
   {"code": "RT-AI-0301", "mnemonic": "AI_BATCH_ALREADY_STORED", "severity": "Warning", "meaning": "Batch with this request id exists", "exit": 0, "executable": "ai"},
   {"code": "RT-AI-0302", "mnemonic": "AI_STORE_INVALID", "severity": "Error", "meaning": "Existing Proposal_Store malformed", "exit": 2, "executable": "ai"},
   {"code": "RT-AI-0303", "mnemonic": "AI_STORE_WRITE_FAILED", "severity": "Error", "meaning": "Atomic store write failed", "exit": 70, "executable": "ai"},

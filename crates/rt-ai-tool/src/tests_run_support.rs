@@ -85,6 +85,7 @@ impl Harness {
                 store_root: root,
                 meta: &self.meta,
                 log_time: "2026-11-15T00:00:01Z",
+                revise_rule: None,
             },
             adapter,
             &mut log,

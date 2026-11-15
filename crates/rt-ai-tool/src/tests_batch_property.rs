@@ -1322,6 +1322,7 @@ fn check_rejected(valid: &Spec, op: &Op, a: usize, b: usize) -> &'static str {
         clauses: &clauses,
         declarations: &h.rulebook,
         redactor: &h.redactor,
+        revise_rule: None,
     });
     let found = direct.expect_err(&label);
     assert_eq!(found.len(), 1, "{label}: {found:?}");
@@ -1580,6 +1581,7 @@ fn semantic_findings_are_stored_as_proposed_data_and_never_reject() {
         clauses: &clauses,
         declarations: &h.rulebook,
         redactor: &h.redactor,
+        revise_rule: None,
     })
     .unwrap();
     assert!(accepted.has_blocking_findings());
@@ -1618,6 +1620,7 @@ fn a_seven_character_run_of_the_credential_is_not_an_echo() {
             clauses: &clauses,
             declarations: &h.rulebook,
             redactor: &h.redactor,
+            revise_rule: None,
         })
     };
     assert!(input(text.as_bytes()).is_ok());

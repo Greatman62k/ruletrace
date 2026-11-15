@@ -113,6 +113,7 @@ fn accept_with(
         clauses: &cl,
         declarations: &rb,
         redactor,
+        revise_rule: None,
     })
 }
 

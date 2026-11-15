@@ -100,6 +100,7 @@ fn run(canary: &str, payload: &str, completion: Completion) -> Result<(), Vec<Di
         clauses: &clauses,
         declarations: &rb,
         redactor: &redactor,
+        revise_rule: None,
     })
     .map(|_| ())
 }

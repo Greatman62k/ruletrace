@@ -684,6 +684,7 @@ fn two_runs_on_one_real_disk_store_each_batch_once() {
                             store_root: &dir,
                             meta: &h.meta,
                             log_time: "t",
+                            revise_rule: None,
                         },
                         &mut p,
                         &mut log,

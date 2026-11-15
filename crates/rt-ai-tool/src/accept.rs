@@ -15,7 +15,7 @@ use crate::response::{
     parse_response, ParsedEvidence, ParsedProposal, ParsedResponse, ParsedRule, ProposalKind,
 };
 use rt_ai_adapter::Completion;
-use rt_foundation::{Code, Diagnostic, InputId, InputLocation, Location};
+use rt_foundation::{Code, Diagnostic, InputId, InputLocation, Location, RuleId};
 use rt_hash::{sha256, Sha256Hex};
 use rt_ir::{draft_hash, print_draft, DocumentDecl, Loc, Rulebook};
 use rt_proposals::{
@@ -46,6 +46,9 @@ pub struct AcceptInput<'a> {
     /// Matches the credential value. Use [`Redactor::no_credential`] for a
     /// run that has none.
     pub redactor: &'a Redactor,
+    /// The Rule identifier of a revision run. Every rule suggestion of such
+    /// a run must name it. `None` for a run that revises nothing.
+    pub revise_rule: Option<&'a RuleId>,
 }
 
 /// A response that passed the protocol, schema, provenance and credential
@@ -150,6 +153,9 @@ fn accept_unscrubbed(input: &AcceptInput<'_>) -> Result<AcceptedBatch, Vec<Diagn
         input.response_limit,
     )
     .map_err(|d| vec![d])?;
+    if let Some(d) = revision_target(input, &parsed) {
+        return Err(vec![d]);
+    }
     let provenance = verify_provenance(input.response_id, &parsed, input.models, input.clauses);
     if !provenance.is_empty() {
         return Err(provenance);
@@ -185,6 +191,27 @@ fn accept_unscrubbed(input: &AcceptInput<'_>) -> Result<AcceptedBatch, Vec<Diagn
         response_sha256: sha256(input.payload),
         payload,
         proposals,
+    })
+}
+
+// A revision run asks for a new revision of one rule, so a draft of another
+// rule is a protocol failure of the whole batch. The identifier of the draft
+// is provider text and is not copied into the Diagnostic.
+fn revision_target(input: &AcceptInput<'_>, parsed: &ParsedResponse) -> Option<Diagnostic> {
+    let wanted = input.revise_rule?;
+    parsed.proposals.iter().enumerate().find_map(|(i, p)| {
+        let ProposalKind::RuleSuggestion(rule) = &p.kind else {
+            return None;
+        };
+        (&rule.id != wanted).then(|| {
+            Diagnostic::new(
+                Code::AiRevisionTargetMismatch,
+                "a rule suggestion of a revision run names a Rule identifier other than \
+                 the one given by --revise-rule"
+                    .to_owned(),
+                plain(input.response_id, Some(format!("proposals[{i}].rule"))),
+            )
+        })
     })
 }
 

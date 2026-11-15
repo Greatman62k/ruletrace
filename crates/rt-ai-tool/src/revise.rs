@@ -58,6 +58,11 @@ impl ReviseContext {
         })
     }
 
+    /// The Rule identifier that the run revises.
+    pub(crate) fn rule(&self) -> &RuleId {
+        &self.rule
+    }
+
     /// The member value: rule, revision, canonical content and feedback.
     pub(crate) fn value(&self) -> Option<Value<()>> {
         Value::object(vec![

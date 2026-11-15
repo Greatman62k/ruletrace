@@ -405,6 +405,7 @@ fn run_accept(
         clauses,
         declarations: decl,
         redactor: &redactor,
+        revise_rule: None,
     })
 }
 

@@ -30,6 +30,7 @@ fn accepted_with(h: &Harness, request: usize, text: &str) -> AcceptedBatch {
         clauses: planned.clauses(),
         declarations: &h.rulebook,
         redactor: &h.redactor,
+        revise_rule: None,
     })
     .unwrap_or_else(|d| panic!("rejected: {d:?}"))
 }

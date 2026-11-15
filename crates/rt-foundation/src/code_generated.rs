@@ -269,6 +269,8 @@ pub enum Code {
     AiResponseIncomplete,
     /// `RT-AI-0206`: Response payload contains the credential value or a run of at least 8 consecutive characters of it; batch not stored (UD-36)
     AiResponseCredentialEcho,
+    /// `RT-AI-0207`: A rule suggestion of a revision run names a Rule identifier other than the one given by --revise-rule; the whole batch is rejected
+    AiRevisionTargetMismatch,
     /// `RT-AI-0301`: Batch with this request id exists
     AiBatchAlreadyStored,
     /// `RT-AI-0302`: Existing Proposal_Store malformed
@@ -301,7 +303,7 @@ pub enum Code {
 
 impl Code {
     /// Every code, in catalogue order.
-    pub const ALL: [Code; 145] = [
+    pub const ALL: [Code; 146] = [
         Code::DiagnosticStateContradiction,
         Code::DiagnosticStateBothFlags,
         Code::LifecycleFlagContradiction,
@@ -433,6 +435,7 @@ impl Code {
         Code::AiResponseForbiddenField,
         Code::AiResponseIncomplete,
         Code::AiResponseCredentialEcho,
+        Code::AiRevisionTargetMismatch,
         Code::AiBatchAlreadyStored,
         Code::AiStoreInvalid,
         Code::AiStoreWriteFailed,
@@ -584,6 +587,7 @@ impl Code {
             Self::AiResponseForbiddenField => "RT-AI-0204",
             Self::AiResponseIncomplete => "RT-AI-0205",
             Self::AiResponseCredentialEcho => "RT-AI-0206",
+            Self::AiRevisionTargetMismatch => "RT-AI-0207",
             Self::AiBatchAlreadyStored => "RT-AI-0301",
             Self::AiStoreInvalid => "RT-AI-0302",
             Self::AiStoreWriteFailed => "RT-AI-0303",
@@ -736,6 +740,7 @@ impl Code {
             Self::AiResponseForbiddenField => "AI_RESPONSE_FORBIDDEN_FIELD",
             Self::AiResponseIncomplete => "AI_RESPONSE_INCOMPLETE",
             Self::AiResponseCredentialEcho => "AI_RESPONSE_CREDENTIAL_ECHO",
+            Self::AiRevisionTargetMismatch => "AI_REVISION_TARGET_MISMATCH",
             Self::AiBatchAlreadyStored => "AI_BATCH_ALREADY_STORED",
             Self::AiStoreInvalid => "AI_STORE_INVALID",
             Self::AiStoreWriteFailed => "AI_STORE_WRITE_FAILED",
@@ -888,6 +893,7 @@ impl Code {
             Self::AiResponseForbiddenField => Severity::Error,
             Self::AiResponseIncomplete => Severity::Error,
             Self::AiResponseCredentialEcho => Severity::Error,
+            Self::AiRevisionTargetMismatch => Severity::Error,
             Self::AiBatchAlreadyStored => Severity::Warning,
             Self::AiStoreInvalid => Severity::Error,
             Self::AiStoreWriteFailed => Severity::Error,
@@ -1040,6 +1046,7 @@ impl Code {
             Self::AiResponseForbiddenField => ExitCode::Response,
             Self::AiResponseIncomplete => ExitCode::Response,
             Self::AiResponseCredentialEcho => ExitCode::Response,
+            Self::AiRevisionTargetMismatch => ExitCode::Response,
             Self::AiBatchAlreadyStored => ExitCode::Success,
             Self::AiStoreInvalid => ExitCode::InvalidInput,
             Self::AiStoreWriteFailed => ExitCode::Internal,
@@ -1192,6 +1199,7 @@ impl Code {
             "RT-AI-0204" => Some(Self::AiResponseForbiddenField),
             "RT-AI-0205" => Some(Self::AiResponseIncomplete),
             "RT-AI-0206" => Some(Self::AiResponseCredentialEcho),
+            "RT-AI-0207" => Some(Self::AiRevisionTargetMismatch),
             "RT-AI-0301" => Some(Self::AiBatchAlreadyStored),
             "RT-AI-0302" => Some(Self::AiStoreInvalid),
             "RT-AI-0303" => Some(Self::AiStoreWriteFailed),
@@ -1345,6 +1353,7 @@ impl Code {
             "AI_RESPONSE_FORBIDDEN_FIELD" => Some(Self::AiResponseForbiddenField),
             "AI_RESPONSE_INCOMPLETE" => Some(Self::AiResponseIncomplete),
             "AI_RESPONSE_CREDENTIAL_ECHO" => Some(Self::AiResponseCredentialEcho),
+            "AI_REVISION_TARGET_MISMATCH" => Some(Self::AiRevisionTargetMismatch),
             "AI_BATCH_ALREADY_STORED" => Some(Self::AiBatchAlreadyStored),
             "AI_STORE_INVALID" => Some(Self::AiStoreInvalid),
             "AI_STORE_WRITE_FAILED" => Some(Self::AiStoreWriteFailed),
