@@ -115,7 +115,13 @@ fn the_size_comes_from_file_metadata_on_the_real_file_system() {
             })
             .collect();
         let out = run(&args, &StdFs);
-        let shown = dir.0.join(BATCH).display().to_string();
+        // The tool joins path components with the platform separator, so
+        // the expected path is built from the components of BATCH.
+        let shown = BATCH
+            .split('/')
+            .fold(dir.0.clone(), |path, part| path.join(part))
+            .display()
+            .to_string();
         assert_only_size_refusal(&out, &shown, size);
     }
 }

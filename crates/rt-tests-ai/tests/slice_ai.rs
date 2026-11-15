@@ -23,7 +23,10 @@ use rt_foundation::InputId;
 use rt_ir::{parse_rulebook, ApprovalStatus};
 use rt_json::ParseLimits;
 use rt_ledger::{derive_statuses, effective_revisions, parse_ledger, unresolved};
-use support::{authored_approvals, fixture, validation_diagnostics, Decision, Ran, Work, REVIEWER};
+use support::{
+    authored_approvals, fixture, stored_with_blocking_findings_codes, validation_diagnostics,
+    Decision, Ran, Work, REVIEWER,
+};
 
 const RB: &str = "rulebook.json";
 const LEDGER: &str = "ledger.jsonl";
@@ -67,7 +70,12 @@ fn ai_path(name: &str) -> Work {
     // The third proposal ranks by `score`, which only the second proposal
     // declares, so its stand-alone check finds RT-VAL-0002 and the batch
     // is stored with the blocking-findings Warning.
-    assert_eq!(proposed.codes(), ["RT-AI-0305"], "{}", proposed.stderr);
+    assert_eq!(
+        proposed.codes(),
+        stored_with_blocking_findings_codes(),
+        "{}",
+        proposed.stderr
+    );
     assert!(
         proposed.stdout.contains("run summary: complete"),
         "{}",

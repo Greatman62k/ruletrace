@@ -43,6 +43,17 @@ pub struct Ran {
     pub stderr: String,
 }
 
+/// The codes `propose` prints when it stores one batch with blocking
+/// findings. Where the platform skips the directory sync, RT-AI-0309
+/// follows (Req 7.17, 29.19); the expectation is written per platform.
+pub fn stored_with_blocking_findings_codes() -> Vec<&'static str> {
+    if cfg!(windows) {
+        vec!["RT-AI-0305", "RT-AI-0309"]
+    } else {
+        vec!["RT-AI-0305"]
+    }
+}
+
 impl Ran {
     /// The catalogue identifiers on standard error, in order.
     pub fn codes(&self) -> Vec<String> {

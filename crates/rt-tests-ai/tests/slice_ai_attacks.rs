@@ -288,7 +288,10 @@ fn clause_text_that_instructs_approval_changes_no_diagnostic_status_or_ledger() 
 
     // The control itself is what the clean flow gives: one Warning, three
     // Proposed revisions, none effective, and a blocked validation.
-    assert_eq!(want.propose_codes, ["RT-AI-0305"]);
+    assert_eq!(
+        want.propose_codes,
+        support::stored_with_blocking_findings_codes()
+    );
     assert_eq!(want.statuses, vec![ApprovalStatus::Proposed; 3]);
     assert_eq!((want.pending, want.effective, want.unresolved), (3, 0, 3));
     assert_eq!(
