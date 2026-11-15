@@ -5,7 +5,7 @@
 //! AI Origin. Validation must give equal Diagnostic lists, and the AI path
 //! through `accept_batch` must store the findings of the manual path.
 //! Instruction text placed in a response or a source document must change
-//! no Diagnostic, no derived status and no ledger.
+//! no Diagnostic and no derived status.
 
 use crate::accept::{accept_batch, AcceptInput, AcceptedBatch};
 use crate::plan::ClauseId;
@@ -19,7 +19,7 @@ use rt_hash::sha256;
 use rt_ir::{
     parse_draft, parse_rulebook, AiOrigin, ApprovalStatus, Identity, Origin, RuleRevision, Rulebook,
 };
-use rt_ledger::{derive_statuses, effective_revisions, print_ledger, unresolved, ApprovalLedger};
+use rt_ledger::{derive_statuses, effective_revisions, unresolved, ApprovalLedger};
 use rt_proposals::{Proposal, StoredLocation};
 use rt_srcmodel::SourceModels;
 use rt_validate::{validate, validate_content, RuleDraft};
@@ -121,8 +121,8 @@ const DEFAULTS: [&str; 5] = [
     r#"{"node":"date","t":"date","value":"2024-02-29"}"#,
     r#"{"node":"date","t":"date","value":"2023-02-29"}"#,
 ];
-// The AI response schema refuses any other well-formed kind name, so the
-// property only uses the one name both readers carry.
+// "unrecognized" is read and left to the validator. "Bad Kind" is not a
+// valid kind name, so both readers refuse the draft at its `kind` field.
 const OPAQUE_KINDS: [&str; 2] = ["unrecognized", "Bad Kind"];
 
 struct Site {
@@ -442,10 +442,80 @@ fn assert_all_proposed(rb: &Rulebook, ledger: &ApprovalLedger, what: &str) {
     );
 }
 
+// A defect the generator can inject into a rule text that the readers must
+// refuse. The expected codes below come from the catalogue meanings of
+// RT-IR-0004, RT-IR-0010 and RT-AI-0202, not from running the readers.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum Defect {
+    OversizeLiteral,
+    InvalidDate,
+    BadKindName,
+    NonsenseType,
+}
+
+impl Defect {
+    // The code the manual reader gives: an unrepresentable numeric literal
+    // is RT-IR-0004, any other wrong value is RT-IR-0010.
+    fn manual_code(self) -> Code {
+        match self {
+            Defect::OversizeLiteral => Code::IrNumericLiteralInvalid,
+            _ => Code::IrFieldInvalid,
+        }
+    }
+
+    // The AI response schema reports every one of these as a violation.
+    fn ai_code(self) -> Code {
+        Code::AiResponseSchemaViolation
+    }
+
+    fn field_fits(self, field: &str) -> bool {
+        match self {
+            Defect::OversizeLiteral => field.ends_with("value"),
+            Defect::InvalidDate => field == "value.value",
+            Defect::BadKindName => field == "kind",
+            Defect::NonsenseType => field == "type",
+        }
+    }
+}
+
+fn is_oversize(expression: &str) -> bool {
+    [BIG39, FRAC29]
+        .iter()
+        .any(|literal| expression.contains(&format!("\"{literal}\"")))
+}
+
+// The defect in the rule body, if the case chose one.
+fn body_defect(c: &Case, pool: &[String]) -> Option<Defect> {
+    let a = pick(pool, c.a);
+    let b = pick(pool, c.b);
+    match c.kind % 6 {
+        0 | 1 => is_oversize(a).then_some(Defect::OversizeLiteral),
+        2 => (is_oversize(a) || is_oversize(b)).then_some(Defect::OversizeLiteral),
+        3 => {
+            let breaker = (0..c.c % 3).any(|i| is_oversize(pick(pool, c.a + i + 1)));
+            (is_oversize(a) || breaker).then_some(Defect::OversizeLiteral)
+        }
+        4 => pick(&DEFAULTS, c.a)
+            .contains("2023-02-29")
+            .then_some(Defect::InvalidDate),
+        _ => (*pick(&OPAQUE_KINDS, c.a) == "Bad Kind").then_some(Defect::BadKindName),
+    }
+}
+
+// The defects of the text in document order, since the body is written
+// before the `type` member. Empty means both readers must accept the text.
+fn injected_defects(c: &Case) -> Vec<Defect> {
+    let nonsense = pick(&TYPE_FIELDS, c.ty).contains("nonsense");
+    body_defect(c, &expression_pool())
+        .into_iter()
+        .chain(nonsense.then_some(Defect::NonsenseType))
+        .collect()
+}
+
 // What a case did, for the coverage check.
 #[derive(Debug, PartialEq, Eq)]
 enum Outcome {
-    Rejected,
+    Rejected(Defect),
     Findings(Vec<Code>),
 }
 
@@ -462,12 +532,46 @@ fn check(c: &Case) -> Outcome {
         (Ok(m), Ok(a)) => (m, a),
         (Err(m), Err(a)) => {
             assert_eq!(m, a, "{json}");
-            assert!(accepted.is_err(), "{json}");
-            return Outcome::Rejected;
+            let defects = injected_defects(c);
+            assert!(!defects.is_empty(), "rejected with no defect: {json}");
+            let first = defects[0];
+            // The first Diagnostic is the first defect in document order.
+            // Later ones may repeat a class, but each injected class must
+            // appear and nothing else may.
+            let expected: Vec<Code> = defects.iter().map(|d| d.manual_code()).collect();
+            assert!(m.len() >= defects.len(), "{json}: {m:?}");
+            assert_eq!(m[0].code(), first.manual_code(), "{json}");
+            for d in &m {
+                assert!(expected.contains(&d.code()), "{json}: {d:?}");
+            }
+            for code in &expected {
+                assert!(m.iter().any(|d| d.code() == *code), "{json}: {m:?}");
+            }
+            let field = match m[0].primary() {
+                Location::Input(at) => at.field.clone().unwrap_or_default(),
+                other => panic!("not an input location: {other:?}"),
+            };
+            assert!(first.field_fits(&field), "{first:?} at {field}: {json}");
+            let refused = accepted
+                .err()
+                .unwrap_or_else(|| panic!("accept took a rejected draft: {json}"));
+            assert_eq!(refused.len(), 1, "{json}: {refused:?}");
+            assert_eq!(refused[0].code(), first.ai_code(), "{json}");
+            let expected_at = format!("proposals[0].rule.{field}");
+            match refused[0].primary() {
+                Location::Input(at) => {
+                    assert_eq!(at.field.as_deref(), Some(expected_at.as_str()), "{json}")
+                }
+                other => panic!("not an input location: {other:?}"),
+            }
+            return Outcome::Rejected(first);
         }
         other => panic!("origin changed the reading of {json}: {other:?}"),
     };
+    assert_eq!(injected_defects(c), vec![], "a defect was accepted: {json}");
     assert_eq!(manual.content, ai.content, "{json}");
+    assert!(matches!(manual.origin, Origin::Manual { .. }), "{json}");
+    assert!(matches!(ai.origin, Origin::AiProposal(_)), "{json}");
 
     let ledger = ApprovalLedger::empty();
     let rb_manual = with_revision(&decl, &manual);
@@ -482,24 +586,34 @@ fn check(c: &Case) -> Outcome {
     assert_all_proposed(&rb_manual, &ledger, &json);
     assert_all_proposed(&rb_ai, &ledger, &json);
 
-    let direct_manual = validate_content(&decl, &draft_of(&manual), &models);
-    let direct_ai = validate_content(&decl, &draft_of(&ai), &models);
-    assert_eq!(direct_manual.as_slice(), direct_ai.as_slice(), "{json}");
+    // `RuleDraft` holds only an id and content, so this pair cannot see an
+    // Origin. The Origin-sensitive comparison is the `validate` one above.
+    let content_manual = validate_content(&decl, &draft_of(&manual), &models);
+    let content_ai = validate_content(&decl, &draft_of(&ai), &models);
+    assert_eq!(content_manual.as_slice(), content_ai.as_slice(), "{json}");
 
     let batch = accepted.unwrap_or_else(|d| panic!("accept rejected {json}: {d:?}"));
     assert_eq!(batch.proposals().len(), 1);
     let stored = &batch.proposals()[0];
-    assert_outcome_matches(stored, direct_manual.as_slice(), &json);
+    assert_outcome_matches(stored, content_manual.as_slice(), &json);
     let (draft, _) = stored.rule.as_ref().expect("a rule suggestion has a draft");
     let reread = read_revision(&draft.json, ai_origin()).expect("stored draft reads");
     assert_eq!(reread.content, manual.content, "{json}");
-    Outcome::Findings(
-        direct_manual
-            .as_slice()
-            .iter()
-            .map(Diagnostic::code)
-            .collect(),
-    )
+    let codes: Vec<Code> = content_manual
+        .as_slice()
+        .iter()
+        .map(Diagnostic::code)
+        .collect();
+    let type_omitted = pick(&TYPE_FIELDS, c.ty).is_empty();
+    // A default carries its own typed value and an opaque kind is not
+    // typed at all, so only the four typed kinds owe a declared type.
+    if type_omitted && c.kind % 6 < 4 {
+        assert!(
+            codes.contains(&Code::ValMissingTypeDeclaration),
+            "no RT-VAL-0015 for an omitted type: {json}"
+        );
+    }
+    Outcome::Findings(codes)
 }
 
 fn case() -> impl Strategy<Value = Case> {
@@ -548,7 +662,7 @@ fn base_case() -> Case {
 fn codes_of(c: &Case) -> Vec<Code> {
     match check(c) {
         Outcome::Findings(codes) => codes,
-        Outcome::Rejected => panic!("rejected: {}", rule_json(c)),
+        Outcome::Rejected(defect) => panic!("{defect:?}: {}", rule_json(c)),
     }
 }
 
@@ -577,6 +691,47 @@ fn a_valid_eligibility_rule_has_no_content_findings_whatever_its_origin() {
     );
 }
 
+// The cited span of the rule under test, found by searching the source text
+// for the quoted clause instead of reading it back from the rule.
+struct Cited {
+    start: u32,
+    end: u32,
+    line: u32,
+}
+
+fn cited_clause() -> Cited {
+    let quote = "Gamma δ delta.";
+    let start = RULES.find(quote).unwrap();
+    let before = &RULES[..start];
+    Cited {
+        start: u32::try_from(start).unwrap(),
+        end: u32::try_from(start + quote.len()).unwrap(),
+        line: u32::try_from(before.matches('\n').count() + 1).unwrap(),
+    }
+}
+
+fn assert_at_cited_clause(d: &Diagnostic) {
+    let want = cited_clause();
+    match d.primary() {
+        Location::Source(span) => {
+            assert_eq!(span.doc().as_str(), "rules.md");
+            assert_eq!(
+                (span.start().get(), span.end().get()),
+                (want.start, want.end)
+            );
+            assert_eq!((span.line(), span.column()), (want.line, 1));
+        }
+        other => panic!("not a source location: {other:?}"),
+    }
+}
+
+fn content_findings(c: &Case, origin: Origin) -> Vec<Diagnostic> {
+    let rev = read_revision(&rule_json(c), origin).unwrap();
+    validate_content(&declarations(false), &draft_of(&rev), &all_models())
+        .as_slice()
+        .to_vec()
+}
+
 #[test]
 fn an_unrecognized_kind_is_rt_val_0003_for_both_origins() {
     let c = Case {
@@ -584,22 +739,13 @@ fn an_unrecognized_kind_is_rt_val_0003_for_both_origins() {
         a: 0,
         ..base_case()
     };
-    let json = rule_json(&c);
-    assert!(json.contains(r#""kind":"unrecognized""#));
+    assert!(rule_json(&c).contains(r#""kind":"unrecognized""#));
     for origin in [manual_origin(), ai_origin()] {
-        let rev = read_revision(&json, origin).unwrap();
-        let found = validate_content(&declarations(false), &draft_of(&rev), &all_models());
-        let list = found.as_slice();
+        let list = content_findings(&c, origin);
         assert_eq!(list.len(), 1, "{list:?}");
         assert_eq!(list[0].code().id(), "RT-VAL-0003");
         assert_eq!(list[0].severity(), rt_foundation::Severity::Unsupported);
-        match list[0].primary() {
-            Location::Source(span) => {
-                assert_eq!(span.doc().as_str(), "rules.md");
-                assert_eq!((span.start().get(), span.end().get()), (12, 27));
-            }
-            other => panic!("not a source location: {other:?}"),
-        }
+        assert_at_cited_clause(&list[0]);
     }
 }
 
@@ -611,6 +757,12 @@ fn an_undeclared_field_is_rt_val_0002_for_both_origins() {
     };
     assert_eq!(codes_of(&c), vec![Code::ValUndeclaredReference]);
     assert_eq!(Code::ValUndeclaredReference.id(), "RT-VAL-0002");
+    for origin in [manual_origin(), ai_origin()] {
+        let list = content_findings(&c, origin);
+        assert_eq!(list.len(), 1, "{list:?}");
+        assert_at_cited_clause(&list[0]);
+        assert!(list[0].message().contains("'ghost' at expr.left"));
+    }
 }
 
 #[test]
@@ -621,6 +773,12 @@ fn an_ambiguity_marker_is_rt_val_0004_for_both_origins() {
     };
     assert_eq!(codes_of(&c), vec![Code::ValAmbiguousInterpretation]);
     assert_eq!(Code::ValAmbiguousInterpretation.id(), "RT-VAL-0004");
+    for origin in [manual_origin(), ai_origin()] {
+        let list = content_findings(&c, origin);
+        assert_eq!(list.len(), 1, "{list:?}");
+        assert_at_cited_clause(&list[0]);
+        assert!(list[0].message().contains("Interpretations: 'a', 'b'"));
+    }
 }
 
 #[test]
@@ -631,6 +789,12 @@ fn a_type_mismatch_is_rt_val_0001_for_both_origins() {
     };
     assert_eq!(codes_of(&c), vec![Code::ValTypeMismatch]);
     assert_eq!(Code::ValTypeMismatch.id(), "RT-VAL-0001");
+    for origin in [manual_origin(), ai_origin()] {
+        let list = content_findings(&c, origin);
+        assert_eq!(list.len(), 1, "{list:?}");
+        assert_at_cited_clause(&list[0]);
+        assert!(list[0].message().contains("at expr.right: expected number"));
+    }
 }
 
 #[test]
@@ -639,17 +803,71 @@ fn a_malformed_literal_is_rejected_the_same_way_for_both_origins() {
         a: 27,
         ..base_case()
     };
-    assert_eq!(check(&c), Outcome::Rejected);
+    assert_eq!(check(&c), Outcome::Rejected(Defect::OversizeLiteral));
     let json = rule_json(&c);
-    let found = read_revision(&json, manual_origin()).unwrap_err();
-    assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0].code(), Code::IrNumericLiteralInvalid);
+    let literal = format!("\"{FRAC29}\"");
+    let column = json.find(&literal).unwrap() + 1;
+    for origin in [manual_origin(), ai_origin()] {
+        let found = read_revision(&json, origin).unwrap_err();
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert_eq!(found[0].code(), Code::IrNumericLiteralInvalid);
+        match found[0].primary() {
+            Location::Input(at) => {
+                assert_eq!(at.input.as_str(), "draft.json");
+                assert_eq!(at.field.as_deref(), Some("expr.right.value"));
+                assert_eq!((at.line, at.column), (Some(1), Some(column as u32)));
+            }
+            other => panic!("not an input location: {other:?}"),
+        }
+    }
 }
 
 #[test]
-fn the_grid_reaches_every_outcome_the_property_claims_to_cover() {
+fn an_invalid_kind_name_is_rt_ir_0010_to_the_readers_and_rt_ai_0202_on_the_ai_path() {
+    let c = Case {
+        kind: 5,
+        a: 1,
+        ..base_case()
+    };
+    assert_eq!(check(&c), Outcome::Rejected(Defect::BadKindName));
+    let json = rule_json(&c);
+    assert!(json.contains(r#""kind":"Bad Kind""#));
+    for origin in [manual_origin(), ai_origin()] {
+        let found = read_revision(&json, origin).unwrap_err();
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert_eq!(found[0].code().id(), "RT-IR-0010");
+    }
+    let payload = proposal_text(&c, &json, "why", "model-1");
+    let refused = run_accept(
+        &payload,
+        &declarations(false),
+        &all_models(),
+        &whole_clauses(),
+    )
+    .expect_err("the AI path refuses an invalid kind name");
+    assert_eq!(refused.len(), 1, "{refused:?}");
+    assert_eq!(refused[0].code().id(), "RT-AI-0202");
+}
+
+#[test]
+fn a_missing_type_and_an_odd_target_are_not_refused_by_the_readers() {
+    let missing = Case {
+        ty: 4,
+        ..base_case()
+    };
+    assert_eq!(codes_of(&missing), vec![Code::ValMissingTypeDeclaration]);
+    let odd_target = Case {
+        target: 4,
+        ..base_case()
+    };
+    assert!(rule_json(&odd_target).contains(r#""target":"9bad""#));
+    assert_eq!(codes_of(&odd_target), Vec::<Code>::new());
+}
+
+#[test]
+fn coverage_of_every_outcome_is_asserted_here_and_not_in_the_property() {
     let mut seen: std::collections::BTreeSet<Vec<&'static str>> = Default::default();
-    let mut rejected = 0usize;
+    let mut rejected: std::collections::BTreeMap<Defect, usize> = Default::default();
     for kind in 0..6 {
         for a in 0..32 {
             for marker in 0..6 {
@@ -666,7 +884,7 @@ fn the_grid_reaches_every_outcome_the_property_claims_to_cover() {
                         declare_cafe: a.is_multiple_of(2),
                     };
                     match check(&c) {
-                        Outcome::Rejected => rejected += 1,
+                        Outcome::Rejected(defect) => *rejected.entry(defect).or_default() += 1,
                         Outcome::Findings(codes) => {
                             seen.insert(codes.iter().map(|c| c.id()).collect());
                         }
@@ -675,7 +893,14 @@ fn the_grid_reaches_every_outcome_the_property_claims_to_cover() {
             }
         }
     }
-    assert!(rejected > 0);
+    for defect in [
+        Defect::OversizeLiteral,
+        Defect::InvalidDate,
+        Defect::BadKindName,
+        Defect::NonsenseType,
+    ] {
+        assert!(rejected.contains_key(&defect), "never rejected {defect:?}");
+    }
     for code in ["RT-VAL-0001", "RT-VAL-0002", "RT-VAL-0003", "RT-VAL-0004"] {
         assert!(
             seen.iter().any(|list| list.contains(&code)),
@@ -685,8 +910,6 @@ fn the_grid_reaches_every_outcome_the_property_claims_to_cover() {
     assert!(seen.contains(&Vec::new()), "never produced a clean rule");
     assert!(seen.iter().any(|list| list.len() > 1));
 }
-
-// ----- instructions inside responses and source documents -----
 
 #[derive(Clone, Copy, Debug)]
 enum Plant {
@@ -754,29 +977,18 @@ const RULE_BODIES: [&str; 4] = [
     r#""kind":"derived","target":"derived_total","type":"number","expr":{"node":"num","t":"number","value":"1"}"#,
 ];
 
-fn names_in_cwd_with_ledger() -> Vec<String> {
-    let mut found: Vec<String> = std::fs::read_dir(".")
-        .map(|it| {
-            it.filter_map(Result::ok)
-                .map(|e| e.file_name().to_string_lossy().into_owned())
-                .filter(|n| n.to_lowercase().contains("ledger"))
-                .collect()
-        })
-        .unwrap_or_default();
-    found.sort();
-    found
-}
-
 fn accept_fixture(f: &Fixture) -> AcceptedBatch {
     run_accept(&f.payload, &f.decl, &f.models, &f.clauses)
         .unwrap_or_else(|d| panic!("rejected {}: {d:?}", f.payload))
 }
 
 #[test]
-fn instructions_in_a_response_or_a_source_change_no_diagnostic_status_or_ledger() {
+fn instructions_in_a_response_or_a_source_change_no_diagnostic_or_derived_status() {
+    // Status is derived from the ledger alone, so no text can change it.
+    // That nothing here can append to a ledger rests on two structural
+    // checks: the source scan in rt-ledger/src/tests.rs finds no append
+    // function there, and check-graph forbids rt-ai-tool -> rt-review.
     let ledger = ApprovalLedger::empty();
-    let ledger_before = print_ledger(&ledger);
-    let files_before = names_in_cwd_with_ledger();
     for body in RULE_BODIES {
         let clean = fixture(body, None);
         let control = accept_fixture(&clean);
@@ -812,9 +1024,6 @@ fn instructions_in_a_response_or_a_source_change_no_diagnostic_status_or_ledger(
             assert!(!injected.state().no_errors(), "{plant:?} {body}");
         }
     }
-    assert!(ledger.is_empty());
-    assert_eq!(print_ledger(&ledger), ledger_before);
-    assert_eq!(names_in_cwd_with_ledger(), files_before);
 }
 
 #[test]
