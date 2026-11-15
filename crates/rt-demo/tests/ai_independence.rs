@@ -152,7 +152,14 @@ fn prepare_bin(source: &Path, dir: &Path, with_tool: bool) -> bool {
         fs::copy(real, target).unwrap();
         true
     } else {
-        fs::write(target, b"inert stand-in for ruletrace-ai\n").unwrap();
+        fs::write(&target, b"inert stand-in for ruletrace-ai\n").unwrap();
+        // Executable, so an attempt to start it fails on the file content
+        // and not on a permission error a caller could swallow.
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&target, fs::Permissions::from_mode(0o755)).unwrap();
+        }
         false
     }
 }

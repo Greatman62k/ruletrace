@@ -928,7 +928,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
 
   - [-] 8.18 Write the AI-independence and origin-independence tests
     - **Property 41: AI tool and CLI are independent**
-    - For every combination of presence of `ruletrace-ai`, an AI_Configuration file and the credential variable, `ruletrace` stdout, stderr, files and exit code are byte identical for the same inputs, and equal between a full build and a core-only build (all AI crates and `rt-tests-ai` excluded). Run `check-tree` for `rt-cli` and every core crate. In the acceptance test, assert that the `hand` and `ai` profiles compile to byte-identical artifacts when their Rule_Content is equal. Required.
+    - For every combination of presence of `ruletrace-ai`, an AI_Configuration file and the credential variable, `ruletrace` stdout, stderr, files and exit code are byte identical for the same inputs, and equal between a full build and a core-only build (all AI crates and `rt-tests-ai` excluded). Run `check-tree` for `rt-cli` and every core crate. The matrix over three booleans is exhaustive (8 cells), which replaces generated cases (decision of the orchestrator, recorded in the 8.18 review). Origin independence (Req 16.18): the `hand` and `ai` demo documents differ, so a hand-authored rulebook over the `ai` document is compiled and its bytes are asserted equal to the `ai` profile's. Required.
     - Observable: the `core-only` job still passes with the AI crates present in the workspace, and the origin-independence assertion passes.
     - Blocked by: 8.17, 6.10.
     - **Validates: Requirements 17.7, 17.8, 18.1, 20.16, 27.9, 16.18**
