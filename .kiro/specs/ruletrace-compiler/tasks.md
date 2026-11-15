@@ -769,7 +769,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 5.8, 5.9, 5.10, 5.11, 5.12, 17.11, 23.12, 23.16, 27.12_
     - Design §3.9.1, §2.4
 
-  - [ ] 7.5 Extend the review-refusal property test to adoption
+  - [x] 7.5 Extend the review-refusal property test to adoption
     - **Property 15: Review refusals leave files unchanged**
     - Add the adoption refusal cases (stale prospective hash, revision exhaustion, proposer equal to Reviewer) to the generator of 6.3. Required.
     - Observable: every adoption refusal leaves ledger, Rulebook and store byte-identical.
@@ -793,7 +793,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: every input kind rejects each flag and lifecycle key with the specified code.
     - **Validates: Requirements 22.6, 22.7, 22.9, 22.10, 22.11, 22.12, 22.13, 22.16, 22.17, 22.18, 20.25**
 
-  - [ ] 7.9 Checkpoint - Phase 5 exit
+  - [-] 7.9 Checkpoint - Phase 5 exit
     - Run the full gate set. Confirm the `ruletrace` tree has no AI or network crate.
     - Exit criteria: Properties 15 and 16 pass with fault injection; recovery and concurrency tests pass; the no-other-channel test still passes; UD-36 is `Confirmed`.
     - Ensure all tests pass, ask the user if questions arise.
