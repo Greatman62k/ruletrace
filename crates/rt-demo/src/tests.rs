@@ -340,3 +340,78 @@ fn ledger_description_lists_each_record_with_reviewer_time_and_hash() {
         ]
     );
 }
+
+const SECRET: &[u8] = b"rtc-Zq7x93LmN-Rt5vK2pWd8Hc4Jf1Bs6Ug0Ya3Xe9";
+
+#[test]
+fn leak_search_finds_the_whole_secret_at_its_offset() {
+    let mut haystack = b"prefix ".to_vec();
+    haystack.extend_from_slice(SECRET);
+    haystack.extend_from_slice(b" suffix");
+    assert_eq!(leak::first_leak(SECRET, &haystack), Some(7));
+}
+
+#[test]
+fn leak_search_finds_a_fragment_of_eight_bytes_but_not_of_seven() {
+    let eight = &SECRET[10..18];
+    let seven = &SECRET[10..17];
+    let with = [b"..".as_slice(), eight, b".."].concat();
+    let without = [b"..".as_slice(), seven, b".."].concat();
+    assert_eq!(leak::first_leak(SECRET, &with), Some(2));
+    assert_eq!(leak::first_leak(SECRET, &without), None);
+}
+
+#[test]
+fn leak_search_reports_nothing_for_empty_input_and_unrelated_text() {
+    assert_eq!(leak::first_leak(SECRET, b""), None);
+    assert_eq!(leak::first_leak(b"", SECRET), None);
+    assert_eq!(
+        leak::first_leak(SECRET, b"rtc-Zq7 has only seven characters in common"),
+        None
+    );
+}
+
+#[test]
+fn leak_search_of_a_short_secret_needs_the_whole_secret() {
+    assert_eq!(leak::first_leak(b"abc", b"xxabcxx"), Some(2));
+    assert_eq!(leak::first_leak(b"abc", b"xxabxcx"), None);
+}
+
+mod leak_property {
+    use super::*;
+    use proptest::prelude::*;
+
+    /// The reference: every window of the secret against every window of the
+    /// haystack, with no table.
+    fn reference(secret: &[u8], haystack: &[u8]) -> Option<usize> {
+        let width = leak::FRAGMENT_BYTES.min(secret.len());
+        if width == 0 {
+            return None;
+        }
+        (0..haystack.len().saturating_sub(width - 1)).find(|&i| {
+            let h = &haystack[i..i + width];
+            secret.windows(width).any(|s| s == h)
+        })
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(512))]
+
+        #[test]
+        fn search_agrees_with_the_reference_on_random_inputs(
+            secret in proptest::collection::vec(b'a'..=b'f', 1..24),
+            left in proptest::collection::vec(b'a'..=b'f', 0..64),
+            piece in 0usize..24,
+            width in 1usize..12,
+            right in proptest::collection::vec(b'a'..=b'f', 0..64),
+        ) {
+            let from = piece.min(secret.len() - 1);
+            let to = (from + width).min(secret.len());
+            let haystack = [left, secret[from..to].to_vec(), right].concat();
+            prop_assert_eq!(
+                leak::first_leak(&secret, &haystack),
+                reference(&secret, &haystack)
+            );
+        }
+    }
+}

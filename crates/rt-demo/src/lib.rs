@@ -10,6 +10,7 @@ pub mod coverage;
 pub mod error;
 pub mod golden;
 mod json;
+pub mod leak;
 pub mod manifest;
 pub mod runbook;
 pub mod runner;

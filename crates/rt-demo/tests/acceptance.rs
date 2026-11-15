@@ -1220,3 +1220,223 @@ fn ai_profile_windows_goldens_differ_from_the_others_only_by_the_skipped_directo
     );
     Ok(())
 }
+
+/// A string, not a credential. No eight-byte window of it is likely in
+/// ordinary output.
+const CANARY: &str = "rtc-Zq7x93LmN-Rt5vK2pWd8Hc4Jf1Bs6Ug0Ya3Xe9";
+const CREDENTIAL_VARIABLES: [&str; 3] = ["OPENAI_API_KEY", "RULETRACE_AI_KEY", "RT_CANARY_KEY"];
+
+/// What the canary check scans: each command's output and every file of the
+/// working directory.
+struct Seen {
+    outputs: Vec<(String, Captured)>,
+    files: std::collections::BTreeMap<String, Vec<u8>>,
+}
+
+/// The surfaces that hold the canary, whole or as a fragment of eight bytes.
+fn canary_leaks(seen: &Seen) -> Vec<String> {
+    let secret = CANARY.as_bytes();
+    let mut leaks = Vec::new();
+    for (id, c) in &seen.outputs {
+        if rt_demo::leak::first_leak(secret, &c.stdout).is_some() {
+            leaks.push(format!("stdout of {id}"));
+        }
+        if rt_demo::leak::first_leak(secret, &c.stderr).is_some() {
+            leaks.push(format!("stderr of {id}"));
+        }
+    }
+    for (name, bytes) in &seen.files {
+        if rt_demo::leak::first_leak(secret, bytes).is_some() {
+            leaks.push(format!("file {name}"));
+        }
+        if rt_demo::leak::first_leak(secret, name.as_bytes()).is_some() {
+            leaks.push(format!("path {name}"));
+        }
+    }
+    leaks
+}
+
+/// Runs a step with an empty environment except for the canary in every
+/// credential variable.
+fn run_with_canary(step: &Step, bin: &Path, dir: &Path) -> Captured {
+    let program = rt_demo::binary_path(bin, &step.argv[0]);
+    let mut command = Command::new(program);
+    command
+        .args(&step.argv[1..])
+        .current_dir(dir.join(&step.cwd))
+        .env_clear()
+        .stdin(std::process::Stdio::null());
+    for name in CREDENTIAL_VARIABLES {
+        command.env(name, CANARY);
+    }
+    let output = command.output().unwrap();
+    Captured {
+        exit: output.status.code().expect("an exit code"),
+        stdout: output.stdout,
+        stderr: output.stderr,
+    }
+}
+
+#[test]
+fn ai_profile_a_canary_credential_reaches_no_surface_of_the_runs() -> TestResult {
+    let demo = demo_dir();
+    let bin = bin_dir()?;
+    let runbook = parse_runbook(&std::fs::read_to_string(demo.join("RUNBOOK.md"))?)?;
+    let base = TempDir::new("canary");
+    copy_demo(&demo, &base.0)?;
+    let mut outputs = Vec::new();
+    for step in runbook.steps_for(PROFILE)? {
+        let c = run_with_canary(step, &bin, &base.0);
+        assert_eq!(
+            c.exit,
+            step.expect_exit,
+            "step {}: {}",
+            step.id,
+            output_text(&c)
+        );
+        // The credential variables change nothing: the mock provider names no
+        // credential, so every output equals the golden file of the run
+        // without them.
+        check_golden(
+            Mode::Compare,
+            &step.id,
+            &demo,
+            &step.stdout_golden,
+            &c.stdout,
+        )?;
+        check_golden(
+            Mode::Compare,
+            &step.id,
+            &demo,
+            &step.stderr_golden,
+            &c.stderr,
+        )?;
+        for output in &step.outputs {
+            check_golden(
+                Mode::Compare,
+                &step.id,
+                &demo,
+                &output.golden,
+                &std::fs::read(base.0.join(&output.path))?,
+            )?;
+        }
+        outputs.push((step.id.clone(), c));
+    }
+    let mut files = std::collections::BTreeMap::new();
+    tree(&base.0, Path::new(""), &mut files);
+    for needed in [
+        "work/store/batches",
+        "work/transmission.log.jsonl",
+        "work/ledger.jsonl",
+        "work/compiled.json",
+    ] {
+        assert!(
+            files.keys().any(|k| k.starts_with(needed)),
+            "the scan must cover {needed}"
+        );
+    }
+    let seen = Seen { outputs, files };
+    assert_eq!(canary_leaks(&seen), Vec::<String>::new());
+    // The Run_Summary is the standard output of `propose`.
+    let propose = &seen.outputs.iter().find(|(id, _)| id == "s02").unwrap().1;
+    assert!(String::from_utf8_lossy(&propose.stdout).starts_with("run summary: complete"));
+
+    // The check finds a leak into standard error, into a proposal-store file
+    // and into the ledger, and into a file name. Each mutant is a copy of the
+    // clean surfaces with one injected leak.
+    let inject_stderr = |id: &str| {
+        let mut outputs = seen.outputs.clone();
+        let slot = outputs.iter_mut().find(|(i, _)| i == id).unwrap();
+        slot.1.stderr.extend_from_slice(CANARY.as_bytes());
+        Seen {
+            outputs,
+            files: seen.files.clone(),
+        }
+    };
+    assert_eq!(canary_leaks(&inject_stderr("s02")), ["stderr of s02"]);
+    let inject_file = |name: &str, tail: &[u8]| {
+        let mut files = seen.files.clone();
+        files.get_mut(name).unwrap().extend_from_slice(tail);
+        Seen {
+            outputs: seen.outputs.clone(),
+            files,
+        }
+    };
+    let batch = seen
+        .files
+        .keys()
+        .find(|k| k.starts_with("work/store/batches/"))
+        .unwrap()
+        .clone();
+    assert_eq!(
+        canary_leaks(&inject_file(&batch, CANARY.as_bytes())),
+        [format!("file {batch}")]
+    );
+    assert_eq!(
+        canary_leaks(&inject_file("work/ledger.jsonl", &CANARY.as_bytes()[5..13])),
+        ["file work/ledger.jsonl"]
+    );
+    assert_eq!(
+        canary_leaks(&inject_file(
+            "work/transmission.log.jsonl",
+            &CANARY.as_bytes()[5..12]
+        )),
+        Vec::<String>::new(),
+        "seven bytes are not a fragment"
+    );
+    let mut renamed = seen.files.clone();
+    renamed.insert(format!("work/{CANARY}.tmp"), Vec::new());
+    let named = Seen {
+        outputs: seen.outputs.clone(),
+        files: renamed,
+    };
+    assert_eq!(canary_leaks(&named), [format!("path work/{CANARY}.tmp")]);
+    Ok(())
+}
+
+#[test]
+fn ai_profile_a_configuration_with_an_inline_credential_is_refused_without_echo() -> TestResult {
+    let demo = demo_dir();
+    let bin = bin_dir()?;
+    let runbook = parse_runbook(&std::fs::read_to_string(demo.join("RUNBOOK.md"))?)?;
+    let dir = TempDir::new("inline-credential");
+    copy_demo(&demo, &dir.0)?;
+    run_expecting(step_by_id(&runbook, "s01"), 0, &bin, &dir.0);
+    // The canary stands in for an inline credential. The configuration file
+    // holds it on purpose, so only the outputs and the stores are scanned.
+    let config = std::fs::read_to_string(demo.join("ai/mock-replay.toml"))?;
+    let inline = dir.0.join("ai/inline.toml");
+    std::fs::write(&inline, format!("{config}api_key = \"{CANARY}\"\n"))?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&inline, std::fs::Permissions::from_mode(0o600))?;
+    }
+    let mut words = dry_run_args();
+    words.extend(["--consent", "stand-in-rules.md"]);
+    let mut step = adhoc("inline", &words);
+    step.argv[3] = "ai/inline.toml".to_owned();
+    assert_eq!(step.argv[2], "--config");
+    let c = run_with_canary(&step, &bin, &dir.0);
+    assert_eq!(c.exit, 2, "{}", output_text(&c));
+    assert!(
+        String::from_utf8_lossy(&c.stderr).contains("RT-AI-0003"),
+        "{}",
+        output_text(&c)
+    );
+    let mut files = std::collections::BTreeMap::new();
+    tree(&dir.0, Path::new(""), &mut files);
+    files.retain(|name, _| name != "ai/inline.toml");
+    assert!(
+        !files
+            .keys()
+            .any(|k| k.starts_with("work/store") || k.starts_with("work/transmission")),
+        "a refused run stores nothing and logs no transmission"
+    );
+    let seen = Seen {
+        outputs: vec![("inline".to_owned(), c)],
+        files,
+    };
+    assert_eq!(canary_leaks(&seen), Vec::<String>::new());
+    Ok(())
+}
