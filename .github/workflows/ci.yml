@@ -27,7 +27,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install pinned toolchain
         run: |
           channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
@@ -40,7 +40,7 @@ jobs:
           cargo fmt --all --check 2>&1 | tee ci-output/fmt.log
       - name: Keep failed-check output
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: fmt-${{ matrix.os }}
           path: ci-output/
@@ -57,7 +57,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install pinned toolchain
         run: |
           channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
@@ -70,7 +70,7 @@ jobs:
           cargo clippy --workspace --all-targets --all-features -- -D warnings 2>&1 | tee ci-output/clippy.log
       - name: Keep failed-check output
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: clippy-${{ matrix.os }}
           path: ci-output/
@@ -87,7 +87,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install pinned toolchain
         run: |
           channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
@@ -105,7 +105,7 @@ jobs:
           cargo test --workspace --all-features --no-fail-fast 2>&1 | tee ci-output/test.log
       - name: Keep failed-check output
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-${{ matrix.os }}
           path: ci-output/
@@ -125,7 +125,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install pinned toolchain
         run: |
           channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
@@ -140,7 +140,7 @@ jobs:
           cargo test -p rt-tests-core --all-features golden 2>&1 | tee ci-output/golden.log
       - name: Keep failed-check output
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: golden-${{ matrix.os }}
           path: ci-output/
@@ -157,7 +157,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install pinned toolchain
         run: |
           channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
@@ -172,7 +172,7 @@ jobs:
           test -n "$expected" && test "$expected" = "$actual"
       - name: Keep failed-check output
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: toolchain-${{ matrix.os }}
           path: ci-output/
@@ -185,7 +185,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       # Full history and tags: check-catalogue reads `git tag --list` (Req 7.12).
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -203,7 +203,7 @@ jobs:
           cargo run -q -p rt-xtask -- check-graph check-tree scan-sources scan-api check-decisions check-catalogue check-justification 2>&1 | tee ci-output/graph.log
       - name: Keep failed-check output
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: graph-linux
           path: ci-output/
@@ -214,7 +214,7 @@ jobs:
     name: deny (linux)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install pinned toolchain
         run: |
           channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
@@ -229,7 +229,7 @@ jobs:
           cargo deny check 2>&1 | tee ci-output/deny.log
       - name: Keep failed-check output
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: deny-linux
           path: ci-output/
@@ -245,7 +245,7 @@ jobs:
         --exclude rt-ai-adapter --exclude rt-ai-mock --exclude rt-ai-openai
         --exclude rt-ai-tool --exclude rt-tests-ai
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install pinned toolchain
         run: |
           channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
@@ -286,7 +286,7 @@ jobs:
           done
       - name: Keep failed-check output
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: core-only-linux
           path: ci-output/
@@ -306,7 +306,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install pinned toolchain
         run: |
           channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
@@ -334,7 +334,7 @@ jobs:
           fi
       - name: Keep failed-check output
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: demo-offline-${{ matrix.os }}
           path: ci-output/
@@ -348,7 +348,7 @@ jobs:
     needs: [fmt, clippy, test, golden, toolchain, graph, deny, core-only, demo-offline]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Every job succeeded (no failure, skip or cancel)
         env:
           NEEDS: ${{ toJSON(needs) }}
