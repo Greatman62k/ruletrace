@@ -8,7 +8,7 @@
 - Public APIs are small and documented. Keep crate boundaries clean; no cyclic dependencies.
 - Use `BTreeMap`/`BTreeSet` or sorted `Vec` where order can affect output.
 - Exact arithmetic only (decimal or rational). Checked operations; overflow is a diagnostic, not a wrap.
-- Core crates have no mutable globals, no `static mut`, no thread-local or lazily initialized global state, and no environment, clock, random, file or network access. Only the CLI binary, the AI and review tools, and the AI integration crates do I/O.
+- Core crates have no mutable globals, no `static mut`, no thread-local or lazily initialized global state, and no environment, clock, random, file or network access. Only the `ruletrace` binary crate (including the review command group), the `ruletrace-ai` crate and the AI integration crates do I/O.
 - Credentials are read only in an AI integration crate, from the environment variable whose name the explicit TOML configuration gives, and are redacted from every output. An inline credential in the configuration is an error.
 - The retry decision is a pure function of attempt outcomes and elapsed monotonic time (no jitter, no randomness) so a simulated timer can test it. Only the integration crate uses a monotonic timer.
 

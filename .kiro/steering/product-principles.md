@@ -42,7 +42,7 @@ We are not building a generic chatbot, document summarizer, dashboard product or
 - Money and score calculations must use exact decimal or rational arithmetic.
 - Floating-point arithmetic is prohibited in Rule_IR, compilation and execution paths.
 - Rounding must be explicitly declared by the applicable rule.
-- The numeric representation is chosen by comparing exact decimal, rational and hybrid options on exactness, range and scale, rounding, overflow protection, canonical serialization, and dependency and performance cost, not for convenience. The choice (bounded decimal or bounded rational with decimal literals) is pending user confirmation; requirements are written to hold under both.
+- The numeric representation is chosen by comparing exact decimal, rational and hybrid options on exactness, range and scale, rounding, overflow protection, canonical serialization, and dependency and performance cost, not for convenience. The choice is confirmed: a bounded rational with decimal literals (R-128, see `tools/decisions/UD-3.md`).
 - Overflow, division by zero and unsupported numeric operations must be reported rather than silently approximated.
 
 ### 2.5 Security
