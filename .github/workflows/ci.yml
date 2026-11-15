@@ -261,7 +261,8 @@ jobs:
           set -o pipefail
           {
             cargo build --workspace $AUX_EXCLUDE --bins --target-dir target/core-only
-            cargo test --workspace --all-features --no-fail-fast $AUX_EXCLUDE --target-dir target/core-only
+            cargo test --workspace --all-features --no-fail-fast $AUX_EXCLUDE --target-dir target/core-only \
+              -- --skip ai_profile_
           } 2>&1 | tee ci-output/core-only.log
       - name: Resolved tree has no network or AI crate (check-tree)
         run: |
@@ -319,14 +320,14 @@ jobs:
           cargo fetch --locked
           cargo build --workspace --bins --offline 2>&1 | tee ci-output/demo-build.log
           cargo test -p rt-demo --all-features --offline --no-run 2>&1 | tee -a ci-output/demo-build.log
-      - name: Run the hand profile with no network and no credential
+      - name: Run the hand and ai profiles with no network and no credential
         env:
           RULETRACE_CI_PLATFORM: ${{ matrix.os }}
         run: |
           set -o pipefail
           export RT_BIN_DIR="$PWD/target/debug"
           unset OPENAI_API_KEY RULETRACE_AI_KEY
-          cmd=(cargo test -p rt-demo --all-features --offline --test stand_in_hand --test acceptance_hand)
+          cmd=(cargo test -p rt-demo --all-features --offline --test stand_in_hand --test acceptance_hand --test acceptance)
           if [ "$RUNNER_OS" = "Linux" ]; then
             sudo unshare --net -- sudo -u "$USER" env "PATH=$PATH" "HOME=$HOME" "RT_BIN_DIR=$RT_BIN_DIR" "${cmd[@]}" 2>&1 | tee ci-output/demo-offline.log
           else
