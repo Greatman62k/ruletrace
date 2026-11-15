@@ -11,7 +11,7 @@ use rt_foundation::{Code, Location};
 use rt_srcmodel::SourceModels;
 use std::collections::BTreeSet;
 
-const ALPHABET: [char; 7] = ['a', 'b', ' ', '\n', 'é', 'δ', '日'];
+const ALPHABET: [char; 8] = ['a', 'b', ' ', '\n', '\r', 'é', 'δ', '日'];
 
 #[derive(Clone, Debug)]
 struct Case {
@@ -34,13 +34,33 @@ fn boundaries(text: &str) -> BTreeSet<u32> {
     set
 }
 
+// Walks the characters before `start`. A CR followed by LF leaves the line
+// to the LF, any other CR and every LF ends the line.
 fn line_column(text: &str, start: u32) -> (u32, u32) {
     let Some(before) = text.get(..start as usize) else {
         return (1, 1);
     };
-    let line = before.matches('\n').count() + 1;
-    let column = before.rsplit('\n').next().unwrap_or("").chars().count() + 1;
-    (u32::try_from(line).unwrap(), u32::try_from(column).unwrap())
+    let (mut line, mut column) = (1u32, 1u32);
+    let mut rest = text.chars().peekable();
+    let mut seen = 0usize;
+    while let Some(c) = rest.next() {
+        if seen >= before.len() {
+            break;
+        }
+        seen += c.len_utf8();
+        let breaks = match c {
+            '\n' => true,
+            '\r' => rest.peek() != Some(&'\n'),
+            _ => false,
+        };
+        if breaks {
+            line += 1;
+            column = 1;
+        } else {
+            column += 1;
+        }
+    }
+    (line, column)
 }
 
 fn claimed_position(c: &Case) -> (u32, u32) {

@@ -21,6 +21,16 @@ pub(crate) const CAFE_HASH: &str =
 // Bytes: two three-byte characters, boundaries at 0, 3 and 6.
 const KANJI: &str = "日日";
 
+// Bytes: a0 b1 CR2 LF3 c4 d5 CR6 LF7 e8 f9. Each CRLF is one line break.
+const CRLF: &str = "ab\r\ncd\r\nef";
+const CRLF_HASH: &str = "b83f211a347ea3b2ac24b774883ceb86af37cbf0b694b1d4344da70b00ff3796";
+// Bytes: a0 b1 CR2 c3 d4 CR5 e6 f7. Each lone CR is one line break.
+const CR: &str = "ab\rcd\ref";
+const CR_HASH: &str = "91ca52ab512c846fd50390021bb3913cb9435ee1b72807a15f12c3782f3ba9cf";
+// Bytes: a0 CR1 LF2 CR3 b4 LF5 LF6 c7. CRLF then CR are two breaks.
+const MIXED: &str = "a\r\n\rb\n\nc";
+const MIXED_HASH: &str = "9d0e9236fca5a29a5d049e0dee25eeec57481af4ba9cc0823287004dd870f55c";
+
 pub(crate) fn doc(name: &str) -> DocumentId {
     DocumentId::new(name).unwrap()
 }
@@ -46,6 +56,9 @@ pub(crate) fn models() -> SourceModels {
     all.insert(model("rules.md", RULES)).unwrap();
     all.insert(model("cafe.md", CAFE)).unwrap();
     all.insert(model("kanji.md", KANJI)).unwrap();
+    all.insert(model("crlf.md", CRLF)).unwrap();
+    all.insert(model("cr.md", CR)).unwrap();
+    all.insert(model("mixed.md", MIXED)).unwrap();
     all
 }
 
@@ -65,6 +78,9 @@ fn clauses() -> Vec<ClauseId> {
         clause("rules.md", 28, 32),
         clause("cafe.md", 0, 9),
         clause("kanji.md", 0, 6),
+        clause("crlf.md", 0, 10),
+        clause("cr.md", 0, 8),
+        clause("mixed.md", 0, 8),
     ]
 }
 
@@ -98,6 +114,7 @@ pub(crate) fn escaped(text: &str) -> String {
     text.replace('\\', "\\\\")
         .replace('"', "\\\"")
         .replace('\n', "\\n")
+        .replace('\r', "\\r")
         .replace('\u{0}', "\\u0000")
 }
 
@@ -162,7 +179,7 @@ fn run(text: &str) -> Vec<Diagnostic> {
 
 type Shape = (Code, Severity, Option<u32>, Option<u32>, Option<String>);
 
-/// Column of the value of the `nth` occurrence of `key` in single-line text.
+// Column of the value of the `nth` occurrence of `key` in single-line text.
 fn val(text: &str, key: &str, nth: usize) -> Option<u32> {
     let needle = format!(r#""{key}":"#);
     let at = col_nth(text, &needle, nth)?;
@@ -480,4 +497,68 @@ fn the_diagnostics_are_errors_with_the_provenance_exit_code() {
     assert_eq!(found[0].code().id(), "RT-PRV-0102");
     assert_eq!(found[0].code().exit_code().value(), 3);
     assert_eq!(found[0].severity(), Severity::Error);
+}
+
+fn one_char(doc: &'static str, sha: &'static str, at: (u32, u32, u32), q: &'static str) -> Span {
+    Span {
+        doc,
+        sha,
+        start: at.0,
+        end: at.0 + 1,
+        line: at.1,
+        column: at.2,
+        quote: q,
+    }
+}
+
+#[test]
+fn crlf_and_lone_cr_each_count_as_one_line_break() {
+    let crlf = |at, q| one_char("crlf.md", CRLF_HASH, at, q);
+    let cr = |at, q| one_char("cr.md", CR_HASH, at, q);
+    let mixed = |at, q| one_char("mixed.md", MIXED_HASH, at, q);
+    let valid = [
+        crlf((0, 1, 1), "a"),
+        crlf((2, 1, 3), "\r"),
+        crlf((3, 1, 4), "\n"),
+        crlf((4, 2, 1), "c"),
+        crlf((5, 2, 2), "d"),
+        crlf((6, 2, 3), "\r"),
+        crlf((8, 3, 1), "e"),
+        crlf((9, 3, 2), "f"),
+        cr((2, 1, 3), "\r"),
+        cr((3, 2, 1), "c"),
+        cr((4, 2, 2), "d"),
+        cr((5, 2, 3), "\r"),
+        cr((6, 3, 1), "e"),
+        cr((7, 3, 2), "f"),
+        mixed((0, 1, 1), "a"),
+        mixed((3, 2, 1), "\r"),
+        mixed((4, 3, 1), "b"),
+        mixed((6, 4, 1), "\n"),
+        mixed((7, 5, 1), "c"),
+    ];
+    for span in valid {
+        let text = wrap(&[advisory(std::slice::from_ref(&span))]);
+        assert!(run(&text).is_empty(), "{}", span.json());
+    }
+}
+
+#[test]
+fn a_miscounted_line_break_is_reported_at_the_line_or_column() {
+    let wrong = [
+        (one_char("crlf.md", CRLF_HASH, (4, 3, 1), "c"), "line"),
+        (one_char("crlf.md", CRLF_HASH, (4, 2, 3), "c"), "column"),
+        (one_char("cr.md", CR_HASH, (3, 1, 4), "c"), "line"),
+        (one_char("mixed.md", MIXED_HASH, (4, 2, 1), "b"), "line"),
+        (one_char("mixed.md", MIXED_HASH, (4, 4, 1), "b"), "line"),
+    ];
+    for (span, key) in wrong {
+        let text = wrap(&[advisory(std::slice::from_ref(&span))]);
+        assert_eq!(
+            only(&text),
+            at_field(&text, Code::AiProposalSpanUnresolved, key),
+            "{}",
+            span.json()
+        );
+    }
 }

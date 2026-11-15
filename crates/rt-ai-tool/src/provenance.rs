@@ -167,6 +167,7 @@ fn range(e: &ParsedEvidence, model: &SourceModel) -> Option<Failure> {
 
 fn position(e: &ParsedEvidence, model: &SourceModel) -> Option<Failure> {
     let site = &e.site;
+    // Unreachable once `range` has passed. Fail closed instead of assuming.
     let Some((line, column)) = model.line_column(e.start) else {
         return Some(fail(
             Code::AiProposalSpanUnresolved,

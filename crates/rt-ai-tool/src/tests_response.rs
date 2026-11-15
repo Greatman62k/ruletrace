@@ -730,8 +730,6 @@ fn a_rule_that_is_not_valid_rule_ir_is_0202_at_the_key_or_the_rule() {
 
 #[test]
 fn a_first_decoder_diagnostic_that_is_not_an_unknown_field_stays_at_the_rule() {
-    // The invalid id comes before the unknown member, so the decoder reports
-    // the id first and the position stays at the start of the rule.
     let draft = DRAFT.replacen(r#""id":"elig.new""#, r#""id":"has space","revision":2"#, 1);
     let text = wrap(&[rule_proposal(&draft)]);
     let d = fail(&text);
