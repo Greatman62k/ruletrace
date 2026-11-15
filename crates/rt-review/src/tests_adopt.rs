@@ -674,3 +674,22 @@ fn the_named_hash_selects_among_proposals_for_the_same_rule() {
     assert_eq!(origin.proposal_id, b.proposals[1].proposal_id.as_str());
     assert_eq!(adopted.unwrap().content.target.as_str(), "eligible3");
 }
+
+#[test]
+fn an_unbindable_draft_is_refused_at_the_rule_site_without_an_approval_binding() {
+    let rb = base();
+    let b = batch_with(&rb, "req-unbound", &[("elig.new", "eligible2")]);
+    let mut other = rb.clone();
+    other.documents.clear();
+    let pending = rt_proposals::pending_proposals(std::slice::from_ref(&b), &other);
+    let direct = prospective_adoption(&other, &pending[0], &sites().rule).unwrap_err();
+    assert_eq!(direct.code(), Code::ReviewBlockingDiagnostic);
+    assert!(
+        direct
+            .message()
+            .starts_with("the draft of rule 'elig.new' has no approval binding: "),
+        "{}",
+        direct.message()
+    );
+    assert_eq!(direct.primary(), &sites().rule);
+}
