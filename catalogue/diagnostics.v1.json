@@ -127,7 +127,7 @@
   {"code": "RT-AI-0201", "mnemonic": "AI_RESPONSE_MALFORMED", "severity": "Error", "meaning": "Not UTF-8 or not parseable", "exit": 6, "executable": "ai"},
   {"code": "RT-AI-0202", "mnemonic": "AI_RESPONSE_SCHEMA_VIOLATION", "severity": "Error", "meaning": "Duplicate key, unknown or missing field, wrong type, depth", "exit": 6, "executable": "ai"},
   {"code": "RT-AI-0203", "mnemonic": "AI_RESPONSE_TOO_LARGE", "severity": "Error", "meaning": "Response above the limit", "exit": 6, "executable": "ai"},
-  {"code": "RT-AI-0204", "mnemonic": "AI_RESPONSE_FORBIDDEN_FIELD", "severity": "Error", "meaning": "Approval, reviewer, status, `has_errors`, `no_errors` or similar field", "exit": 6, "executable": "ai"},
+  {"code": "RT-AI-0204", "mnemonic": "AI_RESPONSE_FORBIDDEN_FIELD", "severity": "Error", "meaning": "A response member named by one of the thirteen approval and validity field names of design 3.7.4", "exit": 6, "executable": "ai"},
   {"code": "RT-AI-0205", "mnemonic": "AI_RESPONSE_INCOMPLETE", "severity": "Error", "meaning": "Refusal, incomplete or non-completed status", "exit": 6, "executable": "ai"},
   {"code": "RT-AI-0206", "mnemonic": "AI_RESPONSE_CREDENTIAL_ECHO", "severity": "Error", "meaning": "Response payload contains the credential value; batch not stored (UD-36)", "exit": 6, "executable": "ai"},
   {"code": "RT-AI-0301", "mnemonic": "AI_BATCH_ALREADY_STORED", "severity": "Warning", "meaning": "Batch with this request id exists", "exit": 0, "executable": "ai"},

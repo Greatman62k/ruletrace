@@ -263,7 +263,7 @@ pub enum Code {
     AiResponseSchemaViolation,
     /// `RT-AI-0203`: Response above the limit
     AiResponseTooLarge,
-    /// `RT-AI-0204`: Approval, reviewer, status, `has_errors`, `no_errors` or similar field
+    /// `RT-AI-0204`: A response member named by one of the thirteen approval and validity field names of design 3.7.4
     AiResponseForbiddenField,
     /// `RT-AI-0205`: Refusal, incomplete or non-completed status
     AiResponseIncomplete,
