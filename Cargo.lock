@@ -274,7 +274,9 @@ dependencies = [
  "rt-ai-mock",
  "rt-foundation",
  "rt-hash",
+ "rt-ir",
  "rt-json",
+ "rt-srcmodel",
  "toml_edit",
 ]
 

@@ -503,3 +503,19 @@ fn credential_with_a_control_character_is_redacted_in_every_rendered_form() {
     assert!(!all.contains("ctl-ab"), "{all:?}");
     assert!(all.contains("[REDACTED]"));
 }
+
+#[test]
+fn redactor_replaces_overlapping_occurrences_with_one_marker() {
+    let quotes = Credential::new("\"".repeat(6)).unwrap();
+    let r = Redactor::new(&quotes);
+    assert_eq!(r.redact(&"\"".repeat(11)), "[REDACTED]");
+    assert_eq!(r.redact(&"\"".repeat(5)), "\"\"\"\"\"");
+}
+
+#[test]
+fn redactor_never_rewrites_an_earlier_marker() {
+    let bracket = Credential::new("[".to_owned()).unwrap();
+    let r = Redactor::new(&bracket);
+    assert_eq!(r.redact("Bearer ["), "[REDACTED]");
+    assert_eq!(r.redact("a[b"), "a[REDACTED]b");
+}

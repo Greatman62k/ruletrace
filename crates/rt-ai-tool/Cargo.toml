@@ -15,7 +15,9 @@ rt-ai-adapter = { path = "../rt-ai-adapter" }
 rt-ai-mock = { path = "../rt-ai-mock" }
 rt-foundation = { path = "../rt-foundation" }
 rt-hash = { path = "../rt-hash" }
+rt-ir = { path = "../rt-ir" }
 rt-json = { path = "../rt-json" }
+rt-srcmodel = { path = "../rt-srcmodel" }
 toml_edit = { version = "0.25", default-features = false, features = ["parse"] }
 
 [dev-dependencies]

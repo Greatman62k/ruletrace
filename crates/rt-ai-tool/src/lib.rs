@@ -11,21 +11,31 @@
 mod config;
 mod consent;
 mod credential;
+mod decls;
+mod dryrun;
 mod endpoint;
 mod locate;
 mod out;
 mod perm;
+mod plan;
 mod raw;
 mod reader;
 mod redact;
 mod scan;
 mod secret;
 mod txlog;
+mod vocab;
 
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod tests_config_order;
+#[cfg(test)]
 mod tests_log;
+#[cfg(test)]
+mod tests_plan;
+#[cfg(test)]
+mod tests_redaction_property;
 #[cfg(test)]
 mod tests_scan;
 
@@ -34,7 +44,13 @@ pub use config::{
 };
 pub use consent::Consent;
 pub use credential::{Credential, EnvReader, ProcessEnv};
+pub use dryrun::{announcement, dry_run};
 pub use out::{render_diagnostic, Out};
 pub use perm::{file_mode, permission_warning};
+pub use plan::{
+    build_plan, ClauseId, PlanInput, PlannedRequest, RunPlan, MAX_CLAUSE_BYTES, MAX_REQUEST_BYTES,
+    TASK,
+};
 pub use redact::{Redactor, REDACTED};
 pub use txlog::{FileLog, LogContext, LogSink, TransmissionLog};
+pub use vocab::Ud32Option;
