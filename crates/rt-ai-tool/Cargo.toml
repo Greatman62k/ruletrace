@@ -1,0 +1,22 @@
+[package]
+name = "rt-ai-tool"
+description = "ruletrace-ai: configuration, consent, credential, redaction and Transmission_Log (class aux)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rt-ai-adapter = { path = "../rt-ai-adapter" }
+rt-ai-mock = { path = "../rt-ai-mock" }
+rt-foundation = { path = "../rt-foundation" }
+rt-hash = { path = "../rt-hash" }
+rt-json = { path = "../rt-json" }
+toml_edit = { version = "0.25", default-features = false, features = ["parse"] }
+
+[dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }

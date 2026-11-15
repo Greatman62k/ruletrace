@@ -48,3 +48,4 @@ forbid-name  rt-engine -> rt-explain rt-ir rt-hash
 forbid-external ureq rustls hyper reqwest h2 tokio openssl native-tls curl isahc attohttpc ring except-under rt-ai-openai
 # external <crate> allowed-in <crate...>   (dev-only entries are marked dev)
 external sha2 allowed-in rt-hash
+external toml_edit allowed-in rt-ai-tool
