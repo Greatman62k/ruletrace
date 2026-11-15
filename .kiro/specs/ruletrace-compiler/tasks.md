@@ -848,7 +848,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 23.5, 23.6, 23.7, 23.8, 23.9, 23.10, 30.1, 30.2, 30.3, 30.4, 30.5, 30.7, 30.9, 30.10, 30.11, 22.16_
     - Design §3.7.3, §3.7.4, §8.11.7, §8.11.8
 
-  - [ ] 8.7 Implement the Proposal_Store writer, call loop and Run_Summary
+  - [x] 8.7 Implement the Proposal_Store writer, call loop and Run_Summary
     - Implement the idempotency check, the temp-file write with `sync_all`, create-if-absent by hard link that fails closed (`RT-AI-0303`, exit 70, store unchanged, temp file removed, no rename fallback), `RT-AI-0301` when a batch exists or a concurrent run wins, and `RT-AI-0303` on any write failure with no partial batch file. Implement the call loop using `next_step` and the adapter, per-attempt Warnings, final codes (`RT-AI-0101` to `0108`), sequential requests with no request after the first failure, the Run_Summary lists (`processed`, `stored`, `unprocessed`) and `RT-AI-0306` when an earlier batch was kept.
     - Observable: a three-request run whose second request fails keeps the first batch, lists the remaining clauses as unprocessed and never claims completeness.
     - Carried from 8.6 review: emit `RT-AI-0305` (`AcceptedBatch::blocking_warning()`) only after a successful store write, with a test that a failed write emits none. The store writer accepts only `AcceptedBatch`, never a bare `Batch` or `Proposal`. The Run_Summary writer and the Transmission_Log writer each get their own canary test (`sk-canary-Zq7x93LmN` absent from every written byte and every Diagnostic).
@@ -878,13 +878,13 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: retries only on transient failures, on the 2 s and 8 s schedule, never beyond the deadline.
     - **Validates: Requirements 29.1, 29.2, 29.3, 29.4, 29.5, 29.6, 29.13, 29.15, 29.18, 23.17**
 
-  - [ ] 8.11 Write property test for whole-batch rejection and strict acceptance
+  - [x] 8.11 Write property test for whole-batch rejection and strict acceptance
     - **Property 33: Whole-batch rejection and strict acceptance**
     - Each single mutation of a valid response is rejected with its one specified code and nothing is stored. Include the Provider_Response flag case of Property 5 (`RT-AI-0204`, exit 6). Required because it protects provenance.
     - Observable: every mutation of a valid response is rejected with one code, and the store is unchanged.
     - **Validates: Requirements 23.5, 23.6, 23.7, 23.8, 23.10, 30.1, 30.2, 30.3, 30.4, 30.5, 30.10, 30.11**
 
-  - [ ] 8.12 Write property test for the same validation of manual and AI-origin content
+  - [x] 8.12 Write property test for the same validation of manual and AI-origin content
     - **Property 34: Same validation for manual and AI-origin content**
     - Include instructions inside a response or a Source_Document: no ledger, status or Diagnostic code changes. Required because it protects the approval gate.
     - Observable: the validator gives identical Diagnostics for equal content whatever its Origin.
