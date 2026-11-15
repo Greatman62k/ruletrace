@@ -47,8 +47,9 @@ pub struct ProviderRequest {
 
 impl ProviderRequest {
     /// RT-JSON compact bytes with the fixed key order `v`, `task`, `model`,
-    /// `limits`, `reasoning_effort` (only when set), then the context members. Returns `None` when a context
-    /// key repeats one of the fixed keys or another context key.
+    /// `limits`, `reasoning_effort` (only when set), then the context
+    /// members. Returns `None` when a context key repeats one of the fixed
+    /// keys or another context key.
     #[must_use]
     pub fn canonical_bytes(&self) -> Option<Vec<u8>> {
         let limits = Value::object(vec![

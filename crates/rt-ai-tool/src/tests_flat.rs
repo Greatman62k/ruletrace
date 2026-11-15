@@ -642,6 +642,28 @@ fn an_unreferenced_node_is_refused_at_the_node() {
 }
 
 #[test]
+fn an_index_equal_to_the_node_count_is_out_of_range() {
+    // The table has one node, so the last valid index is 0.
+    let by_node = flat_payload(&table_rule(r#"{"node":"not","t":"boolean","arg":1}"#));
+    let d = fail(&by_node);
+    assert_eq!(d.code(), Code::AiResponseSchemaViolation);
+    assert_eq!(
+        d.message(),
+        "node index 1 is out of range, the table has 1 nodes"
+    );
+    let (_, _, _, _, field) = shape(&d);
+    assert_eq!(field.as_deref(), Some("proposals[0].rule.nodes[0].arg"));
+    let by_rule = table_rule(BOOL).replace(r#""expr":0"#, r#""expr":1"#);
+    let d = fail(&flat_payload(&by_rule));
+    assert_eq!(
+        d.message(),
+        "node index 1 is out of range, the table has 1 nodes"
+    );
+    let (_, _, _, _, field) = shape(&d);
+    assert_eq!(field.as_deref(), Some("proposals[0].rule.expr"));
+}
+
+#[test]
 fn an_out_of_range_index_is_refused_at_the_index() {
     let text = flat_payload(&table_rule(r#"{"node":"not","t":"boolean","arg":7}"#));
     expect_flat(
