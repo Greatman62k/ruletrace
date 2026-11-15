@@ -1796,9 +1796,9 @@ The catalogue is one file, `catalogue/diagnostics.v1.json` (RT-JSON array of `{c
 | RT-AI-0008 (R) | AI_CONSENT_MISSING | Error | Consent absent or not equal to the documents sent | 2 | ai |
 | RT-AI-0009 (R) | AI_CONFIG_PERMISSIONS | Warning | Config readable by group or others | 0 | ai |
 | RT-AI-0010 (R) | AI_TRANSMISSION_LOG_FAILED | Error | Log entry not written, nothing sent | 70 | ai |
-| RT-AI-0011 (N) | AI_CAPABILITY_UNSUPPORTED | Error | A required Capability is no or unknown for the Provider_Profile (UD-37; the catalogue row is added by task 10.10) | 2 | ai |
-| RT-AI-0012 (N) | AI_MODEL_TRAINING_MODE_REFUSED | Error | Model identifier contains `contributor` and `allow_provider_training` is not true (UD-37; task 10.10) | 2 | ai |
-| RT-AI-0013 (N) | AI_CONFIG_ENDPOINT_HOST_NOT_PERMITTED | Error | Endpoint host is not the official host of the provider id (UD-37; task 10.10) | 2 | ai |
+| RT-AI-0011 (N) | AI_CAPABILITY_UNSUPPORTED | Error | A required Capability is no or unknown for the Provider_Profile (UD-37) | 2 | ai |
+| RT-AI-0012 (N) | AI_MODEL_TRAINING_MODE_REFUSED | Error | Model identifier contains `contributor` and `allow_provider_training` is not true (UD-37) | 2 | ai |
+| RT-AI-0013 (N) | AI_CONFIG_ENDPOINT_HOST_NOT_PERMITTED | Error | Endpoint host is not the official host of the provider id (UD-37) | 2 | ai |
 | RT-AI-0101 (R) | AI_PROVIDER_UNAVAILABLE | Warning | Attempt failed: refused, reset, DNS, 5xx | 0 | ai |
 | RT-AI-0102 (R) | AI_PROVIDER_TIMEOUT | Warning | Attempt timed out | 0 | ai |
 | RT-AI-0103 (R) | AI_PROVIDER_RATE_LIMITED | Warning | Attempt got HTTP 429 | 0 | ai |
@@ -1807,8 +1807,8 @@ The catalogue is one file, `catalogue/diagnostics.v1.json` (RT-JSON array of `{c
 | RT-AI-0106 (R) | AI_PROVIDER_RETRY_EXHAUSTED | Error | All permitted attempts transient failures | 5 | ai |
 | RT-AI-0107 (R) | AI_PROVIDER_DEADLINE_EXCEEDED | Error | Deadline cannot fit another attempt | 5 | ai |
 | RT-AI-0108 (R) | AI_PROVIDER_TLS_FAILED | Error | TLS or certificate failure | 5 | ai |
-| RT-AI-0109 (N) | AI_MODEL_DISCOVERY_FAILED | Error | The `models` request failed, was refused, or its response was unreadable (UD-37; task 10.10) | 5 | ai |
-| RT-AI-0110 (N) | AI_MODEL_NOT_IN_CATALOGUE | Error | `verify_model` is true and the configured model is not listed (UD-37; task 10.10) | 5 | ai |
+| RT-AI-0109 (N) | AI_MODEL_DISCOVERY_FAILED | Error | The `models` request failed, was refused, or its response was unreadable (UD-37) | 5 | ai |
+| RT-AI-0110 (N) | AI_MODEL_NOT_IN_CATALOGUE | Error | `verify_model` is true and the configured model is not listed (UD-37) | 5 | ai |
 | RT-AI-0201 (R) | AI_RESPONSE_MALFORMED | Error | Not UTF-8 or not parseable | 6 | ai |
 | RT-AI-0202 (R) | AI_RESPONSE_SCHEMA_VIOLATION | Error | Duplicate key, unknown or missing field, wrong type, depth | 6 | ai |
 | RT-AI-0203 (R) | AI_RESPONSE_TOO_LARGE | Error | Response above the limit | 6 | ai |

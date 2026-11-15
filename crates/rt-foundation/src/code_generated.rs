@@ -241,6 +241,12 @@ pub enum Code {
     AiConfigPermissions,
     /// `RT-AI-0010`: Log entry not written, nothing sent
     AiTransmissionLogFailed,
+    /// `RT-AI-0011`: A Capability that the run requires is declared no or is unknown for the Provider_Profile
+    AiCapabilityUnsupported,
+    /// `RT-AI-0012`: The model identifier contains contributor and allow_provider_training is not true
+    AiModelTrainingModeRefused,
+    /// `RT-AI-0013`: The endpoint host is not the official host of the provider identifier
+    AiConfigEndpointHostNotPermitted,
     /// `RT-AI-0101`: Attempt failed: refused, reset, DNS, 5xx
     AiProviderUnavailable,
     /// `RT-AI-0102`: Attempt timed out
@@ -257,6 +263,10 @@ pub enum Code {
     AiProviderDeadlineExceeded,
     /// `RT-AI-0108`: TLS or certificate failure
     AiProviderTlsFailed,
+    /// `RT-AI-0109`: The models request failed, was refused, or its response could not be read
+    AiModelDiscoveryFailed,
+    /// `RT-AI-0110`: verify_model is true and the configured model is not in the provider Model_Catalogue
+    AiModelNotInCatalogue,
     /// `RT-AI-0201`: Not UTF-8 or not parseable
     AiResponseMalformed,
     /// `RT-AI-0202`: Duplicate key, unknown or missing field, wrong type, depth
@@ -305,7 +315,7 @@ pub enum Code {
 
 impl Code {
     /// Every code, in catalogue order.
-    pub const ALL: [Code; 147] = [
+    pub const ALL: [Code; 152] = [
         Code::DiagnosticStateContradiction,
         Code::DiagnosticStateBothFlags,
         Code::LifecycleFlagContradiction,
@@ -423,6 +433,9 @@ impl Code {
         Code::AiConsentMissing,
         Code::AiConfigPermissions,
         Code::AiTransmissionLogFailed,
+        Code::AiCapabilityUnsupported,
+        Code::AiModelTrainingModeRefused,
+        Code::AiConfigEndpointHostNotPermitted,
         Code::AiProviderUnavailable,
         Code::AiProviderTimeout,
         Code::AiProviderRateLimited,
@@ -431,6 +444,8 @@ impl Code {
         Code::AiProviderRetryExhausted,
         Code::AiProviderDeadlineExceeded,
         Code::AiProviderTlsFailed,
+        Code::AiModelDiscoveryFailed,
+        Code::AiModelNotInCatalogue,
         Code::AiResponseMalformed,
         Code::AiResponseSchemaViolation,
         Code::AiResponseTooLarge,
@@ -576,6 +591,9 @@ impl Code {
             Self::AiConsentMissing => "RT-AI-0008",
             Self::AiConfigPermissions => "RT-AI-0009",
             Self::AiTransmissionLogFailed => "RT-AI-0010",
+            Self::AiCapabilityUnsupported => "RT-AI-0011",
+            Self::AiModelTrainingModeRefused => "RT-AI-0012",
+            Self::AiConfigEndpointHostNotPermitted => "RT-AI-0013",
             Self::AiProviderUnavailable => "RT-AI-0101",
             Self::AiProviderTimeout => "RT-AI-0102",
             Self::AiProviderRateLimited => "RT-AI-0103",
@@ -584,6 +602,8 @@ impl Code {
             Self::AiProviderRetryExhausted => "RT-AI-0106",
             Self::AiProviderDeadlineExceeded => "RT-AI-0107",
             Self::AiProviderTlsFailed => "RT-AI-0108",
+            Self::AiModelDiscoveryFailed => "RT-AI-0109",
+            Self::AiModelNotInCatalogue => "RT-AI-0110",
             Self::AiResponseMalformed => "RT-AI-0201",
             Self::AiResponseSchemaViolation => "RT-AI-0202",
             Self::AiResponseTooLarge => "RT-AI-0203",
@@ -730,6 +750,9 @@ impl Code {
             Self::AiConsentMissing => "AI_CONSENT_MISSING",
             Self::AiConfigPermissions => "AI_CONFIG_PERMISSIONS",
             Self::AiTransmissionLogFailed => "AI_TRANSMISSION_LOG_FAILED",
+            Self::AiCapabilityUnsupported => "AI_CAPABILITY_UNSUPPORTED",
+            Self::AiModelTrainingModeRefused => "AI_MODEL_TRAINING_MODE_REFUSED",
+            Self::AiConfigEndpointHostNotPermitted => "AI_CONFIG_ENDPOINT_HOST_NOT_PERMITTED",
             Self::AiProviderUnavailable => "AI_PROVIDER_UNAVAILABLE",
             Self::AiProviderTimeout => "AI_PROVIDER_TIMEOUT",
             Self::AiProviderRateLimited => "AI_PROVIDER_RATE_LIMITED",
@@ -738,6 +761,8 @@ impl Code {
             Self::AiProviderRetryExhausted => "AI_PROVIDER_RETRY_EXHAUSTED",
             Self::AiProviderDeadlineExceeded => "AI_PROVIDER_DEADLINE_EXCEEDED",
             Self::AiProviderTlsFailed => "AI_PROVIDER_TLS_FAILED",
+            Self::AiModelDiscoveryFailed => "AI_MODEL_DISCOVERY_FAILED",
+            Self::AiModelNotInCatalogue => "AI_MODEL_NOT_IN_CATALOGUE",
             Self::AiResponseMalformed => "AI_RESPONSE_MALFORMED",
             Self::AiResponseSchemaViolation => "AI_RESPONSE_SCHEMA_VIOLATION",
             Self::AiResponseTooLarge => "AI_RESPONSE_TOO_LARGE",
@@ -884,6 +909,9 @@ impl Code {
             Self::AiConsentMissing => Severity::Error,
             Self::AiConfigPermissions => Severity::Warning,
             Self::AiTransmissionLogFailed => Severity::Error,
+            Self::AiCapabilityUnsupported => Severity::Error,
+            Self::AiModelTrainingModeRefused => Severity::Error,
+            Self::AiConfigEndpointHostNotPermitted => Severity::Error,
             Self::AiProviderUnavailable => Severity::Warning,
             Self::AiProviderTimeout => Severity::Warning,
             Self::AiProviderRateLimited => Severity::Warning,
@@ -892,6 +920,8 @@ impl Code {
             Self::AiProviderRetryExhausted => Severity::Error,
             Self::AiProviderDeadlineExceeded => Severity::Error,
             Self::AiProviderTlsFailed => Severity::Error,
+            Self::AiModelDiscoveryFailed => Severity::Error,
+            Self::AiModelNotInCatalogue => Severity::Error,
             Self::AiResponseMalformed => Severity::Error,
             Self::AiResponseSchemaViolation => Severity::Error,
             Self::AiResponseTooLarge => Severity::Error,
@@ -1038,6 +1068,9 @@ impl Code {
             Self::AiConsentMissing => ExitCode::InvalidInput,
             Self::AiConfigPermissions => ExitCode::Success,
             Self::AiTransmissionLogFailed => ExitCode::Internal,
+            Self::AiCapabilityUnsupported => ExitCode::InvalidInput,
+            Self::AiModelTrainingModeRefused => ExitCode::InvalidInput,
+            Self::AiConfigEndpointHostNotPermitted => ExitCode::InvalidInput,
             Self::AiProviderUnavailable => ExitCode::Success,
             Self::AiProviderTimeout => ExitCode::Success,
             Self::AiProviderRateLimited => ExitCode::Success,
@@ -1046,6 +1079,8 @@ impl Code {
             Self::AiProviderRetryExhausted => ExitCode::Provider,
             Self::AiProviderDeadlineExceeded => ExitCode::Provider,
             Self::AiProviderTlsFailed => ExitCode::Provider,
+            Self::AiModelDiscoveryFailed => ExitCode::Provider,
+            Self::AiModelNotInCatalogue => ExitCode::Provider,
             Self::AiResponseMalformed => ExitCode::Response,
             Self::AiResponseSchemaViolation => ExitCode::Response,
             Self::AiResponseTooLarge => ExitCode::Response,
@@ -1192,6 +1227,9 @@ impl Code {
             "RT-AI-0008" => Some(Self::AiConsentMissing),
             "RT-AI-0009" => Some(Self::AiConfigPermissions),
             "RT-AI-0010" => Some(Self::AiTransmissionLogFailed),
+            "RT-AI-0011" => Some(Self::AiCapabilityUnsupported),
+            "RT-AI-0012" => Some(Self::AiModelTrainingModeRefused),
+            "RT-AI-0013" => Some(Self::AiConfigEndpointHostNotPermitted),
             "RT-AI-0101" => Some(Self::AiProviderUnavailable),
             "RT-AI-0102" => Some(Self::AiProviderTimeout),
             "RT-AI-0103" => Some(Self::AiProviderRateLimited),
@@ -1200,6 +1238,8 @@ impl Code {
             "RT-AI-0106" => Some(Self::AiProviderRetryExhausted),
             "RT-AI-0107" => Some(Self::AiProviderDeadlineExceeded),
             "RT-AI-0108" => Some(Self::AiProviderTlsFailed),
+            "RT-AI-0109" => Some(Self::AiModelDiscoveryFailed),
+            "RT-AI-0110" => Some(Self::AiModelNotInCatalogue),
             "RT-AI-0201" => Some(Self::AiResponseMalformed),
             "RT-AI-0202" => Some(Self::AiResponseSchemaViolation),
             "RT-AI-0203" => Some(Self::AiResponseTooLarge),
@@ -1347,6 +1387,9 @@ impl Code {
             "AI_CONSENT_MISSING" => Some(Self::AiConsentMissing),
             "AI_CONFIG_PERMISSIONS" => Some(Self::AiConfigPermissions),
             "AI_TRANSMISSION_LOG_FAILED" => Some(Self::AiTransmissionLogFailed),
+            "AI_CAPABILITY_UNSUPPORTED" => Some(Self::AiCapabilityUnsupported),
+            "AI_MODEL_TRAINING_MODE_REFUSED" => Some(Self::AiModelTrainingModeRefused),
+            "AI_CONFIG_ENDPOINT_HOST_NOT_PERMITTED" => Some(Self::AiConfigEndpointHostNotPermitted),
             "AI_PROVIDER_UNAVAILABLE" => Some(Self::AiProviderUnavailable),
             "AI_PROVIDER_TIMEOUT" => Some(Self::AiProviderTimeout),
             "AI_PROVIDER_RATE_LIMITED" => Some(Self::AiProviderRateLimited),
@@ -1355,6 +1398,8 @@ impl Code {
             "AI_PROVIDER_RETRY_EXHAUSTED" => Some(Self::AiProviderRetryExhausted),
             "AI_PROVIDER_DEADLINE_EXCEEDED" => Some(Self::AiProviderDeadlineExceeded),
             "AI_PROVIDER_TLS_FAILED" => Some(Self::AiProviderTlsFailed),
+            "AI_MODEL_DISCOVERY_FAILED" => Some(Self::AiModelDiscoveryFailed),
+            "AI_MODEL_NOT_IN_CATALOGUE" => Some(Self::AiModelNotInCatalogue),
             "AI_RESPONSE_MALFORMED" => Some(Self::AiResponseMalformed),
             "AI_RESPONSE_SCHEMA_VIOLATION" => Some(Self::AiResponseSchemaViolation),
             "AI_RESPONSE_TOO_LARGE" => Some(Self::AiResponseTooLarge),

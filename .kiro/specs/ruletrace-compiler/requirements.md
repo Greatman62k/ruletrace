@@ -397,9 +397,9 @@ The smallest meaningful end-to-end slice takes a Source_Document, a structured R
 | RT-AI-0008 | AI_CONSENT_MISSING | Error | Transmission_Consent is absent or does not name exactly the documents to send | 2 | ruletrace-ai |
 | RT-AI-0009 | AI_CONFIG_PERMISSIONS | Warning | AI_Configuration file is readable by group or others where the platform reports this | 0 | ruletrace-ai |
 | RT-AI-0010 | AI_TRANSMISSION_LOG_FAILED | Error | The Transmission_Log entry could not be written, so nothing was sent | 70 | ruletrace-ai |
-| RT-AI-0011 | AI_CAPABILITY_UNSUPPORTED | Error | A Capability that the run requires is declared no or is unknown for the Provider_Profile (UD-37; the catalogue row is added by task 10.10) | 2 | ruletrace-ai |
-| RT-AI-0012 | AI_MODEL_TRAINING_MODE_REFUSED | Error | The model identifier contains `contributor` and allow_provider_training is not true (UD-37; task 10.10) | 2 | ruletrace-ai |
-| RT-AI-0013 | AI_CONFIG_ENDPOINT_HOST_NOT_PERMITTED | Error | The endpoint host is not the official host of the provider identifier (UD-37; task 10.10) | 2 | ruletrace-ai |
+| RT-AI-0011 | AI_CAPABILITY_UNSUPPORTED | Error | A Capability that the run requires is declared no or is unknown for the Provider_Profile (UD-37) | 2 | ruletrace-ai |
+| RT-AI-0012 | AI_MODEL_TRAINING_MODE_REFUSED | Error | The model identifier contains `contributor` and allow_provider_training is not true (UD-37) | 2 | ruletrace-ai |
+| RT-AI-0013 | AI_CONFIG_ENDPOINT_HOST_NOT_PERMITTED | Error | The endpoint host is not the official host of the provider identifier (UD-37) | 2 | ruletrace-ai |
 | RT-AI-0101 | AI_PROVIDER_UNAVAILABLE | Warning | One attempt failed by connection refusal, reset, name resolution failure, or HTTP 5xx | 0 | ruletrace-ai |
 | RT-AI-0102 | AI_PROVIDER_TIMEOUT | Warning | One attempt exceeded the per-attempt timeout | 0 | ruletrace-ai |
 | RT-AI-0103 | AI_PROVIDER_RATE_LIMITED | Warning | One attempt received HTTP 429 | 0 | ruletrace-ai |
@@ -408,8 +408,8 @@ The smallest meaningful end-to-end slice takes a Source_Document, a structured R
 | RT-AI-0106 | AI_PROVIDER_RETRY_EXHAUSTED | Error | Every permitted attempt ended in a Transient_Failure | 5 | ruletrace-ai |
 | RT-AI-0107 | AI_PROVIDER_DEADLINE_EXCEEDED | Error | The total request deadline cannot fit another attempt | 5 | ruletrace-ai |
 | RT-AI-0108 | AI_PROVIDER_TLS_FAILED | Error | TLS or certificate verification failed, not retried | 5 | ruletrace-ai |
-| RT-AI-0109 | AI_MODEL_DISCOVERY_FAILED | Error | The models request failed, was refused, or its response could not be read (UD-37; task 10.10) | 5 | ruletrace-ai |
-| RT-AI-0110 | AI_MODEL_NOT_IN_CATALOGUE | Error | verify_model is true and the configured model is not in the provider's Model_Catalogue (UD-37; task 10.10) | 5 | ruletrace-ai |
+| RT-AI-0109 | AI_MODEL_DISCOVERY_FAILED | Error | The models request failed, was refused, or its response could not be read (UD-37) | 5 | ruletrace-ai |
+| RT-AI-0110 | AI_MODEL_NOT_IN_CATALOGUE | Error | verify_model is true and the configured model is not in the provider's Model_Catalogue (UD-37) | 5 | ruletrace-ai |
 | RT-AI-0201 | AI_RESPONSE_MALFORMED | Error | Provider_Response is not valid UTF-8 or not parseable | 6 | ruletrace-ai |
 | RT-AI-0202 | AI_RESPONSE_SCHEMA_VIOLATION | Error | Duplicate key, unknown field, missing field, wrong type, or excess nesting | 6 | ruletrace-ai |
 | RT-AI-0203 | AI_RESPONSE_TOO_LARGE | Error | Provider_Response exceeds the response size limit | 6 | ruletrace-ai |

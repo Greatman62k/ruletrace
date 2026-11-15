@@ -1119,11 +1119,12 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 23.4, 23.27, 23.39_
     - Design §3.7.3, §9.1 (R-D1)
 
-  - [ ] 10.10 Add the UD-37 catalogue entries and regenerate the `Code` enum
+  - [-] 10.10 Add the UD-37 catalogue entries and regenerate the `Code` enum
     - Add the rows `RT-AI-0011` AI_CAPABILITY_UNSUPPORTED, `RT-AI-0012` AI_MODEL_TRAINING_MODE_REFUSED, `RT-AI-0013` AI_CONFIG_ENDPOINT_HOST_NOT_PERMITTED (Error, exit 2) and `RT-AI-0109` AI_MODEL_DISCOVERY_FAILED, `RT-AI-0110` AI_MODEL_NOT_IN_CATALOGUE (Error, exit 5), all for `ruletrace-ai`, to `catalogue/diagnostics.v1.json` with the meanings of design §3.9.2, run `rt-xtask gen-catalogue`, and update any test that pins the number of codes, with the reason stated. The rows were not added when UD-37 was recorded because the generator rewrites `rt-foundation/src/code_generated.rs`.
     - Observable: `rt-xtask check-catalogue` passes with 152 codes (147 plus 5); each new code has the severity and exit code above; `Diagnostic::new` for each code gives that severity (a test per code); no existing row changed.
     - Red/green: a test that looks up each of the five codes by identifier fails before the rows exist and passes after.
     - Blocked by: 8.19.
+    - Status note: the five rows are in the catalogue, `Code` is regenerated (152 codes), `check-catalogue` passes, and `crates/rt-foundation/tests/catalogue_ud37.rs` asserts each code's identifier, mnemonic, severity, exit code and `Diagnostic::new` severity from values written out of UD-37 section 5 (shown failing before the rows, passing after, and failing for a changed severity or exit code). No test pinned the code count. The task stays in progress until the CI run on three platforms and the independent review. Not claimed complete.
     - _Requirements: 7.15 to 7.20, 35.3, 35.6, 35.8, 35.18, 35.19_
     - Design §3.9.2, §5 (catalogue table)
 
