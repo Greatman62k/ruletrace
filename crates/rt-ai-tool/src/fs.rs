@@ -23,6 +23,19 @@ pub trait StoreFile {
     fn sync_all(&mut self) -> io::Result<()>;
 }
 
+/// What a directory sync did when it did not fail.
+///
+/// A platform skip is an expected outcome, not an error. It never counts as
+/// durability confirmed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DirSync {
+    /// The directory entries were flushed to stable storage.
+    Synced,
+    /// The platform cannot flush a directory handle, so nothing was
+    /// flushed and durability of the entries is not confirmed.
+    SkippedByPlatform,
+}
+
 /// The operations the store writer uses. Every method takes `&self` so
 /// that two runs can share one implementation in a test.
 pub trait StoreFs {
@@ -71,11 +84,12 @@ pub trait StoreFs {
     /// `AlreadyExists`, `Unsupported` or any other link failure.
     fn hard_link(&self, from: &Path, to: &Path) -> io::Result<()>;
 
-    /// Makes the entries of the directory durable.
+    /// Flushes the entries of the directory, or reports that the platform
+    /// skips the flush.
     ///
     /// # Errors
-    /// Any flush failure.
-    fn sync_dir(&self, dir: &Path) -> io::Result<()>;
+    /// Any flush failure that is not the expected platform skip.
+    fn sync_dir(&self, dir: &Path) -> io::Result<DirSync>;
 
     /// Removes a file.
     ///
@@ -138,11 +152,25 @@ impl StoreFs for StdFs {
         std::fs::hard_link(from, to)
     }
 
-    fn sync_dir(&self, dir: &Path) -> io::Result<()> {
-        File::open(dir)?.sync_all()
+    fn sync_dir(&self, dir: &Path) -> io::Result<DirSync> {
+        sync_directory(dir)
     }
 
     fn remove_file(&self, path: &Path) -> io::Result<()> {
         std::fs::remove_file(path)
     }
+}
+
+// Unix flushes a directory through a read-only handle. Windows refuses to
+// open a directory as a file, and other platforms are not known to flush
+// one, so both report a skip and never a confirmation.
+#[cfg(unix)]
+fn sync_directory(dir: &Path) -> io::Result<DirSync> {
+    File::open(dir)?.sync_all()?;
+    Ok(DirSync::Synced)
+}
+
+#[cfg(not(unix))]
+fn sync_directory(_dir: &Path) -> io::Result<DirSync> {
+    Ok(DirSync::SkippedByPlatform)
 }

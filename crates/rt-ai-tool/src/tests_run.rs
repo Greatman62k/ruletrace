@@ -331,6 +331,77 @@ fn a_failed_directory_sync_of_the_second_request_keeps_that_batch_listed_as_unco
     );
 }
 
+// An expected platform skip is a success: exit 0, no diagnostic, and the
+// summary names the batches whose directory durability is not confirmed.
+#[test]
+fn a_directory_sync_skipped_by_the_platform_is_exit_0_with_an_explicit_status() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        sync_dir_skipped: true,
+        ..Faults::default()
+    });
+    let mut p = provider(vec![ok(0), ok(1), ok(2)]);
+    let report = h.run(&mut p, &fs, &VecSink::default());
+    assert_eq!(report.exit, ExitCode::Success);
+    assert_eq!(report.exit.value(), 0);
+    assert_eq!(shapes(&report.diagnostics), Vec::<(&str, &str)>::new());
+    assert!(report
+        .diagnostics
+        .iter()
+        .all(|d| d.code() != Code::AiStoreWriteFailed));
+    assert_eq!(stored_names(&fs).len(), 3);
+    assert!(report.summary.stored().is_empty());
+    assert_eq!(report.summary.platform_skipped(), [cid(0), cid(1), cid(2)]);
+    assert!(report.summary.unconfirmed().is_empty());
+    assert!(report.summary.is_complete());
+    assert_eq!(
+        report.summary.render(&Redactor::no_credential()),
+        "run summary: complete\n\
+         processed:\n  rules.md 0 11\n  rules.md 12 27\n  rules.md 28 32\n\
+         stored:\n  (none)\n\
+         stored, directory durability not confirmed (skipped by platform):\n  \
+         rules.md 0 11\n  rules.md 12 27\n  rules.md 28 32\n\
+         unprocessed:\n  (none)\n"
+    );
+}
+
+#[test]
+fn only_the_batches_whose_directory_sync_was_skipped_are_marked() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        sync_dir_skipped: true,
+        sync_dir_after: 1,
+        ..Faults::default()
+    });
+    let mut p = provider(vec![ok(0), ok(1), ok(2)]);
+    let report = h.run(&mut p, &fs, &VecSink::default());
+    assert_eq!(report.exit, ExitCode::Success);
+    assert_eq!(report.summary.stored(), [cid(0)]);
+    assert_eq!(report.summary.platform_skipped(), [cid(1), cid(2)]);
+}
+
+#[test]
+fn a_later_failure_after_a_skipped_batch_still_reports_that_batch_as_skipped() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        sync_dir_skipped: true,
+        ..Faults::default()
+    });
+    let mut p = provider(vec![ok(0), fail(ProviderFailure::AuthFailed, 100)]);
+    let report = h.run(&mut p, &fs, &VecSink::default());
+    assert_eq!(report.exit.value(), 5);
+    assert!(report.summary.stored().is_empty());
+    assert_eq!(report.summary.platform_skipped(), [cid(0)]);
+    assert!(!report.summary.is_complete());
+    assert!(report
+        .diagnostics
+        .iter()
+        .any(|d| d.code() == Code::AiRunIncomplete));
+}
+
 #[test]
 fn a_failed_directory_sync_of_the_first_request_adds_no_rt_ai_0306() {
     let h = Harness::new("");
@@ -707,8 +778,18 @@ fn two_runs_on_one_real_disk_store_each_batch_once() {
         .iter()
         .flat_map(|r| r.summary.stored().iter().cloned())
         .collect();
+    let mut skipped: Vec<ClauseId> = reports
+        .iter()
+        .flat_map(|r| r.summary.platform_skipped().iter().cloned())
+        .collect();
     stored.sort();
-    assert_eq!(stored, vec![cid(0), cid(1), cid(2)]);
+    skipped.sort();
+    let all = vec![cid(0), cid(1), cid(2)];
+    if cfg!(unix) {
+        assert_eq!((stored, skipped), (all, Vec::new()));
+    } else {
+        assert_eq!((stored, skipped), (Vec::new(), all));
+    }
     let files = std::fs::read_dir(dir.join("batches")).unwrap().count();
     let temps = std::fs::read_dir(dir.join(".tmp")).unwrap().count();
     assert_eq!((files, temps), (3, 0));

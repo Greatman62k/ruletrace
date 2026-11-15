@@ -66,6 +66,7 @@ pub struct RunReport {
 struct Done {
     diagnostics: Vec<Diagnostic>,
     stored: bool,
+    directory_unsynced: bool,
 }
 
 struct Failed {
@@ -257,6 +258,7 @@ impl Loop<'_, '_> {
                 return Ok(Done {
                     diagnostics: vec![already_stored_warning(root, &request_id)],
                     stored: false,
+                    directory_unsynced: false,
                 });
             }
             Ok(false) => {}
@@ -297,11 +299,12 @@ impl Loop<'_, '_> {
             Ok(report) => {
                 notes.extend(report.warnings);
                 match report.outcome {
-                    StoreOutcome::Stored => {
+                    outcome @ (StoreOutcome::Stored | StoreOutcome::StoredDirectoryUnsynced) => {
                         notes.extend(accepted.blocking_warning());
                         Ok(Done {
                             diagnostics: notes,
                             stored: true,
+                            directory_unsynced: outcome == StoreOutcome::StoredDirectoryUnsynced,
                         })
                     }
                     StoreOutcome::AlreadyStored(warning) => {
@@ -309,6 +312,7 @@ impl Loop<'_, '_> {
                         Ok(Done {
                             diagnostics: notes,
                             stored: false,
+                            directory_unsynced: false,
                         })
                     }
                 }
@@ -363,6 +367,12 @@ fn last_name(code: Option<Code>) -> &'static str {
 /// confirmed, not as unprocessed. `RT-AI-0306` still depends only on
 /// batches of earlier requests.
 ///
+/// When the platform skips the directory sync, the batch is kept and the
+/// run is not failed. The Run_Summary lists those clauses under a separate
+/// heading, not as stored with confirmed durability. The run is still
+/// complete, and no diagnostic is added. Such a batch counts as kept for
+/// `RT-AI-0306`.
+///
 /// A Transmission_Log entry is appended before each attempt. When the
 /// append fails, `RT-AI-0010` ends the run and that attempt is not made.
 pub fn run_requests<S: LogSink>(
@@ -381,6 +391,7 @@ pub fn run_requests<S: LogSink>(
     let mut processed: Vec<ClauseId> = Vec::new();
     let mut stored: Vec<ClauseId> = Vec::new();
     let mut unconfirmed: Vec<ClauseId> = Vec::new();
+    let mut unsynced: Vec<ClauseId> = Vec::new();
     let mut diagnostics: Vec<Diagnostic> = Vec::new();
     let mut exit = ExitCode::Success;
     for request in input.plan.requests() {
@@ -390,6 +401,9 @@ pub fn run_requests<S: LogSink>(
                 processed.extend(request.clauses().iter().cloned());
                 if done.stored {
                     stored.extend(request.clauses().iter().cloned());
+                }
+                if done.directory_unsynced {
+                    unsynced.extend(request.clauses().iter().cloned());
                 }
             }
             Err(failed) => {
@@ -416,7 +430,8 @@ pub fn run_requests<S: LogSink>(
         ));
     }
     RunReport {
-        summary: RunSummary::with_unconfirmed(&requested, &processed, &stored, &unconfirmed),
+        summary: RunSummary::with_unconfirmed(&requested, &processed, &stored, &unconfirmed)
+            .with_platform_skipped(&unsynced),
         diagnostics,
         exit,
     }

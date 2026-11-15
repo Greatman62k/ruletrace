@@ -133,7 +133,7 @@ pub use config::{
 pub use consent::Consent;
 pub use credential::{Credential, EnvReader, ProcessEnv};
 pub use dryrun::{announcement, dry_run};
-pub use fs::{StdFs, StoreFile, StoreFs};
+pub use fs::{DirSync, StdFs, StoreFile, StoreFs};
 pub use out::{render_diagnostic, Out};
 pub use perm::{file_mode, permission_warning};
 pub use plan::{

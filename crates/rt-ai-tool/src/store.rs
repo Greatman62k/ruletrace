@@ -6,7 +6,7 @@
 //! fallback for a file system that cannot link.
 
 use crate::accept::AcceptedBatch;
-use crate::fs::StoreFs;
+use crate::fs::{DirSync, StoreFs};
 use rt_foundation::{escape_controls, Code, Diagnostic, InputId, InputLocation, Location};
 use rt_hash::Sha256Hex;
 use rt_ir::Identity;
@@ -38,8 +38,12 @@ pub struct StoreMeta {
 /// How a call of [`store_batch`] ended without a failure.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StoreOutcome {
-    /// This call created the batch file.
+    /// This call created the batch file and synced its directory.
     Stored,
+    /// This call created the batch file, but the platform skipped the
+    /// directory sync. The file is whole and visible, and the durability
+    /// of its directory entry is not confirmed.
+    StoredDirectoryUnsynced,
     /// A batch with this Request_Identifier already existed, or a
     /// concurrent run created it first. Nothing was changed. The value is
     /// the Warning `RT-AI-0301`.
@@ -253,6 +257,10 @@ fn open_temp(
 /// than an existing target, refuses the write. The writer never copies,
 /// renames or creates a marker file instead.
 ///
+/// A directory sync that the platform skips gives
+/// [`StoreOutcome::StoredDirectoryUnsynced`], never a failure. Any other
+/// directory sync error is `RT-AI-0303`.
+///
 /// A temporary file that cannot be removed gives the Warning `RT-AI-0307`
 /// and never changes the outcome.
 ///
@@ -319,7 +327,8 @@ pub fn store_batch(
     let synced = fs.sync_dir(&batches);
     let warnings: Vec<Diagnostic> = remove_temp(fs, &temp).into_iter().collect();
     match synced {
-        Ok(()) => done(StoreOutcome::Stored, warnings),
+        Ok(DirSync::Synced) => done(StoreOutcome::Stored, warnings),
+        Ok(DirSync::SkippedByPlatform) => done(StoreOutcome::StoredDirectoryUnsynced, warnings),
         Err(e) => {
             let d = failed(&final_path, "making the batch durable", &e);
             Err(StoreFailure {

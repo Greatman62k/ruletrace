@@ -119,7 +119,7 @@ impl StoreFs for GateFs {
         result
     }
 
-    fn sync_dir(&self, dir: &Path) -> io::Result<()> {
+    fn sync_dir(&self, dir: &Path) -> io::Result<crate::fs::DirSync> {
         StdFs.sync_dir(dir)
     }
 

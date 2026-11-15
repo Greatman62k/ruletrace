@@ -2,7 +2,7 @@
 //! [`StoreFs`] trait as the disk, so a failure travels through the real
 //! error paths of the store writer.
 
-use crate::fs::{StoreFile, StoreFs};
+use crate::fs::{DirSync, StoreFile, StoreFs};
 use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::io::{self, ErrorKind};
@@ -38,6 +38,9 @@ pub(crate) struct Faults {
     pub(crate) sync_file: Option<ErrorKind>,
     pub(crate) links: VecDeque<Link>,
     pub(crate) sync_dir: Option<ErrorKind>,
+    /// Directory syncs that report `SkippedByPlatform` instead of
+    /// `Synced`. An injected `sync_dir` error takes precedence.
+    pub(crate) sync_dir_skipped: bool,
     /// Directory syncs that succeed before `sync_dir` takes effect.
     pub(crate) sync_dir_after: usize,
     pub(crate) remove: Option<ErrorKind>,
@@ -274,16 +277,17 @@ impl StoreFs for MemFs {
         Ok(())
     }
 
-    fn sync_dir(&self, dir: &Path) -> io::Result<()> {
+    fn sync_dir(&self, dir: &Path) -> io::Result<DirSync> {
         self.begin(format!("sync_dir {}", show(dir)))?;
         let mut state = self.0.borrow_mut();
         if state.faults.sync_dir_after > 0 {
             state.faults.sync_dir_after -= 1;
-            return Ok(());
+            return Ok(DirSync::Synced);
         }
-        match state.faults.sync_dir {
-            Some(kind) => Err(io_error(kind)),
-            None => Ok(()),
+        match (state.faults.sync_dir, state.faults.sync_dir_skipped) {
+            (Some(kind), _) => Err(io_error(kind)),
+            (None, true) => Ok(DirSync::SkippedByPlatform),
+            (None, false) => Ok(DirSync::Synced),
         }
     }
 

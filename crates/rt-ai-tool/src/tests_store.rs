@@ -5,11 +5,12 @@
 //! verifies the canonical form and every proposal identifier.
 
 use crate::accept::{accept_batch, AcceptInput, AcceptedBatch};
+use crate::fs::DirSync;
 use crate::tests_memfs::{Faults, Link, MemFs};
 use crate::tests_response::LIMIT;
 use crate::tests_rig::{native, payload, Harness, ROOT};
 use crate::tests_scratch::{GateFs, ScratchDir};
-use crate::{store_batch, FailureOutcome, StoreFailure, StoreOutcome, StoreReport};
+use crate::{store_batch, FailureOutcome, StdFs, StoreFailure, StoreFs, StoreOutcome, StoreReport};
 use rt_foundation::{Code, Diagnostic, ExitCode, InputId, Location, Severity};
 use rt_hash::{sha256, Sha256Hex};
 use rt_proposals::parse_batch;
@@ -495,6 +496,16 @@ fn stored_bytes_do_not_depend_on_the_run_that_wrote_them() {
     assert_eq!(first.read(&h.batch_file(1)), second.read(&h.batch_file(1)));
 }
 
+// What a successful write on a real disk reports here: the directory is
+// synced on Unix and skipped by the platform elsewhere.
+fn on_this_platform() -> StoreOutcome {
+    if cfg!(unix) {
+        StoreOutcome::Stored
+    } else {
+        StoreOutcome::StoredDirectoryUnsynced
+    }
+}
+
 // Real files. The gate holds the first two links until both runs have
 // written a temporary file, so the second link always meets the batch file
 // of the first and the `AlreadyExists` path of the writer runs on a disk.
@@ -519,7 +530,7 @@ fn concurrent_runs_on_a_real_disk_store_one_batch_and_report_the_rest() {
     });
     let stored = results
         .iter()
-        .filter(|r| matches!(r, Ok(StoreOutcome::Stored)))
+        .filter(|r| matches!(r, Ok(o) if *o == on_this_platform()))
         .count();
     let already = results
         .iter()
@@ -533,4 +544,104 @@ fn concurrent_runs_on_a_real_disk_store_one_batch_and_report_the_rest() {
     let batches = std::fs::read_dir(dir.join("batches")).unwrap().count();
     let temps = std::fs::read_dir(dir.join(".tmp")).unwrap().count();
     assert_eq!((batches, temps), (1, 0));
+}
+
+fn batch_is_whole_and_temp_is_gone(h: &Harness, fs: &MemFs) {
+    let bytes = fs.read(&h.batch_file(0)).expect("the batch file exists");
+    parse_batch(&InputId::new("batch").unwrap(), &bytes).unwrap();
+    assert_eq!(
+        fs.names_under(&native(&format!("{ROOT}/.tmp"))),
+        Vec::<String>::new()
+    );
+}
+
+#[test]
+fn a_synced_directory_gives_the_stored_outcome_without_warnings() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    let report = store_full(&h, &fs, &accepted(&h, 0)).unwrap();
+    assert_eq!(report.outcome, StoreOutcome::Stored);
+    assert_eq!(report.warnings, Vec::<Diagnostic>::new());
+    batch_is_whole_and_temp_is_gone(&h, &fs);
+}
+
+#[test]
+fn a_directory_sync_skipped_by_the_platform_stores_the_batch_unconfirmed() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        sync_dir_skipped: true,
+        ..Faults::default()
+    });
+    let report = store_full(&h, &fs, &accepted(&h, 0)).unwrap();
+    assert_eq!(report.outcome, StoreOutcome::StoredDirectoryUnsynced);
+    assert_ne!(report.outcome, StoreOutcome::Stored);
+    assert_eq!(report.warnings, Vec::<Diagnostic>::new());
+    batch_is_whole_and_temp_is_gone(&h, &fs);
+    let tmp = tmp_name(&h, 0, "");
+    let ops = fs.ops();
+    assert_eq!(ops.len(), 9, "{ops:?}");
+    assert_eq!(ops[5], "sync_file");
+    assert_eq!(ops[6], format!("link {tmp} {}", h.batch_file(0)));
+    assert_eq!(
+        ops[7],
+        format!("sync_dir {}", native(&format!("{ROOT}/batches")))
+    );
+}
+
+#[test]
+fn an_unexpected_directory_sync_failure_is_rt_ai_0303_even_when_skips_are_allowed() {
+    for kind in [ErrorKind::Other, ErrorKind::PermissionDenied] {
+        let h = Harness::new("");
+        let fs = MemFs::new();
+        fs.with_faults(Faults {
+            sync_dir: Some(kind),
+            sync_dir_skipped: true,
+            ..Faults::default()
+        });
+        let failure = store_full(&h, &fs, &accepted(&h, 0)).unwrap_err();
+        assert_eq!(failure.outcome, FailureOutcome::KeptUnconfirmed, "{kind:?}");
+        expect_failure(&failure.error, &h.batch_file(0));
+        assert!(
+            failure.error.message().contains(&format!("({kind:?})")),
+            "{}",
+            failure.error.message()
+        );
+        batch_is_whole_and_temp_is_gone(&h, &fs);
+    }
+}
+
+#[test]
+fn a_skipped_directory_sync_does_not_excuse_a_failed_file_sync() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        sync_file: Some(ErrorKind::Other),
+        sync_dir_skipped: true,
+        ..Faults::default()
+    });
+    let failure = store_full(&h, &fs, &accepted(&h, 0)).unwrap_err();
+    assert_eq!(failure.outcome, FailureOutcome::Refused);
+    expect_failure(&failure.error, &h.batch_file(0));
+    assert_eq!(fs.read(&h.batch_file(0)), None);
+}
+
+#[test]
+fn the_real_file_system_reports_the_platform_directory_outcome() {
+    let scratch = ScratchDir::new("dir-sync");
+    let expected = if cfg!(unix) {
+        DirSync::Synced
+    } else {
+        DirSync::SkippedByPlatform
+    };
+    assert_eq!(StdFs.sync_dir(scratch.path()).unwrap(), expected);
+}
+
+#[cfg(unix)]
+#[test]
+fn the_real_file_system_fails_to_sync_a_missing_directory() {
+    let scratch = ScratchDir::new("dir-sync-missing");
+    let missing = scratch.path().join("absent");
+    let error = StdFs.sync_dir(&missing).unwrap_err();
+    assert_eq!(error.kind(), ErrorKind::NotFound);
 }

@@ -50,3 +50,53 @@ fn the_unconfirmed_list_is_sorted_by_start_offset() {
     assert_eq!(s.unconfirmed(), [cid(0), cid(2)]);
     assert_eq!(s.unprocessed(), [cid(1)]);
 }
+
+#[test]
+fn platform_skipped_clauses_move_out_of_stored_into_their_own_section() {
+    let plain = RunSummary::new(&all(), &all(), &all());
+    assert!(plain.platform_skipped().is_empty());
+    assert!(!render(&plain).contains("durability"), "{}", render(&plain));
+    let marked = plain.with_platform_skipped(&[cid(2), cid(1)]);
+    assert_eq!(marked.platform_skipped(), [cid(1), cid(2)]);
+    assert_eq!(marked.stored(), [cid(0)]);
+    assert_eq!(marked.processed(), all());
+    assert!(marked.is_complete());
+    assert_eq!(
+        render(&marked),
+        "run summary: complete\n\
+         processed:\n  rules.md 0 11\n  rules.md 12 27\n  rules.md 28 32\n\
+         stored:\n  rules.md 0 11\n\
+         stored, directory durability not confirmed (skipped by platform):\n  \
+         rules.md 12 27\n  rules.md 28 32\n\
+         unprocessed:\n  (none)\n"
+    );
+}
+
+#[test]
+fn a_platform_skipped_clause_that_was_not_stored_is_dropped() {
+    let s = RunSummary::new(&all(), &[cid(0), cid(1)], &[cid(0), cid(1)])
+        .with_platform_skipped(&[cid(1), cid(2)]);
+    assert_eq!(s.platform_skipped(), [cid(1)]);
+    assert_eq!(s.stored(), [cid(0)]);
+    assert_eq!(s.unprocessed(), [cid(2)]);
+}
+
+#[test]
+fn the_platform_skip_and_the_failed_sync_are_two_separate_sections() {
+    let s = RunSummary::with_unconfirmed(&all(), &[cid(0)], &[cid(0)], &[cid(1)])
+        .with_platform_skipped(&[cid(0)]);
+    assert!(!s.is_complete());
+    assert!(s.stored().is_empty());
+    assert_eq!(s.platform_skipped(), [cid(0)]);
+    assert_eq!(s.unconfirmed(), [cid(1)]);
+    assert_eq!(
+        render(&s),
+        "run summary: incomplete\n\
+         processed:\n  rules.md 0 11\n\
+         stored:\n  (none)\n\
+         stored, directory durability not confirmed (skipped by platform):\n  \
+         rules.md 0 11\n\
+         stored, durability not confirmed:\n  rules.md 12 27\n\
+         unprocessed:\n  rules.md 28 32\n"
+    );
+}
