@@ -83,6 +83,14 @@ fn input_at(id: &str) -> Location {
     }
 }
 
+fn attempt_noun(attempts: usize) -> &'static str {
+    if attempts == 1 {
+        "attempt"
+    } else {
+        "attempts"
+    }
+}
+
 struct Loop<'a, 'b> {
     input: &'a RunInput<'b>,
 }
@@ -181,7 +189,8 @@ impl Loop<'_, '_> {
                     return Err(self.provider_failure(
                         Code::AiProviderRetryExhausted,
                         format!(
-                            "{attempts} attempts failed; the last was {}",
+                            "{attempts} {} failed; the last was {}",
+                            attempt_noun(usize::from(attempts)),
                             last_name(last_warning)
                         ),
                     ));
@@ -199,9 +208,11 @@ impl Loop<'_, '_> {
                 RetryStep::Stop(RetryStop::NonTransient(f)) => {
                     let code = final_code(f);
                     let attempts = history.len();
-                    let noun = if attempts == 1 { "attempt" } else { "attempts" };
-                    let mut message =
-                        format!("{attempts} {noun} failed; the last was {}", code.mnemonic());
+                    let mut message = format!(
+                        "{attempts} {} failed; the last was {}",
+                        attempt_noun(attempts),
+                        code.mnemonic()
+                    );
                     if let Some(detail) = &last_detail {
                         message.push_str(&format!(" ({detail})"));
                     }

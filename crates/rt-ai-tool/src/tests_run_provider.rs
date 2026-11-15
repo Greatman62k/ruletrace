@@ -235,6 +235,35 @@ fn rt_ai_0106_three_transient_failures_exhaust_the_retries() {
     assert!(fs.files().is_empty());
 }
 
+// Req 29.6: the message states the number of attempts. With no retry
+// allowed there is exactly one attempt, and "1 attempts" is wrong English.
+#[test]
+fn rt_ai_0106_states_one_attempt_in_the_singular_and_two_in_the_plural() {
+    for (extra, steps, expected) in [
+        (
+            "max_retries = 0\n",
+            1,
+            "1 attempt failed; the last was AI_PROVIDER_UNAVAILABLE",
+        ),
+        (
+            "max_retries = 1\n",
+            2,
+            "2 attempts failed; the last was AI_PROVIDER_UNAVAILABLE",
+        ),
+    ] {
+        let mut h = Harness::new(extra);
+        h.plan = plan_of(&h.config, &[0]);
+        let script: Vec<_> = (0..steps).map(|_| fail(unavailable(), 0)).collect();
+        let mut p = provider(script);
+        let r = h.run(&mut p, &MemFs::new(), &VecSink::default());
+        let last = r.diagnostics.last().unwrap();
+        assert_eq!(last.code(), Code::AiProviderRetryExhausted, "{extra}");
+        assert_eq!(last.message(), expected, "{extra}");
+        assert_eq!(p.steps_consumed(), steps, "{extra}");
+        assert_eq!(r.exit.value(), 5, "{extra}");
+    }
+}
+
 #[test]
 fn rt_ai_0107_two_timeouts_leave_too_little_time_for_a_third_attempt() {
     let (r, fs, p, _) = run_one(vec![
