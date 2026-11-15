@@ -338,6 +338,33 @@ fn refusal_and_incomplete_are_0205() {
     }
 }
 
+// Regression (task 10.5): the Responses adapter returns an empty payload
+// with Refused or Incomplete, so the completion decides, not the parser.
+#[test]
+fn an_empty_payload_with_refusal_or_incomplete_is_0205_not_0201() {
+    for completion in [Completion::Refused, Completion::Incomplete] {
+        let d = parse_with(completion, b"", LIMIT).unwrap_err();
+        assert_eq!(
+            shape(&d),
+            (
+                Code::AiResponseIncomplete,
+                Severity::Error,
+                None,
+                None,
+                None
+            ),
+            "{completion:?}"
+        );
+    }
+}
+
+// An empty payload that claims completion stays a malformed envelope.
+#[test]
+fn an_empty_complete_payload_is_still_0201() {
+    let d = parse_with(Completion::Complete, b"", LIMIT).unwrap_err();
+    assert_eq!(d.code(), Code::AiResponseMalformed);
+}
+
 #[test]
 fn the_production_list_is_exactly_the_thirteen_names_of_the_design() {
     assert_eq!(FORBIDDEN_FIELDS.len(), 13);

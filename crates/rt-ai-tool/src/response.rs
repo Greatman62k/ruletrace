@@ -174,6 +174,14 @@ pub struct ParsedRule {
     pub content: Box<RuleContent>,
 }
 
+fn incomplete(at: &Locator<'_>, completion: Completion) -> Diagnostic {
+    Diagnostic::new(
+        Code::AiResponseIncomplete,
+        format!("provider response is not a completed answer: {completion:?}"),
+        at.plain(None),
+    )
+}
+
 /// Parses and schema-checks one provider response payload.
 ///
 /// `response_id` names the response in every Diagnostic location.
@@ -181,8 +189,9 @@ pub struct ParsedRule {
 ///
 /// # Errors
 /// Exactly one Diagnostic, the first applicable of: `RT-AI-0203` (size),
+/// `RT-AI-0205` (refusal or incomplete with an empty payload),
 /// `RT-AI-0201` (not UTF-8 or not parseable), `RT-AI-0205` (refusal or
-/// incomplete), `RT-AI-0204` (forbidden field), `RT-AI-0202` (every other
+/// incomplete with any other payload), `RT-AI-0204` (forbidden field), `RT-AI-0202` (every other
 /// violation, including a repeated key and nesting beyond [`MAX_DEPTH`]).
 ///
 /// The Diagnostic can quote text of the untrusted payload, such as an
@@ -203,6 +212,11 @@ pub fn parse_response(
             at.plain(None),
         ));
     }
+    // The Responses adapter carries no text for a refusal or an incomplete
+    // answer, so an empty payload is decided by its completion.
+    if payload.is_empty() && completion != Completion::Complete {
+        return Err(incomplete(&at, completion));
+    }
     let text = std::str::from_utf8(payload).map_err(|e| {
         let valid = e.valid_up_to();
         let prefix = payload
@@ -220,11 +234,7 @@ pub fn parse_response(
     let parsed = parse_keeping_duplicates(response_id, payload, limits)
         .map_err(|d| malformed(&at, text, &d))?;
     if completion != Completion::Complete {
-        return Err(Diagnostic::new(
-            Code::AiResponseIncomplete,
-            format!("provider response is not a completed answer: {completion:?}"),
-            at.plain(None),
-        ));
+        return Err(incomplete(&at, completion));
     }
     let tree = parsed.tree;
     let repeat = parsed
