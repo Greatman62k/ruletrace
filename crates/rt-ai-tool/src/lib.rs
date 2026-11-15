@@ -80,6 +80,8 @@ mod tests_run_support;
 #[cfg(test)]
 mod tests_scan;
 #[cfg(test)]
+mod tests_scratch;
+#[cfg(test)]
 mod tests_store;
 
 pub use accept::{accept_batch, AcceptInput, AcceptedBatch};

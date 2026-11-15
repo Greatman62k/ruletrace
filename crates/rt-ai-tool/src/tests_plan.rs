@@ -561,8 +561,8 @@ fn dry_run_prints_the_identifier_and_the_announcement() {
 
 #[test]
 fn dry_run_identifiers_follow_the_request_order_and_write_no_log() {
-    let log = std::env::temp_dir().join(format!("rt-ai-tool-{}-dry.jsonl", std::process::id()));
-    let _ = std::fs::remove_file(&log);
+    let scratch = crate::tests_scratch::ScratchDir::new("plan-dry");
+    let log = scratch.path().join("dry.jsonl");
     let m = model("rules.md", "0123456789");
     let mut r = rig();
     r.config = config_with("max_clauses_per_request = 1\n");

@@ -8,7 +8,8 @@ use crate::accept::{accept_batch, AcceptInput, AcceptedBatch};
 use crate::tests_memfs::{Faults, Link, MemFs};
 use crate::tests_response::LIMIT;
 use crate::tests_rig::{payload, Harness, ROOT};
-use crate::{store_batch, StdFs, StoreOutcome};
+use crate::tests_scratch::{GateFs, ScratchDir};
+use crate::{store_batch, StoreOutcome};
 use rt_foundation::{Code, Diagnostic, ExitCode, InputId, Location, Severity};
 use rt_hash::{sha256, Sha256Hex};
 use rt_proposals::parse_batch;
@@ -342,16 +343,19 @@ fn stored_bytes_do_not_depend_on_the_run_that_wrote_them() {
     assert_eq!(first.read(&h.batch_file(1)), second.read(&h.batch_file(1)));
 }
 
-// Real files: two threads race for one batch.
+// Real files. The gate holds the first two links until both runs have
+// written a temporary file, so the second link always meets the batch file
+// of the first and the `AlreadyExists` path of the writer runs on a disk.
 #[test]
 fn concurrent_runs_on_a_real_disk_store_one_batch_and_report_the_rest() {
     let h = Harness::new("");
-    let dir = std::env::temp_dir().join(format!("rt-ai-tool-{}-store-race", std::process::id()));
-    drop(std::fs::remove_dir_all(&dir));
+    let scratch = ScratchDir::new("store-race");
+    let dir = scratch.path().to_path_buf();
+    let gate = GateFs::new();
     let batch = accepted(&h, 0);
     let results: Vec<Result<StoreOutcome, Diagnostic>> = std::thread::scope(|scope| {
         let workers: Vec<_> = (0..8)
-            .map(|_| scope.spawn(|| store_batch(&StdFs, &dir, &batch, &h.meta)))
+            .map(|_| scope.spawn(|| store_batch(&gate, &dir, &batch, &h.meta)))
             .collect();
         workers.into_iter().map(|w| w.join().unwrap()).collect()
     });
@@ -364,11 +368,11 @@ fn concurrent_runs_on_a_real_disk_store_one_batch_and_report_the_rest() {
         .filter(|r| matches!(r, Ok(StoreOutcome::AlreadyStored(w)) if w.code() == Code::AiBatchAlreadyStored))
         .count();
     assert_eq!((stored, already), (1, 7), "{results:?}");
+    assert!(gate.link_target_existed() >= 1);
     let name = dir.join("batches").join(format!("{}.json", h.id(0)));
     let bytes = std::fs::read(&name).unwrap();
     parse_batch(&InputId::new("batch").unwrap(), &bytes).unwrap();
     let batches = std::fs::read_dir(dir.join("batches")).unwrap().count();
     let temps = std::fs::read_dir(dir.join(".tmp")).unwrap().count();
     assert_eq!((batches, temps), (1, 0));
-    drop(std::fs::remove_dir_all(&dir));
 }

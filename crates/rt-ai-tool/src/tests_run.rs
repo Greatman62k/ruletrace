@@ -471,7 +471,8 @@ fn every_attempt_is_logged_with_the_same_request_identifier() {
 
 #[test]
 fn two_runs_on_one_real_disk_store_each_batch_once() {
-    use crate::{run_requests, RunInput, StdFs, TransmissionLog};
+    use crate::tests_scratch::{GateFs, ScratchDir};
+    use crate::{run_requests, RunInput, TransmissionLog};
     struct Null;
     impl crate::LogSink for Null {
         fn append(&mut self, _: &[u8]) -> std::io::Result<()> {
@@ -515,8 +516,9 @@ fn two_runs_on_one_real_disk_store_each_batch_once() {
         }
     }
     let h = Harness::new("");
-    let dir = std::env::temp_dir().join(format!("rt-ai-tool-{}-run-race", std::process::id()));
-    drop(std::fs::remove_dir_all(&dir));
+    let scratch = ScratchDir::new("run-race");
+    let dir = scratch.path().to_path_buf();
+    let gate = GateFs::new();
     let reports: Vec<RunReport> = std::thread::scope(|scope| {
         let workers: Vec<_> = (0..2)
             .map(|_| {
@@ -543,7 +545,7 @@ fn two_runs_on_one_real_disk_store_each_batch_once() {
                         },
                         &mut p,
                         &mut log,
-                        &StdFs,
+                        &gate,
                     )
                 })
             })
@@ -567,5 +569,5 @@ fn two_runs_on_one_real_disk_store_each_batch_once() {
     let files = std::fs::read_dir(dir.join("batches")).unwrap().count();
     let temps = std::fs::read_dir(dir.join(".tmp")).unwrap().count();
     assert_eq!((files, temps), (3, 0));
-    drop(std::fs::remove_dir_all(&dir));
+    assert!(gate.link_target_existed() >= 1);
 }

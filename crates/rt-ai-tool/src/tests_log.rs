@@ -235,14 +235,10 @@ fn log_line_is_redacted_even_when_a_field_carries_the_credential() {
     assert!(line.contains("m-[REDACTED]"));
 }
 
-fn temp_path(name: &str) -> std::path::PathBuf {
-    std::env::temp_dir().join(format!("rt-ai-tool-{}-{name}", std::process::id()))
-}
-
 #[test]
 fn file_log_appends_lines_and_keeps_earlier_ones() {
-    let path = temp_path("append.jsonl");
-    let _ = std::fs::remove_file(&path);
+    let scratch = crate::tests_scratch::ScratchDir::new("log-append");
+    let path = scratch.path().join("append.jsonl");
     let mut log = TransmissionLog::without_credential(FileLog::new(path.clone()), field_at());
     log.record(&context(), &request(), 1, "t1").unwrap();
     log.record(&context(), &request(), 2, "t2").unwrap();
@@ -256,7 +252,12 @@ fn file_log_appends_lines_and_keeps_earlier_ones() {
 
 #[test]
 fn file_log_in_a_missing_directory_fails_with_rt_ai_0010() {
-    let path = temp_path("missing-dir").join("nested").join("tx.jsonl");
+    let scratch = crate::tests_scratch::ScratchDir::new("log-missing");
+    let path = scratch
+        .path()
+        .join("absent")
+        .join("nested")
+        .join("tx.jsonl");
     let mut log = TransmissionLog::without_credential(FileLog::new(path.clone()), field_at());
     let d = log.record(&context(), &request(), 1, "t").unwrap_err();
     assert_eq!(d.code(), Code::AiTransmissionLogFailed);
@@ -431,7 +432,8 @@ fn permission_warning_depends_only_on_group_and_other_read_bits() {
 #[test]
 fn file_mode_reports_the_real_permission_bits() {
     use std::os::unix::fs::PermissionsExt;
-    let path = temp_path("mode.toml");
+    let scratch = crate::tests_scratch::ScratchDir::new("log-mode");
+    let path = scratch.path().join("mode.toml");
     std::fs::write(&path, "x").unwrap();
     let input = InputId::new("ai.toml").unwrap();
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
