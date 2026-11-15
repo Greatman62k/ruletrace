@@ -59,6 +59,10 @@ mod tests_config_order;
 #[cfg(test)]
 mod tests_exit_order_property;
 #[cfg(test)]
+mod tests_gate_failures;
+#[cfg(test)]
+mod tests_gate_rig;
+#[cfg(test)]
 mod tests_identifier_property;
 #[cfg(test)]
 mod tests_log;
