@@ -861,6 +861,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: `ruletrace-ai propose --config ai/mock-replay.toml ... --consent D` writes a batch to the store and a Transmission_Log entry and exits 0.
     - Carried from 8.5: wire `--dry-run` to `dryrun::dry_run` (print each Request_Identifier, send nothing, write no log), with a CLI-level test that runs the parsed command and asserts the identifiers on standard output and no transmission.
     - Carried from 8.6 review: `Out` and `Redactor::redact` match only the whole credential, so a truncated or cut copy of it passes unredacted. The `Out`, Run_Summary and Transmission_Log canary tests must use a credential longer than 60 characters, a dotted canary and a bracketed canary, and must assert that no run of 8 characters of the credential appears in any output.
+    - Carried from 8.7 review: 8.8 supplies `created_at` and `log_time` from `main` (not library code) and validates their format, because the store writes `created_at` verbatim. `Out` still uses whole-value `redact` (already carried above). The store-path diagnostics (`RT-AI-0303`, the stale-file hint, `RT-AI-0307`) are not fragment-redacted and must pass through `Out` or `redact_fragments` before they are shown.
     - Blocked by: 8.7.
     - _Requirements: 16.16, 16.17, 16.24, 17.7, 18.1, 18.13, 23.1, 27.1, 27.2, 27.3, 27.4, 27.8_
     - Design §3.9.2, §6.1
