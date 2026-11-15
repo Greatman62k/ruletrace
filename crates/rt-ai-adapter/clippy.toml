@@ -1,0 +1,14 @@
+# Template for crates/rt-ai-*/clippy.toml. Clippy reads the nearest clippy.toml, so a copy in an
+# AI crate replaces the workspace one: keep the workspace test allowances below in sync.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-indexing-slicing-in-tests = true
+# AI crates handle credentials and document text: no ad-hoc printing that could leak them.
+disallowed-macros = [
+  { path = "std::dbg", reason = "may print credentials or document text" },
+  { path = "std::println", reason = "output goes through the redacting writer" },
+  { path = "std::print", reason = "output goes through the redacting writer" },
+  { path = "std::eprintln", reason = "output goes through the redacting writer" },
+  { path = "std::eprint", reason = "output goes through the redacting writer" },
+]

@@ -1,0 +1,13 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 63ac5f16da2dee537574f8a73a2fd742efd64dc2f4487a02d10c6baf369345fa # shrinks to attempt = 1, extra = 0, n = 1
+cc 2987ec492c195fa371e0313e433ff04fd41e91e4ec138d98363e36abd9b6a4cc # shrinks to deadline = 198, attempt_raw = 1, retries = 1, prefix = [], last = Some(RateLimited { retry_after_secs: Some(3) }), elapsed_ms = 0, jitter_ns = 0
+cc 9ac0ed9542231e3308c57b2f69ccc3477b1cdd804ab0a6bf707eea3c36007865 # shrinks to deadline = 1, attempt_raw = 1, retries = 0, prefix = [], last = Some(Unavailable), elapsed_ms = 0, jitter_ns = 0
+cc 83848def0dbf684726d97ee276cff5812d24ded5eb193e349931f24e643944b3 # shrinks to deadline = 1, attempt_raw = 1, retries = 1, prefix = [], last = Some(Unavailable), elapsed_ms = 1001, jitter_ns = 0
+cc fcd4c2d4bc7ef58b1fd4919e0b98665b2d76a62b06453d0dbd420e0893a653e8 # shrinks to deadline = 216, attempt_raw = 1, retries = 1, prefix = [], last = Some(Unavailable), elapsed_ms = 213001, jitter_ns = 0
+cc 8dfb611ab67aabb76fe11d6c2defcbcf30fe2a248c803a898416975e657aa33d # shrinks to deadline = 79, attempt_raw = 1, retries = 1, prefix = [], last = Some(Unavailable), elapsed_ms = 0, jitter_ns = 0
+cc d076c1e5e28523ad44e6fce2ba5686667aefdc60534d501b229e3980395ee6d8 # shrinks to deadline = 1, attempt_raw = 1, retries = 0, prefix = [], last = None, elapsed_ms = 0, jitter_ns = 0

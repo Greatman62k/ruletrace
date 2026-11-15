@@ -1,0 +1,18 @@
+[package]
+name = "rt-ai-adapter"
+description = "Provider-independent AI adapter trait, request and failure types, pure retry decision (class aux)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rt-hash = { path = "../rt-hash" }
+rt-json = { path = "../rt-json" }
+
+[dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }
