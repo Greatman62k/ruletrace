@@ -120,9 +120,26 @@ fn text_of(name: &str) -> &'static str {
     DOCS.iter().find(|(n, _)| *n == name).map_or("", |(_, t)| t)
 }
 
+// `sha256sum` of the exact bytes of `RULES_TEXT` (50 bytes) and
+// `EXTRA_TEXT` (19 bytes), computed outside the tool.
+const DOC_HASHES: [&str; 2] = [
+    "65402f09841d04189481bc26ca1aa8e389ad780bdd3eae8910cc9ade130cf9c7",
+    "1d62e26ee3e2c577650c6e4afe9987b8d8273699b69c2d318a3fb0354247edf9",
+];
+
 fn hash_of(index: usize) -> String {
-    let (name, text) = DOCS[index];
-    model(name, text).sha256().as_str().to_owned()
+    DOC_HASHES[index].to_owned()
+}
+
+#[test]
+fn the_fixture_hashes_equal_the_hash_the_tool_computes_for_the_same_bytes() {
+    for (index, (name, text)) in DOCS.iter().enumerate() {
+        assert_eq!(
+            model(name, text).sha256().as_str(),
+            DOC_HASHES[index],
+            "{name}"
+        );
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -973,7 +990,8 @@ fn build(valid: &Spec, op: &Op, a: usize, b: usize) -> Built {
             let segs = site_segs(*site, p, e);
             members(at(&mut root, &segs)).retain(|(k, _)| k != name);
             // Without `spans` the rule fails the equality with the evidence
-            // spans, which is reported at the key (design 3.7.3).
+            // spans, which is reported at the field the check names (design
+            // 3.7.4).
             let field = if segs.is_empty() {
                 Field::Absent
             } else if *site == Site::Rule && *name == "spans" {

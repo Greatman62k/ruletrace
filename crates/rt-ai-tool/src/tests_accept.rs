@@ -170,6 +170,20 @@ fn a_valid_rule_suggestion_is_stored_with_no_findings() {
     assert_eq!(hash, &declared);
 }
 
+#[test]
+fn a_rule_with_no_markers_member_is_stored_as_the_rule_with_empty_markers() {
+    let without = eligibility("age").replace(r#""markers":[],"#, "");
+    assert!(!without.contains("markers"), "{without}");
+    let batch = accepted(&wrap(&[suggestion(&without)]));
+    let reference = accepted(&wrap(&[suggestion(&eligibility("age"))]));
+    let (draft, hash) = batch.proposals()[0].rule.as_ref().unwrap();
+    let (expected, expected_hash) = reference.proposals()[0].rule.as_ref().unwrap();
+    assert!(batch.proposals()[0].outcome.is_empty());
+    assert!(draft.json.contains(r#""markers":[]"#), "{}", draft.json);
+    assert_eq!(draft, expected);
+    assert_eq!(hash, expected_hash);
+}
+
 const SHUFFLED_RULE: &str = r#"{ "spans" : [ {"column":1,"line":2,"end":27,"start":12,"document":"rules.md"} ],
   "markers" : [],
   "expr" : {"right":{"value":"16","t":"number","node":"num"},"op":"ge",

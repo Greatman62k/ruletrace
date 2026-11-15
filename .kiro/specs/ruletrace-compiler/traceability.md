@@ -263,3 +263,9 @@ User decision of 2026-11-15. The store writer keeps the whole batch file when th
 
 Other sections changed: design 3.7.5, 3.7.7 and the incomplete-run property.
 
+
+## Rule draft `markers` is optional in the local parser (8.8, from the 8.11 review)
+
+A `rule_suggestion` whose rule draft has no `markers` member is accepted and stored with empty markers. The Rule_IR decoder (`rt-ir`, `parse.rs`) treats an absent `markers` as an empty list, and the stored draft is the canonical text with `"markers":[]`, equal in text and Draft hash to the draft that spells the empty list. Test: `tests_accept::a_rule_with_no_markers_member_is_stored_as_the_rule_with_empty_markers`. A mutant that makes `markers` required is killed by it.
+
+Open specification question: the provider-side strict JSON Schema lists `markers` as required, while the local parser, which design 3.7.3 calls authoritative, does not. No requirement states which is intended. No requirement or design text was changed. Needs a user decision: keep the local parser lenient, or require `markers` locally (Req 23.5, design 3.7.3).
