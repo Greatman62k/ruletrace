@@ -926,13 +926,14 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 33.6, 33.7, 33.8, 33.9, 33.11, 33.12, 23.25_
     - Design §8.11.4, §8.11.7, §8.11.8, §7.5 (Slice 1)
 
-  - [ ] 8.18 Write the AI-independence and origin-independence tests
+  - [-] 8.18 Write the AI-independence and origin-independence tests
     - **Property 41: AI tool and CLI are independent**
     - For every combination of presence of `ruletrace-ai`, an AI_Configuration file and the credential variable, `ruletrace` stdout, stderr, files and exit code are byte identical for the same inputs, and equal between a full build and a core-only build (all AI crates and `rt-tests-ai` excluded). Run `check-tree` for `rt-cli` and every core crate. In the acceptance test, assert that the `hand` and `ai` profiles compile to byte-identical artifacts when their Rule_Content is equal. Required.
     - Observable: the `core-only` job still passes with the AI crates present in the workspace, and the origin-independence assertion passes.
     - Blocked by: 8.17, 6.10.
     - **Validates: Requirements 17.7, 17.8, 18.1, 20.16, 27.9, 16.18**
     - _Also: 21.8, 21.13, 27.5, 27.6_
+    - Status note: implemented and verified locally on Linux (`cargo test -p rt-demo --test ai_independence --test origin_independence`, `cargo test -p rt-demo --test acceptance`, a core-only simulation without `ruletrace-ai`, five controlled mutants). The task stays in progress until the CI run: the `core-only` job (which now runs both new test files) and the three-platform `demo-offline` job have not run. Two deviations, see `traceability.md` (Task 8.18): Property 41 is an exhaustive 2x2x2 matrix, not 256 generated cases; the origin-independence comparison uses a hand-authored Rulebook over the `ai` document, not the `hand` profile, whose document differs.
 
   - [ ] 8.19 Checkpoint - Phase 6 exit and Demo Slice 1 exit
     - Run the full gate set including `core-only`. Confirm the steering decision of 8.3 is recorded.
