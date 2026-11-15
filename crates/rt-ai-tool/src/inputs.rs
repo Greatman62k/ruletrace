@@ -151,6 +151,23 @@ fn refused(wanted_at: usize, option: &str, message: String) -> Diagnostic {
     )
 }
 
+// Req 19.3: an oversize file is rejected before its content is used, and the
+// size is the one the file system reports, not the size of a bounded read.
+fn oversize_feedback(path: &Path, read_len: usize) -> Diagnostic {
+    let size = std::fs::metadata(path)
+        .map_or(read_len as u64, |m| m.len())
+        .max(read_len as u64);
+    let input = escape_controls(&path.display().to_string());
+    Diagnostic::new(
+        Code::LimitFileTooLarge,
+        format!(
+            "input file '{input}' is {size} bytes, larger than the effective limit of \
+             {MAX_FEEDBACK_BYTES} bytes"
+        ),
+        input_location(path),
+    )
+}
+
 // The feedback is untrusted text: it must be UTF-8, not empty and at most
 // MAX_FEEDBACK_BYTES, and it is kept byte for byte.
 fn load_feedback(wanted: &ReviseArgs, problems: &mut Vec<Diagnostic>) -> Option<String> {
@@ -162,17 +179,15 @@ fn load_feedback(wanted: &ReviseArgs, problems: &mut Vec<Diagnostic>) -> Option<
             return None;
         }
     };
-    let why = if bytes.len() > MAX_FEEDBACK_BYTES {
-        Some(format!(
-            "the feedback file given by --feedback-file is larger than {MAX_FEEDBACK_BYTES} bytes"
-        ))
-    } else if bytes.is_empty() {
-        Some("the feedback file given by --feedback-file is empty".to_owned())
-    } else {
-        None
-    };
-    if let Some(message) = why {
-        problems.push(invalid_request(message, at));
+    if bytes.len() > MAX_FEEDBACK_BYTES {
+        problems.push(oversize_feedback(&wanted.feedback, bytes.len()));
+        return None;
+    }
+    if bytes.is_empty() {
+        problems.push(invalid_request(
+            "the feedback file given by --feedback-file is empty".to_owned(),
+            at,
+        ));
         return None;
     }
     match String::from_utf8(bytes) {

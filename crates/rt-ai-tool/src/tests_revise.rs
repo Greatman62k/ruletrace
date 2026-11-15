@@ -472,15 +472,11 @@ fn an_unreadable_feedback_path_is_refused_as_an_unreadable_input() {
 }
 
 #[test]
-fn an_empty_oversize_or_non_utf8_feedback_is_refused_with_its_own_message() {
-    let cases: [(Vec<u8>, &str); 3] = [
+fn an_empty_or_non_utf8_feedback_is_refused_with_its_own_message() {
+    let cases: [(Vec<u8>, &str); 2] = [
         (
             Vec::new(),
             "the feedback file given by --feedback-file is empty",
-        ),
-        (
-            vec![b'a'; MAX_FEEDBACK_BYTES + 1],
-            "the feedback file given by --feedback-file is larger than 8192 bytes",
         ),
         (
             vec![0x66, 0xff, 0x66],
@@ -497,6 +493,29 @@ fn an_empty_oversize_or_non_utf8_feedback_is_refused_with_its_own_message() {
         assert_eq!(found.len(), 1, "{i}: {found:?}");
         assert_eq!(found[0].1, "RT-AI-0304", "{i}");
         assert!(found[0].2.starts_with(message), "{i}: {}", found[0].2);
+        assert_nothing_sent(&fixture);
+    }
+}
+
+// Req 19.3 and 23.16: an oversize feedback file is RT-LIM-0001 with the
+// size that the file system reports, not the size of a bounded read.
+#[test]
+fn an_oversize_feedback_is_refused_as_rt_lim_0001_with_its_true_size() {
+    for size in [MAX_FEEDBACK_BYTES + 1, 20_000, 3_000_000] {
+        let fixture = revise_fixture(&format!("revise-feedback-big-{size}"));
+        std::fs::write(fixture.path("feedback.txt"), vec![b'a'; size]).unwrap();
+        let extra = revise_opts(&fixture, "elig.basic", "1");
+        let ran = run_std(&consented_with(&fixture, &extra));
+        assert_eq!(ran.code, ExitCode::InvalidInput, "{size}: {}", ran.stderr);
+        let found = crate::tests_gate_rig::findings(&ran);
+        assert_eq!(found.len(), 1, "{size}: {found:?}");
+        assert_eq!(found[0].0, "error", "{size}");
+        assert_eq!(found[0].1, "RT-LIM-0001", "{size}");
+        let path = fixture.path("feedback.txt").display().to_string();
+        let message = format!(
+            "input file '{path}' is {size} bytes, larger than the effective limit of 8192 bytes"
+        );
+        assert!(found[0].2.starts_with(&message), "{size}: {}", found[0].2);
         assert_nothing_sent(&fixture);
     }
 }

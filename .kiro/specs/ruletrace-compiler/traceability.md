@@ -303,3 +303,9 @@ User decisions and corrections of the 8.15 review.
 | Req | Title | Status | Changed criteria | New criteria | Cause |
 | --- | --- | --- | --- | --- | --- |
 | 23 | AI-Assisted Proposal Pipeline | Unchanged | - | - | User decision (8.15 review): the row order of the 23.33 table is not a precedence among failures of one Req 16.17 step, and inputs load before the store check (design 3.7.1, 3.7.5). A note after the table says so. This confirms the reading recorded under "Task 8.15 final follow-ups" and changes no verdict |
+
+## Task 8.21 follow-up: oversize feedback file
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 23 | AI-Assisted Proposal Pipeline | Changed | 23.16 | - | User decision: the feedback file has an 8,192-byte limit, recorded in 23.16 and in design 3.7.2 item 4 and 3.9.2. A larger file is `RT-LIM-0001` (Req 19.3) with the size from file metadata, exit 2, not `RT-AI-0304` with a message that names no size. Expected values changed: code `RT-AI-0304` to `RT-LIM-0001`, message `the feedback file given by --feedback-file is larger than 8192 bytes` to `input file '<path>' is <size> bytes, larger than the effective limit of 8192 bytes`. Design 3.9.2 also says that a Reviewer may paste text into the feedback file and that the tool cannot detect text from a document that the consent does not name |
