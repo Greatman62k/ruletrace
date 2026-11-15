@@ -166,9 +166,10 @@ fn step_4_each_input_failure_exits_2_with_its_code() {
     let ran = run_std(&fixture.consented());
     assert_eq!(ran.code, ExitCode::InvalidInput);
     assert_eq!(ran.stdout, "");
-    assert!(!ran.codes().is_empty());
-    assert!(
-        ran.codes().iter().all(|c| c.starts_with("RT-")),
+    // A truncated document is one IR_SYNTAX_ERROR and nothing else.
+    assert_eq!(
+        ran.shapes(),
+        [("error".to_owned(), "RT-IR-0001".to_owned())],
         "{}",
         ran.stderr
     );
