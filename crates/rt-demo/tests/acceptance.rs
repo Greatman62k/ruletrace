@@ -317,6 +317,31 @@ fn stored_batches(work: &Path) -> Vec<Batch> {
         .collect()
 }
 
+const RANKING_LABEL: &str = "Score ranking \u{2014} all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.";
+
+/// The report states, once per standings decision, that the ranking covers
+/// all submitted participants, and p3 (ineligible in the demo data) is listed.
+fn assert_ranking_label(report: &str, proof: &Json) {
+    let standings: Vec<&Json> = items(at(proof, "decisions"))
+        .iter()
+        .filter(|s| {
+            at(at(s, "outcome"), "state").as_str() == Some("decided")
+                && text(at(at(at(s, "outcome"), "value"), "type")) == "standings"
+        })
+        .collect();
+    assert!(!standings.is_empty(), "no ranking decision in the report");
+    assert_eq!(report.matches(RANKING_LABEL).count(), standings.len());
+    for s in standings {
+        let members: Vec<&str> = items(at(at(at(s, "outcome"), "value"), "places"))
+            .iter()
+            .flat_map(|p| items(at(p, "members")))
+            .map(text)
+            .collect();
+        assert!(members.contains(&"p3"), "ineligible p3 is not ranked");
+    }
+    assert!(report.contains("4: p3, p5]"));
+}
+
 #[test]
 fn ai_profile_acceptance() -> TestResult {
     let demo = demo_dir();
@@ -597,6 +622,10 @@ fn ai_profile_acceptance() -> TestResult {
     let proof = json("proof.json", &std::fs::read(work.join("work/proof.json"))?);
     let sections = items(at(&proof, "decisions"));
     assert_eq!(sections.len(), verification.len());
+    assert_ranking_label(
+        &std::fs::read_to_string(work.join("work/proof.txt"))?,
+        &proof,
+    );
     assert!(sections
         .iter()
         .all(|s| text(at(at(s, "verification"), "status")) == "verified"));
@@ -847,6 +876,10 @@ fn ai_profile_acceptance() -> TestResult {
     let complete_proof = json(
         "proof-complete.json",
         &std::fs::read(work.join("work/proof-complete.json"))?,
+    );
+    assert_ranking_label(
+        &std::fs::read_to_string(work.join("work/proof-complete.txt"))?,
+        &complete_proof,
     );
     assert_eq!(
         at(at(&complete_proof, "header"), "verified_traces").as_u64(),
