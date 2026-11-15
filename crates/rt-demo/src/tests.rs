@@ -271,3 +271,72 @@ fn a_windows_variant_replaces_its_golden_file_on_windows_only() {
     check_golden(Mode::Compare, "t", &dir, "golden/steps/t.stdout", b"same").unwrap();
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+const RESULTS: &str = r#"{"format":"ruletrace-results","version":1,
+"outcomes":[
+{"state":"decided","value":{"type":"bool","value":true}},
+{"state":"indeterminate","reasons":[{"kind":"missing_input","participant":"p2","field":"age"}]},
+{"state":"decided","value":{"type":"number","value":"7.6"}},
+{"state":"decided","value":{"type":"standings","places":[
+{"position":1,"members":["p2"]},{"position":2,"members":["p3","p5"]}]}}],
+"traces":[
+{"question":{"kind":"value","target":"eligible","participant":"p1"}},
+{"question":{"kind":"value","target":"eligible","participant":"p2"}},
+{"question":{"kind":"value","target":"score","participant":"p1"}},
+{"question":{"kind":"rank","target":"standing"}}],
+"diagnostics":[],
+"verification":[{"status":"verified"},{"status":"verified"},{"status":"not_verified"},{"status":"verified"}]}"#;
+
+#[test]
+fn evaluate_description_names_every_outcome_reason_code_and_verification() {
+    let stderr = "error RT-EXE-0001: rule elig.entry: input 'age' is missing\n  at source a.md:1-2\n\
+                  warning RT-EXE-0011: published 7.9 differs from computed 7.8\n  at input 'p.json'\n";
+    let text = describe_evaluate("s06", 4, RESULTS.as_bytes(), stderr.as_bytes()).unwrap();
+    let expected = [
+        "evaluate s06: exit 4",
+        "  question                outcome",
+        "  eligible p1             true",
+        "  eligible p2             indeterminate (missing_input: participant p2, field age)",
+        "  score p1                7.6",
+        "  standing                1:p2 2:p3=p5",
+        "  decided 3 of 4",
+        "  diagnostics: RT-EXE-0001 (error), RT-EXE-0011 (warning)",
+        "  verification: 3 of 4 traces verified",
+        "",
+    ]
+    .join("\n");
+    assert_eq!(text, expected);
+}
+
+#[test]
+fn evaluate_description_says_none_when_standard_error_is_empty() {
+    let text = describe_evaluate("s06c", 0, RESULTS.as_bytes(), b"").unwrap();
+    assert!(text.contains("  diagnostics: none\n"), "{text}");
+}
+
+#[test]
+fn evaluate_description_refuses_results_of_unequal_lengths() {
+    let broken = RESULTS.replace(r#"{"status":"verified"},{"status":"verified"},{"status":"not_verified"},{"status":"verified"}"#, r#"{"status":"verified"}"#);
+    assert!(describe_evaluate("s06", 4, broken.as_bytes(), b"").is_err());
+}
+
+#[test]
+fn diagnostic_codes_skip_continuation_lines_and_free_text() {
+    let stderr =
+        b"error RT-CLI-0003: input file 'x' does not exist\n  at input 'x'\nsee RT-FAKE here\n";
+    assert_eq!(diagnostic_codes(stderr), ["RT-CLI-0003 (error)"]);
+}
+
+#[test]
+fn ledger_description_lists_each_record_with_reviewer_time_and_hash() {
+    let ledger = "{\"format\":\"ruletrace-ledger\",\"version\":1}\n\
+{\"seq\":1,\"kind\":\"approval\",\"rule\":\"a.b\",\"revision\":1,\"content_hash\":\"abc\",\"reviewer\":\"R One\",\"time\":\"2026-01-15T10:00:00Z\",\"reason\":null}\n\
+{\"seq\":2,\"kind\":\"rejection\",\"rule\":\"c.d\",\"revision\":2,\"content_hash\":\"def\",\"reviewer\":\"R One\",\"time\":\"2026-01-15T10:00:00Z\",\"reason\":\"too wide\"}\n";
+    assert_eq!(
+        describe_ledger(ledger.as_bytes()).unwrap(),
+        [
+            "approval of a.b @ 1 by \"R One\" at 2026-01-15T10:00:00Z, content hash abc",
+            "rejection of c.d @ 2 by \"R One\" at 2026-01-15T10:00:00Z, content hash def, reason: too wide",
+        ]
+    );
+}

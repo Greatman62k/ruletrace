@@ -66,6 +66,15 @@ pub fn run_step(step: &Step, bin_dir: &Path, work_dir: &Path) -> Result<Captured
     })
 }
 
+/// What one step of a runbook printed, kept for the demonstration summary.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StepRecord {
+    /// The step identifier.
+    pub id: String,
+    /// What the process printed and its exit code.
+    pub captured: Captured,
+}
+
 /// Makes a copied AI_Configuration readable by its owner only.
 ///
 /// A checkout gives the file the mode of the user's umask, and `ruletrace-ai`
@@ -115,7 +124,23 @@ pub fn copy_demo(demo_dir: &Path, work_dir: &Path) -> Result<(), DemoError> {
 }
 
 /// Runs the steps of `profile` in order and compares each with its golden
-/// files. Stops at the first failure.
+/// files. Stops at the first failure. See [`run_runbook_recorded`].
+///
+/// # Errors
+/// The first failure, as for [`run_runbook_recorded`].
+pub fn run_runbook(
+    runbook: &Runbook,
+    profile: &str,
+    demo_dir: &Path,
+    work_dir: &Path,
+    bin_dir: &Path,
+    mode: Mode,
+) -> Result<(), DemoError> {
+    run_runbook_recorded(runbook, profile, demo_dir, work_dir, bin_dir, mode).map(|_| ())
+}
+
+/// Runs the steps of `profile` in order and compares each with its golden
+/// files. Stops at the first failure. Returns what each step printed.
 ///
 /// Per step the order is: exit code, standard output, standard error, then each
 /// listed output file. `demo_dir` holds the committed demonstration and its
@@ -125,16 +150,17 @@ pub fn copy_demo(demo_dir: &Path, work_dir: &Path) -> Result<(), DemoError> {
 /// # Errors
 /// The first failure: [`DemoError::Step`] for a wrong exit code or a missing
 /// output file, [`DemoError::Golden`] for a difference.
-pub fn run_runbook(
+pub fn run_runbook_recorded(
     runbook: &Runbook,
     profile: &str,
     demo_dir: &Path,
     work_dir: &Path,
     bin_dir: &Path,
     mode: Mode,
-) -> Result<(), DemoError> {
+) -> Result<Vec<StepRecord>, DemoError> {
     let steps = runbook.steps_for(profile)?;
     copy_demo(demo_dir, work_dir)?;
+    let mut records = Vec::new();
     for step in steps {
         let captured = run_step(step, bin_dir, work_dir)?;
         if captured.exit != step.expect_exit {
@@ -168,6 +194,10 @@ pub fn run_runbook(
             })?;
             check_golden(mode, &step.id, demo_dir, &output.golden, &bytes)?;
         }
+        records.push(StepRecord {
+            id: step.id.clone(),
+            captured,
+        });
     }
-    Ok(())
+    Ok(records)
 }
