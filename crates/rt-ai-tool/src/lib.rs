@@ -15,6 +15,7 @@ mod credential;
 mod decls;
 mod dryrun;
 mod endpoint;
+mod fs;
 mod locate;
 mod out;
 mod perm;
@@ -26,6 +27,7 @@ mod redact;
 pub mod response;
 mod scan;
 mod secret;
+mod store;
 mod txlog;
 mod vocab;
 
@@ -41,6 +43,8 @@ mod tests_config_order;
 mod tests_identifier_property;
 #[cfg(test)]
 mod tests_log;
+#[cfg(test)]
+mod tests_memfs;
 #[cfg(test)]
 mod tests_origin_property;
 #[cfg(test)]
@@ -62,7 +66,11 @@ mod tests_response_closed;
 #[cfg(test)]
 mod tests_response_objects;
 #[cfg(test)]
+mod tests_rig;
+#[cfg(test)]
 mod tests_scan;
+#[cfg(test)]
+mod tests_store;
 
 pub use accept::{accept_batch, AcceptInput, AcceptedBatch};
 pub use config::{
@@ -71,6 +79,7 @@ pub use config::{
 pub use consent::Consent;
 pub use credential::{Credential, EnvReader, ProcessEnv};
 pub use dryrun::{announcement, dry_run};
+pub use fs::{StdFs, StoreFile, StoreFs};
 pub use out::{render_diagnostic, Out};
 pub use perm::{file_mode, permission_warning};
 pub use plan::{
@@ -78,5 +87,8 @@ pub use plan::{
     TASK,
 };
 pub use redact::{Redactor, REDACTED};
+pub use store::{
+    already_stored_warning, batch_exists, batch_path, store_batch, StoreMeta, StoreOutcome,
+};
 pub use txlog::{FileLog, LogContext, LogSink, TransmissionLog};
 pub use vocab::Ud32Option;
