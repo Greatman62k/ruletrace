@@ -882,6 +882,8 @@ Handling of the HTTP response: read at most `response_bytes + 1` bytes; more giv
    5. span lies inside at least one Candidate_Clause sent in this request, else `RT-PRV-0103`;
    6. `quote` equals the span bytes exactly, else `RT-PRV-0104`.
 
+   Locations in the response: `RT-PRV-0103` depends on both offsets and is reported at the evidence item. A span with `start >= end` is reported at `end`. Every other failure is reported at the field the check names (`document`, `sha256`, `start`, `end`, `line`, `column`, `quote`).
+
    Every Diagnostic has an Input_Location of the offending field in the response (never a Source_Span, Req 7.15). Nothing is repaired, trimmed or re-anchored (Req 23.8). All failing proposals are reported in ascending proposal index; the exit code is that of the earliest failing stage (6 if any schema failure, else 3).
 4. `semantic_validate`: for each `rule_suggestion`, build a `RuleDraft` and call `validate_content(declarations, draft, sources)`. The result is the Semantic_Outcome (Ambiguity, Unsupported, Error findings with their codes). It never changes the exit code (Req 30.2). The stored `has_errors`-style status is derived from this `DiagnosticState` only, and no provider-supplied flag is stored (Req 30.5).
 

@@ -164,3 +164,13 @@ User decision: a provider field that would carry a script, a general-purpose exp
 | 23 | AI-Assisted Proposal Pipeline | Changed | 5 (the FORBIDDEN_FIELD class is the approval and validity names only; excluded content kinds are SCHEMA_VIOLATION) | - | User decision on the stage A review |
 
 Other sections changed: design section 3.7.3 (closed objects at every level, rule kind and node outside the request vocabulary is RT-AI-0202, unknown but well-formed `op` or `fn` is carried and reaches the validator as Unsupported, no provider field or value is executed) and section 3.7.4 step 1 (the thirteen names are the whole of RT-AI-0204). Criterion 4 is unchanged. No safety criterion was removed or weakened.
+
+## Req 23.7 amendment (claimed line and column check)
+
+User decision: criterion 7 lists the check of the claimed line and column between the bounds and boundary check and the clause-containment check, as design section 3.7.4 step 4 and the Diagnostic_Catalogue (RT-PRV-0101) already state. A line or column that differs from the Source_Model value is AI_PROPOSAL_SPAN_UNRESOLVED.
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 23 | AI-Assisted Proposal Pipeline | Changed | 7 (the claimed line and column check is listed, in the order of design section 3.7.4) | - | User decision on the stage B review |
+
+Other sections changed: design section 3.7.4 step 3 (locations: RT-PRV-0103 at the evidence item, `start >= end` at `end`). No safety criterion was removed or weakened.
