@@ -1,0 +1,13 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 40d98002d3f708fb283c252b4c17582e9789f7a69278478bac4e5cf6da35eb64 # shrinks to host = Other("a.api.meta.ai")
+cc 92a56be438423ceeba4a6ed9c98a77716adedaf1f1d81bfa35b3793d8ee38f13 # shrinks to host = Other("api.meta.ai.a")
+cc 2f6143e6a74ca0e0e871e1306ff1e6b38172649561fac9ee93972509bfd44161 # shrinks to on = [false, false, false, false, false, true, false, false, false, false, false, false]
+cc fa6790a5825b25190cf28ba188d19ba4bb49ec2fc29e92f0931f1e5cf75040a9 # shrinks to on = [false, false, false, false, false, false, false, false, true, false, false, false]
+cc cd082525187b69431ccf31d755c23e57301cfabf21a6df2a331ca34b7bb2d2c9 # shrinks to on = [false, false, false, false, false, false, false, true, true, false, false, false]
+cc 9a29aa616b23eec45b7ecd047b679b2f5e767afa1ff9fdf4147e340f54cb9290 # shrinks to on = [false, false, false, false, false, false, false, false, false, true, true, false]
+cc b47137dbdbe106b9403612cb3165cb4ccaae2d891d549521fa328c262b962d3f # shrinks to host = Other("api.meta.ai.")

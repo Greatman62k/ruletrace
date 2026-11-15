@@ -26,14 +26,14 @@ const SECRET_NAMES: [&str; 6] = [
 ];
 const SECRET_PREFIXES: [&str; 5] = ["sk-", "sk_", "Bearer", "ghp_", "AKIA"];
 const GOOD_ENDPOINTS: [&str; 9] = [
-    "https://api.example.org",
-    "HTTPS://API.EXAMPLE.ORG:8443/v1/responses",
+    "https://api.openai.com",
+    "HTTPS://API.OPENAI.COM:8443/v1/responses",
     "http://localhost:8080/v1",
     "http://127.0.0.1",
     "http://127.200.3.4:1",
     "http://[::1]:9/x",
-    "https://0.0.0.0",
-    "https://[::]:443/",
+    "https://127.0.0.1",
+    "https://[::1]:443/",
     "Http://LocalHost",
 ];
 const INSECURE_ENDPOINTS: [&str; 9] = [
@@ -397,11 +397,11 @@ fn apply_secret(b: &mut Build, case: &Case, v: usize, sub: usize) {
         }
         _ => {
             let forms = [
-                format!("https://u:{m}@api.example.org"),
-                format!("https://{m}@api.example.org/x"),
-                format!("https://api.example.org/p?k={m}"),
+                format!("https://u:{m}@api.openai.com"),
+                format!("https://{m}@api.openai.com/x"),
+                format!("https://api.openai.com/p?k={m}"),
                 format!("http://localhost?x={m}"),
-                "https://api.example.org?".to_owned(),
+                "https://api.openai.com?".to_owned(),
             ];
             b.put("endpoint", format!("endpoint = \"{}\"", forms[sub % 5]));
             at(Pos::Key("endpoint"), 1, Some("endpoint"))
@@ -421,7 +421,7 @@ fn apply_fields(b: &mut Build, v: usize) {
         ("ai_identities", "ai_identities = \"a\""),
         ("provider", "provider = true"),
         ("model", "model = \"\""),
-        ("schema_version", "schema_version = 2"),
+        ("schema_version", "schema_version = 3"),
         ("transmission_log", "transmission_log = \"\""),
     ];
     match v % 16 {

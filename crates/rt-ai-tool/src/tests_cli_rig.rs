@@ -119,7 +119,7 @@ impl Fixture {
     pub(crate) fn real_config(&self, extra: &str) -> String {
         format!(
             "schema_version = 1\nenabled = true\nprovider = \"openai-responses\"\n\
-             model = \"model-1\"\nendpoint = \"https://api.example.org\"\n\
+             model = \"model-1\"\nendpoint = \"https://api.openai.com\"\n\
              credential_env_var = \"PROVIDER_CREDENTIAL\"\nallow_document_text = true\n\
              ai_identities = [\"openai-responses\", \"model-1\"]\n\
              transmission_log = \"{}\"\n{extra}",

@@ -46,7 +46,7 @@ fn context() -> LogContext {
     LogContext {
         provider: "openai-responses".to_owned(),
         model: "model-1".to_owned(),
-        endpoint_host: "api.example.org".to_owned(),
+        endpoint_host: "api.openai.com".to_owned(),
         documents: vec![(DocumentId::new("a.md").unwrap(), sha256(b"document a"))],
         clauses: 3,
     }
@@ -143,7 +143,7 @@ fn entry_has_exactly_the_specified_fields_and_no_text() {
         .unwrap();
     let canonical = req.canonical_bytes().unwrap();
     let expected = format!(
-        "{{\"provider\":\"openai-responses\",\"model\":\"model-1\",\"endpoint_host\":\"api.example.org\",\"documents\":[{{\"document\":\"a.md\",\"sha256\":\"{}\"}}],\"clauses\":3,\"request_bytes\":{},\"request_id\":\"{}\",\"attempt\":1,\"time\":\"2025-01-02T03:04:05Z\"}}\n",
+        "{{\"provider\":\"openai-responses\",\"model\":\"model-1\",\"endpoint_host\":\"api.openai.com\",\"documents\":[{{\"document\":\"a.md\",\"sha256\":\"{}\"}}],\"clauses\":3,\"request_bytes\":{},\"request_id\":\"{}\",\"attempt\":1,\"time\":\"2025-01-02T03:04:05Z\"}}\n",
         sha256(b"document a"),
         canonical.len(),
         sha256(&canonical),
@@ -342,16 +342,16 @@ fn rejected_values_never_reach_the_rendered_diagnostics() {
     let secret_values = [
         ("model = \"model-1\"", "model = \"sk-CANARYSECRET1\""),
         (
-            "https://api.example.org",
-            "https://u:CANARYSECRET1@api.example.org",
+            "https://api.openai.com",
+            "https://u:CANARYSECRET1@api.openai.com",
         ),
         (
-            "https://api.example.org",
-            "https://api.example.org/?k=CANARYSECRET1",
+            "https://api.openai.com",
+            "https://api.openai.com/?k=CANARYSECRET1",
         ),
         ("PROVIDER_CREDENTIAL", "canarysecret1"),
     ];
-    let base = "schema_version = 1\nenabled = true\nprovider = \"openai-responses\"\nmodel = \"model-1\"\nendpoint = \"https://api.example.org\"\ncredential_env_var = \"PROVIDER_CREDENTIAL\"\nallow_document_text = true\nai_identities = [\"x\"]\ntransmission_log = \"tx\"\n";
+    let base = "schema_version = 1\nenabled = true\nprovider = \"openai-responses\"\nmodel = \"model-1\"\nendpoint = \"https://api.openai.com\"\ncredential_env_var = \"PROVIDER_CREDENTIAL\"\nallow_document_text = true\nai_identities = [\"x\"]\ntransmission_log = \"tx\"\n";
     let docs: std::collections::BTreeSet<DocumentId> = [DocumentId::new("a.md").unwrap()].into();
     for (from, to) in secret_values {
         let text = base.replace(from, to);
@@ -379,7 +379,7 @@ fn credential_read_from_the_environment_is_redacted_in_provider_errors() {
     let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", CANARY)]);
     let docs: std::collections::BTreeSet<DocumentId> = [DocumentId::new("a.md").unwrap()].into();
     let consent = Consent::named(docs.clone(), Location::None(Code::InternalError));
-    let text = "schema_version = 1\nenabled = true\nprovider = \"openai-responses\"\nmodel = \"model-1\"\nendpoint = \"https://api.example.org\"\ncredential_env_var = \"PROVIDER_CREDENTIAL\"\nallow_document_text = true\nai_identities = [\"x\"]\ntransmission_log = \"tx\"\n";
+    let text = "schema_version = 1\nenabled = true\nprovider = \"openai-responses\"\nmodel = \"model-1\"\nendpoint = \"https://api.openai.com\"\ncredential_env_var = \"PROVIDER_CREDENTIAL\"\nallow_document_text = true\nai_identities = [\"x\"]\ntransmission_log = \"tx\"\n";
     let ok = load(
         &InputId::new("ai.toml").unwrap(),
         text,

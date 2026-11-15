@@ -555,7 +555,7 @@ fn dry_run_prints_the_identifier_and_the_announcement() {
     assert_eq!(
         stderr,
         format!(
-            "dry run, nothing is sent: request {ID_RANK}: provider openai-responses, endpoint host api.example.org, documents ['rules.md'], clauses 2, bytes 1282\n"
+            "dry run, nothing is sent: request {ID_RANK}: provider openai-responses, endpoint host api.openai.com, documents ['rules.md'], clauses 2, bytes 1282\n"
         )
     );
 }

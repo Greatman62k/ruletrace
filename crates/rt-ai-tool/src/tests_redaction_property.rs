@@ -236,7 +236,7 @@ fn record_with_model(redactor: &Redactor, model: &str) -> String {
     let context = LogContext {
         provider: "openai-responses".to_owned(),
         model: model.to_owned(),
-        endpoint_host: "api.example.org".to_owned(),
+        endpoint_host: "api.openai.com".to_owned(),
         documents: vec![(DocumentId::new("a.md").unwrap(), sha256(b"a"))],
         clauses: 1,
     };

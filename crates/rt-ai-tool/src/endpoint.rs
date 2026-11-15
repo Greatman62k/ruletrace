@@ -75,3 +75,11 @@ pub(crate) fn is_loopback(host: &str) -> bool {
 pub(crate) fn transport_permitted(endpoint: &ParsedEndpoint) -> bool {
     endpoint.scheme == "https" || (endpoint.scheme == "http" && is_loopback(&endpoint.host))
 }
+
+/// The endpoint host for a provider with an official host: that host after
+/// ASCII lower-casing, or a loopback address for the stub server of the
+/// tests (Req 35.6). Everything else is refused, including a suffix, a
+/// prefix, a trailing dot and an IP literal. The port is not compared.
+pub(crate) fn host_permitted(endpoint: &ParsedEndpoint, official: &str) -> bool {
+    endpoint.host == official || is_loopback(&endpoint.host)
+}

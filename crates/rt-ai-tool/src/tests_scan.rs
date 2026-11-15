@@ -131,7 +131,7 @@ fn http_to_a_non_loopback_host_is_insecure_even_for_unspecified_addresses() {
     ] {
         let env = env_ok();
         let d = one(
-            run(&with(("https://api.example.org", url)), &env),
+            run(&with(("https://api.openai.com", url)), &env),
             Code::AiConfigEndpointInsecure,
         );
         assert_eq!(at(&d).2.as_deref(), Some("endpoint"), "{url}");
@@ -142,7 +142,7 @@ fn http_to_a_non_loopback_host_is_insecure_even_for_unspecified_addresses() {
 #[test]
 fn unbracketed_double_colon_host_is_a_malformed_endpoint() {
     let d = one(
-        run(&with(("https://api.example.org", "http://::")), &env_ok()),
+        run(&with(("https://api.openai.com", "http://::")), &env_ok()),
         Code::AiConfigInvalid,
     );
     assert_eq!(at(&d).2.as_deref(), Some("endpoint"));
@@ -162,6 +162,7 @@ fn field_check_never_echoes_a_credential_like_unknown_key() {
     let reader = Reader {
         table: document.as_table(),
         locator: &locator,
+        prefix: "",
     };
     let found = RawConfig::read(&reader).unwrap_err();
     let codes: Vec<_> = found.iter().map(|d| d.code()).collect();

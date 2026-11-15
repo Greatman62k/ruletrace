@@ -4,10 +4,13 @@ use crate::consent::Consent;
 use crate::credential::{read_credential, Credential, EnvReader};
 use crate::endpoint;
 use crate::locate::Locator;
-use crate::raw::RawConfig;
+use crate::profile::Profile;
+use crate::raw::{parse_tri, RawConfig};
 use crate::reader::{Found, Reader};
 use crate::scan;
-use rt_ai_adapter::{RequestLimits, RetryPolicy, RetryPolicyError};
+use rt_ai_adapter::{
+    negotiate, Capabilities, RequestLimits, Required, RetryPolicy, RetryPolicyError, Tri,
+};
 use rt_foundation::{Code, Diagnostic, DocumentId, InputId, Location};
 use std::collections::BTreeSet;
 use toml_edit::Document;
@@ -81,8 +84,18 @@ pub struct Endpoint {
 /// disabled configuration.
 #[derive(Clone, Debug)]
 pub struct AiConfig {
-    /// Built-in provider kind.
+    /// Built-in provider kind, which follows from the protocol.
     pub provider: ProviderKind,
+    /// The documented profile of the provider identifier.
+    pub profile: &'static Profile,
+    /// Reasoning effort, when configured. Never defaulted.
+    pub reasoning_effort: Option<String>,
+    /// Whether the model catalogue is queried before the first request.
+    pub verify_model: bool,
+    /// Whether a model identifier with `contributor` is allowed.
+    pub allow_provider_training: bool,
+    /// The profile capabilities after the configuration's lowering.
+    pub capabilities: Capabilities,
     /// Model identifier.
     pub model: String,
     /// Endpoint of a real provider, absent for `mock-replay`.
@@ -105,9 +118,10 @@ pub struct AiConfig {
     pub policy: RetryPolicy,
     /// Location of the `transmission_log` field.
     pub transmission_log_at: Location,
-    /// Location of the `provider` field.
+    /// Location of the provider identifier field.
     pub provider_at: Location,
     credential_at: Option<Location>,
+    effort_at: Option<Location>,
 }
 
 /// A configuration that passed every check, with the credential when the
@@ -262,6 +276,14 @@ fn check_limits(raw: &RawConfig) -> Result<Limits, Vec<Diagnostic>> {
     })
 }
 
+// The field name of an Input_Location, for messages.
+fn field_path(at: &Location) -> String {
+    match at {
+        Location::Input(i) => i.field.clone().unwrap_or_default(),
+        _ => String::new(),
+    }
+}
+
 fn check_endpoint(
     raw: &RawConfig,
     reader: &Reader<'_>,
@@ -272,17 +294,33 @@ fn check_endpoint(
     let Some(parsed) = endpoint::parse(&found.value) else {
         let d = reader.invalid(
             found.at.clone(),
-            "field `endpoint` is not an absolute URL".to_owned(),
+            format!("field `{}` is not an absolute URL", field_path(&found.at)),
         );
         return Err(vec![d]);
     };
     if !endpoint::transport_permitted(&parsed) {
         let d = Diagnostic::new(
             Code::AiConfigEndpointInsecure,
-            "field `endpoint` must use https unless the host is a loopback address".to_owned(),
+            format!(
+                "field `{}` must use https unless the host is a loopback address",
+                field_path(&found.at)
+            ),
             found.at.clone(),
         );
         return Err(vec![d]);
+    }
+    if let Some(official) = raw.profile().and_then(|p| p.official_host) {
+        if !endpoint::host_permitted(&parsed, official) {
+            let d = Diagnostic::new(
+                Code::AiConfigEndpointHostNotPermitted,
+                format!(
+                    "field `{}` must name the official host of the provider or a loopback address",
+                    field_path(&found.at)
+                ),
+                found.at.clone(),
+            );
+            return Err(vec![d]);
+        }
     }
     Ok(Some(Endpoint {
         url: found.value.clone(),
@@ -291,8 +329,9 @@ fn check_endpoint(
 }
 
 /// Loads a configuration without authorizing a send: every check of
-/// [`load`] up to and including the provider kind, and neither the consent
-/// nor the credential. `propose --dry-run` uses it, because nothing is sent
+/// [`load`] up to and including the model guard, and neither the capability
+/// negotiation (see [`AiConfig::check_capabilities`]) nor the consent nor
+/// the credential. `propose --dry-run` uses it, because nothing is sent
 /// and no credential may be read.
 ///
 /// # Errors
@@ -310,6 +349,7 @@ pub fn load_config(input: &InputId, text: &str) -> Result<AiConfig, Vec<Diagnost
     let reader = Reader {
         table: document.as_table(),
         locator: &locator,
+        prefix: "",
     };
     let secrets = scan::scan(&reader);
     if !secrets.is_empty() {
@@ -332,16 +372,16 @@ pub fn load_config(input: &InputId, text: &str) -> Result<AiConfig, Vec<Diagnost
 
 /// Loads and authorizes a configuration for one run.
 ///
-/// The checks run in the order of Req 28.17 and the result carries only the
-/// Diagnostics of the earliest failing check: TOML syntax, inline secret,
-/// field checks, limits, endpoint, enabled state, provider kind, consent,
-/// credential. The environment is read last, and only for a provider kind
-/// that needs a credential, and only the variable the configuration names.
+/// The checks run in the order of Req 28.17 as amended by Req 35 and the
+/// result carries only the Diagnostics of the earliest failing check: TOML
+/// syntax, inline secret, field checks, limits, endpoint scheme, endpoint
+/// host, enabled state, provider identifier and protocol, model guard,
+/// capability negotiation, consent, credential. The environment is read
+/// last, and only for a provider kind that needs a credential, and only the
+/// variable the configuration names.
 ///
 /// `run_documents` is the set of documents whose text the run sends.
 ///
-/// # Errors
-/// The Diagnostics of the earliest failing check, in canonical order.
 pub fn load(
     input: &InputId,
     text: &str,
@@ -350,6 +390,7 @@ pub fn load(
     env: &dyn EnvReader,
 ) -> Result<Authorized, Vec<Diagnostic>> {
     let config = load_config(input, text)?;
+    config.check_capabilities()?;
     if let Some(d) = consent.check(config.allow_document_text, run_documents) {
         return Err(vec![d]);
     }
@@ -360,34 +401,105 @@ pub fn load(
     Ok(Authorized { config, credential })
 }
 
+fn unknown_provider(at: Location, what: &str) -> Vec<Diagnostic> {
+    vec![Diagnostic::new(
+        Code::AiProviderUnknown,
+        format!("no built-in provider implements the {what}"),
+        at,
+    )]
+}
+
+// Req 28.12, 35.10: the identifier is one of the profiles and the protocol
+// is the one that profile names.
+fn check_pair(raw: &RawConfig) -> Result<(&'static Profile, ProviderKind), Vec<Diagnostic>> {
+    let (Some(id), Some(protocol)) = (&raw.provider_id, &raw.protocol) else {
+        return Err(missing_field());
+    };
+    let Some(profile) = raw.profile() else {
+        return Err(unknown_provider(id.at.clone(), "provider identifier"));
+    };
+    let kind = ProviderKind::from_name(&protocol.value)
+        .filter(|k| k.protocol() == profile.protocol.as_str());
+    match kind {
+        Some(kind) => Ok((profile, kind)),
+        None => Err(unknown_provider(
+            protocol.at.clone(),
+            "protocol of the provider identifier",
+        )),
+    }
+}
+
+fn missing_field() -> Vec<Diagnostic> {
+    vec![Diagnostic::new(
+        Code::InternalError,
+        "a required field is missing after the field checks".to_owned(),
+        Location::None(Code::InternalError),
+    )]
+}
+
+// Req 35.8: a model identifier that contains `contributor` in any letter
+// case is refused unless training is allowed explicitly.
+fn check_model_guard(model: &Found<String>, allowed: bool) -> Result<(), Vec<Diagnostic>> {
+    if allowed || !model.value.to_lowercase().contains("contributor") {
+        return Ok(());
+    }
+    Err(vec![Diagnostic::new(
+        Code::AiModelTrainingModeRefused,
+        format!(
+            "field `{}` names a contributor model and `allow_provider_training` is not true",
+            field_path(&model.at)
+        ),
+        model.at.clone(),
+    )])
+}
+
+// The profile capabilities with each declaration applied. A declaration can
+// only restate or lower a value, which the field checks already enforced.
+fn effective_capabilities(raw: &RawConfig, profile: &Profile) -> Capabilities {
+    let mut caps = profile.capabilities;
+    for (name, found) in &raw.capabilities {
+        let Some(value) = parse_tri(&found.value) else {
+            continue;
+        };
+        match *name {
+            "reasoning_effort" => caps.reasoning_effort = value,
+            "structured_output" => caps.structured_output = value,
+            _ => caps.usage_reporting = value,
+        }
+    }
+    caps
+}
+
 fn build(
     raw: &RawConfig,
     limits: Limits,
     endpoint: Option<Endpoint>,
 ) -> Result<AiConfig, Vec<Diagnostic>> {
-    let (Some(provider), Some(model), Some(allow), Some(identities), Some(log)) = (
-        &raw.provider,
+    let (Some(model), Some(allow), Some(identities), Some(log)) = (
         &raw.model,
         &raw.allow_document_text,
         &raw.ai_identities,
         &raw.transmission_log,
     ) else {
-        return Err(vec![Diagnostic::new(
-            Code::InternalError,
-            "a required field is missing after the field checks".to_owned(),
-            Location::None(Code::InternalError),
-        )]);
+        return Err(missing_field());
     };
-    let Some(kind) = ProviderKind::from_name(&provider.value) else {
-        let d = Diagnostic::new(
-            Code::AiProviderUnknown,
-            "no built-in provider implements the provider kind".to_owned(),
-            provider.at.clone(),
-        );
-        return Err(vec![d]);
-    };
+    let (profile, kind) = check_pair(raw)?;
+    let training = raw
+        .allow_provider_training
+        .as_ref()
+        .is_some_and(|f| f.value);
+    check_model_guard(model, training)?;
+    let provider_at = raw
+        .provider_id
+        .as_ref()
+        .map_or_else(|| Location::None(Code::InternalError), |f| f.at.clone());
     Ok(AiConfig {
         provider: kind,
+        profile,
+        reasoning_effort: raw.reasoning_effort.as_ref().map(|f| f.value.clone()),
+        verify_model: raw.verify_model.as_ref().is_some_and(|f| f.value),
+        allow_provider_training: training,
+        capabilities: effective_capabilities(raw, profile),
         model: model.value.clone(),
         endpoint,
         credential_env_var: raw.credential_env_var.as_ref().map(|f| f.value.clone()),
@@ -399,13 +511,60 @@ fn build(
         limits: limits.request,
         policy: limits.policy,
         transmission_log_at: log.at.clone(),
-        provider_at: provider.at.clone(),
+        provider_at,
         credential_at: raw.credential_env_var.as_ref().map(|f| f.at.clone()),
+        effort_at: raw.reasoning_effort.as_ref().map(|f| f.at.clone()),
     })
+}
+
+fn tri_word(value: Tri) -> &'static str {
+    match value {
+        Tri::Yes => "yes",
+        Tri::No => "no",
+        Tri::Unknown => "unknown",
+    }
 }
 
 impl AiConfig {
     pub(crate) fn credential_location(&self) -> Option<&Location> {
         self.credential_at.as_ref()
+    }
+
+    /// The capability check of Req 35.3 for a propose run: structured output
+    /// is always required and a reasoning effort control only when an effort
+    /// is configured. An unknown value fails closed. It reads no environment
+    /// variable and makes no call.
+    ///
+    /// # Errors
+    /// One `RT-AI-0011` per unmet capability, in ascending capability-name
+    /// order, at the field that caused the requirement.
+    pub fn check_capabilities(&self) -> Result<(), Vec<Diagnostic>> {
+        let required = Required {
+            structured_output: true,
+            reasoning_effort: self.reasoning_effort.is_some(),
+        };
+        let Err(unmet) = negotiate(&required, &self.capabilities) else {
+            return Ok(());
+        };
+        let found = unmet
+            .iter()
+            .map(|u| {
+                let at = match (u.capability, &self.effort_at) {
+                    ("reasoning_effort", Some(at)) => at.clone(),
+                    _ => self.provider_at.clone(),
+                };
+                Diagnostic::new(
+                    Code::AiCapabilityUnsupported,
+                    format!(
+                        "provider '{}' has capability {} = {}, which this run requires",
+                        self.profile.id,
+                        u.capability,
+                        tri_word(u.value)
+                    ),
+                    at,
+                )
+            })
+            .collect();
+        Err(found)
     }
 }

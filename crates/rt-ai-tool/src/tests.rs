@@ -44,7 +44,7 @@ pub(crate) const BASE: &str = "schema_version = 1
 enabled = true
 provider = \"openai-responses\"
 model = \"model-1\"
-endpoint = \"https://api.example.org\"
+endpoint = \"https://api.openai.com\"
 credential_env_var = \"PROVIDER_CREDENTIAL\"
 allow_document_text = true
 ai_identities = [\"openai-responses\", \"model-1\"]
@@ -130,7 +130,7 @@ fn valid_real_configuration_reads_only_the_named_variable() {
     assert_eq!(env.reads(), vec!["PROVIDER_CREDENTIAL".to_owned()]);
     let c = ok.config;
     assert_eq!(c.provider, ProviderKind::OpenAiResponses);
-    assert_eq!(c.endpoint.unwrap().host, "api.example.org");
+    assert_eq!(c.endpoint.unwrap().host, "api.openai.com");
     assert_eq!(c.max_clauses_per_request, 20);
     let l = c.limits;
     assert_eq!(
@@ -153,7 +153,7 @@ fn mock_replay_needs_no_endpoint_and_reads_no_environment() {
 #[test]
 fn mock_replay_refuses_endpoint_and_credential_fields() {
     for extra in [
-        "endpoint = \"https://api.example.org\"\n",
+        "endpoint = \"https://api.openai.com\"\n",
         "credential_env_var = \"PROVIDER_CREDENTIAL\"\n",
     ] {
         let env = env_ok();
@@ -336,14 +336,14 @@ fn invalid_credential_env_var_names_are_inline_secret_errors() {
 #[test]
 fn endpoint_with_user_name_password_or_query_is_an_inline_secret() {
     for url in [
-        "https://user:pass@api.example.org",
-        "https://user@api.example.org/v1",
-        "https://api.example.org/v1?token=abc",
+        "https://user:pass@api.openai.com",
+        "https://user@api.openai.com/v1",
+        "https://api.openai.com/v1?token=abc",
         "http://u:p@evil.example.com",
     ] {
         let env = env_ok();
         let d = one(
-            run(&with(("https://api.example.org", url)), &env),
+            run(&with(("https://api.openai.com", url)), &env),
             Code::AiConfigInlineSecret,
         );
         assert_eq!(
@@ -355,7 +355,7 @@ fn endpoint_with_user_name_password_or_query_is_an_inline_secret() {
         assert!(!d.message().contains(":pass") && !d.message().contains("token=abc"));
         no_env_read(&env);
     }
-    let ok = with(("https://api.example.org", "https://api.example.org/a@b"));
+    let ok = with(("https://api.openai.com", "https://api.openai.com/a@b"));
     assert!(run(&ok, &env_ok()).is_ok());
 }
 
@@ -381,7 +381,7 @@ fn unknown_wrong_type_and_missing_fields_are_invalid_config() {
     assert_eq!(at(&d), (Some(8), Some(1), Some("ai_identities".to_owned())));
     let d = one(
         run(
-            &with(("schema_version = 1", "schema_version = 2")),
+            &with(("schema_version = 1", "schema_version = 3")),
             &env_ok(),
         ),
         Code::AiConfigInvalid,
@@ -513,7 +513,7 @@ fn explicit_limits_are_carried_into_the_configuration() {
 #[test]
 fn endpoint_must_be_https_unless_the_host_is_loopback() {
     let insecure = [
-        "http://api.example.org",
+        "http://api.openai.com",
         "http://localhost.evil.example",
         "http://127.0.0.1.evil.example",
         "http://128.0.0.1",
@@ -524,7 +524,7 @@ fn endpoint_must_be_https_unless_the_host_is_loopback() {
     for url in insecure {
         let env = env_ok();
         let d = one(
-            run(&with(("https://api.example.org", url)), &env),
+            run(&with(("https://api.openai.com", url)), &env),
             Code::AiConfigEndpointInsecure,
         );
         assert_eq!(
@@ -535,9 +535,9 @@ fn endpoint_must_be_https_unless_the_host_is_loopback() {
         no_env_read(&env);
     }
     let accepted = [
-        "https://api.example.org",
-        "HTTPS://API.EXAMPLE.ORG",
-        "https://api.example.org:8443/v1",
+        "https://api.openai.com",
+        "HTTPS://API.OPENAI.COM",
+        "https://api.openai.com:8443/v1",
         "http://localhost:8080",
         "http://LOCALHOST",
         "http://127.0.0.1",
@@ -547,7 +547,7 @@ fn endpoint_must_be_https_unless_the_host_is_loopback() {
     ];
     for url in accepted {
         assert!(
-            run(&with(("https://api.example.org", url)), &env_ok()).is_ok(),
+            run(&with(("https://api.openai.com", url)), &env_ok()).is_ok(),
             "{url}"
         );
     }
@@ -556,12 +556,12 @@ fn endpoint_must_be_https_unless_the_host_is_loopback() {
 #[test]
 fn endpoint_host_is_lowercased_without_port() {
     let c = run(
-        &with(("https://api.example.org", "HTTPS://Api.Example.ORG:8443/v1")),
+        &with(("https://api.openai.com", "HTTPS://Api.OpenAI.COM:8443/v1")),
         &env_ok(),
     )
     .unwrap()
     .config;
-    assert_eq!(c.endpoint.unwrap().host, "api.example.org");
+    assert_eq!(c.endpoint.unwrap().host, "api.openai.com");
 }
 
 #[test]
@@ -576,7 +576,7 @@ fn malformed_endpoint_is_invalid_config_not_insecure() {
         "https://[::1",
     ] {
         let d = one(
-            run(&with(("https://api.example.org", url)), &env_ok()),
+            run(&with(("https://api.openai.com", url)), &env_ok()),
             Code::AiConfigInvalid,
         );
         assert_eq!(at(&d).2.as_deref(), Some("endpoint"), "{url}");
@@ -599,7 +599,7 @@ fn check_order_follows_requirement_28_17() {
     let secret = "api_key = 1\n";
     let unknown = "bogus = 1\n";
     let limit = "max_retries = 9\n";
-    let insecure = with(("https://api.example.org", "http://example.org"));
+    let insecure = with(("https://api.openai.com", "http://example.org"));
     let disabled = with(("enabled = true", "enabled = false"));
     let provider = with(("openai-responses\"\nmodel", "other\"\nmodel"));
     let cases: Vec<(String, Code)> = vec![
@@ -615,7 +615,7 @@ fn check_order_follows_requirement_28_17() {
         ),
         (
             with(("enabled = true", "enabled = false"))
-                .replace("https://api.example.org", "http://example.org"),
+                .replace("https://api.openai.com", "http://example.org"),
             Code::AiConfigEndpointInsecure,
         ),
         (

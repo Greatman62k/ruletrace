@@ -194,7 +194,7 @@ fn a_clean_hosted_run_writes_no_credential_character_run_anywhere() {
         assert_eq!(
             ran.stderr
                 .lines()
-                .filter(|l| l.contains("endpoint host api.example.org"))
+                .filter(|l| l.contains("endpoint host api.openai.com"))
                 .count(),
             1
         );

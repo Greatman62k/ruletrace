@@ -3,7 +3,7 @@
 
 use crate::locate::Locator;
 use rt_foundation::{Code, Diagnostic, Location};
-use toml_edit::{Item, Key, Table};
+use toml_edit::{Item, Key, TableLike};
 
 /// A value together with the location of its key.
 #[derive(Clone, Debug)]
@@ -14,13 +14,20 @@ pub(crate) struct Found<T> {
 
 /// Field access over one parsed table.
 pub(crate) struct Reader<'a> {
-    pub(crate) table: &'a Table,
+    pub(crate) table: &'a dyn TableLike,
     pub(crate) locator: &'a Locator<'a>,
+    /// Field path of `table` with a trailing dot, empty at the top level.
+    pub(crate) prefix: &'a str,
 }
 
 impl Reader<'_> {
+    /// The field path of `name` in this table, as shown in locations.
+    pub(crate) fn path(&self, name: &str) -> String {
+        format!("{}{name}", self.prefix)
+    }
+
     pub(crate) fn key_location(&self, key: &Key, name: &str) -> Location {
-        self.locator.at(key.span(), Some(name))
+        self.locator.at(key.span(), Some(&self.path(name)))
     }
 
     fn entry(&self, name: &str) -> Option<(Location, &Item)> {
@@ -43,7 +50,10 @@ impl Reader<'_> {
         };
         match convert(item) {
             Some(value) => Ok(Some(Found { value, at })),
-            None => Err(self.invalid(at, format!("field `{name}` must be {expected}"))),
+            None => Err(self.invalid(
+                at,
+                format!("field `{}` must be {expected}", self.path(name)),
+            )),
         }
     }
 
@@ -77,8 +87,35 @@ impl Reader<'_> {
             return;
         }
         out.push(self.invalid(
-            self.locator.at(None, Some(name)),
-            format!("required field `{name}` is missing"),
+            self.locator.at(None, Some(&self.path(name))),
+            format!("required field `{}` is missing", self.path(name)),
         ));
+    }
+}
+
+impl<'a> Reader<'a> {
+    /// A nested table (standard or inline) as a reader whose locations use
+    /// the dotted path `prefix`. `Ok(None)` when the key is absent.
+    pub(crate) fn subtable(
+        &self,
+        name: &str,
+        prefix: &'a str,
+    ) -> Result<Option<(Location, Reader<'a>)>, Diagnostic> {
+        let table: &'a dyn TableLike = self.table;
+        let Some((key, item)) = table.get_key_value(name) else {
+            return Ok(None);
+        };
+        let at = self.key_location(key, name);
+        match item.as_table_like() {
+            Some(inner) => Ok(Some((
+                at,
+                Reader {
+                    table: inner,
+                    locator: self.locator,
+                    prefix,
+                },
+            ))),
+            None => Err(self.invalid(at, format!("field `{}` must be a table", self.path(name)))),
+        }
     }
 }

@@ -62,6 +62,12 @@ mod tests_cli_run;
 #[cfg(test)]
 mod tests_config_order;
 #[cfg(test)]
+mod tests_config_v2;
+#[cfg(test)]
+mod tests_config_v2_disk;
+#[cfg(test)]
+mod tests_config_v2_property;
+#[cfg(test)]
 mod tests_dir_sync_skip;
 #[cfg(test)]
 mod tests_exit_order_property;
