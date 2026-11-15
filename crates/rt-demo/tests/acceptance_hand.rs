@@ -540,7 +540,14 @@ fn hand_profile_acceptance() -> TestResult {
         ])
         .current_dir(repo_root())
         .output()?;
-    assert!(metadata.status.success(), "cargo metadata failed");
+    // The resolve covers every platform, so a cold cargo cache needs
+    // `cargo fetch --locked` first. Offline keeps the check network-free.
+    assert!(
+        metadata.status.success(),
+        "cargo metadata failed ({}): {}",
+        metadata.status,
+        String::from_utf8_lossy(&metadata.stderr)
+    );
     let members = rt_xtask::run_graph_check(
         &repo_root().canonicalize()?,
         &metadata.stdout,

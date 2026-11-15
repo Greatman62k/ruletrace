@@ -94,6 +94,10 @@ jobs:
           rustup toolchain install "$channel" --profile minimal
           rustup default "$channel"
       # The live-provider job is separate (Req 21.14); no credential is present here.
+      # The hand acceptance test runs `cargo metadata --offline`, which needs the
+      # packages of every platform; `cargo test` fetches only the host's.
+      - name: Fetch every locked dependency
+        run: cargo fetch --locked
       - name: cargo test
         run: |
           mkdir -p ci-output
@@ -247,6 +251,10 @@ jobs:
           channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
           rustup toolchain install "$channel" --profile minimal
           rustup default "$channel"
+      # The excluded crates are not built, but the hand acceptance test runs
+      # `cargo metadata --offline` over the whole workspace.
+      - name: Fetch every locked dependency
+        run: cargo fetch --locked
       - name: Build and test the core with auxiliary crates excluded
         run: |
           mkdir -p ci-output
