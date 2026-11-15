@@ -10,7 +10,7 @@
 
 use crate::cli::{parse, ProposeArgs};
 use crate::config::{load, load_config, AiConfig, ProviderKind};
-use crate::credential::EnvReader;
+use crate::credential::{Credential, EnvReader};
 use crate::dryrun::{announcement, dry_run};
 use crate::fs::StoreFs;
 use crate::inputs::{
@@ -149,15 +149,53 @@ impl<O: Write, E: Write> AiAdapter for Announcing<'_, O, E> {
     }
 }
 
-fn unavailable_provider(config: &AiConfig, path: &Path) -> Diagnostic {
+fn unavailable_provider(config: &AiConfig) -> Diagnostic {
     Diagnostic::new(
         Code::AiProviderUnknown,
         format!(
             "this build links no integration for the provider kind '{}'",
             config.provider.name()
         ),
-        input_location(path),
+        command_at(),
     )
+}
+
+/// Where a run gets its provider adapter and the adapter version that the
+/// stored batches record.
+pub trait Providers {
+    /// The adapter for `config`. `credential` is present exactly when the
+    /// provider kind needs one.
+    ///
+    /// # Errors
+    /// A Diagnostic when no adapter can be built; it ends the run before any
+    /// request is made.
+    fn adapter<'a>(
+        &self,
+        config: &AiConfig,
+        credential: Option<&Credential>,
+    ) -> Result<(Box<dyn AiAdapter + 'a>, String), Diagnostic>;
+}
+
+/// The providers this build links: the offline replay of a recorded script.
+/// No integration crate for a hosted provider is linked yet.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct BuiltInProviders;
+
+impl Providers for BuiltInProviders {
+    fn adapter<'a>(
+        &self,
+        config: &AiConfig,
+        _credential: Option<&Credential>,
+    ) -> Result<(Box<dyn AiAdapter + 'a>, String), Diagnostic> {
+        match (config.provider, config.script.as_deref()) {
+            (ProviderKind::MockReplay, Some(script_path)) => {
+                let script = load_script(Path::new(script_path))?;
+                let version = script.adapter_version.clone();
+                Ok((Box::new(ReplayProvider::new(script)), version))
+            }
+            _ => Err(unavailable_provider(config)),
+        }
+    }
 }
 
 /// Runs `ruletrace-ai` with `args`, which exclude the program name, and
@@ -169,11 +207,22 @@ pub fn run<O: Write, E: Write>(
     fs: &dyn StoreFs,
     out: &mut Out<O, E>,
 ) -> ExitCode {
+    run_with(args, env, &BuiltInProviders, fs, out)
+}
+
+/// Like [`run`], with the adapter taken from `providers`.
+pub fn run_with<O: Write, E: Write>(
+    args: &[OsString],
+    env: &dyn EnvReader,
+    providers: &dyn Providers,
+    fs: &dyn StoreFs,
+    out: &mut Out<O, E>,
+) -> ExitCode {
     let mut report = Reporter {
         out,
         write_failed: false,
     };
-    let code = propose(args, env, fs, &mut report);
+    let code = propose(args, env, providers, fs, &mut report);
     match (code, report.write_failed) {
         (ExitCode::Success, true) => ExitCode::Internal,
         (code, _) => code,
@@ -183,6 +232,7 @@ pub fn run<O: Write, E: Write>(
 fn propose<O: Write, E: Write>(
     args: &[OsString],
     env: &dyn EnvReader,
+    providers: &dyn Providers,
     fs: &dyn StoreFs,
     report: &mut Reporter<'_, O, E>,
 ) -> ExitCode {
@@ -244,23 +294,11 @@ fn propose<O: Write, E: Write>(
         Ok(plan) => plan,
         Err(found) => return report.fail(&found),
     };
-    let (adapter, adapter_version): (Box<dyn AiAdapter>, String) = match config.provider {
-        ProviderKind::MockReplay => {
-            let Some(script_path) = config.script.as_deref() else {
-                return report.fail(&[unavailable_provider(&config, &args.config)]);
-            };
-            match load_script(Path::new(script_path)) {
-                Ok(script) => {
-                    let version = script.adapter_version.clone();
-                    (Box::new(ReplayProvider::new(script)), version)
-                }
-                Err(d) => return report.fail(&[d]),
-            }
-        }
-        ProviderKind::OpenAiResponses => {
-            return report.fail(&[unavailable_provider(&config, &args.config)]);
-        }
-    };
+    let (adapter, adapter_version) =
+        match providers.adapter(&config, authorized.credential.as_ref()) {
+            Ok(found) => found,
+            Err(d) => return report.fail(&[d]),
+        };
     let meta = StoreMeta {
         provider: config.provider.name().to_owned(),
         model: config.model.clone(),

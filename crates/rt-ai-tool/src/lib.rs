@@ -47,6 +47,8 @@ mod tests_batch_property;
 #[cfg(test)]
 mod tests_cli_args;
 #[cfg(test)]
+mod tests_cli_canary;
+#[cfg(test)]
 mod tests_cli_order;
 #[cfg(test)]
 mod tests_cli_rig;
@@ -54,6 +56,8 @@ mod tests_cli_rig;
 mod tests_cli_run;
 #[cfg(test)]
 mod tests_config_order;
+#[cfg(test)]
+mod tests_exit_order_property;
 #[cfg(test)]
 mod tests_identifier_property;
 #[cfg(test)]
@@ -103,7 +107,7 @@ mod tests_summary;
 
 pub use accept::{accept_batch, AcceptInput, AcceptedBatch};
 pub use cli::{parse, ProposeArgs, ReviseArgs};
-pub use command::run;
+pub use command::{run, run_with, BuiltInProviders, Providers};
 pub use config::{
     disabled_without_configuration, load, load_config, AiConfig, Authorized, Endpoint, ProviderKind,
 };
