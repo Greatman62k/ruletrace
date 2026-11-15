@@ -127,6 +127,10 @@
     "8.13 Write property test for credential redaction": {
       "status": "passed",
       "lastRunTimestamp": 1794720003408
+    },
+    "8.9 Write property test for request and proposal identifiers": {
+      "status": "passed",
+      "lastRunTimestamp": 1794720989903
     }
   },
   "executionHistory": {
@@ -1941,6 +1945,11 @@
         "executionId": "24a94c1c-968a-451e-9605-46484c9d6a38",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794654920604
+      },
+      {
+        "executionId": "9ef9c8c9-f906-4073-87f7-f03a4b69d163",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794720703436
       }
     ],
     "8.7 Implement the Proposal_Store writer, call loop and Run_Summary": [
@@ -1962,6 +1971,11 @@
         "executionId": "24a94c1c-968a-451e-9605-46484c9d6a38",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794654920647
+      },
+      {
+        "executionId": "9ef9c8c9-f906-4073-87f7-f03a4b69d163",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794720702735
       }
     ],
     "8.10 Write property test for the retry decision function": [

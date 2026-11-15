@@ -21,6 +21,7 @@ mod plan;
 mod raw;
 mod reader;
 mod redact;
+pub mod response;
 mod scan;
 mod secret;
 mod txlog;
@@ -38,6 +39,8 @@ mod tests_log;
 mod tests_plan;
 #[cfg(test)]
 mod tests_redaction_property;
+#[cfg(test)]
+mod tests_response;
 #[cfg(test)]
 mod tests_scan;
 

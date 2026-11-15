@@ -840,7 +840,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Note (8.5 review): the CLI wiring of `ruletrace-ai propose --dry-run` belongs to task 8.8. Only `dryrun::dry_run` exists now.
     - Note (8.5 review): the unsupported names in `vocab.rs` are hard-coded and `tools/known-unsupported.v1` (design.md, Reserved names) does not exist. No task in this file creates it. When it or an equivalent validator capability list exists, a test must tie the request vocabulary to those names. Track it under the task that creates the file; until a task names it, this note stands and task 8.6 (validator side of `unrecognized`) is the nearest owner.
 
-  - [ ] 8.6 Implement response parsing, strict schema, provenance and semantic validation
+  - [-] 8.6 Implement response parsing, strict schema, provenance and semantic validation
     - Parse with `rt-json` (depth 32, duplicate keys rejected). The single Diagnostic follows the order: too large, malformed, incomplete or refusal, forbidden field (`RT-AI-0204` for any listed name, agreeing or contradictory), schema violation. Implement the five proposal kinds with closed field sets and the `unrecognized` expression and kind variants of §3.7.3 so that an unsupported clause reaches `validate_content` and yields `RT-VAL-0003`.
     - Verify every span of every proposal, including advisory kinds, against the Source_Models in the order of Req 23.7 (`RT-PRV-0101` to `0104`) with Input_Locations in the response, repairing nothing. Run `validate_content` for each `rule_suggestion`. Semantic findings are stored and never change the exit code (UD-26). No provider-supplied flag is stored. Refuse to store a payload that contains the credential value (`RT-AI-0206`).
     - Observable: a response with a quote that differs from the Source_Model bytes is rejected as a whole batch with the specified code, and a well-formed unsupported clause is kept as a non-executable proposal.
@@ -863,7 +863,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 16.16, 16.17, 16.24, 17.7, 18.1, 18.13, 23.1, 27.1, 27.2, 27.3, 27.4, 27.8_
     - Design §3.9.2, §6.1
 
-  - [ ] 8.9 Write property test for request and proposal identifiers
+  - [-] 8.9 Write property test for request and proposal identifiers
     - **Property 31: Request and proposal identifiers**
     - Required: the recorded script is keyed by the Request_Identifier.
     - Observable: equal requests give equal identifiers and every change changes them.
