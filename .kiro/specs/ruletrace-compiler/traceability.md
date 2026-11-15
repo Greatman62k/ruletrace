@@ -231,3 +231,18 @@ Choices made while implementing the writer. Each is stated in design section 3.7
 | Req | Title | Status | Changed criteria | New criteria | Cause |
 | --- | --- | --- | --- | --- | --- |
 | 29 | Provider Call Policy and Proposal_Store | Unchanged | - | - | Implementation choices of the store writer |
+
+## Stale temporary files of the store writer (8.7 follow-up)
+
+User decision of 2026-11-15. The writer keeps its eight temporary names. A temporary file that cannot be removed is no longer dropped or folded into the Error message.
+
+- New catalogue code `RT-AI-0307` (`AI_STORE_TEMP_NOT_REMOVED`, Warning, exit 0, `ruletrace-ai`). It covers the one failure mode "a temporary file of the writer could not be removed", whether the write succeeded, lost a race or was refused. No existing code fitted: `RT-AI-0301` means a batch exists and `RT-AI-0303` is an Error. The code is in the Req 7.17 table, the design catalogue table (row marked N) and `catalogue/diagnostics.v1.json`, and `rt-xtask gen-catalogue` regenerated `code_generated.rs`.
+- When all eight names are taken, the `RT-AI-0303` message lists the eight paths so the operator can delete the stale ones. Control characters in the paths are escaped. No requirement criterion changes.
+- A removal error after the link lost a race (`AlreadyExists`) was `RT-AI-0303` and is now `RT-AI-0307` with the outcome `RT-AI-0301`. The batch exists, so the write did not fail.
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 7 | Diagnostic_Catalogue | Changed | 7.17 table | RT-AI-0307 row | User decision on stale temporary files |
+
+Other sections changed: design catalogue table (section 4.3).
+

@@ -278,6 +278,27 @@ fn a_failing_first_request_stores_nothing_and_leaves_the_store_as_it_was() {
 }
 
 #[test]
+fn a_temporary_file_that_cannot_be_removed_warns_and_the_run_completes() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        remove: Some(ErrorKind::PermissionDenied),
+        ..Faults::default()
+    });
+    let sink = VecSink::default();
+    let mut p = provider(vec![ok(0), ok(1), ok(2)]);
+    let report = h.run(&mut p, &fs, &sink);
+    assert_eq!(report.exit, ExitCode::Success);
+    assert_eq!(
+        shapes(&report.diagnostics),
+        vec![("RT-AI-0307", "warning"); 3]
+    );
+    assert!(report.summary.is_complete());
+    assert_eq!(report.summary.stored(), [cid(0), cid(1), cid(2)]);
+    assert_eq!(stored_names(&fs).len(), 3);
+}
+
+#[test]
 fn a_third_request_that_fails_after_two_stored_lists_only_its_own_clauses() {
     let h = Harness::new("");
     let fs = MemFs::new();

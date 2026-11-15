@@ -9,7 +9,7 @@ use crate::tests_memfs::{Faults, Link, MemFs};
 use crate::tests_response::LIMIT;
 use crate::tests_rig::{payload, Harness, ROOT};
 use crate::tests_scratch::{GateFs, ScratchDir};
-use crate::{store_batch, StoreOutcome};
+use crate::{store_batch, StoreFailure, StoreOutcome, StoreReport};
 use rt_foundation::{Code, Diagnostic, ExitCode, InputId, Location, Severity};
 use rt_hash::{sha256, Sha256Hex};
 use rt_proposals::parse_batch;
@@ -38,8 +38,33 @@ fn accepted(h: &Harness, request: usize) -> AcceptedBatch {
     accepted_with(h, request, &payload(request))
 }
 
-fn store(h: &Harness, fs: &MemFs, batch: &AcceptedBatch) -> Result<StoreOutcome, Diagnostic> {
+fn store_full(h: &Harness, fs: &MemFs, batch: &AcceptedBatch) -> Result<StoreReport, StoreFailure> {
     store_batch(fs, Path::new(ROOT), batch, &h.meta)
+}
+
+fn store(h: &Harness, fs: &MemFs, batch: &AcceptedBatch) -> Result<StoreOutcome, Diagnostic> {
+    store_full(h, fs, batch)
+        .map(|report| report.outcome)
+        .map_err(|failure| failure.error)
+}
+
+fn expect_temp_warning(w: &Diagnostic, temp: &str, kind: &str) {
+    assert_eq!(w.code(), Code::AiStoreTempNotRemoved);
+    assert_eq!(w.code().id(), "RT-AI-0307");
+    assert_eq!(w.code().mnemonic(), "AI_STORE_TEMP_NOT_REMOVED");
+    assert_eq!(w.severity(), Severity::Warning);
+    assert_eq!(w.code().exit_code(), ExitCode::Success);
+    assert_eq!(
+        w.message(),
+        format!(
+            "the temporary file could not be removed ({kind}); \
+             it is never read and can be deleted"
+        )
+    );
+    match w.primary() {
+        Location::Input(at) => assert_eq!(at.input.as_str(), temp),
+        other => panic!("expected an input location, found {other:?}"),
+    }
 }
 
 fn expect_failure(d: &Diagnostic, final_name: &str) {
@@ -304,7 +329,7 @@ fn a_failed_existence_check_or_directory_creation_stores_nothing() {
 }
 
 #[test]
-fn a_failed_removal_after_a_failed_write_is_named_in_the_message() {
+fn a_failed_removal_after_a_failed_write_is_a_warning_beside_the_error() {
     let h = Harness::new("");
     let fs = MemFs::new();
     fs.with_faults(Faults {
@@ -312,11 +337,86 @@ fn a_failed_removal_after_a_failed_write_is_named_in_the_message() {
         remove: Some(ErrorKind::PermissionDenied),
         ..Faults::default()
     });
-    let err = store(&h, &fs, &accepted(&h, 0)).unwrap_err();
-    expect_failure(&err, &h.batch_file(0));
-    assert!(err
-        .message()
-        .contains("temporary file could not be removed"));
+    let failure = store_full(&h, &fs, &accepted(&h, 0)).unwrap_err();
+    expect_failure(&failure.error, &h.batch_file(0));
+    assert_eq!(
+        failure.error.message(),
+        "the batch was not stored: writing the temporary file failed (WriteZero)"
+    );
+    assert_eq!(failure.warnings.len(), 1, "{:?}", failure.warnings);
+    expect_temp_warning(
+        &failure.warnings[0],
+        &tmp_name(&h, 0, ""),
+        "PermissionDenied",
+    );
+}
+
+#[test]
+fn a_failed_removal_after_a_failed_link_is_a_warning_beside_the_error() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        links: [Link::Fail(ErrorKind::Unsupported)].into(),
+        remove: Some(ErrorKind::Other),
+        ..Faults::default()
+    });
+    let failure = store_full(&h, &fs, &accepted(&h, 0)).unwrap_err();
+    expect_failure(&failure.error, &h.batch_file(0));
+    assert_eq!(failure.warnings.len(), 1);
+    expect_temp_warning(&failure.warnings[0], &tmp_name(&h, 0, ""), "Other");
+}
+
+#[test]
+fn a_failed_removal_after_the_link_keeps_the_batch_and_warns() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        remove: Some(ErrorKind::PermissionDenied),
+        ..Faults::default()
+    });
+    let report = store_full(&h, &fs, &accepted(&h, 0)).unwrap();
+    assert_eq!(report.outcome, StoreOutcome::Stored);
+    assert_eq!(report.warnings.len(), 1, "{:?}", report.warnings);
+    expect_temp_warning(
+        &report.warnings[0],
+        &tmp_name(&h, 0, ""),
+        "PermissionDenied",
+    );
+    let bytes = fs.read(&h.batch_file(0)).unwrap();
+    parse_batch(&InputId::new("batch").unwrap(), &bytes).unwrap();
+}
+
+#[test]
+fn a_failed_removal_after_losing_the_race_is_a_warning_not_an_error() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        links: [Link::Winner(b"winner bytes".to_vec())].into(),
+        remove: Some(ErrorKind::PermissionDenied),
+        ..Faults::default()
+    });
+    let report = store_full(&h, &fs, &accepted(&h, 0)).unwrap();
+    assert!(matches!(report.outcome, StoreOutcome::AlreadyStored(_)));
+    assert_eq!(report.warnings.len(), 1);
+    expect_temp_warning(
+        &report.warnings[0],
+        &tmp_name(&h, 0, ""),
+        "PermissionDenied",
+    );
+    assert_eq!(fs.read(&h.batch_file(0)).unwrap(), b"winner bytes");
+}
+
+#[test]
+fn a_removal_that_finds_no_file_gives_no_warning() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        remove: Some(ErrorKind::NotFound),
+        ..Faults::default()
+    });
+    let report = store_full(&h, &fs, &accepted(&h, 0)).unwrap();
+    assert_eq!(report.outcome, StoreOutcome::Stored);
+    assert!(report.warnings.is_empty(), "{:?}", report.warnings);
 }
 
 #[test]
@@ -327,10 +427,45 @@ fn all_temporary_slots_taken_refuses_without_touching_them() {
     for n in 1..8 {
         fs.plant(&tmp_name(&h, 0, &format!(".{n}")), b"stale");
     }
-    let err = store(&h, &fs, &accepted(&h, 0)).unwrap_err();
-    expect_failure(&err, &h.batch_file(0));
+    let failure = store_full(&h, &fs, &accepted(&h, 0)).unwrap_err();
+    expect_failure(&failure.error, &h.batch_file(0));
+    assert!(failure.warnings.is_empty());
+    let stale: Vec<String> = [""]
+        .into_iter()
+        .map(str::to_owned)
+        .chain((1..8).map(|n| format!(".{n}")))
+        .map(|slot| tmp_name(&h, 0, &slot))
+        .collect();
+    assert_eq!(
+        failure.error.message(),
+        format!(
+            "the batch was not stored: finding a free temporary file name \
+             failed (AlreadyExists); if no other run is active, delete \
+             these stale temporary files: {}",
+            stale.join(", ")
+        )
+    );
     assert_eq!(fs.files().len(), 8);
     assert!(fs.files().values().all(|b| b == b"stale"));
+}
+
+#[test]
+fn the_stale_file_hint_escapes_control_characters_of_the_store_path() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    let root = "st\nore";
+    let id = h.id(0);
+    fs.plant(&format!("{root}/.tmp/{id}.tmp"), b"stale");
+    for n in 1..8 {
+        fs.plant(&format!("{root}/.tmp/{id}.{n}.tmp"), b"stale");
+    }
+    let failure = store_batch(&fs, Path::new(root), &accepted(&h, 0), &h.meta).unwrap_err();
+    assert!(
+        failure.error.message().contains("st\\u{a}ore/.tmp/"),
+        "{}",
+        failure.error.message()
+    );
+    assert!(!failure.error.message().contains('\n'));
 }
 
 #[test]
@@ -355,7 +490,13 @@ fn concurrent_runs_on_a_real_disk_store_one_batch_and_report_the_rest() {
     let batch = accepted(&h, 0);
     let results: Vec<Result<StoreOutcome, Diagnostic>> = std::thread::scope(|scope| {
         let workers: Vec<_> = (0..8)
-            .map(|_| scope.spawn(|| store_batch(&gate, &dir, &batch, &h.meta)))
+            .map(|_| {
+                scope.spawn(|| {
+                    store_batch(&gate, &dir, &batch, &h.meta)
+                        .map(|report| report.outcome)
+                        .map_err(|failure| failure.error)
+                })
+            })
             .collect();
         workers.into_iter().map(|w| w.join().unwrap()).collect()
     });

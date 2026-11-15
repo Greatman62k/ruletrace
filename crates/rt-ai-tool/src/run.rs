@@ -267,22 +267,28 @@ impl Loop<'_, '_> {
             }
         };
         match store_batch(fs, root, &accepted, self.input.meta) {
-            Ok(StoreOutcome::Stored) => {
-                notes.extend(accepted.blocking_warning());
-                Ok(Done {
-                    diagnostics: notes,
-                    stored: true,
-                })
+            Ok(report) => {
+                notes.extend(report.warnings);
+                match report.outcome {
+                    StoreOutcome::Stored => {
+                        notes.extend(accepted.blocking_warning());
+                        Ok(Done {
+                            diagnostics: notes,
+                            stored: true,
+                        })
+                    }
+                    StoreOutcome::AlreadyStored(warning) => {
+                        notes.push(warning);
+                        Ok(Done {
+                            diagnostics: notes,
+                            stored: false,
+                        })
+                    }
+                }
             }
-            Ok(StoreOutcome::AlreadyStored(warning)) => {
-                notes.push(warning);
-                Ok(Done {
-                    diagnostics: notes,
-                    stored: false,
-                })
-            }
-            Err(d) => {
-                notes.push(d);
+            Err(failure) => {
+                notes.extend(failure.warnings);
+                notes.push(failure.error);
                 Err(Failed { diagnostics: notes })
             }
         }

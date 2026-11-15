@@ -1652,6 +1652,7 @@ The catalogue is one file, `catalogue/diagnostics.v1.json` (RT-JSON array of `{c
 | RT-AI-0304 (R) | AI_REQUEST_INVALID | Error | Clauses, models, declarations or time missing or invalid | 2 | ai |
 | RT-AI-0305 (R) | AI_BATCH_HAS_BLOCKING_PROPOSALS | Warning | Stored batch has proposals with blocking findings | 0 | ai |
 | RT-AI-0306 (R) | AI_RUN_INCOMPLETE | Warning | Earlier batch kept, later request failed | exit of the failing request | ai |
+| RT-AI-0307 (N) | AI_STORE_TEMP_NOT_REMOVED | Warning | A temporary file of the store writer could not be removed | 0 | ai |
 | RT-APP-0001 (N) | APP_INPUT_MALFORMED | Error | Application input not well formed: CSV syntax, unknown column, wrong cell count (Req 31.9) | 2 | pc, bc |
 | RT-APP-0002 (N) | APP_INPUT_FIELD_MISSING | Error | Required column or declared input absent | 2 | pc, bc |
 | RT-APP-0003 (N) | APP_INPUT_DUPLICATE_PARTICIPANT | Error | Two records with one participant identifier | 2 | pc, bc |

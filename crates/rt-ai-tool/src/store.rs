@@ -46,6 +46,34 @@ pub enum StoreOutcome {
     AlreadyStored(Diagnostic),
 }
 
+/// The result of a call of [`store_batch`] that did not fail.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StoreReport {
+    /// How the call ended.
+    pub outcome: StoreOutcome,
+    /// Warnings `RT-AI-0307` for temporary files that could not be
+    /// removed.
+    pub warnings: Vec<Diagnostic>,
+}
+
+/// A refused write.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StoreFailure {
+    /// The Error `RT-AI-0303`.
+    pub error: Diagnostic,
+    /// Warnings `RT-AI-0307` that arose while the write was undone.
+    pub warnings: Vec<Diagnostic>,
+}
+
+impl StoreFailure {
+    fn new(error: Diagnostic) -> Self {
+        Self {
+            error,
+            warnings: Vec::new(),
+        }
+    }
+}
+
 /// The location of the batch file of `request_id` under `root`.
 #[must_use]
 pub fn batch_path(root: &Path, request_id: &Sha256Hex) -> PathBuf {
@@ -132,41 +160,72 @@ fn temp_path(root: &Path, request_id: &Sha256Hex, slot: u32) -> PathBuf {
     root.join(".tmp").join(name)
 }
 
-// Removes a temporary file this call created. A failure to remove it is
-// added to the message of the failure that caused the cleanup.
-fn discard(fs: &dyn StoreFs, temp: &Path, d: Diagnostic) -> Diagnostic {
+// Removes a temporary file this call created. A removal that fails is a
+// Warning, because the temporary file is never read.
+fn remove_temp(fs: &dyn StoreFs, temp: &Path) -> Option<Diagnostic> {
     match fs.remove_file(temp) {
-        Ok(()) => d,
-        Err(e) if e.kind() == ErrorKind::NotFound => d,
-        Err(_) => Diagnostic::new(
-            d.code(),
-            format!("{}; the temporary file could not be removed", d.message()),
-            d.primary().clone(),
-        ),
+        Ok(()) => None,
+        Err(e) if e.kind() == ErrorKind::NotFound => None,
+        Err(e) => Some(Diagnostic::new(
+            Code::AiStoreTempNotRemoved,
+            format!(
+                "the temporary file could not be removed ({:?}); \
+                 it is never read and can be deleted",
+                e.kind()
+            ),
+            at(temp),
+        )),
+    }
+}
+
+fn refuse(fs: &dyn StoreFs, temp: &Path, error: Diagnostic) -> StoreFailure {
+    StoreFailure {
+        error,
+        warnings: remove_temp(fs, temp).into_iter().collect(),
     }
 }
 
 // Creates the first free temporary file. `create_new` is atomic, so two
-// runs never share one.
+// runs never share one. When every name is taken the message lists them,
+// so the operator can delete the stale ones.
 fn open_temp(
     fs: &dyn StoreFs,
     root: &Path,
     request_id: &Sha256Hex,
     final_path: &Path,
-) -> Result<(PathBuf, Box<dyn crate::fs::StoreFile>), Diagnostic> {
+) -> Result<(PathBuf, Box<dyn crate::fs::StoreFile>), StoreFailure> {
+    let mut taken: Vec<String> = Vec::new();
     for slot in 0..TEMP_SLOTS {
         let path = temp_path(root, request_id, slot);
         match fs.create_new(&path) {
             Ok(file) => return Ok((path, file)),
-            Err(e) if e.kind() == ErrorKind::AlreadyExists => {}
-            Err(e) => return Err(failed(final_path, "creating the temporary file", &e)),
+            Err(e) if e.kind() == ErrorKind::AlreadyExists => {
+                taken.push(escape_controls(&path.to_string_lossy()));
+            }
+            Err(e) => {
+                return Err(StoreFailure::new(failed(
+                    final_path,
+                    "creating the temporary file",
+                    &e,
+                )))
+            }
         }
     }
-    Err(failed(
+    let d = failed(
         final_path,
         "finding a free temporary file name",
         &io::Error::from(ErrorKind::AlreadyExists),
-    ))
+    );
+    Err(StoreFailure::new(Diagnostic::new(
+        d.code(),
+        format!(
+            "{}; if no other run is active, delete these stale temporary \
+             files: {}",
+            d.message(),
+            taken.join(", ")
+        ),
+        d.primary().clone(),
+    )))
 }
 
 /// Stores one accepted batch.
@@ -179,6 +238,9 @@ fn open_temp(
 /// than an existing target, refuses the write. The writer never copies,
 /// renames or creates a marker file instead.
 ///
+/// A temporary file that cannot be removed gives the Warning `RT-AI-0307`
+/// and never changes the outcome.
+///
 /// # Errors
 /// `RT-AI-0303` (exit 70) when any step fails. No partial file remains at
 /// the final name, and the temporary file is removed.
@@ -187,16 +249,21 @@ pub fn store_batch(
     root: &Path,
     accepted: &AcceptedBatch,
     meta: &StoreMeta,
-) -> Result<StoreOutcome, Diagnostic> {
+) -> Result<StoreReport, StoreFailure> {
     let request_id = accepted.request_id();
     let final_path = batch_path(root, request_id);
-    if batch_exists(fs, root, request_id)? {
-        return Ok(StoreOutcome::AlreadyStored(already_stored(&final_path)));
+    let done = |outcome, warnings| Ok(StoreReport { outcome, warnings });
+    if batch_exists(fs, root, request_id).map_err(StoreFailure::new)? {
+        return done(
+            StoreOutcome::AlreadyStored(already_stored(&final_path)),
+            Vec::new(),
+        );
     }
     let batches = root.join("batches");
     for dir in [&batches, &root.join(".tmp")] {
-        fs.create_dir_all(dir)
-            .map_err(|e| failed(&final_path, "creating the store directories", &e))?;
+        fs.create_dir_all(dir).map_err(|e| {
+            StoreFailure::new(failed(&final_path, "creating the store directories", &e))
+        })?;
     }
     let bytes = print_batch(&batch_of(accepted, meta));
     let (temp, mut file) = open_temp(fs, root, request_id, &final_path)?;
@@ -204,7 +271,7 @@ pub fn store_batch(
         .write_all(bytes.as_bytes())
         .and_then(|()| file.sync_all())
     {
-        return Err(discard(
+        return Err(refuse(
             fs,
             &temp,
             failed(&final_path, "writing the temporary file", &e),
@@ -214,17 +281,13 @@ pub fn store_batch(
     match fs.hard_link(&temp, &final_path) {
         Ok(()) => {}
         Err(e) if e.kind() == ErrorKind::AlreadyExists => {
-            let warning = already_stored(&final_path);
-            return match fs.remove_file(&temp) {
-                Ok(()) => Ok(StoreOutcome::AlreadyStored(warning)),
-                Err(e) if e.kind() == ErrorKind::NotFound => {
-                    Ok(StoreOutcome::AlreadyStored(warning))
-                }
-                Err(e) => Err(failed(&final_path, "removing the temporary file", &e)),
-            };
+            return done(
+                StoreOutcome::AlreadyStored(already_stored(&final_path)),
+                remove_temp(fs, &temp).into_iter().collect(),
+            );
         }
         Err(e) => {
-            return Err(discard(
+            return Err(refuse(
                 fs,
                 &temp,
                 failed(&final_path, "linking the batch file", &e),
@@ -236,15 +299,19 @@ pub fn store_batch(
     // message of that failure says that the store is unchanged only when
     // the file is absent, so it names the durability step instead.
     let synced = fs.sync_dir(&batches);
-    // The batch file is whole, so a leftover temporary file is harmless
-    // and never read.
-    drop(fs.remove_file(&temp));
-    synced.map(|()| StoreOutcome::Stored).map_err(|e| {
-        let d = failed(&final_path, "making the batch durable", &e);
-        Diagnostic::new(
-            d.code(),
-            format!("{}; the complete batch file stays in place", d.message()),
-            d.primary().clone(),
-        )
-    })
+    let warnings: Vec<Diagnostic> = remove_temp(fs, &temp).into_iter().collect();
+    match synced {
+        Ok(()) => done(StoreOutcome::Stored, warnings),
+        Err(e) => {
+            let d = failed(&final_path, "making the batch durable", &e);
+            Err(StoreFailure {
+                error: Diagnostic::new(
+                    d.code(),
+                    format!("{}; the complete batch file stays in place", d.message()),
+                    d.primary().clone(),
+                ),
+                warnings,
+            })
+        }
+    }
 }

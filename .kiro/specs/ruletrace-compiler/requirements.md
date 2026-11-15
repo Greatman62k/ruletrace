@@ -411,6 +411,7 @@ The smallest meaningful end-to-end slice takes a Source_Document, a structured R
 | RT-AI-0304 | AI_REQUEST_INVALID | Error | Candidate_Clauses, Source_Models, or Rulebook type declarations are missing or invalid | 2 | ruletrace-ai |
 | RT-AI-0305 | AI_BATCH_HAS_BLOCKING_PROPOSALS | Warning | The stored batch contains Proposals whose Semantic_Outcome has a Blocking_Diagnostic | 0 | ruletrace-ai |
 | RT-AI-0306 | AI_RUN_INCOMPLETE | Warning | A run kept the batch of an earlier Provider_Request and a later Provider_Request failed, so some Candidate_Clauses are unprocessed (Requirement 23 criterion 37) | 0 as a Warning; the run exits with the code of the failing Provider_Request (Requirement 16 criterion 24) | ruletrace-ai |
+| RT-AI-0307 | AI_STORE_TEMP_NOT_REMOVED | Warning | A temporary file of the Proposal_Store writer could not be removed after the batch was stored or the write was refused, and the file is never read | 0 | ruletrace-ai |
 
 18. IF a Diagnostic is constructed with a code that is not in the Diagnostic_Catalogue or with a Severity that differs from the catalogue, THEN THE RuleTrace test suite SHALL fail, as verified by a test that scans every Diagnostic constructor.
 19. THE RuleTrace SHALL verify by a test that the exit code column of the Diagnostic_Catalogue equals the exit code that the named executable returns for each code under the earliest-failing-stage policy of Requirement 16 criteria 14 and 17, and that each Warning code leaves the exit code and the derived flags of Requirement 22 unchanged.
