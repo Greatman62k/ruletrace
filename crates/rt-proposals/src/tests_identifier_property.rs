@@ -50,24 +50,27 @@ proptest! {
         request in request_id(),
         i in index(),
     ) {
-        let want = oracle(request.as_str(), i);
-        prop_assert_eq!(proposal_id(&request, i), want.clone());
-        prop_assert_eq!(proposal_id(&request, i), want);
+        prop_assert_eq!(proposal_id(&request, i), oracle(request.as_str(), i));
     }
 
     #[test]
-    fn a_different_index_or_request_gives_a_different_id(
-        a in request_id(),
-        b in request_id(),
+    fn a_different_index_gives_a_different_id(
+        request in request_id(),
         i in index(),
         j in index(),
     ) {
-        if i != j {
-            prop_assert_ne!(proposal_id(&a, i), proposal_id(&a, j));
-        }
-        if a != b {
-            prop_assert_ne!(proposal_id(&a, i), proposal_id(&b, i));
-        }
+        prop_assume!(i != j);
+        prop_assert_ne!(proposal_id(&request, i), proposal_id(&request, j));
+    }
+
+    #[test]
+    fn a_different_request_gives_a_different_id(
+        a in request_id(),
+        b in request_id(),
+        i in index(),
+    ) {
+        prop_assume!(a != b);
+        prop_assert_ne!(proposal_id(&a, i), proposal_id(&b, i));
     }
 }
 

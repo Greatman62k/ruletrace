@@ -9,18 +9,28 @@
 use crate::tests::{MapEnv, BASE};
 use crate::{build_plan, load, AiConfig, Consent, PlanInput, RunPlan, Ud32Option};
 use proptest::prelude::*;
-use rt_ai_adapter::{ProviderRequest, RequestLimits};
-use rt_foundation::{CliLocation, DocumentId, InputId, Location};
+use rt_ai_adapter::{AiAdapter, AttemptOutcome, ProviderFailure, ProviderRequest, RequestLimits};
+use rt_ai_mock::{RecordedScript, ReplayProvider};
+use rt_foundation::{CliLocation, Code, DocumentId, InputId, Location};
 use rt_hash::sha256;
 use rt_ir::{parse_rulebook, Rulebook};
 use rt_json::Value;
 use rt_srcmodel::{CandidateClause, DocumentKind, Element, ElementKind, SourceModel, SourceModels};
 use std::collections::BTreeSet;
+use std::time::Duration;
 
 const NAMES: [&str; 2] = ["a.md", "b.md"];
 const RULES_HASH: &str = "55887559197c793ed287815f2b33d45f454d0a045b92edf84d7d60ba82f1d29b";
 const ALPHABET: [char; 12] = [
     'a', 'b', '1', ' ', '"', '\\', '\n', '\t', 'é', '中', '\u{7f}', '\u{1}',
+];
+
+const INPUT_NAMES: [&str; 5] = ["age", "score", "club", "dob", "fee"];
+const INPUT_TYPES: [&str; 4] = ["number", "boolean", "text", "date"];
+const ENUM_NAMES: [&str; 3] = ["Level", "Tier", "Zone"];
+const MEMBER_NAMES: [&str; 5] = ["low", "mid", "high", "gold", "silver"];
+const CLAUSE_FIELDS: [&str; 7] = [
+    "document", "sha256", "start", "end", "line", "column", "text",
 ];
 
 const DECLS: &str = r#","declarations":{"ir_version":"1","inputs":[{"name":"age","type":"number"}],"enums":[],"sets":[],"collections":[],"highest_revision":{}},"#;
@@ -92,11 +102,13 @@ fn clause_json(c: &Oracle) -> String {
     )
 }
 
-fn oracle_bytes(model: &str, l: RequestLimits, rank: bool, chunk: &[Oracle]) -> Vec<u8> {
+fn oracle_bytes(s: &Spec, chunk: &[Oracle]) -> Vec<u8> {
+    let (model, l, rank) = (&s.model, s.limits, s.rank);
+    let decls = decls_json(&s.decls);
     let vocab = if rank { VOCAB_RANK } else { VOCAB_THRESHOLD };
     let clauses: Vec<String> = chunk.iter().map(clause_json).collect();
     format!(
-        r#"{{"v":1,"task":"propose_rules","model":{},"limits":{{"deadline_s":{},"attempt_s":{},"retries":{},"response_bytes":{}}},"clauses":[{}]{DECLS}{vocab}{TAIL}"#,
+        r#"{{"v":1,"task":"propose_rules","model":{},"limits":{{"deadline_s":{},"attempt_s":{},"retries":{},"response_bytes":{}}},"clauses":[{}]{decls}{vocab}{TAIL}"#,
         quote(model),
         l.deadline_s,
         l.attempt_s,
@@ -161,9 +173,99 @@ fn base_config() -> AiConfig {
     .config
 }
 
+#[derive(Clone, Debug)]
+struct Decls {
+    inputs: Vec<(String, String)>,
+    enums: Vec<(String, Vec<String>)>,
+}
+
+fn fixed_decls() -> Decls {
+    Decls {
+        inputs: vec![("age".to_owned(), "number".to_owned())],
+        enums: Vec::new(),
+    }
+}
+
+// Written independently of the production declarations encoder.
+fn type_members(d: &Decls) -> String {
+    let inputs: Vec<String> = d
+        .inputs
+        .iter()
+        .map(|(n, t)| format!(r#"{{"name":{},"type":{}}}"#, quote(n), quote(t)))
+        .collect();
+    let enums: Vec<String> = d
+        .enums
+        .iter()
+        .map(|(n, members)| {
+            let list: Vec<String> = members.iter().map(|m| quote(m)).collect();
+            format!(r#"{{"name":{},"members":[{}]}}"#, quote(n), list.join(","))
+        })
+        .collect();
+    format!(
+        r#""inputs":[{}],"enums":[{}],"sets":[],"collections":[]"#,
+        inputs.join(","),
+        enums.join(",")
+    )
+}
+
+fn decls_json(d: &Decls) -> String {
+    format!(
+        r#","declarations":{{"ir_version":"1",{},"highest_revision":{{}}}},"#,
+        type_members(d)
+    )
+}
+
+fn decls() -> impl Strategy<Value = Decls> {
+    (
+        proptest::sample::subsequence(INPUT_NAMES.to_vec(), 1..=4),
+        proptest::collection::vec(proptest::sample::select(INPUT_TYPES.to_vec()), 4..=4),
+        proptest::sample::subsequence(ENUM_NAMES.to_vec(), 0..=3),
+        proptest::collection::vec(
+            proptest::sample::subsequence(MEMBER_NAMES.to_vec(), 1..=3),
+            3..=3,
+        ),
+    )
+        .prop_map(|(names, types, enums, members)| Decls {
+            inputs: names
+                .into_iter()
+                .zip(types)
+                .map(|(n, t)| (n.to_owned(), t.to_owned()))
+                .collect(),
+            enums: enums
+                .into_iter()
+                .zip(members)
+                .map(|(n, m)| (n.to_owned(), m.into_iter().map(str::to_owned).collect()))
+                .collect(),
+        })
+}
+
+// Every variant changes the declarations the request carries.
+fn mutate_decls(d: &Decls, which: usize) -> Decls {
+    let mut out = d.clone();
+    match which {
+        0 => out.inputs.push(("bonus".to_owned(), "number".to_owned())),
+        1 => {
+            let ty = &mut out.inputs[0].1;
+            *ty = if ty == "number" { "text" } else { "number" }.to_owned();
+        }
+        2 => out.inputs[0].0.push('x'),
+        3 => match out.enums.first_mut() {
+            Some((_, members)) => members.push("extra".to_owned()),
+            None => out.enums.push(("Extra".to_owned(), vec!["m".to_owned()])),
+        },
+        _ => out.enums.push(("Extra".to_owned(), vec!["m".to_owned()])),
+    }
+    out
+}
+
 fn empty_rulebook() -> Rulebook {
+    rulebook_of(&fixed_decls())
+}
+
+fn rulebook_of(d: &Decls) -> Rulebook {
+    let types = type_members(d);
     let text = format!(
-        r#"{{"format":"ruletrace-rulebook","ir_version":"1","name":"n","version":"1","documents":[{{"id":"rules.md","sha256":"{RULES_HASH}"}}],"types":{{"inputs":[{{"name":"age","type":"number"}}],"enums":[],"sets":[],"collections":[]}},"rules":[],"precedence":[]}}"#
+        r#"{{"format":"ruletrace-rulebook","ir_version":"1","name":"n","version":"1","documents":[{{"id":"rules.md","sha256":"{RULES_HASH}"}}],"types":{{{types}}},"rules":[],"precedence":[]}}"#
     );
     parse_rulebook(
         text.as_bytes(),
@@ -186,6 +288,7 @@ struct Spec {
     rank: bool,
     max_clauses: u32,
     pick: usize,
+    decls: Decls,
 }
 
 fn text() -> impl Strategy<Value = String> {
@@ -214,28 +317,32 @@ fn spec() -> impl Strategy<Value = Spec> {
         any::<bool>(),
         1u32..=4,
         any::<usize>(),
+        decls(),
     )
-        .prop_map(|(texts, raw, model, limits, rank, max_clauses, pick)| {
-            let mut seen = BTreeSet::new();
-            let mut clauses = Vec::new();
-            for (d, a, b) in raw {
-                let len = texts[d].chars().count();
-                let start = usize::from(a) % len;
-                let end = start + 1 + usize::from(b) % (len - start);
-                if seen.insert((d, start, end)) {
-                    clauses.push((d, start, end));
+        .prop_map(
+            |(texts, raw, model, limits, rank, max_clauses, pick, decls)| {
+                let mut seen = BTreeSet::new();
+                let mut clauses = Vec::new();
+                for (d, a, b) in raw {
+                    let len = texts[d].chars().count();
+                    let start = usize::from(a) % len;
+                    let end = start + 1 + usize::from(b) % (len - start);
+                    if seen.insert((d, start, end)) {
+                        clauses.push((d, start, end));
+                    }
                 }
-            }
-            Spec {
-                texts,
-                clauses,
-                model: model.into_iter().collect(),
-                limits,
-                rank,
-                max_clauses,
-                pick,
-            }
-        })
+                Spec {
+                    texts,
+                    clauses,
+                    model: model.into_iter().collect(),
+                    limits,
+                    rank,
+                    max_clauses,
+                    pick,
+                    decls,
+                }
+            },
+        )
 }
 
 struct Rig {
@@ -278,7 +385,7 @@ fn plan(spec: &Spec, config: &AiConfig, rig: &Rig, candidates: &[CandidateClause
         config,
         models: &rig.all,
         candidates,
-        rulebook: &empty_rulebook(),
+        rulebook: &rulebook_of(&spec.decls),
         option: option(spec.rank),
         candidates_at: Location::Cli(CliLocation::Argument {
             position: 5,
@@ -339,6 +446,74 @@ fn reversed_clauses(r: &ProviderRequest) -> ProviderRequest {
     copy
 }
 
+fn bump(value: &Value<()>) -> Value<()> {
+    match value.as_u64() {
+        Some(n) => Value::integer(u32::try_from(n).unwrap() + 1),
+        None => Value::string(format!("{}x", value.as_str().unwrap())),
+    }
+}
+
+// Changes one member of one clause object and nothing else.
+fn with_clause_field(r: &ProviderRequest, clause: usize, field: &str) -> ProviderRequest {
+    let mut copy = r.clone();
+    for (key, value) in &mut copy.context {
+        if key == "clauses" {
+            let mut items = value.as_array().unwrap().to_vec();
+            let members = items[clause]
+                .as_object()
+                .unwrap()
+                .iter()
+                .map(|m| {
+                    let v = if m.key == field {
+                        bump(&m.value)
+                    } else {
+                        m.value.clone()
+                    };
+                    (m.key.clone(), v)
+                })
+                .collect();
+            items[clause] = Value::object(members).unwrap();
+            *value = Value::array(items);
+        }
+    }
+    copy
+}
+
+// One single-point change of a request, by index in 0..3 + clause fields.
+fn mutated(r: &ProviderRequest, which: usize) -> ProviderRequest {
+    let mut copy = r.clone();
+    match which {
+        0 => copy.task.push('x'),
+        1 => copy.model.push('x'),
+        2 => copy.limits.deadline_s += 1,
+        n => {
+            let field = CLAUSE_FIELDS[(n - 3) % CLAUSE_FIELDS.len()];
+            let clause = (n - 3) / CLAUSE_FIELDS.len();
+            return with_clause_field(r, clause, field);
+        }
+    }
+    copy
+}
+
+fn script_for(ids: &[String], payloads: &[String]) -> RecordedScript {
+    let entries: Vec<String> = ids
+        .iter()
+        .zip(payloads)
+        .map(|(id, payload)| {
+            format!(
+                r#"{{"request_id":"{id}","origin":"authored","completion":"complete","response_sha256":"{}","payload":{}}}"#,
+                sha256(payload.as_bytes()).as_str(),
+                quote(payload)
+            )
+        })
+        .collect();
+    let text = format!(
+        r#"{{"format":"ruletrace-recorded-script","version":1,"provider":{{"kind":"openai-responses","model":"m","adapter_version":"0.1.0"}},"captured":"c","entries":[{}]}}"#,
+        entries.join(",")
+    );
+    RecordedScript::parse(&InputId::new("recorded.json").unwrap(), text.as_bytes()).unwrap()
+}
+
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
@@ -352,7 +527,7 @@ proptest! {
         let p = plan(&s, &config, &r, &r.candidates);
         prop_assert_eq!(p.requests().len(), chunks.len());
         for (got, want) in p.requests().iter().zip(&chunks) {
-            let bytes = oracle_bytes(&s.model, s.limits, s.rank, want);
+            let bytes = oracle_bytes(&s, want);
             prop_assert_eq!(got.bytes(), bytes.as_slice());
             let digest = sha256(&bytes);
             prop_assert_eq!(got.id().as_str(), digest.as_str());
@@ -423,8 +598,24 @@ proptest! {
             prop_assert_ne!(a, &b);
         }
 
+        for which in 0..5 {
+            let changed = Spec { decls: mutate_decls(&s.decls, which), ..s.clone() };
+            let after = ids(&plan(&changed, &config, &r, &r.candidates));
+            prop_assert_eq!(after.len(), base_ids.len());
+            for (a, b) in base_ids.iter().zip(&after) {
+                prop_assert_ne!(a, b);
+            }
+        }
+
         for planned in base.requests() {
             let request = planned.request();
+            let original = request.request_id().unwrap();
+            for index in 0..planned.clauses().len() {
+                for field in CLAUSE_FIELDS {
+                    let after = with_clause_field(request, index, field);
+                    prop_assert_ne!(after.request_id().unwrap(), original.clone());
+                }
+            }
             let mut task = request.clone();
             task.task.push('x');
             prop_assert_ne!(task.request_id().unwrap(), request.request_id().unwrap());
@@ -434,10 +625,82 @@ proptest! {
             }
         }
     }
+
+    // A replay script holds one payload per planned request, keyed by its
+    // identifier. A request hits only its own entry, and any single change
+    // of the request misses.
+    #[test]
+    fn replay_script_is_keyed_by_the_request_identifier(s in spec()) {
+        let config = config_of(&s);
+        let r = rig(&s, &s.texts);
+        let p = plan(&s, &config, &r, &r.candidates);
+        let payloads: Vec<String> =
+            (0..p.requests().len()).map(|k| format!("payload-{k}")).collect();
+        let mut provider = ReplayProvider::new(script_for(&ids(&p), &payloads));
+        let timeout = Duration::from_secs(1);
+        for (k, planned) in p.requests().iter().enumerate() {
+            let report = provider.attempt(planned.request(), timeout);
+            match report.outcome {
+                AttemptOutcome::Response(response) => {
+                    prop_assert_eq!(response.payload, payloads[k].as_bytes())
+                }
+                other => prop_assert!(false, "request {k} missed: {other:?}"),
+            }
+        }
+
+        let first = p.requests()[s.pick % p.requests().len()].request();
+        let clause_count = first
+            .context
+            .iter()
+            .find(|(key, _)| key == "clauses")
+            .and_then(|(_, v)| v.as_array())
+            .map_or(0, <[_]>::len);
+        let all = ids(&p);
+        for which in 0..3 + clause_count * CLAUSE_FIELDS.len() {
+            let changed = mutated(first, which);
+            let id = changed.request_id().unwrap();
+            prop_assert!(!all.iter().any(|known| known == id.as_str()));
+            let report = provider.attempt(&changed, timeout);
+            prop_assert_eq!(
+                report.outcome,
+                AttemptOutcome::Failure(ProviderFailure::Other { http_status: None })
+            );
+            prop_assert_eq!(
+                report.detail,
+                Some(format!("no entry for request {}", id.as_str()))
+            );
+        }
+    }
+}
+
+// Duplicate clauses are rejected by RT-AI-0304 in the plan tests, so the
+// identifier properties above use distinct clauses only.
+#[test]
+fn an_empty_clause_list_is_rejected_with_the_exact_diagnostic() {
+    let at = Location::Cli(CliLocation::Argument {
+        position: 5,
+        name: Some("--candidates".to_owned()),
+    });
+    let config = base_config();
+    let found = build_plan(&PlanInput {
+        config: &config,
+        models: &SourceModels::new(),
+        candidates: &[],
+        rulebook: &empty_rulebook(),
+        option: Ud32Option::ThresholdOnly,
+        candidates_at: at.clone(),
+    })
+    .unwrap_err();
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].code(), Code::AiRequestInvalid);
+    assert_eq!(found[0].message(), "no Candidate_Clause was supplied");
+    assert_eq!(found[0].primary(), &at);
 }
 
 // Hand-written bytes for one request, hashed with `sha256sum`.
 const GOLDEN_TEXT: &str = "Fee \"20\".";
+// sha256sum of GOLDEN_TEXT.
+const GOLDEN_DOC_HASH: &str = "9f77d9492a837a3da0e3ef9ecb2b18230ccbc992dc1346e18e2c7fc1e5960dd4";
 const GOLDEN_BYTES: &str = concat!(
     r#"{"v":1,"task":"propose_rules","model":"m-2","#,
     r#""limits":{"deadline_s":5,"attempt_s":3,"retries":1,"response_bytes":2048},"#,
@@ -480,6 +743,3 @@ fn golden_request_matches_hand_written_bytes_and_external_digest() {
     );
     assert_eq!(p.requests()[0].id().as_str(), GOLDEN_ID);
 }
-
-// sha256sum of GOLDEN_TEXT.
-const GOLDEN_DOC_HASH: &str = "9f77d9492a837a3da0e3ef9ecb2b18230ccbc992dc1346e18e2c7fc1e5960dd4";
