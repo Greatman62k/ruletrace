@@ -355,8 +355,16 @@ fn endpoint_with_user_name_password_or_query_is_an_inline_secret() {
         assert!(!d.message().contains(":pass") && !d.message().contains("token=abc"));
         no_env_read(&env);
     }
-    let ok = with(("https://api.openai.com", "https://api.openai.com/a@b"));
+    // An `@` after the first `/` is not user information. The official
+    // host with a path is then refused by the later host check.
+    let ok = with(("https://api.openai.com", "http://127.0.0.1:9/a@b"));
     assert!(run(&ok, &env_ok()).is_ok());
+    let path = with(("https://api.openai.com", "https://api.openai.com/a@b"));
+    let d = one(
+        run(&path, &env_ok()),
+        Code::AiConfigEndpointHostNotPermitted,
+    );
+    assert_eq!(at(&d), (Some(5), Some(1), Some("endpoint".to_owned())));
 }
 
 #[test]
@@ -537,7 +545,7 @@ fn endpoint_must_be_https_unless_the_host_is_loopback() {
     let accepted = [
         "https://api.openai.com",
         "HTTPS://API.OPENAI.COM",
-        "https://api.openai.com:8443/v1",
+        "https://api.openai.com/",
         "http://localhost:8080",
         "http://LOCALHOST",
         "http://127.0.0.1",
@@ -556,12 +564,20 @@ fn endpoint_must_be_https_unless_the_host_is_loopback() {
 #[test]
 fn endpoint_host_is_lowercased_without_port() {
     let c = run(
-        &with(("https://api.openai.com", "HTTPS://Api.OpenAI.COM:8443/v1")),
+        &with(("https://api.openai.com", "HTTPS://Api.OpenAI.COM/")),
         &env_ok(),
     )
     .unwrap()
     .config;
     assert_eq!(c.endpoint.unwrap().host, "api.openai.com");
+    // Only a loopback endpoint may carry a port, and the host excludes it.
+    let c = run(
+        &with(("https://api.openai.com", "http://LocalHost:8443/v1")),
+        &env_ok(),
+    )
+    .unwrap()
+    .config;
+    assert_eq!(c.endpoint.unwrap().host, "localhost");
 }
 
 #[test]

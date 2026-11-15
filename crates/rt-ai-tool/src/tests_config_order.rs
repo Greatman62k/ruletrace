@@ -27,7 +27,7 @@ const SECRET_NAMES: [&str; 6] = [
 const SECRET_PREFIXES: [&str; 5] = ["sk-", "sk_", "Bearer", "ghp_", "AKIA"];
 const GOOD_ENDPOINTS: [&str; 9] = [
     "https://api.openai.com",
-    "HTTPS://API.OPENAI.COM:8443/v1/responses",
+    "HTTPS://API.OPENAI.COM/",
     "http://localhost:8080/v1",
     "http://127.0.0.1",
     "http://127.200.3.4:1",

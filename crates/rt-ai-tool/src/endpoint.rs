@@ -8,6 +8,9 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 pub(crate) struct ParsedEndpoint {
     pub(crate) scheme: String,
     pub(crate) host: String,
+    /// True when the URL is the bare origin: no port, no path other than
+    /// a single `/`, no query and no fragment.
+    pub(crate) bare_origin: bool,
 }
 
 fn authority(raw: &str) -> Option<&str> {
@@ -27,15 +30,16 @@ fn valid_scheme(scheme: &str) -> bool {
         && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
 }
 
-fn split_host_port(authority: &str) -> Option<&str> {
+/// The host and whether the authority names a port.
+fn split_host_port(authority: &str) -> Option<(&str, bool)> {
     if let Some(rest) = authority.strip_prefix('[') {
         let (host, tail) = rest.split_once(']')?;
         let port_ok = tail.is_empty() || tail.strip_prefix(':').is_some_and(valid_port);
-        return port_ok.then_some(host);
+        return port_ok.then_some((host, !tail.is_empty()));
     }
     match authority.split_once(':') {
-        None => Some(authority),
-        Some((host, port)) => valid_port(port).then_some(host),
+        None => Some((authority, false)),
+        Some((host, port)) => valid_port(port).then_some((host, true)),
     }
 }
 
@@ -54,13 +58,19 @@ pub(crate) fn parse(raw: &str) -> Option<ParsedEndpoint> {
     if !valid_scheme(scheme) {
         return None;
     }
-    let host = split_host_port(authority(raw)?)?;
+    let authority = authority(raw)?;
+    let (host, has_port) = split_host_port(authority)?;
     if host.is_empty() {
         return None;
     }
+    // The authority is a prefix of the text after `://`, so what follows
+    // it is the path, the query and the fragment.
+    let (_, rest) = raw.split_once("://")?;
+    let tail = rest.get(authority.len()..)?;
     Some(ParsedEndpoint {
         scheme: scheme.to_ascii_lowercase(),
         host: host.to_ascii_lowercase(),
+        bare_origin: !has_port && matches!(tail, "" | "/"),
     })
 }
 
@@ -77,9 +87,12 @@ pub(crate) fn transport_permitted(endpoint: &ParsedEndpoint) -> bool {
 }
 
 /// The endpoint host for a provider with an official host: that host after
-/// ASCII lower-casing, or a loopback address for the stub server of the
-/// tests (Req 35.6). Everything else is refused, including a suffix, a
-/// prefix, a trailing dot and an IP literal. The port is not compared.
+/// ASCII lower-casing and as a bare origin, or a loopback address for the
+/// stub server of the tests, which may carry a port and a path (Req 35.6).
+/// Everything else is refused, including a suffix, a prefix, a trailing
+/// dot, an IP literal, a port, a path, a query and a fragment of the
+/// official host. The default port 443 is refused too, because this
+/// parser does not normalize it.
 pub(crate) fn host_permitted(endpoint: &ParsedEndpoint, official: &str) -> bool {
-    endpoint.host == official || is_loopback(&endpoint.host)
+    (endpoint.host == official && endpoint.bare_origin) || is_loopback(&endpoint.host)
 }

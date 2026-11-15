@@ -122,14 +122,23 @@ proptest! {
     #![proptest_config(ProptestConfig::with_cases(512))]
 
     // The credential can reach only the official host or a loopback
-    // address: any generated host that is neither is refused with
-    // RT-AI-0013 at the endpoint field, and the other two are accepted.
+    // address: any generated host that is neither, and any official host
+    // with a port or a path, is refused with RT-AI-0013 at the endpoint
+    // field. The bare official origin and loopback are accepted.
     #[test]
     fn the_host_restriction_accepts_only_the_official_host_and_loopback(host in arb_host()) {
         let text = v2("https://api.meta.ai", &url(&host));
         let result = run(&text, &meta_env());
         match host {
             Host::Other(_) => {
+                let d = one(result, Code::AiConfigEndpointHostNotPermitted);
+                prop_assert_eq!(
+                    at(&d),
+                    (Some(12), Some(1), Some("provider.endpoint".to_owned()))
+                );
+            }
+            Host::Official { port, path, .. } if port.is_some() || path == 2 => {
+                // A port or the path `/v1` is not the bare origin.
                 let d = one(result, Code::AiConfigEndpointHostNotPermitted);
                 prop_assert_eq!(
                     at(&d),

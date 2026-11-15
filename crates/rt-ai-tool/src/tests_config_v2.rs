@@ -60,7 +60,7 @@ pub(crate) fn meta_env() -> MapEnv {
 
 type Place = (Option<u32>, Option<u32>, Option<String>);
 
-fn loc(line: u32, field: &str) -> Place {
+pub(crate) fn loc(line: u32, field: &str) -> Place {
     (Some(line), Some(1), Some(field.to_owned()))
 }
 
@@ -437,14 +437,12 @@ fn host_text(id_endpoint: &str) -> String {
 }
 
 #[test]
-fn the_official_host_is_accepted_in_any_letter_case_with_a_port_or_a_path() {
+fn the_official_host_is_accepted_in_any_letter_case_as_a_bare_origin() {
     for url in [
         "https://api.meta.ai",
         "https://API.META.AI",
         "https://Api.Meta.Ai/",
         "HTTPS://api.meta.ai",
-        "https://api.meta.ai:443",
-        "https://api.meta.ai/v1",
     ] {
         let ok = run(&host_text(url), &meta_env()).unwrap();
         assert_eq!(ok.config.endpoint.unwrap().host, "api.meta.ai", "{url}");
