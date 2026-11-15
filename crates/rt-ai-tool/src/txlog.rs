@@ -146,7 +146,7 @@ impl<S: LogSink> TransmissionLog<S> {
         let Some(line) = entry_line(context, size, id.as_str(), attempt, time) else {
             return Err(self.failure("the entry could not be built"));
         };
-        let line = self.redactor.redact(&line);
+        let line = self.redactor.redact_fragments(&line);
         let mut bytes = line.into_bytes();
         bytes.push(b'\n');
         self.sink

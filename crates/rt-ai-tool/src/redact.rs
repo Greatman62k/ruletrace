@@ -148,6 +148,43 @@ impl Redactor {
                 .any(|f| f.windows(FRAGMENT_CHARS).any(|w| seen.contains(w)))
     }
 
+    /// Like [`Redactor::redact`], and also replaces every run of
+    /// characters that is covered by a window of [`FRAGMENT_CHARS`]
+    /// characters of the credential. Writers of files and summaries use
+    /// this form, because they copy text that a cut or a truncation could
+    /// leave with only part of the credential.
+    #[must_use]
+    pub fn redact_fragments(&self, text: &str) -> String {
+        let whole = self.redact(text);
+        let chars: Vec<char> = whole.chars().collect();
+        let windows: BTreeSet<&[char]> = self
+            .forms
+            .iter()
+            .flat_map(|f| f.windows(FRAGMENT_CHARS))
+            .collect();
+        let mut covered = vec![false; chars.len()];
+        for (start, window) in chars.windows(FRAGMENT_CHARS).enumerate() {
+            if windows.contains(window) {
+                for flag in covered.iter_mut().skip(start).take(FRAGMENT_CHARS) {
+                    *flag = true;
+                }
+            }
+        }
+        let mut out = String::with_capacity(whole.len());
+        let mut in_run = false;
+        for (c, hidden) in chars.iter().zip(covered) {
+            if hidden {
+                if !in_run {
+                    out.push_str(REDACTED);
+                }
+            } else {
+                out.push(*c);
+            }
+            in_run = hidden;
+        }
+        out
+    }
+
     /// `text` with every occurrence replaced.
     ///
     /// Matches are found in the original text only, so a marker is never
