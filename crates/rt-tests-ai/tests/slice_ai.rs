@@ -23,7 +23,7 @@ use rt_foundation::InputId;
 use rt_ir::{parse_rulebook, ApprovalStatus};
 use rt_json::ParseLimits;
 use rt_ledger::{derive_statuses, effective_revisions, parse_ledger, unresolved};
-use support::{authored_approvals, fixture, Decision, Ran, Work, REVIEWER};
+use support::{authored_approvals, fixture, validation_diagnostics, Decision, Ran, Work, REVIEWER};
 
 const RB: &str = "rulebook.json";
 const LEDGER: &str = "ledger.jsonl";
@@ -182,10 +182,16 @@ fn the_ai_path_compiles_and_evaluates_byte_identically_to_the_authored_rulebook(
     // the Origin of each revision. Neither the compiled artifact nor the
     // results name an AI identity.
     assert_ne!(work.read(RB), authored.read(RB));
+    // The two validation files differ only in the recorded Origin of each
+    // revision. What validation found is the same list of Diagnostics.
     assert_ne!(
         work.read("ai-validation.json"),
         authored.read("hand-validation.json")
     );
+    let ai_found = validation_diagnostics(&work.read("ai-validation.json"));
+    let hand_found = validation_diagnostics(&authored.read("hand-validation.json"));
+    assert_eq!(ai_found, hand_found);
+    assert_eq!(ai_found, "[]");
     for text in [&ai_compiled, &ai_results] {
         let text = String::from_utf8(text.clone()).unwrap();
         for name in ["ai_proposal", "proposer-a", "model-1", "mock-replay"] {

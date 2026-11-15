@@ -1,8 +1,10 @@
 //! A scratch directory and runners for `ruletrace` and `ruletrace-ai`.
 //!
 //! Both tools run through their library entry points on the real disk, in a
-//! directory under the workspace `target` directory that is removed when the
-//! guard drops.
+//! directory under the workspace `target` directory. The directory is
+//! removed when the guard drops, except while the thread is panicking: a
+//! failed test keeps its files for inspection, and the next run of the same
+//! process id replaces them.
 
 use rt_ai_tool::{EnvReader, Out, Redactor, StdFs as AiFs};
 use rt_cli::StdFs;
@@ -67,6 +69,14 @@ impl EnvReader for NoEnv {
 /// A scratch directory that holds one scenario.
 pub struct Work {
     root: PathBuf,
+}
+
+impl Drop for Work {
+    fn drop(&mut self) {
+        if !std::thread::panicking() {
+            drop(std::fs::remove_dir_all(&self.root));
+        }
+    }
 }
 
 impl Work {
@@ -399,4 +409,20 @@ fn field(line: &str, name: &str) -> String {
     let start = line.find(&marker).unwrap() + marker.len();
     let len = line[start..].find('"').unwrap();
     line[start..start + len].to_owned()
+}
+
+/// The `diagnostics` member of a `validation.json`, in compact form.
+///
+/// Compares what validation found without the Rulebook and ledger copies
+/// that the file also carries.
+pub fn validation_diagnostics(bytes: &[u8]) -> String {
+    member_compact(bytes, "diagnostics")
+}
+
+/// The top-level member `key` of a JSON file, in compact form.
+pub fn member_compact(bytes: &[u8], key: &str) -> String {
+    let input = rt_foundation::InputId::new("artifact.json").unwrap();
+    let limits = rt_json::ParseLimits::new(1 << 24, 64);
+    let tree = rt_json::parse(&input, bytes, limits).unwrap();
+    write_compact(&tree.get(key).unwrap().value)
 }

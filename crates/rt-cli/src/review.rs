@@ -272,6 +272,9 @@ fn decide_locked(
                 reason: reason.clone(),
             },
         },
+        // The adopted revision's Origin already names the AI identities of
+        // its batch, so no further set is passed. The slice-ai attack test
+        // refuses each of them as a Reviewer.
         batch_identities: AiIdentitySet::new(Vec::<String>::new()),
     };
     let plan = match plan_review_with_store(
