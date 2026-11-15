@@ -1233,7 +1233,7 @@ transmission_log = "work/transmission.log.jsonl"
 max_clauses_per_request = 20
 ```
 
-Relative `script` and `transmission_log` paths are resolved against the working directory of the `ruletrace-ai` process, not against the directory of the configuration file. The loader keeps them as written.
+Relative `script` and `transmission_log` paths are resolved against the working directory of the `ruletrace-ai` process, not against the directory of the configuration file. The loader keeps them as written. In TOML a path with a backslash must be a literal string (`'C:\work\log.jsonl'`) or write each backslash twice, because `\` starts an escape in a basic string; forward slashes also work on Windows.
 
 `endpoint` and `credential_env_var` are required for a real provider kind and absent for `mock-replay`; the configuration checks of Req 28 (inline secret, limits, consent, log) still run, so the offline flow exercises the same consent and logging path. It names no real provider and needs no credential (Req 33.9).
 
