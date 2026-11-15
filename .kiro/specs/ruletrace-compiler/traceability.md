@@ -154,3 +154,13 @@ UD-32 is not changed by this amendment. See the gate 1.11 amendment below.
 ## Gate 1.11 amendment (UD-32)
 
 UD-32 is Confirmed with option Rank_Reference, recorded in `tools/decisions/UD-32.md`. It was applied under the gate rule from the UD-34 scope (top-two qualification) because the user did not name UD-32, and is reported back for confirmation. The Req 14.12 extension applies; Req 14.13 and 32.4 do not. Criteria 14.11 to 14.14 are unchanged except for a status note on 14.12 and 14.13.
+
+## Req 23.5 amendment (closed schema and excluded content kinds)
+
+User decision: a provider field that would carry a script, a general-purpose expression, a shell command or an external reference (for example `script`, `command`, `reference`) is an unknown field under the closed Proposal_Schema and is AI_RESPONSE_SCHEMA_VIOLATION (RT-AI-0202). AI_RESPONSE_FORBIDDEN_FIELD (RT-AI-0204) stays a security diagnostic for the thirteen approval and validity names of design section 3.7.4 and is not used for ordinary schema violations.
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 23 | AI-Assisted Proposal Pipeline | Changed | 5 (the FORBIDDEN_FIELD class is the approval and validity names only; excluded content kinds are SCHEMA_VIOLATION) | - | User decision on the stage A review |
+
+Other sections changed: design section 3.7.3 (closed objects at every level, rule kind and node outside the request vocabulary is RT-AI-0202, unknown but well-formed `op` or `fn` is carried and reaches the validator as Unsupported, no provider field or value is executed) and section 3.7.4 step 1 (the thirteen names are the whole of RT-AI-0204). Criterion 4 is unchanged. No safety criterion was removed or weakened.
