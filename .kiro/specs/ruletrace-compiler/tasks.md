@@ -856,7 +856,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 23.20, 23.35, 23.36, 23.37, 23.38, 29.7, 29.8, 29.10, 29.11, 29.12, 29.17, 29.19_
     - Design §3.7.5, §3.7.6, §3.7.7
 
-  - [ ] 8.8 Implement the `ruletrace-ai propose` command
+  - [x] 8.8 Implement the `ruletrace-ai propose` command
     - Implement the argument parser, exit codes 0, 2, 3, 5, 6 and 70 with the earliest-failing-stage order of Req 16.17, and stdout and stderr through `Out`. The tool never opens a ledger file and never writes the Rulebook. `rt-ai-tool` has no edge to `rt-review`, `rt-compile`, `rt-engine` or `rt-compiled`, which `check-graph` enforces. Extend Property 30 to `ruletrace-ai`.
     - Observable: `ruletrace-ai propose --config ai/mock-replay.toml ... --consent D` writes a batch to the store and a Transmission_Log entry and exits 0.
     - Carried from 8.5: wire `--dry-run` to `dryrun::dry_run` (print each Request_Identifier, send nothing, write no log), with a CLI-level test that runs the parsed command and asserts the identifiers on standard output and no transmission.
@@ -903,13 +903,13 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: for generated configurations exactly one earliest check fails and nothing is transmitted.
     - **Validates: Requirements 28.1, 28.3, 28.4, 28.5, 28.6, 28.7, 28.17, 28.18, 23.19**
 
-  - [ ] 8.15 Write gate-level mock-provider failure tests
+  - [x] 8.15 Write gate-level mock-provider failure tests
     - One required test per failure class: transport failure with retry then success (one stored batch), retry exhaustion, a non-transient failure (no retry), a malformed response, a schema violation, a bad span, a quote mismatch, a store write failure, and a well-formed unsupported clause stored as a non-executable proposal. Assert exit codes, the Run_Summary and that nothing is stored on a protocol failure. The full cross product, simulated-timer matrix and idempotence under concurrency are in Phase 10 (task 12.10).
     - Observable: each case gives its specified code and exit code.
     - Blocked by: 8.8.
     - _Requirements: 20.7, 20.8, 20.9, 23.17, 23.33, 23.38, 29.14_
 
-  - [ ] 8.16 Add the `slice-ai` fixture and approval-gating tests
+  - [-] 8.16 Add the `slice-ai` fixture and approval-gating tests
     - End to end with the Mock_Provider: propose, `review approve`, validate, compile, evaluate. The compiled output is byte-identical to the manually authored equivalent (Req 16.18). Add the self-approval attempt (Reviewer equal to the proposer, provider, model or an AI identity) and the prompt-injection fixture (clause text instructing approval). Neither may change any ledger, status or Diagnostic code. Required.
     - Observable: the fixture is green on three platforms, and both attack fixtures leave the ledger unchanged.
     - Blocked by: 8.8, 8.12.
