@@ -275,6 +275,30 @@ fn is_flag_key(key: &str) -> bool {
     FLAG_KEYS.contains(&key) || LIFECYCLE_KEYS.contains(&key)
 }
 
+/// Expression node names the decoder knows, each with the exact field names
+/// it accepts. A node name outside this table is carried as an opaque
+/// construct, and so is a `binary`, `cmp` or `agg` node whose operator or
+/// function is unknown. Consumers that must know the vocabulary, such as the
+/// provider response check, read this table instead of repeating it.
+pub const NODE_FIELDS: [(&str, &[&str]); 16] = [
+    ("num", &["node", "t", "value"]),
+    ("bool", &["node", "t", "value"]),
+    ("text", &["node", "t", "value"]),
+    ("date", &["node", "t", "value"]),
+    ("enum", &["node", "t", "enum", "member"]),
+    ("field", &["node", "t", "name"]),
+    ("ref", &["node", "t", "target"]),
+    ("rank_reference", &["node", "t", "target"]),
+    ("binary", &["node", "t", "op", "left", "right"]),
+    ("cmp", &["node", "t", "op", "left", "right"]),
+    ("and", &["node", "t", "args"]),
+    ("or", &["node", "t", "args"]),
+    ("not", &["node", "t", "arg"]),
+    ("in", &["node", "t", "value", "set"]),
+    ("agg", &["node", "t", "fn", "collection", "field"]),
+    ("round", &["node", "t", "arg", "places", "mode"]),
+];
+
 /// An opened JSON object with its position and field path.
 struct Obj<'a> {
     members: &'a [Member<Position>],
@@ -1495,19 +1519,10 @@ impl<'i> Dec<'i> {
         let fields: Option<&[&str]> = if forced_opaque {
             None
         } else {
-            match node {
-                "num" | "bool" | "text" | "date" => Some(&["node", "t", "value"]),
-                "enum" => Some(&["node", "t", "enum", "member"]),
-                "field" => Some(&["node", "t", "name"]),
-                "ref" | "rank_reference" => Some(&["node", "t", "target"]),
-                "binary" | "cmp" => Some(&["node", "t", "op", "left", "right"]),
-                "and" | "or" => Some(&["node", "t", "args"]),
-                "not" => Some(&["node", "t", "arg"]),
-                "in" => Some(&["node", "t", "value", "set"]),
-                "agg" => Some(&["node", "t", "fn", "collection", "field"]),
-                "round" => Some(&["node", "t", "arg", "places", "mode"]),
-                _ => None,
-            }
+            NODE_FIELDS
+                .iter()
+                .find(|(name, _)| *name == node)
+                .map(|(_, fields)| *fields)
         };
         if let Some(fields) = fields {
             self.unknown_in(&o, fields);

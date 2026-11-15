@@ -392,6 +392,40 @@ fn scan(root: &Value<Position>, repeat: Option<(u32, u32)>) -> Scan {
     found
 }
 
+/// Position in `rule` of the key that the decoder reported at the line and
+/// column of `d` in `compact`, the compact text of `rule`. Both trees have
+/// the same shape, so the two are walked together.
+fn key_position(rule: &Value<Position>, compact: &str, d: &Diagnostic) -> Option<Position> {
+    let Location::Input(l) = d.primary() else {
+        return None;
+    };
+    let target = l.line.zip(l.column)?;
+    let id = InputId::new("compact").ok()?;
+    let limits = ParseLimits::new(u64::try_from(compact.len()).ok()?, u32::MAX);
+    let copy = rt_json::parse(&id, compact.as_bytes(), limits).ok()?;
+    find_key(rule, &copy, target)
+}
+
+fn find_key(
+    original: &Value<Position>,
+    copy: &Value<Position>,
+    target: (u32, u32),
+) -> Option<Position> {
+    match (original.kind(), copy.kind()) {
+        (Kind::Array(a), Kind::Array(b)) => {
+            a.iter().zip(b).find_map(|(x, y)| find_key(x, y, target))
+        }
+        (Kind::Object(a), Kind::Object(b)) => a.iter().zip(b).find_map(|(x, y)| {
+            if (y.key_pos.line, y.key_pos.column) == target {
+                Some(x.key_pos)
+            } else {
+                find_key(&x.value, &y.value, target)
+            }
+        }),
+        _ => None,
+    }
+}
+
 struct Dec<'a> {
     at: Locator<'a>,
     limit: u64,
@@ -669,8 +703,9 @@ impl Dec<'_> {
     /// decoder, so the field set of a rule is defined in one place, and
     /// checks that the rule spans equal the evidence spans (design 3.7.3).
     ///
-    /// A decoder failure is reported at the start of the rule. The field
-    /// path names the offending member, which is what Req 23.5 requires.
+    /// A decoder failure is reported at the start of the rule, except an
+    /// unknown field, which is reported at its key. The field path names
+    /// the offending member, which is what Req 23.5 requires.
     fn rule(
         &self,
         value: &Value<Position>,
@@ -703,8 +738,12 @@ impl Dec<'_> {
                 let why = first.map_or_else(String::new, |d| {
                     format!("{}: {}", d.code().id(), d.message())
                 });
+                let pos = first
+                    .filter(|d| d.code() == Code::IrUnknownField)
+                    .and_then(|d| key_position(value, &json, d))
+                    .unwrap_or(*value.pos());
                 return Err(self.violation(
-                    *value.pos(),
+                    pos,
                     &field,
                     format!("the rule draft is not valid Rule_IR: {why}"),
                 ));

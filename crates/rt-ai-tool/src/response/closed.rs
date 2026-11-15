@@ -7,34 +7,18 @@
 //! and, for a rule, to the ordinary rule fields (Req 23.4).
 //!
 //! A node whose `op` or `fn` is unknown but well formed is carried by the
-//! decoder with every member it has. Every node therefore has its field set
-//! checked here, so no member of a draft is left unchecked.
+//! decoder without reading its members. For every node this module checks
+//! the field set against the decoder's own table, that each operand is a
+//! node, and that an aggregate names its collection and field with a string
+//! (the field may be null). Other members are left to the decoder, which
+//! reads them only when the operator is known.
 
 use super::{child, shown};
 use crate::vocab::RULE_KINDS;
-use rt_ir::OpaqueName;
+use rt_ir::{OpaqueName, NODE_FIELDS};
 use rt_json::{Kind, Member, Position, Value};
 
 const UNRECOGNIZED: &str = "unrecognized";
-
-const NODE_FIELDS: [(&str, &[&str]); 16] = [
-    ("num", &["node", "t", "value"]),
-    ("bool", &["node", "t", "value"]),
-    ("text", &["node", "t", "value"]),
-    ("date", &["node", "t", "value"]),
-    ("enum", &["node", "t", "enum", "member"]),
-    ("field", &["node", "t", "name"]),
-    ("ref", &["node", "t", "target"]),
-    ("binary", &["node", "t", "op", "left", "right"]),
-    ("cmp", &["node", "t", "op", "left", "right"]),
-    ("and", &["node", "t", "args"]),
-    ("or", &["node", "t", "args"]),
-    ("not", &["node", "t", "arg"]),
-    ("in", &["node", "t", "value", "set"]),
-    ("agg", &["node", "t", "fn", "collection", "field"]),
-    ("round", &["node", "t", "arg", "places", "mode"]),
-    ("rank_reference", &["node", "t", "target"]),
-];
 
 // Fields a rule of the unrecognized kind keeps from every other rule.
 const ORDINARY_RULE_FIELDS: [&str; 5] = ["id", "target", "type", "markers", "spans"];
@@ -132,7 +116,37 @@ fn node_name(
             ));
         }
     }
+    scalars(name, members, path)?;
     operands(name, members, path)
+}
+
+/// Members of an aggregate that name a collection or a field. The decoder
+/// reads them as names for a known function but carries them unread for an
+/// unknown one, so they are held to the same scalar types here.
+fn scalars(name: &str, members: &[Member<Position>], path: &str) -> Result<(), Breach> {
+    if name != "agg" {
+        return Ok(());
+    }
+    for m in members {
+        let ok = match m.key.as_str() {
+            "collection" => m.value.as_str().is_some(),
+            "field" => m.value.as_str().is_some() || matches!(m.value.kind(), Kind::Null),
+            _ => true,
+        };
+        if !ok {
+            let expected = if m.key == "field" {
+                "a string or null"
+            } else {
+                "a string"
+            };
+            return Err(breach(
+                *m.value.pos(),
+                child(path, &m.key),
+                format!("field '{}' must be {expected}", m.key),
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// Every operand of an operator must itself be a node, so that no member of
