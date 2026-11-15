@@ -552,6 +552,137 @@ fn ai_profile_acceptance() -> TestResult {
     let s06b = std::fs::read_to_string(demo.join("golden/steps/s06b.stderr"))?;
     assert!(s06b.contains("warning RT-EXE-0011"));
 
+    // 5e2. Origin independence (Req 16.18): the hand-authored Rulebook with
+    // the same Rule_Content and Revision_Numbers compiles and evaluates to the
+    // bytes this AI-origin flow just produced.
+    let authored = TempDir::new("hand-authored");
+    rt_demo::copy_demo(&demo, &authored.0)?;
+    let hand = &authored.0;
+    let rb = "rulebook/hand-authored.json";
+    let common = ["--source-model", "work/source-model.json"];
+    run_expecting(
+        &adhoc(
+            "o01",
+            &[
+                "ruletrace",
+                "ingest",
+                "--document",
+                "documents/stand-in-rules.md",
+                "--document-id",
+                "stand-in-rules.md",
+                "--out",
+                "work/source-model.json",
+                "--candidates",
+                "work/candidates.json",
+            ],
+        ),
+        0,
+        &bin,
+        hand,
+    );
+    let approvals = [
+        (
+            "elig.entry",
+            "9edaa59e63831bf8d71ccba89eb6025bac65019cbd424ed1348981e784dc368c",
+        ),
+        (
+            "score.weighted",
+            "9fa6292ebbd6de150b1021e75b47a0ffca25db2da4c24c5ecd17f2c249136dac",
+        ),
+        (
+            "rank.standing",
+            "0bc9dbf21d05814446b9ef0b9466e0f7de03c96b26bdebcb8916a8a328628224",
+        ),
+    ];
+    for (i, (rule, hash)) in approvals.iter().enumerate() {
+        let mut words = vec![
+            "ruletrace",
+            "review",
+            "approve",
+            "--rulebook",
+            rb,
+            "--ledger",
+            "work/ledger.jsonl",
+            common[0],
+            common[1],
+            "--rule",
+            rule,
+            "--revision",
+            "1",
+            "--content-hash",
+            hash,
+            "--reviewer",
+            "Demo Reviewer",
+            "--time",
+            "2026-01-15T10:00:00Z",
+        ];
+        if i == 0 {
+            words.push("--create-ledger");
+        }
+        run_expecting(&adhoc("o02", &words), 0, &bin, hand);
+    }
+    for (id, exit, words) in [
+        (
+            "o03",
+            0,
+            vec![
+                "ruletrace",
+                "validate",
+                "--rulebook",
+                rb,
+                "--ledger",
+                "work/ledger.jsonl",
+                common[0],
+                common[1],
+                "--candidates",
+                "work/candidates.json",
+                "--out",
+                "work/validation.json",
+            ],
+        ),
+        (
+            "o04",
+            0,
+            vec![
+                "ruletrace",
+                "compile",
+                "--validation",
+                "work/validation.json",
+                "--out",
+                "work/compiled.json",
+            ],
+        ),
+        (
+            "o05",
+            4,
+            vec![
+                "ruletrace",
+                "evaluate",
+                "--compiled",
+                "work/compiled.json",
+                "--data",
+                "data/canonical/data.json",
+                "--questions",
+                "data/canonical/questions.json",
+                "--published",
+                "data/canonical/published.json",
+                common[0],
+                common[1],
+                "--out",
+                "work/results.json",
+            ],
+        ),
+    ] {
+        run_expecting(&adhoc(id, &words), exit, &bin, hand);
+    }
+    for name in ["compiled.json", "results.json"] {
+        assert!(
+            std::fs::read(hand.join("work").join(name))?
+                == std::fs::read(work.join("work").join(name))?,
+            "{name}: the hand-authored and AI-origin artifacts differ"
+        );
+    }
+
     // 5f. The dependency tree of `ruletrace` has no network, provider or AI
     // crate.
     let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
