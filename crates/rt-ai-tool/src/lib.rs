@@ -25,9 +25,11 @@ mod raw;
 mod reader;
 mod redact;
 pub mod response;
+mod run;
 mod scan;
 mod secret;
 mod store;
+mod summary;
 mod txlog;
 mod vocab;
 
@@ -68,6 +70,14 @@ mod tests_response_objects;
 #[cfg(test)]
 mod tests_rig;
 #[cfg(test)]
+mod tests_run;
+#[cfg(test)]
+mod tests_run_canary;
+#[cfg(test)]
+mod tests_run_provider;
+#[cfg(test)]
+mod tests_run_support;
+#[cfg(test)]
 mod tests_scan;
 #[cfg(test)]
 mod tests_store;
@@ -87,8 +97,10 @@ pub use plan::{
     TASK,
 };
 pub use redact::{Redactor, REDACTED};
+pub use run::{run_requests, RunInput, RunReport};
 pub use store::{
     already_stored_warning, batch_exists, batch_path, store_batch, StoreMeta, StoreOutcome,
 };
+pub use summary::RunSummary;
 pub use txlog::{FileLog, LogContext, LogSink, TransmissionLog};
 pub use vocab::Ud32Option;
