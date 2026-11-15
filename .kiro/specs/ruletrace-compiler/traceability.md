@@ -191,3 +191,17 @@ Defect fixed with the amendment: a rejected batch could return Diagnostics that 
 | 23 | AI-Assisted Proposal Pipeline | Unchanged | - | - | User decisions on the stage C review refine design section 3.7.4 only |
 
 Other sections changed: design section 3.7.4 (step 4 stored findings and draft, new step 5, with the 8-character guarantee and the structural field path).
+
+## Stage C follow-up amendment (8.6: partial credential echoes in accepted batches)
+
+User decision: an accepted batch is refused when it holds a partial echo of the credential. Requirement 28 criterion 9 now says that a Provider_Response payload that contains the credential value, or any run of at least 8 consecutive characters of it, is not stored. Design section 3.7.4 step 5 states the guarantee, the field names that production emits and the limits.
+
+- The check covers the raw payload and every decoded text that the store keeps, in the plain, JSON-escaped and control-escaped forms. It refuses with `RT-AI-0206` (exit 6) at the structural field that holds the match.
+- Stated limits, each pinned by a test: the match is case-sensitive, and a credential split into pieces shorter than 8 characters is not found.
+- Trade-off: a low-entropy credential such as `password1` can cause a legitimate batch to be refused, because a window of 8 of its characters (`password`) occurs in ordinary rationale or quote text. The refusal is loud (`RT-AI-0206`, exit 6, nothing stored). The alternative of matching only the whole value was rejected because a long key shown in part by a rationale would then be stored.
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 28 | AI Configuration, Credentials, and Transmission Consent | Changed | 9 (a payload with a run of 8 characters of the credential is not stored) | - | User decision on the stage C follow-up review |
+
+Other sections changed: design section 3.7.4 step 5. No safety criterion was removed or weakened.
