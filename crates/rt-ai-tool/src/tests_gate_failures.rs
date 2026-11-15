@@ -97,7 +97,8 @@ fn transport_failure_then_success_stores_one_batch_and_exits_0() {
     baseline.write_script(&payload(0));
     let clean = run_std(&baseline.consented());
     assert_eq!(clean.code, ExitCode::Success, "{}", clean.stderr);
-    assert!(clean.stderr.lines().all(|l| l.starts_with("request ")));
+    assert_eq!(findings(&clean), skip_findings());
+    assert_eq!(announcements(&clean).len(), 1, "{}", clean.stderr);
     assert_eq!(
         std::fs::read(fixture.path(&batch_path(&id))).unwrap(),
         std::fs::read(baseline.path(&batch_path(&id))).unwrap(),

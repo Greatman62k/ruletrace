@@ -69,10 +69,10 @@ fn golden_slice_basic_source_is_the_worked_example() {
     assert_eq!(bytes.len(), 171);
 }
 
-/// Regression for the macOS `NotFound` flake: parallel tests each ran
-/// `cargo build`, which re-links the binary and removes it for a moment,
-/// so another thread could fail to launch it. The binary must be built
-/// once per process and stay launchable from every thread.
+/// Launchability smoke check for the macOS `NotFound` flake. It is not a
+/// demonstrated regression test: it also passes on the old code on Linux.
+/// The once-per-process build is an unverified mitigation until a macOS CI
+/// run is green.
 #[test]
 fn the_binary_stays_launchable_while_many_threads_ask_for_it() {
     let launches: Vec<_> = (0..24)

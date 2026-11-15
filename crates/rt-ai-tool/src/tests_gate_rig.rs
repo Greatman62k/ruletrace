@@ -311,7 +311,8 @@ pub(crate) fn write_script_entries(fixture: &Fixture, entries: &[(String, String
 }
 
 /// The finding the skip warning adds on standard error, with its message
-/// written by hand from the design (3.7.5).
+/// copied from the warning text in `run.rs` (the design gives the code and
+/// severity, not the wording).
 pub(crate) fn skip_findings() -> Vec<(String, String, String)> {
     if cfg!(windows) {
         vec![(
