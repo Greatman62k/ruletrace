@@ -15,7 +15,7 @@ use rt_foundation::{
 };
 use rt_hash::Sha256Hex;
 use rt_ir::{parse_draft, Identity, Origin};
-use rt_json::{Kind, Member, ParseLimits, Position, Value};
+use rt_json::{parse_keeping_duplicates, Kind, Member, ParseLimits, Position, Value};
 
 /// The only schema version this parser accepts.
 pub const SCHEMA_VERSION: &str = "1";
@@ -44,10 +44,8 @@ pub const FORBIDDEN_FIELDS: [&str; 13] = [
     "is_proposed",
 ];
 
-// Renaming a repeated key keeps every byte offset, so the rest of the
-// document can still be searched for forbidden names. Each round uses a
-// different byte so renamed keys cannot collide with each other.
-const RENAME_BYTES: &[u8; 8] = b"~^`|!#$%";
+mod closed;
+
 const SHOWN_CHARS: usize = 60;
 
 /// A parsed, schema-checked response.
@@ -118,10 +116,12 @@ pub struct ParsedEvidence {
     pub quote: String,
 }
 
-/// A rule draft that decoded under the Rule_IR decoder.
+/// A rule draft that is in the closed vocabulary, decodes under the Rule_IR
+/// decoder and has the same spans as its evidence.
 ///
-/// An unrecognized rule kind or expression node is carried here and left to
-/// the validator (RT-VAL-0003).
+/// Nothing else is guaranteed. Types, references and semantics are checked
+/// later, and an `unrecognized` kind or node is carried for the validator
+/// (RT-VAL-0003).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ParsedRule {
     /// The rule identifier named by the draft.
@@ -171,14 +171,8 @@ pub fn parse_response(
         )
     })?;
     let limits = ParseLimits::new(response_limit, u32::MAX);
-    let (tree, duplicate) = match rt_json::parse(response_id, payload, limits) {
-        Ok(tree) => (Some(tree), None),
-        Err(d) if is_duplicate_key(&d) => {
-            let recovered = recover_duplicates(response_id, payload, limits, &d);
-            (recovered, Some(*d))
-        }
-        Err(d) => return Err(malformed(&at, text, &d)),
-    };
+    let parsed = parse_keeping_duplicates(response_id, payload, limits)
+        .map_err(|d| malformed(&at, text, &d))?;
     if completion != Completion::Complete {
         return Err(Diagnostic::new(
             Code::AiResponseIncomplete,
@@ -186,33 +180,37 @@ pub fn parse_response(
             at.plain(None),
         ));
     }
-    let scan = tree.as_ref().map(scan);
-    if let Some((path, pos)) = scan.as_ref().and_then(|s| s.forbidden.as_ref()) {
-        let name = path.rsplit('.').next().unwrap_or(path);
+    let tree = parsed.tree;
+    let repeat = parsed
+        .first_duplicate
+        .as_deref()
+        .and_then(|d| match d.primary() {
+            Location::Input(l) => l.line.zip(l.column),
+            _ => None,
+        });
+    let found = scan(&tree, repeat);
+    if let Some((path, pos)) = found.forbidden {
+        let name = path.rsplit('.').next().unwrap_or(&path);
         return Err(Diagnostic::new(
             Code::AiResponseForbiddenField,
             format!(
                 "the response contains the forbidden field '{}'",
                 shown(name.split('[').next().unwrap_or(name))
             ),
-            at.at(*pos, path),
+            at.at(pos, &path),
         ));
     }
-    if let Some(d) = duplicate {
+    if let Some(d) = parsed.first_duplicate {
+        let place = found
+            .repeated
+            .map_or_else(|| d.primary().clone(), |(path, pos)| at.at(pos, &path));
         return Err(Diagnostic::new(
             Code::AiResponseSchemaViolation,
             format!("the response has a repeated key: {}", d.message()),
-            d.primary().clone(),
+            place,
         ));
     }
-    let (Some(tree), Some(scan)) = (tree, scan) else {
-        return Err(Diagnostic::new(
-            Code::InternalError,
-            "the response tree is missing without a diagnostic".to_owned(),
-            Location::None(Code::InternalError),
-        ));
-    };
-    if let Some((path, pos)) = scan.deep {
+    if let Some((path, pos)) = found.deep {
         return Err(Diagnostic::new(
             Code::AiResponseSchemaViolation,
             format!("the response nests containers deeper than {MAX_DEPTH}"),
@@ -277,10 +275,6 @@ fn shown(text: &str) -> String {
     format!("{}{more}", escape_controls(&cut))
 }
 
-fn is_duplicate_key(d: &Diagnostic) -> bool {
-    d.message().contains("duplicate object key")
-}
-
 fn malformed(at: &Locator<'_>, text: &str, d: &Diagnostic) -> Diagnostic {
     let lc = match d.primary() {
         Location::Input(l) => l.line.zip(l.column),
@@ -313,48 +307,6 @@ fn offset_of(text: &str, line: u32, column: u32) -> Option<usize> {
     None
 }
 
-/// Parses a copy in which each repeated key is renamed in place, so that a
-/// forbidden name later in the document is still found. Gives up (`None`)
-/// when a key cannot be renamed without moving a byte.
-fn recover_duplicates(
-    id: &InputId,
-    payload: &[u8],
-    limits: ParseLimits,
-    first: &Diagnostic,
-) -> Option<Value<Position>> {
-    let text = std::str::from_utf8(payload).ok()?;
-    let mut copy = payload.to_vec();
-    let mut error = first.clone();
-    for replacement in RENAME_BYTES {
-        let Location::Input(l) = error.primary() else {
-            return None;
-        };
-        let start = offset_of(text, l.line?, l.column?)?;
-        if copy.get(start) != Some(&b'"') {
-            return None;
-        }
-        let close = copy
-            .iter()
-            .enumerate()
-            .skip(start + 1)
-            .find(|(_, b)| **b == b'"' || **b == b'\\')?;
-        if *close.1 != b'"' || close.0 < start + 2 {
-            return None;
-        }
-        let last = close.0 - 1;
-        if !copy.get(last)?.is_ascii() {
-            return None;
-        }
-        *copy.get_mut(last)? = *replacement;
-        match rt_json::parse(id, &copy, limits) {
-            Ok(tree) => return Some(tree),
-            Err(d) if is_duplicate_key(&d) => error = *d,
-            Err(_) => return None,
-        }
-    }
-    None
-}
-
 enum Seg<'a> {
     Key(&'a str),
     Index(usize),
@@ -362,6 +314,7 @@ enum Seg<'a> {
 
 struct Scan {
     forbidden: Option<(String, Position)>,
+    repeated: Option<(String, Position)>,
     deep: Option<(String, Position)>,
 }
 
@@ -393,13 +346,15 @@ type Entry<'a> = (
     Option<(&'a str, Position)>,
 );
 
-/// Finds, in document order, the first forbidden key and the first container
-/// nested deeper than [`MAX_DEPTH`]. Iterative, so the depth of the input
-/// cannot exhaust the stack.
-fn scan(root: &Value<Position>) -> Scan {
+/// Finds, in document order, the first forbidden key, the key at the
+/// line and column `repeat` and the first container nested deeper than
+/// [`MAX_DEPTH`]. Every key of the tree is visited, repeated or not.
+/// Iterative, so the depth of the input cannot exhaust the stack.
+fn scan(root: &Value<Position>, repeat: Option<(u32, u32)>) -> Scan {
     let mut arena: Vec<(Option<usize>, Seg<'_>)> = Vec::new();
     let mut found = Scan {
         forbidden: None,
+        repeated: None,
         deep: None,
     };
     let mut stack: Vec<Entry<'_>> = vec![(root, 0, None, None)];
@@ -407,6 +362,9 @@ fn scan(root: &Value<Position>) -> Scan {
         if let Some((name, pos)) = key {
             if found.forbidden.is_none() && FORBIDDEN_FIELDS.contains(&name) {
                 found.forbidden = Some((render(&arena, node), pos));
+            }
+            if found.repeated.is_none() && repeat == Some((pos.line, pos.column)) {
+                found.repeated = Some((render(&arena, node), pos));
             }
         }
         let depth = parent_depth.saturating_add(1);
@@ -707,28 +665,27 @@ impl Dec<'_> {
         })
     }
 
-    /// Decodes the rule with the Rule_IR draft decoder, so the field set of a
-    /// rule is the one place that defines it, and checks that the rule spans
-    /// equal the evidence spans (design 3.7.3).
+    /// Checks the closed vocabulary, decodes the rule with the Rule_IR draft
+    /// decoder, so the field set of a rule is defined in one place, and
+    /// checks that the rule spans equal the evidence spans (design 3.7.3).
+    ///
+    /// A decoder failure is reported at the start of the rule. The field
+    /// path names the offending member, which is what Req 23.5 requires.
     fn rule(
         &self,
         value: &Value<Position>,
         path: &str,
         evidence: &[ParsedEvidence],
     ) -> Result<ParsedRule, Diagnostic> {
+        if let Err(b) = closed::check(value, path) {
+            return Err(self.violation(b.pos, &b.path, b.message));
+        }
         let json = rt_json::write_compact(value);
-        let Ok(revision) = RevisionNumber::new(1) else {
-            return Err(Diagnostic::new(
-                Code::InternalError,
-                "revision number 1 was refused".to_owned(),
-                Location::None(Code::InternalError),
-            ));
-        };
         let origin = Origin::Manual { author: None };
         let draft = parse_draft(
             json.as_bytes(),
             self.at.id,
-            revision,
+            RevisionNumber::FIRST,
             origin,
             self.limit,
             MAX_DEPTH,

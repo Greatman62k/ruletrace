@@ -17,7 +17,7 @@ impl Ud32Option {
     pub const CONFIRMED: Self = Self::RankReference;
 }
 
-const RULE_KINDS: [&str; 5] = [
+pub(crate) const RULE_KINDS: [&str; 5] = [
     "eligibility",
     "derived",
     "weighted_score",

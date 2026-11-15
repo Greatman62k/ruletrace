@@ -2,49 +2,66 @@
 //! 22.16; design 3.7.3 and 3.7.4). Payloads are written by hand. Expected
 //! columns are found by searching the payload text, not by the parser.
 
-use crate::response::{
-    parse_response, ParsedResponse, ProposalKind, FORBIDDEN_FIELDS, MAX_EVIDENCE, MAX_PROPOSALS,
-};
+use crate::response::{parse_response, ParsedResponse, ProposalKind, FORBIDDEN_FIELDS};
 use proptest::prelude::*;
 use rt_ai_adapter::Completion;
 use rt_foundation::{Code, Diagnostic, InputId, Location, Severity};
 
-const LIMIT: u64 = 1 << 20;
-const SHA: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-const DRAFT: &str = r#"{"id":"elig.new","kind":"eligibility","target":"eligible2","type":"boolean","expr":{"node":"cmp","t":"boolean","op":"ge","left":{"node":"field","t":"number","name":"age"},"right":{"node":"num","t":"number","value":"16"}},"markers":[],"spans":[{"document":"rules.md","start":9,"end":59,"line":3,"column":1}]}"#;
+/// The thirteen names of design 3.7.4 step 1, written out independently of
+/// the production list.
+pub(crate) const FORBIDDEN_NAMES: [&str; 13] = [
+    "approval",
+    "approval_status",
+    "status",
+    "reviewer",
+    "approved_by",
+    "validation_status",
+    "validation_result",
+    "has_errors",
+    "no_errors",
+    "passed",
+    "is_approved",
+    "is_rejected",
+    "is_proposed",
+];
 
-fn rid() -> InputId {
+pub(crate) const LIMIT: u64 = 1 << 20;
+pub(crate) const SHA: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+const CMP_EXPR: &str = r#"{"node":"cmp","t":"boolean","op":"ge","left":{"node":"field","t":"number","name":"age"},"right":{"node":"num","t":"number","value":"16"}}"#;
+pub(crate) const DRAFT: &str = r#"{"id":"elig.new","kind":"eligibility","target":"eligible2","type":"boolean","expr":{"node":"cmp","t":"boolean","op":"ge","left":{"node":"field","t":"number","name":"age"},"right":{"node":"num","t":"number","value":"16"}},"markers":[],"spans":[{"document":"rules.md","start":9,"end":59,"line":3,"column":1}]}"#;
+
+pub(crate) fn rid() -> InputId {
     InputId::new("response-1").unwrap()
 }
 
-fn evidence() -> String {
+pub(crate) fn evidence() -> String {
     format!(
         r#"{{"document":"rules.md","sha256":"{SHA}","start":9,"end":59,"line":3,"column":1,"quote":"Applicants must be 16."}}"#
     )
 }
 
-fn proposal(kind: &str) -> String {
+pub(crate) fn proposal(kind: &str) -> String {
     format!(
         r#"{{"kind":"{kind}","proposer":"model-1","rationale":"why","evidence":[{}]}}"#,
         evidence()
     )
 }
 
-fn rule_proposal(draft: &str) -> String {
+pub(crate) fn rule_proposal(draft: &str) -> String {
     format!(
         r#"{{"kind":"rule_suggestion","proposer":"model-1","rationale":"why","evidence":[{}],"rule":{draft}}}"#,
         evidence()
     )
 }
 
-fn wrap(proposals: &[String]) -> String {
+pub(crate) fn wrap(proposals: &[String]) -> String {
     format!(
         r#"{{"schema_version":"1","proposals":[{}]}}"#,
         proposals.join(",")
     )
 }
 
-fn parse_with(
+pub(crate) fn parse_with(
     completion: Completion,
     bytes: &[u8],
     limit: u64,
@@ -52,11 +69,11 @@ fn parse_with(
     parse_response(&rid(), completion, bytes, limit)
 }
 
-fn parse(text: &str) -> Result<ParsedResponse, Diagnostic> {
+pub(crate) fn parse(text: &str) -> Result<ParsedResponse, Diagnostic> {
     parse_with(Completion::Complete, text.as_bytes(), LIMIT)
 }
 
-fn fail(text: &str) -> Diagnostic {
+pub(crate) fn fail(text: &str) -> Diagnostic {
     match parse(text) {
         Ok(_) => panic!("expected a rejection of {text}"),
         Err(d) => d,
@@ -65,7 +82,7 @@ fn fail(text: &str) -> Diagnostic {
 
 /// Code, severity, line, column and field of a diagnostic, after checking
 /// that the location is an Input_Location of the response.
-fn shape(d: &Diagnostic) -> (Code, Severity, Option<u32>, Option<u32>, Option<String>) {
+pub(crate) fn shape(d: &Diagnostic) -> (Code, Severity, Option<u32>, Option<u32>, Option<String>) {
     match d.primary() {
         Location::Input(l) => {
             assert_eq!(l.input, rid());
@@ -76,12 +93,12 @@ fn shape(d: &Diagnostic) -> (Code, Severity, Option<u32>, Option<u32>, Option<St
 }
 
 /// 1-based column of the first occurrence of `needle` in single-line `text`.
-fn col(text: &str, needle: &str) -> Option<u32> {
+pub(crate) fn col(text: &str, needle: &str) -> Option<u32> {
     let at = text.find(needle).unwrap();
     Some(u32::try_from(text[..at].chars().count()).unwrap() + 1)
 }
 
-fn expect(text: &str, code: Code, needle: &str, field: &str) {
+pub(crate) fn expect(text: &str, code: Code, needle: &str, field: &str) {
     let d = fail(text);
     assert_eq!(
         shape(&d),
@@ -96,8 +113,6 @@ fn expect(text: &str, code: Code, needle: &str, field: &str) {
         d.message()
     );
 }
-
-// ----- valid responses, one per kind -----
 
 #[test]
 fn each_advisory_kind_decodes_to_exact_values() {
@@ -153,21 +168,14 @@ fn an_empty_proposal_list_is_a_valid_response() {
 
 #[test]
 fn an_unrecognized_rule_kind_is_carried_not_rejected() {
-    let draft = DRAFT.replace(
-        r#""kind":"eligibility","target":"eligible2","type":"boolean","expr":"#,
-        r#""kind":"unrecognized","name":"slot_allocation","detail":"top four qualify","target":"eligible2","type":"boolean","expr":"#,
-    );
-    let draft = draft.replace(
-        r#"{"node":"cmp","t":"boolean","op":"ge","left":{"node":"field","t":"number","name":"age"},"right":{"node":"num","t":"number","value":"16"}}"#,
-        "{}",
-    );
-    let draft = draft.replace(r#""expr":{},"#, "");
-    let parsed = parse(&wrap(&[rule_proposal(&draft)])).unwrap();
+    let draft = r#"{"id":"elig.new","kind":"unrecognized","name":"slot_allocation","detail":"top four qualify","target":"eligible2","type":"boolean","markers":[],"spans":[{"document":"rules.md","start":9,"end":59,"line":3,"column":1}]}"#;
+    let parsed = parse(&wrap(&[rule_proposal(draft)])).unwrap();
     let ProposalKind::RuleSuggestion(rule) = &parsed.proposals[0].kind else {
         panic!("rule suggestion expected");
     };
+    assert_eq!(rule.id.as_str(), "elig.new");
     assert_eq!(rule.kind_name, "unrecognized");
-    assert!(rule.json.contains(r#""name":"slot_allocation""#));
+    assert_eq!(rule.json, draft);
 }
 
 #[test]
@@ -196,28 +204,43 @@ fn a_response_of_exactly_the_limit_is_accepted() {
 }
 
 #[test]
-fn nesting_of_exactly_thirty_two_is_accepted_and_thirty_three_is_not() {
-    let nested = |extra: usize| {
-        let open = "[".repeat(extra);
-        let close = "]".repeat(extra);
-        DRAFT.replace(
-            r#""kind":"eligibility","#,
-            &format!(r#""kind":"deep_kind","nest":{open}{close},"#),
-        )
-    };
-    // root 1, proposals 2, proposal 3, rule 4, so 28 arrays reach depth 32.
-    assert!(parse(&wrap(&[rule_proposal(&nested(28))])).is_ok());
-    let text = wrap(&[rule_proposal(&nested(29))]);
-    let d = fail(&text);
-    let (code, sev, _, _, field) = shape(&d);
-    assert_eq!(
-        (code, sev),
-        (Code::AiResponseSchemaViolation, Severity::Error)
-    );
-    assert_eq!(field.as_deref(), Some("proposals[0].rule.nest[0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0]"));
+fn a_hundred_kibibyte_rationale_and_quote_are_accepted_whole() {
+    let long = "a".repeat(100 * 1024);
+    let text = wrap(&[proposal("candidate_test")
+        .replace("why", &long)
+        .replace("Applicants must be 16.", &long)]);
+    let parsed = parse(&text).unwrap();
+    assert_eq!(parsed.proposals[0].rationale, long);
+    assert_eq!(parsed.proposals[0].evidence[0].quote, long);
 }
 
-// ----- one negative test per failure class -----
+#[test]
+fn nesting_of_exactly_thirty_two_is_accepted_and_thirty_three_is_not() {
+    let leaf = r#"{"node":"bool","t":"boolean","value":true}"#;
+    let with_depth = |nots: usize| {
+        let mut expr = leaf.to_owned();
+        for _ in 0..nots {
+            expr = format!(r#"{{"node":"not","t":"boolean","arg":{expr}}}"#);
+        }
+        DRAFT.replace(CMP_EXPR, &expr)
+    };
+    // Root 1, proposals 2, proposal 3, rule 4, outermost expr 5. The leaf
+    // sits 5 + nots deep, so 27 nots put it at depth 32.
+    assert!(parse(&wrap(&[rule_proposal(&with_depth(27))])).is_ok());
+    let text = wrap(&[rule_proposal(&with_depth(28))]);
+    let at_leaf = col(&text, r#"{"node":"bool""#);
+    let field = format!("proposals[0].rule.expr{}", ".arg".repeat(28));
+    assert_eq!(
+        shape(&fail(&text)),
+        (
+            Code::AiResponseSchemaViolation,
+            Severity::Error,
+            Some(1),
+            at_leaf,
+            Some(field)
+        )
+    );
+}
 
 #[test]
 fn too_large_is_0203_with_the_response_id_and_no_position() {
@@ -303,8 +326,18 @@ fn refusal_and_incomplete_are_0205() {
 }
 
 #[test]
+fn the_production_list_is_exactly_the_thirteen_names_of_the_design() {
+    assert_eq!(FORBIDDEN_FIELDS.len(), 13);
+    let mut production: Vec<&str> = FORBIDDEN_FIELDS.to_vec();
+    let mut design: Vec<&str> = FORBIDDEN_NAMES.to_vec();
+    production.sort_unstable();
+    design.sort_unstable();
+    assert_eq!(production, design);
+}
+
+#[test]
 fn every_forbidden_name_is_0204_whatever_its_value() {
-    for name in FORBIDDEN_FIELDS {
+    for name in FORBIDDEN_NAMES {
         for value in ["true", "false", r#""approved""#, "null", "[]"] {
             let text = proposal("candidate_test").replace(
                 r#""rationale":"why""#,
@@ -574,91 +607,188 @@ fn proposer_identity_is_one_to_two_hundred_scalar_values() {
 #[test]
 fn proposal_and_evidence_counts_are_bounded() {
     let many = |n: usize| wrap(&vec![proposal("candidate_test"); n]);
+    assert_eq!(parse(&many(100)).unwrap().proposals.len(), 100);
+    let text = many(101);
     assert_eq!(
-        parse(&many(MAX_PROPOSALS)).unwrap().proposals.len(),
-        MAX_PROPOSALS
+        shape(&fail(&text)),
+        (
+            Code::AiResponseSchemaViolation,
+            Severity::Error,
+            Some(1),
+            col(&text, "["),
+            Some("proposals".to_owned())
+        )
     );
-    let d = fail(&many(MAX_PROPOSALS + 1));
-    assert_eq!(d.code(), Code::AiResponseSchemaViolation);
-    assert!(matches!(d.primary(), Location::Input(l)
-        if l.field.as_deref() == Some("proposals")));
 
     let with = |n: usize| {
         let list = vec![evidence(); n].join(",");
         let one = proposal("candidate_test");
         wrap(&[one.replace(&format!("[{}]", evidence()), &format!("[{list}]"))])
     };
-    assert_eq!(
-        parse(&with(MAX_EVIDENCE)).unwrap().proposals[0]
-            .evidence
-            .len(),
-        MAX_EVIDENCE
-    );
-    for n in [0, MAX_EVIDENCE + 1] {
-        let d = fail(&with(n));
-        assert_eq!(d.code(), Code::AiResponseSchemaViolation, "{n}");
-        assert!(matches!(d.primary(), Location::Input(l)
-            if l.field.as_deref() == Some("proposals[0].evidence")));
+    assert_eq!(parse(&with(16)).unwrap().proposals[0].evidence.len(), 16);
+    for n in [0, 17] {
+        let text = with(n);
+        assert_eq!(
+            shape(&fail(&text)),
+            (
+                Code::AiResponseSchemaViolation,
+                Severity::Error,
+                Some(1),
+                col(&text, r#""evidence":"#).map(|c| c + 11),
+                Some("proposals[0].evidence".to_owned())
+            ),
+            "{n} items"
+        );
     }
 }
 
 #[test]
-fn a_repeated_key_is_0202_at_the_second_key() {
-    let text = r#"{"schema_version":"1","schema_version":"1","proposals":[]}"#;
-    let second = text.rfind(r#""schema_version""#).unwrap();
-    let d = fail(text);
-    let (code, sev, line, column, _) = shape(&d);
+fn a_repeated_key_is_0202_at_the_second_key_with_its_path() {
+    let top = r#"{"schema_version":"1","schema_version":"1","proposals":[]}"#;
+    let second = u32::try_from(top.rfind(r#""schema_version""#).unwrap()).unwrap() + 1;
     assert_eq!(
-        (code, sev, line),
-        (Code::AiResponseSchemaViolation, Severity::Error, Some(1))
+        shape(&fail(top)),
+        (
+            Code::AiResponseSchemaViolation,
+            Severity::Error,
+            Some(1),
+            Some(second),
+            Some("schema_version".to_owned())
+        )
     );
-    assert_eq!(column, Some(u32::try_from(second).unwrap() + 1));
+    let nested = wrap(&[proposal("candidate_test").replace(
+        r#""rationale":"why""#,
+        r#""rationale":"why","rationale":"again""#,
+    )]);
+    let second = col(&nested, r#""rationale":"again""#);
+    assert_eq!(
+        shape(&fail(&nested)),
+        (
+            Code::AiResponseSchemaViolation,
+            Severity::Error,
+            Some(1),
+            second,
+            Some("proposals[0].rationale".to_owned())
+        )
+    );
+}
+
+/// Column of the `{` that opens the rule object in single-line `text`.
+fn rule_start(text: &str) -> Option<u32> {
+    col(text, r#""rule":{"#).map(|c| c + 7)
 }
 
 #[test]
-fn a_rule_that_is_not_valid_rule_ir_is_0202() {
-    for member in [
-        r#""revision":2,"#,
-        r#""origin":{"kind":"manual","author":null},"#,
-    ] {
+fn a_rule_that_is_not_valid_rule_ir_is_0202_at_the_rule() {
+    let cases = [
+        (r#""revision":2,"#, "proposals[0].rule.revision"),
+        (
+            r#""origin":{"kind":"manual","author":null},"#,
+            "proposals[0].rule.origin",
+        ),
+    ];
+    for (member, field) in cases {
         let draft = DRAFT.replacen('{', &format!("{{{member}"), 1);
         let text = wrap(&[rule_proposal(&draft)]);
-        let d = fail(&text);
-        assert_eq!(d.code(), Code::AiResponseSchemaViolation, "{member}");
-        assert_eq!(d.severity(), Severity::Error);
-        assert!(matches!(d.primary(), Location::Input(l)
-            if l.input == rid() && l.line == Some(1)
-                && l.field.as_deref().is_some_and(|f| f.starts_with("proposals[0].rule"))));
+        assert_eq!(
+            shape(&fail(&text)),
+            (
+                Code::AiResponseSchemaViolation,
+                Severity::Error,
+                Some(1),
+                rule_start(&text),
+                Some(field.to_owned())
+            ),
+            "{member}"
+        );
     }
     let text = wrap(&[rule_proposal(r#"{"id":"x"}"#)]);
-    assert_eq!(fail(&text).code(), Code::AiResponseSchemaViolation);
+    assert_eq!(
+        shape(&fail(&text)),
+        (
+            Code::AiResponseSchemaViolation,
+            Severity::Error,
+            Some(1),
+            rule_start(&text),
+            Some("proposals[0].rule".to_owned())
+        )
+    );
+}
+
+const SPAN_A: &str = r#"{"document":"rules.md","start":9,"end":59,"line":3,"column":1}"#;
+const SPAN_B: &str = r#"{"document":"rules.md","start":70,"end":90,"line":5,"column":4}"#;
+
+fn evidence_item(span: &str) -> String {
+    let quote = r#","quote":"Applicants must be 16.""#;
+    let fields = span.trim_end_matches('}');
+    let with_hash = fields.replace(r#""start""#, &format!(r#""sha256":"{SHA}","start""#));
+    format!("{with_hash}{quote}}}")
+}
+
+fn suggestion(evidence_spans: &[&str], rule_spans: &[&str]) -> String {
+    let items: Vec<String> = evidence_spans.iter().map(|s| evidence_item(s)).collect();
+    let draft = DRAFT.replace(
+        &format!(r#""spans":[{SPAN_A}]"#),
+        &format!(r#""spans":[{}]"#, rule_spans.join(",")),
+    );
+    wrap(&[format!(
+        r#"{{"kind":"rule_suggestion","proposer":"model-1","rationale":"why","evidence":[{}],"rule":{draft}}}"#,
+        items.join(",")
+    )])
+}
+
+#[test]
+fn matching_rule_and_evidence_spans_are_accepted() {
+    assert!(parse(&suggestion(&[SPAN_A], &[SPAN_A])).is_ok());
+    assert!(parse(&suggestion(&[SPAN_A, SPAN_B], &[SPAN_A, SPAN_B])).is_ok());
 }
 
 #[test]
 fn rule_spans_must_equal_the_evidence_spans() {
-    for changed in [
-        DRAFT.replace(r#""start":9"#, r#""start":8"#),
-        DRAFT.replace(r#""end":59"#, r#""end":60"#),
-        DRAFT.replace(r#""line":3"#, r#""line":4"#),
-        DRAFT.replace("rules.md", "other.md"),
-    ] {
-        let text = wrap(&[rule_proposal(&changed)]);
-        let d = fail(&text);
-        assert_eq!(
-            (d.code(), d.severity()),
-            (Code::AiResponseSchemaViolation, Severity::Error),
-            "{changed}"
-        );
-        assert!(
-            matches!(d.primary(), Location::Input(l)
-            if l.field.as_deref() == Some("proposals[0].rule.spans")),
-            "{:?}",
-            d.primary()
-        );
+    let moved = |from: &str, to: &str| SPAN_A.replace(from, to);
+    let changed = [
+        moved(r#""start":9"#, r#""start":8"#),
+        moved(r#""end":59"#, r#""end":60"#),
+        moved(r#""line":3"#, r#""line":4"#),
+        moved(r#""column":1"#, r#""column":2"#),
+        moved("rules.md", "other.md"),
+    ];
+    for rule_span in &changed {
+        let text = suggestion(&[SPAN_A], &[rule_span]);
+        assert_expected_mismatch(&text, rule_span);
     }
 }
 
-// ----- precedence (Req 23.5) -----
+#[test]
+fn only_the_column_differing_is_a_mismatch() {
+    let column_only = SPAN_A.replace(r#""column":1"#, r#""column":2"#);
+    assert_expected_mismatch(&suggestion(&[SPAN_A], &[&column_only]), &column_only);
+}
+
+#[test]
+fn a_different_span_count_is_a_mismatch() {
+    assert_expected_mismatch(&suggestion(&[SPAN_A, SPAN_B], &[SPAN_A]), "count");
+    assert_expected_mismatch(&suggestion(&[SPAN_A], &[SPAN_A, SPAN_B]), "count");
+}
+
+#[test]
+fn the_same_spans_in_a_different_order_are_a_mismatch() {
+    assert_expected_mismatch(&suggestion(&[SPAN_A, SPAN_B], &[SPAN_B, SPAN_A]), "order");
+}
+
+fn assert_expected_mismatch(text: &str, what: &str) {
+    assert_eq!(
+        shape(&fail(text)),
+        (
+            Code::AiResponseSchemaViolation,
+            Severity::Error,
+            Some(1),
+            rule_start(text),
+            Some("proposals[0].rule.spans".to_owned())
+        ),
+        "{what}"
+    );
+}
 
 #[test]
 fn too_large_outranks_malformed() {
@@ -775,43 +905,118 @@ fn a_failure_returns_no_partial_result() {
     assert_eq!(result.unwrap_err().code(), Code::AiResponseSchemaViolation);
 }
 
-// ----- properties -----
+const TOKENS: [&str; 16] = [
+    r#""status":"x","#,
+    r#""approval":true,"#,
+    r#""kind":"unrecognized","#,
+    r#""node":"shell_exec","#,
+    r#""command":"rm","#,
+    r#""rationale":"again","#,
+    r#""evidence":[],"#,
+    "null",
+    "[",
+    "]",
+    "{",
+    "}",
+    ",",
+    r#""é""#,
+    "99999999999",
+    r#"\u0000"#,
+];
+
+fn bases() -> Vec<String> {
+    vec![
+        wrap(&[proposal("candidate_test")]),
+        wrap(&[
+            proposal("clause_relationship"),
+            proposal("conflict_highlight"),
+        ]),
+        wrap(&[rule_proposal(DRAFT)]),
+        suggestion(&[SPAN_A, SPAN_B], &[SPAN_A, SPAN_B]),
+        wrap(&[]),
+    ]
+}
+
+/// One structured mutation of a valid payload: delete, replace or insert a
+/// token, duplicate a slice, truncate or flip one byte.
+fn mutate(base: &str, op: u8, at: usize, len: usize, token: usize) -> Vec<u8> {
+    let mut bytes = base.as_bytes().to_vec();
+    let at = at % (bytes.len() + 1);
+    let end = (at + len).min(bytes.len());
+    let token = TOKENS[token % TOKENS.len()].as_bytes();
+    match op % 6 {
+        0 => {
+            bytes.drain(at..end);
+        }
+        1 => {
+            bytes.splice(at..end, token.iter().copied());
+        }
+        2 => {
+            bytes.splice(at..at, token.iter().copied());
+        }
+        3 => {
+            let copy = bytes[at..end].to_vec();
+            bytes.splice(at..at, copy);
+        }
+        4 => bytes.truncate(at),
+        _ => {
+            if let Some(b) = bytes.get_mut(at) {
+                *b ^= 1 << (len % 8);
+            }
+        }
+    }
+    bytes
+}
 
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
-    /// Any payload yields either a parsed response or exactly one error that
-    /// is Severity Error with a response Input_Location. Arbitrary bytes
-    /// never panic.
+    /// A mutated valid payload never panics. A rejection is exactly one
+    /// Severity Error diagnostic with an AI response code and a location in
+    /// the response. An accepted payload has no forbidden key spelled out.
     #[test]
-    fn arbitrary_bytes_never_panic_and_fail_with_an_ai_error(
-        bytes in proptest::collection::vec(any::<u8>(), 0..200),
+    fn mutated_payloads_never_panic_and_fail_with_an_ai_error(
+        base in 0usize..5,
+        op in any::<u8>(),
+        at in 0usize..400,
+        len in 0usize..40,
+        token in any::<usize>(),
         completion in 0u8..3,
     ) {
+        let payload = mutate(&bases()[base], op, at, len, token);
         let completion = [Completion::Complete, Completion::Refused, Completion::Incomplete]
             [usize::from(completion)];
-        if let Err(d) = parse_with(completion, &bytes, LIMIT) {
-            prop_assert!(matches!(
-                d.code(),
-                Code::AiResponseMalformed | Code::AiResponseIncomplete
-                    | Code::AiResponseSchemaViolation | Code::AiResponseForbiddenField
-            ));
-            prop_assert_eq!(d.severity(), Severity::Error);
-            prop_assert!(matches!(d.primary(), Location::Input(l) if l.input == rid()));
+        match parse_with(completion, &payload, LIMIT) {
+            Err(d) => {
+                prop_assert!(matches!(
+                    d.code(),
+                    Code::AiResponseMalformed | Code::AiResponseIncomplete
+                        | Code::AiResponseSchemaViolation | Code::AiResponseForbiddenField
+                ));
+                prop_assert_eq!(d.severity(), Severity::Error);
+                prop_assert!(matches!(d.primary(), Location::Input(l) if l.input == rid()));
+            }
+            Ok(_) => {
+                prop_assert_eq!(completion, Completion::Complete);
+                let text = String::from_utf8(payload).unwrap();
+                for name in FORBIDDEN_NAMES {
+                    prop_assert!(!text.contains(&format!(r#""{name}":"#)), "{name}");
+                }
+            }
         }
     }
 
     /// Whatever its value, a forbidden name anywhere gives RT-AI-0204.
     #[test]
     fn a_forbidden_name_with_any_value_is_rejected(
-        index in 0..FORBIDDEN_FIELDS.len(),
+        index in 0..FORBIDDEN_NAMES.len(),
         value in prop_oneof![
             Just("true".to_owned()), Just("false".to_owned()), Just("null".to_owned()),
             Just("0".to_owned()), Just(r#""x""#.to_owned()), Just("{}".to_owned()),
         ],
         depth in 0usize..4,
     ) {
-        let name = FORBIDDEN_FIELDS[index];
+        let name = FORBIDDEN_NAMES[index];
         let mut inner = format!(r#""{name}":{value}"#);
         for _ in 0..depth {
             inner = format!(r#""n":{{{inner}}}"#);
