@@ -280,6 +280,66 @@ fn tie_group_is_reported_with_the_no_meaning_note() {
         .contains("\"members\":[\"p7\",\"p9\"]"));
 }
 
+const RANKING_LABEL: &str = "Score ranking \u{2014} all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.";
+
+/// A decided standings trace that lists `members` as one place each.
+fn standings_trace(members: &[&str]) -> DecisionTrace {
+    let rk = RuleId::new("rank.standing").unwrap();
+    let places: Vec<Place> = members
+        .iter()
+        .enumerate()
+        .map(|(i, m)| Place::new(i as u32 + 1, vec![(*m).to_owned()]).unwrap())
+        .collect();
+    DecisionTrace::new(TraceParts {
+        question: TraceQuestion {
+            kind: QuestionKind::Rank,
+            target: "standing".to_owned(),
+            participant: None,
+        },
+        outcome: Outcome::Decided(TraceValue::Standings(places.clone())),
+        rules: vec![TraceRule {
+            rule: rk.clone(),
+            revision: RevisionNumber::new(1).unwrap(),
+            spans: vec![span(0, 20)],
+        }],
+        entries: vec![Entry::Decision(DecisionEntry {
+            rule: rk,
+            op: DecisionOp::Recorded,
+            value: DecisionValue::Known(TraceValue::Standings(places)),
+            from: Vec::new(),
+        })],
+        not_applied: Vec::new(),
+        missing: Vec::new(),
+        diagnostics: DiagnosticState::empty(),
+    })
+    .unwrap()
+}
+
+// Guards the user decision on the ranking label: a standings decision states
+// that the ranking covers all submitted participants and that eligibility is
+// not a filter. The IR has no eligible-only ranking construct (a `ranking`
+// rule has only key, direction, tie breakers and ties), so the contrast is
+// checked on the report text: the listed standings include p3, whose
+// eligibility is a separate decision, and value decisions carry no label.
+#[test]
+fn standings_decision_states_that_ranking_covers_all_submitted_participants() {
+    let ranking = standings_trace(&["p2", "p3", "p1"]);
+    let value = sum_trace(2, 3, decided(2, 3), vec![span(0, 20)]);
+    let traces = [value, ranking];
+    let vs: Vec<Verification> = traces.iter().map(|t| verify_trace(t, &models())).collect();
+    let (human, json) = report_bytes(&traces, &vs, &[]);
+    assert_eq!(human.matches(RANKING_LABEL).count(), 1);
+    let sections: Vec<&str> = human.split("\nDECISION ").collect();
+    assert_eq!(sections.len(), 3);
+    assert!(!sections[1].contains("Score ranking"));
+    assert!(sections[2].starts_with("2  question: rank of standing"));
+    assert!(sections[2].contains(RANKING_LABEL));
+    assert!(sections[2].contains("standings [1: p2; 2: p3; 3: p1]"));
+    assert!(!human.contains("eligible participants only"));
+    let json = String::from_utf8(json).unwrap();
+    assert!(!json.contains("Score ranking"));
+}
+
 #[test]
 fn compare_entries_list_criteria_and_values_in_order() {
     let rk = RuleId::new("rank.total").unwrap();

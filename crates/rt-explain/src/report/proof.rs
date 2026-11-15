@@ -382,6 +382,9 @@ fn pad(label: &str) -> String {
     format!("  {label:<19}")
 }
 
+// Fixed by a user decision: states how a ranking relates to eligibility.
+const RANKING_SCOPE_LABEL: &str = "Score ranking \u{2014} all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.";
+
 fn render_section(out: &mut String, d: &DecisionSection) {
     let t = &d.trace;
     let _ = writeln!(
@@ -391,6 +394,9 @@ fn render_section(out: &mut String, d: &DecisionSection) {
         question_line(t),
         fmt_outcome(t.outcome())
     );
+    if matches!(t.outcome(), Outcome::Decided(TraceValue::Standings(_))) {
+        let _ = writeln!(out, "{}{RANKING_SCOPE_LABEL}", pad("ranking"));
+    }
     let rules: Vec<String> = t
         .rules()
         .iter()
