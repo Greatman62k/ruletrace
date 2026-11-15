@@ -19,15 +19,17 @@ the demonstration Reviewer and does not make a new human decision. Every Approva
 rejection record were written by `ruletrace review`, never by hand.
 
 Steps: s01 ingest. s02 `ruletrace-ai propose` sends clauses 1 to 3 in one request and clauses 4 and
-5 in another (`max_clauses_per_request = 3`) and stores two batches and a Transmission_Log. s03a to
-s03f review the five proposals: s03a approves `elig.entry` and creates the ledger, s03b lists the
-four proposals that remain, s03c approves `score.weighted`, s03d approves `rank.standing`, s03e
-rejects `junior.flag` with a reason, s03f lists what is still pending. `review list` needs an existing
-ledger, so the first listing follows the first decision. `rank.standing` reads the target `score`
-that `score.weighted` declares, so it is approved after `score.weighted`: an earlier approval is
-refused with RT-APR-0205. s04 validate, s05 compile, s06 evaluate against the equal published
-result, s06b evaluate against the published result with one seeded difference (Warning
-RT-EXE-0011), s07 evaluate again with `--render` and the proof report.
+5 in another (`max_clauses_per_request = 3`) and stores two batches and a Transmission_Log. s02b
+`ruletrace review list` shows the five pending proposals before any decision: no ledger exists yet,
+and `review list` then reads as over an empty ledger, writes nothing and creates no file. s03a to
+s03f decide the five proposals: s03a approves `elig.entry` and creates the ledger, s03c approves
+`score.weighted`, s03d approves `rank.standing`, s03e rejects `junior.flag` with a reason, s03f lists
+what is still pending. There is no step s03b: that listing is now s02b. `rank.standing` reads the target `score` that `score.weighted`
+declares, so it is approved after `score.weighted`: an earlier approval is refused with RT-APR-0205.
+s04 validate, s05 compile, s06 evaluate against the equal published result, s06b evaluate against
+the published result with one seeded difference (Warning RT-EXE-0011), s06c evaluate over
+`data/canonical/data-complete.json`, s07 evaluate again with `--render` and the proof report, s07b
+the same over the complete data.
 
 Clause 4 (prize money) is outside the Rule_IR. Its proposal has the kind `unrecognized` and stays
 pending with Unsupported RT-VAL-0003: **1 unsupported clause**. It reaches the Coverage_Statement
@@ -35,8 +37,13 @@ as `unsupported`. Clause 5 is proposed with a deliberate misreading (age at most
 says under 18) and the Reviewer rejects it with a reason, so the Coverage_Statement lists it as
 `proposal_rejected` with that reason. Clauses 1 to 3 are `rule_approved`.
 
-Participant `p2` has no `age`, so its eligibility is Indeterminate by design. Therefore `evaluate`
-exits 4 in s06, s06b and s07. That is the correct result of this demonstration.
+Participant `p2` has no `age` in `data/canonical/data.json`, so its eligibility is Indeterminate by
+design. Therefore `evaluate` exits 4 in s06, s06b and s07. That is the correct result of this
+demonstration: exit code 4 means "at least one Outcome is not decided", and the tool has not failed.
+`data/canonical/data-complete.json` supplies the age of `p2` (20), every Outcome is decided and
+`evaluate` exits 0 in s06c and s07b. The values are those of the `hand` profile: p1, p2, p4 and p5
+eligible and p3 not; scores 7.6, 7.8, 6, 7.8 and 6; standing p2, p4, p1, then the Tie_Group of p3 and
+p5.
 
 Platform note: where the platform cannot sync a directory (Windows), `propose` adds the Warning
 RT-AI-0309 and a different Run_Summary. The files `golden/steps/s02.stdout.windows` and
@@ -129,6 +136,30 @@ Golden files under `golden/` are produced by the real binaries and blessed with 
       ]
     },
     {
+      "id": "s02b",
+      "profile": [
+        "ai"
+      ],
+      "argv": [
+        "ruletrace",
+        "review",
+        "list",
+        "--rulebook",
+        "rulebook/seed.json",
+        "--ledger",
+        "work/ledger.jsonl",
+        "--source-model",
+        "work/source-model.json",
+        "--proposals",
+        "work/store"
+      ],
+      "expect_exit": 0,
+      "cwd": ".",
+      "stdout_golden": "golden/steps/s02b.stdout",
+      "stderr_golden": "golden/steps/s02b.stderr",
+      "outputs": []
+    },
+    {
       "id": "s03a",
       "profile": [
         "ai"
@@ -161,30 +192,6 @@ Golden files under `golden/` are produced by the real binaries and blessed with 
       "cwd": ".",
       "stdout_golden": "golden/steps/s03a.stdout",
       "stderr_golden": "golden/steps/s03a.stderr",
-      "outputs": []
-    },
-    {
-      "id": "s03b",
-      "profile": [
-        "ai"
-      ],
-      "argv": [
-        "ruletrace",
-        "review",
-        "list",
-        "--rulebook",
-        "rulebook/seed.json",
-        "--ledger",
-        "work/ledger.jsonl",
-        "--source-model",
-        "work/source-model.json",
-        "--proposals",
-        "work/store"
-      ],
-      "expect_exit": 0,
-      "cwd": ".",
-      "stdout_golden": "golden/steps/s03b.stdout",
-      "stderr_golden": "golden/steps/s03b.stderr",
       "outputs": []
     },
     {
@@ -443,6 +450,38 @@ Golden files under `golden/` are produced by the real binaries and blessed with 
       ]
     },
     {
+      "id": "s06c",
+      "profile": [
+        "ai"
+      ],
+      "argv": [
+        "ruletrace",
+        "evaluate",
+        "--compiled",
+        "work/compiled.json",
+        "--data",
+        "data/canonical/data-complete.json",
+        "--questions",
+        "data/canonical/questions.json",
+        "--published",
+        "data/canonical/published.json",
+        "--source-model",
+        "work/source-model.json",
+        "--out",
+        "work/results-complete.json"
+      ],
+      "expect_exit": 0,
+      "cwd": ".",
+      "stdout_golden": "golden/steps/s06c.stdout",
+      "stderr_golden": "golden/steps/s06c.stderr",
+      "outputs": [
+        {
+          "path": "work/results-complete.json",
+          "golden": "golden/artifacts/results-complete.json"
+        }
+      ]
+    },
+    {
       "id": "s07",
       "profile": [
         "ai"
@@ -488,6 +527,55 @@ Golden files under `golden/` are produced by the real binaries and blessed with 
         {
           "path": "work/proof.json",
           "golden": "golden/artifacts/proof.json"
+        }
+      ]
+    },
+    {
+      "id": "s07b",
+      "profile": [
+        "ai"
+      ],
+      "argv": [
+        "ruletrace",
+        "evaluate",
+        "--compiled",
+        "work/compiled.json",
+        "--data",
+        "data/canonical/data-complete.json",
+        "--questions",
+        "data/canonical/questions.json",
+        "--published",
+        "data/canonical/published.json",
+        "--source-model",
+        "work/source-model.json",
+        "--out",
+        "work/results-complete.proof-run.json",
+        "--ledger",
+        "work/ledger.jsonl",
+        "--rulebook",
+        "rulebook/seed.json",
+        "--render",
+        "--proof-report",
+        "work/proof-complete.txt",
+        "--proof-report-json",
+        "work/proof-complete.json"
+      ],
+      "expect_exit": 0,
+      "cwd": ".",
+      "stdout_golden": "golden/steps/s07b.stdout",
+      "stderr_golden": "golden/steps/s07b.stderr",
+      "outputs": [
+        {
+          "path": "work/results-complete.proof-run.json",
+          "golden": "golden/artifacts/results-complete.proof-run.json"
+        },
+        {
+          "path": "work/proof-complete.txt",
+          "golden": "golden/artifacts/proof-complete.txt"
+        },
+        {
+          "path": "work/proof-complete.json",
+          "golden": "golden/artifacts/proof-complete.json"
         }
       ]
     }

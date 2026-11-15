@@ -15,11 +15,19 @@ approve` refuses a stale hash. Output files go to `work/`.
 
 Steps: s01 ingest, s03a to s03c approve the three revisions, s04 validate, s05 compile, s06
 evaluate against the equal published result, s06b evaluate against the published result with one
-seeded difference (Warning RT-EXE-0011), s07 evaluate again with `--render` and the proof report.
+seeded difference (Warning RT-EXE-0011), s07 evaluate again with `--render` and the proof report,
+s06c and s07b the same two evaluations over `data/canonical/data-complete.json`.
 
-Participant `p2` has no `age`, so its eligibility is Indeterminate by design. Therefore `evaluate`
-exits 4 in s06, s06b and s07. That is the correct result of this demonstration. Participants `p3`
-and `p5` tie on score and on the tie-breaker and form one Tie_Group.
+Participant `p2` has no `age` in `data/canonical/data.json`, so its eligibility is Indeterminate by
+design. Therefore `evaluate` exits 4 in s06, s06b and s07. That is the correct result of this
+demonstration: exit code 4 means "at least one Outcome is not decided", and the tool has not failed.
+Participants `p3` and `p5` tie on score and on the tie-breaker and form one Tie_Group.
+
+`data/canonical/data-complete.json` is the same data with the age of `p2` supplied (20). Over it
+every Outcome is decided, so `evaluate` exits 0 in s06c and s07b: p1, p2, p4 and p5 are eligible and
+p3 (age 15) is not; the scores are 7.6, 7.8, 6, 7.8 and 6; the standing is p2, p4, p1, then the
+Tie_Group of p3 and p5. The acceptance test checks these values against numbers worked out by hand,
+not against the golden files. The Indeterminate scenario stays in s06, s06b and s07.
 
 Golden files under `golden/` are produced by the real binaries and blessed with `RT_DEMO_BLESS=1`.
 
@@ -286,6 +294,38 @@ Golden files under `golden/` are produced by the real binaries and blessed with 
       ]
     },
     {
+      "id": "s06c",
+      "profile": [
+        "hand"
+      ],
+      "argv": [
+        "ruletrace",
+        "evaluate",
+        "--compiled",
+        "work/compiled.json",
+        "--data",
+        "data/canonical/data-complete.json",
+        "--questions",
+        "data/canonical/questions.json",
+        "--published",
+        "data/canonical/published.json",
+        "--source-model",
+        "work/source-model.json",
+        "--out",
+        "work/results-complete.json"
+      ],
+      "expect_exit": 0,
+      "cwd": ".",
+      "stdout_golden": "golden/steps/s06c.stdout",
+      "stderr_golden": "golden/steps/s06c.stderr",
+      "outputs": [
+        {
+          "path": "work/results-complete.json",
+          "golden": "golden/artifacts/results-complete.json"
+        }
+      ]
+    },
+    {
       "id": "s07",
       "profile": [
         "hand"
@@ -331,6 +371,55 @@ Golden files under `golden/` are produced by the real binaries and blessed with 
         {
           "path": "work/proof.json",
           "golden": "golden/artifacts/proof.json"
+        }
+      ]
+    },
+    {
+      "id": "s07b",
+      "profile": [
+        "hand"
+      ],
+      "argv": [
+        "ruletrace",
+        "evaluate",
+        "--compiled",
+        "work/compiled.json",
+        "--data",
+        "data/canonical/data-complete.json",
+        "--questions",
+        "data/canonical/questions.json",
+        "--published",
+        "data/canonical/published.json",
+        "--source-model",
+        "work/source-model.json",
+        "--out",
+        "work/results-complete.proof-run.json",
+        "--ledger",
+        "work/ledger.jsonl",
+        "--rulebook",
+        "rulebook/hand-authored.json",
+        "--render",
+        "--proof-report",
+        "work/proof-complete.txt",
+        "--proof-report-json",
+        "work/proof-complete.json"
+      ],
+      "expect_exit": 0,
+      "cwd": ".",
+      "stdout_golden": "golden/steps/s07b.stdout",
+      "stderr_golden": "golden/steps/s07b.stderr",
+      "outputs": [
+        {
+          "path": "work/results-complete.proof-run.json",
+          "golden": "golden/artifacts/results-complete.proof-run.json"
+        },
+        {
+          "path": "work/proof-complete.txt",
+          "golden": "golden/artifacts/proof-complete.txt"
+        },
+        {
+          "path": "work/proof-complete.json",
+          "golden": "golden/artifacts/proof-complete.json"
         }
       ]
     }

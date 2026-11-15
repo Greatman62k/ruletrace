@@ -21,7 +21,8 @@
 )]
 
 use rt_demo::{
-    check_manifest, parse_runbook, run_runbook, run_step, Captured, Mode, Runbook, Step,
+    check_manifest, describe_evaluate, describe_ledger, parse_runbook, run_runbook_recorded,
+    run_step, Captured, Mode, Runbook, Step, StepRecord,
 };
 use rt_foundation::InputId;
 use rt_json::{parse, Kind, ParseLimits, Position, Value};
@@ -374,27 +375,60 @@ fn question_label(q: &Json) -> String {
         .map_or_else(|| target.to_owned(), |p| format!("{target} {p}"))
 }
 
-fn print_summary(runbook: &Runbook, work: &Path) {
+/// The argument that follows `flag` in a step.
+fn option<'a>(step: &'a Step, flag: &str) -> Option<&'a str> {
+    step.argv
+        .iter()
+        .position(|a| a == flag)
+        .and_then(|i| step.argv.get(i + 1))
+        .map(String::as_str)
+}
+
+fn print_summary(runbook: &Runbook, work: &Path, records: &[StepRecord]) {
+    println!("\nSLICE 0 SUMMARY, profile `hand`");
+    println!(
+        "\nTHIS IS A STAND-IN. The document below was written for the RuleTrace project. It is not \
+         the rules of any real competition."
+    );
+    println!(
+        "NO AI WAS USED. The runbook has no `ruletrace-ai` step, the manifest names no provider \
+         script, and every rule of the rulebook has origin `manual`. Each approval below is a \
+         human decision recorded by `ruletrace review approve`."
+    );
+    let document = std::fs::read_to_string(work.join("documents/stand-in-rules.md")).unwrap();
+    println!("\nstand-in document (documents/stand-in-rules.md):\n{document}");
+    println!("approvals in the ledger (work/ledger.jsonl):");
+    let ledger = std::fs::read(work.join("work/ledger.jsonl")).unwrap();
+    for line in describe_ledger(&ledger).unwrap() {
+        println!("  {line}");
+    }
     println!("\nstep  exit  command");
     for s in runbook.steps_for(PROFILE).unwrap() {
         let words: Vec<&str> = s.argv.iter().take(2).map(String::as_str).collect();
         println!("{:<5} {:<5} {}", s.id, s.expect_exit, words.join(" "));
     }
-    let results = read_json(&work.join("work/results.json"));
-    println!("\nquestion                outcome");
-    for (t, o) in items(at(&results, "traces"))
-        .iter()
-        .zip(items(at(&results, "outcomes")))
-    {
-        println!(
-            "{:<23} {}",
-            question_label(at(t, "question")),
-            describe_outcome(o)
-        );
+    println!(
+        "\nevaluate steps (exit 4 = at least one Outcome is Indeterminate, exit 0 = all decided):"
+    );
+    for record in records {
+        let step = step_by_id(runbook, &record.id);
+        if step.argv.get(1).map(String::as_str) != Some("evaluate") {
+            continue;
+        }
+        let out = option(step, "--out").expect("evaluate has --out");
+        let results = std::fs::read(work.join(out)).unwrap();
+        let described = describe_evaluate(
+            &record.id,
+            record.captured.exit,
+            &results,
+            &record.captured.stderr,
+        )
+        .unwrap();
+        println!("\n{described}");
     }
     let proof = std::fs::read_to_string(work.join("work/proof.txt")).unwrap();
     let first = proof.split("\nDECISION 2 ").next().unwrap_or(&proof);
-    println!("\nfirst Proof_Report section:\n{first}");
+    println!("first Proof_Report section (s07):\n{first}");
 }
 
 #[test]
@@ -419,7 +453,7 @@ fn hand_profile_acceptance() -> TestResult {
     let ci = std::env::var("CI").ok();
     let mode = Mode::from_env_values(bless.as_deref(), ci.as_deref())?;
     let base = TempDir::new("acceptance");
-    run_runbook(&runbook, PROFILE, &demo, &base.0, &bin, mode)?;
+    let records = run_runbook_recorded(&runbook, PROFILE, &demo, &base.0, &bin, mode)?;
     let work = &base.0;
 
     // 5a. Every Decision_Trace is verified by the Explainer.
@@ -555,7 +589,144 @@ fn hand_profile_acceptance() -> TestResult {
     )?;
     assert!(members > 0);
 
-    print_summary(&runbook, work);
+    // 5f. The happy path (Req 16 criterion 13): over `data-complete.json` every
+    // Outcome is decided and `evaluate` exits 0. The expected values were
+    // worked out by hand from the rules, not read from the tool:
+    //   score = 0.6 * judges + 0.4 * technical
+    //   p1 17/8/7: 4.8 + 2.8 = 7.6   p2 20/7/9: 4.2 + 3.6 = 7.8
+    //   p3 15/6/6: 3.6 + 2.4 = 6     p4 21/9/6: 5.4 + 2.4 = 7.8
+    //   p5 19/6/6: 3.6 + 2.4 = 6
+    //   eligible = age >= 16 and licence: only p3 (age 15) is not.
+    //   ranking: score descending, then technical descending. p2 and p4 tie on
+    //   7.8 and p2 leads on technical 9 against 6; p1 is third on 7.6; p3 and
+    //   p5 tie on 6 and on technical 6, so they form one Tie_Group.
+    let expected_complete = [
+        ("eligible p1", "true"),
+        ("eligible p2", "true"),
+        ("eligible p3", "false"),
+        ("eligible p4", "true"),
+        ("eligible p5", "true"),
+        ("score p1", "7.6"),
+        ("score p2", "7.8"),
+        ("score p3", "6"),
+        ("score p4", "7.8"),
+        ("score p5", "6"),
+        ("standing", "1:p2 2:p4 3:p1 4:p3=p5"),
+    ];
+    for (step_id, out) in [
+        ("s06c", "work/results-complete.json"),
+        ("s07b", "work/results-complete.proof-run.json"),
+    ] {
+        assert_eq!(step_by_id(&runbook, step_id).expect_exit, 0);
+        let record = records.iter().find(|r| r.id == step_id).unwrap();
+        assert_eq!(record.captured.exit, 0, "{step_id}");
+        assert!(
+            record.captured.stderr.is_empty(),
+            "{step_id} has diagnostics"
+        );
+        let complete = read_json(&work.join(out));
+        let found: Vec<(String, String)> = items(at(&complete, "traces"))
+            .iter()
+            .zip(items(at(&complete, "outcomes")))
+            .map(|(t, o)| {
+                assert_eq!(
+                    text(at(o, "state")),
+                    "decided",
+                    "{step_id} has an undecided Outcome"
+                );
+                (question_label(at(t, "question")), describe_outcome(o))
+            })
+            .collect();
+        let wanted: Vec<(String, String)> = expected_complete
+            .iter()
+            .map(|(q, v)| ((*q).to_owned(), (*v).to_owned()))
+            .collect();
+        assert_eq!(found, wanted, "{step_id}");
+        assert!(items(at(&complete, "diagnostics")).is_empty(), "{step_id}");
+        let verification = items(at(&complete, "verification"));
+        assert_eq!(verification.len(), 11, "{step_id}");
+        assert!(
+            verification
+                .iter()
+                .all(|v| text(at(v, "status")) == "verified"
+                    && items(at(v, "spans"))
+                        .iter()
+                        .all(|s| at(s, "resolved").kind() == &Kind::Bool(true))),
+            "{step_id}: a trace is not verified"
+        );
+    }
+    // Render and proof options never change the results (Req 13.19).
+    assert_eq!(
+        std::fs::read(work.join("work/results-complete.json"))?,
+        std::fs::read(work.join("work/results-complete.proof-run.json"))?
+    );
+    let complete_proof = read_json(&work.join("work/proof-complete.json"));
+    let complete_header = at(&complete_proof, "header");
+    assert_eq!(at(complete_header, "decisions").as_u64(), Some(11));
+    assert_eq!(at(complete_header, "verified_traces").as_u64(), Some(11));
+    assert!(items(at(&complete_proof, "decisions"))
+        .iter()
+        .all(|s| text(at(at(s, "verification"), "status")) == "verified"));
+    // The complete data differ from the canonical data only by the age of p2,
+    // so the Indeterminate scenario above stays the only difference.
+    let canonical = read_json(&demo.join("data/canonical/data.json"));
+    let complete_data = read_json(&demo.join("data/canonical/data-complete.json"));
+    let (before, after) = (
+        items(at(&canonical, "participants")),
+        items(at(&complete_data, "participants")),
+    );
+    assert_eq!(before.len(), after.len());
+    for (b, a) in before.iter().zip(after) {
+        let id = text(at(b, "id"));
+        assert_eq!(id, text(at(a, "id")));
+        let (bf, af) = (at(b, "fields"), at(a, "fields"));
+        let Kind::Object(a_fields) = af.kind() else {
+            panic!("fields of {id} is not an object")
+        };
+        for member in a_fields {
+            match bf.get(&member.key) {
+                Some(old) => assert!(same(&old.value, &member.value), "{id}.{}", member.key),
+                None => assert_eq!(
+                    (id, member.key.as_str(), text(&member.value)),
+                    ("p2", "age", "20"),
+                    "the only added field is the age of p2"
+                ),
+            }
+        }
+    }
+    // The worked-out scores also follow from the data by the independent
+    // decimal model, so the literals above cannot drift from the data file.
+    for (index, participant) in after.iter().enumerate() {
+        let fields = at(participant, "fields");
+        let judges = Dec::parse(text(at(fields, "judges")));
+        let technical = Dec::parse(text(at(fields, "technical")));
+        let score = Dec::parse("0.6")
+            .mul(judges)
+            .add(Dec::parse("0.4").mul(technical));
+        assert_eq!(
+            score.compare(Dec::parse(expected_complete[5 + index].1)),
+            Ordering::Equal,
+            "score of {}",
+            text(at(participant, "id"))
+        );
+    }
+
+    // 5g. No AI was used (printed in the summary): no `ruletrace-ai` step, no
+    // provider script in the manifest, and every rule has the origin `manual`.
+    assert!(runbook
+        .steps_for(PROFILE)?
+        .iter()
+        .all(|s| s.argv.first().map(String::as_str) != Some("ruletrace-ai")));
+    assert!(matches!(
+        at(&manifest_json, "provider_script").kind(),
+        Kind::Null
+    ));
+    let rulebook = read_json(&demo.join("rulebook/hand-authored.json"));
+    assert!(items(at(&rulebook, "rules"))
+        .iter()
+        .all(|r| text(at(at(r, "origin"), "kind")) == "manual"));
+
+    print_summary(&runbook, work, &records);
 
     // 6. Mutations M1 to M3, smoke versions (design §8.11.11).
 

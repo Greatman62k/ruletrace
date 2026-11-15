@@ -1,0 +1,217 @@
+RuleTrace proof report   format ruletrace-proof-report v1
+rulebook 7c86dc3620494e4a197c64393e9e738bd7096668f3e7386186d7365edbb9e75b
+data: not stated
+provenance: 11 of 11 traces verified
+
+DECISION 1  question: value of eligible for p1   outcome: decided true
+  rules applied      elig.entry @ revision 1
+  approval           elig.entry @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 9edaa59e63831bf8d71ccba89eb6025bac65019cbd424ed1348981e784dc368c
+  source             rule elig.entry @ 1, stand-in-rules.md bytes 161..241, line 5 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "1. An entrant is eligible if age is at least 16 and the entrant holds a licence."
+  inputs read        1. age (p1) = 17   [rule elig.entry]
+  calculation steps  2. ge(17, 16) -> true   [rule elig.entry]
+  inputs read        3. licence (p1) = true   [rule elig.entry]
+  calculation steps  4. decision and from [2, 3] -> true   [rule elig.entry]
+  calculation steps  5. decision pass from [4] -> true   [rule elig.entry]
+  tie-breaking       none recorded
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          equal
+
+DECISION 2  question: value of eligible for p2   outcome: decided true
+  rules applied      elig.entry @ revision 1
+  approval           elig.entry @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 9edaa59e63831bf8d71ccba89eb6025bac65019cbd424ed1348981e784dc368c
+  source             rule elig.entry @ 1, stand-in-rules.md bytes 161..241, line 5 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "1. An entrant is eligible if age is at least 16 and the entrant holds a licence."
+  inputs read        1. age (p2) = 20   [rule elig.entry]
+  calculation steps  2. ge(20, 16) -> true   [rule elig.entry]
+  inputs read        3. licence (p2) = true   [rule elig.entry]
+  calculation steps  4. decision and from [2, 3] -> true   [rule elig.entry]
+  calculation steps  5. decision pass from [4] -> true   [rule elig.entry]
+  tie-breaking       none recorded
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          not compared for this question
+
+DECISION 3  question: value of eligible for p3   outcome: decided false
+  rules applied      elig.entry @ revision 1
+  approval           elig.entry @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 9edaa59e63831bf8d71ccba89eb6025bac65019cbd424ed1348981e784dc368c
+  source             rule elig.entry @ 1, stand-in-rules.md bytes 161..241, line 5 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "1. An entrant is eligible if age is at least 16 and the entrant holds a licence."
+  inputs read        1. age (p3) = 15   [rule elig.entry]
+  calculation steps  2. ge(15, 16) -> false   [rule elig.entry]
+  inputs read        3. licence (p3) = true   [rule elig.entry]
+  calculation steps  4. decision and from [2, 3] -> false   [rule elig.entry]
+  calculation steps  5. decision pass from [4] -> false   [rule elig.entry]
+  tie-breaking       none recorded
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          equal
+
+DECISION 4  question: value of eligible for p4   outcome: decided true
+  rules applied      elig.entry @ revision 1
+  approval           elig.entry @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 9edaa59e63831bf8d71ccba89eb6025bac65019cbd424ed1348981e784dc368c
+  source             rule elig.entry @ 1, stand-in-rules.md bytes 161..241, line 5 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "1. An entrant is eligible if age is at least 16 and the entrant holds a licence."
+  inputs read        1. age (p4) = 21   [rule elig.entry]
+  calculation steps  2. ge(21, 16) -> true   [rule elig.entry]
+  inputs read        3. licence (p4) = true   [rule elig.entry]
+  calculation steps  4. decision and from [2, 3] -> true   [rule elig.entry]
+  calculation steps  5. decision pass from [4] -> true   [rule elig.entry]
+  tie-breaking       none recorded
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          equal
+
+DECISION 5  question: value of eligible for p5   outcome: decided true
+  rules applied      elig.entry @ revision 1
+  approval           elig.entry @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 9edaa59e63831bf8d71ccba89eb6025bac65019cbd424ed1348981e784dc368c
+  source             rule elig.entry @ 1, stand-in-rules.md bytes 161..241, line 5 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "1. An entrant is eligible if age is at least 16 and the entrant holds a licence."
+  inputs read        1. age (p5) = 19   [rule elig.entry]
+  calculation steps  2. ge(19, 16) -> true   [rule elig.entry]
+  inputs read        3. licence (p5) = true   [rule elig.entry]
+  calculation steps  4. decision and from [2, 3] -> true   [rule elig.entry]
+  calculation steps  5. decision pass from [4] -> true   [rule elig.entry]
+  tie-breaking       none recorded
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          equal
+
+DECISION 6  question: value of score for p1   outcome: decided 7.6
+  rules applied      score.weighted @ revision 1
+  approval           score.weighted @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 9fa6292ebbd6de150b1021e75b47a0ffca25db2da4c24c5ecd17f2c249136dac
+  source             rule score.weighted @ 1, stand-in-rules.md bytes 242..320, line 6 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  inputs read        1. judges (p1) = 8   [rule score.weighted]
+  inputs read        2. technical (p1) = 7   [rule score.weighted]
+  calculation steps  3. mul(0.6, 8) -> 4.8   [rule score.weighted]
+  calculation steps  4. mul(0.4, 7) -> 2.8   [rule score.weighted]
+  calculation steps  5. sum(4.8, 2.8) -> 7.6   [rule score.weighted]
+  calculation steps  6. decision pass from [5] -> 7.6   [rule score.weighted]
+  tie-breaking       none recorded
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          equal
+
+DECISION 7  question: value of score for p2   outcome: decided 7.8
+  rules applied      score.weighted @ revision 1
+  approval           score.weighted @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 9fa6292ebbd6de150b1021e75b47a0ffca25db2da4c24c5ecd17f2c249136dac
+  source             rule score.weighted @ 1, stand-in-rules.md bytes 242..320, line 6 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  inputs read        1. judges (p2) = 7   [rule score.weighted]
+  inputs read        2. technical (p2) = 9   [rule score.weighted]
+  calculation steps  3. mul(0.6, 7) -> 4.2   [rule score.weighted]
+  calculation steps  4. mul(0.4, 9) -> 3.6   [rule score.weighted]
+  calculation steps  5. sum(4.2, 3.6) -> 7.8   [rule score.weighted]
+  calculation steps  6. decision pass from [5] -> 7.8   [rule score.weighted]
+  tie-breaking       none recorded
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          equal
+
+DECISION 8  question: value of score for p3   outcome: decided 6
+  rules applied      score.weighted @ revision 1
+  approval           score.weighted @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 9fa6292ebbd6de150b1021e75b47a0ffca25db2da4c24c5ecd17f2c249136dac
+  source             rule score.weighted @ 1, stand-in-rules.md bytes 242..320, line 6 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  inputs read        1. judges (p3) = 6   [rule score.weighted]
+  inputs read        2. technical (p3) = 6   [rule score.weighted]
+  calculation steps  3. mul(0.6, 6) -> 3.6   [rule score.weighted]
+  calculation steps  4. mul(0.4, 6) -> 2.4   [rule score.weighted]
+  calculation steps  5. sum(3.6, 2.4) -> 6   [rule score.weighted]
+  calculation steps  6. decision pass from [5] -> 6   [rule score.weighted]
+  tie-breaking       none recorded
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          equal
+
+DECISION 9  question: value of score for p4   outcome: decided 7.8
+  rules applied      score.weighted @ revision 1
+  approval           score.weighted @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 9fa6292ebbd6de150b1021e75b47a0ffca25db2da4c24c5ecd17f2c249136dac
+  source             rule score.weighted @ 1, stand-in-rules.md bytes 242..320, line 6 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  inputs read        1. judges (p4) = 9   [rule score.weighted]
+  inputs read        2. technical (p4) = 6   [rule score.weighted]
+  calculation steps  3. mul(0.6, 9) -> 5.4   [rule score.weighted]
+  calculation steps  4. mul(0.4, 6) -> 2.4   [rule score.weighted]
+  calculation steps  5. sum(5.4, 2.4) -> 7.8   [rule score.weighted]
+  calculation steps  6. decision pass from [5] -> 7.8   [rule score.weighted]
+  tie-breaking       none recorded
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          equal
+
+DECISION 10  question: value of score for p5   outcome: decided 6
+  rules applied      score.weighted @ revision 1
+  approval           score.weighted @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 9fa6292ebbd6de150b1021e75b47a0ffca25db2da4c24c5ecd17f2c249136dac
+  source             rule score.weighted @ 1, stand-in-rules.md bytes 242..320, line 6 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  inputs read        1. judges (p5) = 6   [rule score.weighted]
+  inputs read        2. technical (p5) = 6   [rule score.weighted]
+  calculation steps  3. mul(0.6, 6) -> 3.6   [rule score.weighted]
+  calculation steps  4. mul(0.4, 6) -> 2.4   [rule score.weighted]
+  calculation steps  5. sum(3.6, 2.4) -> 6   [rule score.weighted]
+  calculation steps  6. decision pass from [5] -> 6   [rule score.weighted]
+  tie-breaking       none recorded
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          equal
+
+DECISION 11  question: rank of standing for (no participant)   outcome: decided standings [1: p2; 2: p4; 3: p1; 4: p3, p5]
+  rules applied      rank.standing @ revision 1; score.weighted @ revision 1
+  approval           rank.standing @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 0bc9dbf21d05814446b9ef0b9466e0f7de03c96b26bdebcb8916a8a328628224
+  approval           score.weighted @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 9fa6292ebbd6de150b1021e75b47a0ffca25db2da4c24c5ecd17f2c249136dac
+  source             rule rank.standing @ 1, stand-in-rules.md bytes 321..426, line 7 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "3. Entrants are ranked by score, highest first. Equal scores are separated by the higher technical score."
+  source             rule score.weighted @ 1, stand-in-rules.md bytes 242..320, line 6 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  inputs read        1. judges (p1) = 8   [rule score.weighted]
+  inputs read        2. technical (p1) = 7   [rule score.weighted]
+  calculation steps  3. mul(0.6, 8) -> 4.8   [rule score.weighted]
+  calculation steps  4. mul(0.4, 7) -> 2.8   [rule score.weighted]
+  calculation steps  5. sum(4.8, 2.8) -> 7.6   [rule score.weighted]
+  inputs read        6. judges (p2) = 7   [rule score.weighted]
+  inputs read        7. technical (p2) = 9   [rule score.weighted]
+  calculation steps  8. mul(0.6, 7) -> 4.2   [rule score.weighted]
+  calculation steps  9. mul(0.4, 9) -> 3.6   [rule score.weighted]
+  calculation steps  10. sum(4.2, 3.6) -> 7.8   [rule score.weighted]
+  inputs read        11. technical (p2) = 9   [rule rank.standing]
+  inputs read        12. judges (p3) = 6   [rule score.weighted]
+  inputs read        13. technical (p3) = 6   [rule score.weighted]
+  calculation steps  14. mul(0.6, 6) -> 3.6   [rule score.weighted]
+  calculation steps  15. mul(0.4, 6) -> 2.4   [rule score.weighted]
+  calculation steps  16. sum(3.6, 2.4) -> 6   [rule score.weighted]
+  inputs read        17. technical (p3) = 6   [rule rank.standing]
+  inputs read        18. judges (p4) = 9   [rule score.weighted]
+  inputs read        19. technical (p4) = 6   [rule score.weighted]
+  calculation steps  20. mul(0.6, 9) -> 5.4   [rule score.weighted]
+  calculation steps  21. mul(0.4, 6) -> 2.4   [rule score.weighted]
+  calculation steps  22. sum(5.4, 2.4) -> 7.8   [rule score.weighted]
+  inputs read        23. technical (p4) = 6   [rule rank.standing]
+  inputs read        24. judges (p5) = 6   [rule score.weighted]
+  inputs read        25. technical (p5) = 6   [rule score.weighted]
+  calculation steps  26. mul(0.6, 6) -> 3.6   [rule score.weighted]
+  calculation steps  27. mul(0.4, 6) -> 2.4   [rule score.weighted]
+  calculation steps  28. sum(3.6, 2.4) -> 6   [rule score.weighted]
+  inputs read        29. technical (p5) = 6   [rule rank.standing]
+  tie-breaking       31. compare p2 ahead of p4: criterion 0 (desc, rule rank.standing): 7.8 vs 7.8 -> equal; criterion 1 (desc, rule rank.standing): 9 vs 6 -> p2 ahead
+  tie-breaking       33. compare p4 ahead of p1: criterion 0 (desc, rule rank.standing): 7.8 vs 7.6 -> p4 ahead
+  tie-breaking       35. compare p1 ahead of p3: criterion 0 (desc, rule rank.standing): 7.6 vs 6 -> p1 ahead
+  tie-breaking       36. compare p3 tied with p5: criterion 0 (desc, rule rank.standing): 6 vs 6 -> equal; criterion 1 (desc, rule rank.standing): 6 vs 6 -> equal
+  tie-breaking       37. tie group at position 4: {p3, p5}; members are listed in ascending identifier order, which has no ranking meaning
+  calculation steps  38. decision recorded from [] -> standings [1: p2; 2: p4; 3: p1; 4: p3, p5]   [rule rank.standing]
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          not compared for this question

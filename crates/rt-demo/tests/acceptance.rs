@@ -26,8 +26,8 @@ use rt_demo::coverage::{
     StoreFinding,
 };
 use rt_demo::{
-    check_golden, check_manifest, copy_demo, parse_runbook, run_runbook, run_step, Captured, Mode,
-    Runbook, Step,
+    check_golden, check_manifest, copy_demo, describe_evaluate, describe_ledger, parse_runbook,
+    run_runbook, run_runbook_recorded, run_step, Captured, Mode, Runbook, Step,
 };
 use rt_foundation::InputId;
 use rt_hash::sha256;
@@ -167,6 +167,35 @@ fn with_platform_skip(mut expected: Vec<&str>) -> Vec<String> {
     }
     expected.sort_unstable();
     expected.into_iter().map(str::to_owned).collect()
+}
+
+/// Every file below `dir` with its bytes, keyed by the relative path.
+fn tree(dir: &Path, relative: &Path, into: &mut std::collections::BTreeMap<String, Vec<u8>>) {
+    let mut entries: Vec<_> = std::fs::read_dir(dir)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .collect();
+    entries.sort();
+    for path in entries {
+        let name = relative.join(path.file_name().unwrap());
+        if path.is_dir() {
+            tree(&path, &name, into);
+        } else {
+            into.insert(
+                name.to_string_lossy().replace('\\', "/"),
+                std::fs::read(&path).unwrap(),
+            );
+        }
+    }
+}
+
+/// The argument that follows `flag` in a step.
+fn option<'a>(step: &'a Step, flag: &str) -> Option<&'a str> {
+    step.argv
+        .iter()
+        .position(|a| a == flag)
+        .and_then(|i| step.argv.get(i + 1))
+        .map(String::as_str)
 }
 
 fn step_by_id<'a>(runbook: &'a Runbook, id: &str) -> &'a Step {
@@ -343,7 +372,7 @@ fn ai_profile_acceptance() -> TestResult {
     let ci = std::env::var("CI").ok();
     let mode = Mode::from_env_values(bless.as_deref(), ci.as_deref())?;
     let base = TempDir::new("acceptance");
-    run_runbook(&runbook, PROFILE, &demo, &base.0, &bin, mode)?;
+    let records = run_runbook_recorded(&runbook, PROFILE, &demo, &base.0, &bin, mode)?;
     let work = &base.0;
 
     // 5a. A script entry is keyed by the identifier that `--dry-run` prints
@@ -362,6 +391,43 @@ fn ai_profile_acceptance() -> TestResult {
     let keys: BTreeSet<String> = entries.iter().map(|e| e.0.clone()).collect();
     assert_eq!(printed_ids.len(), 2);
     assert_eq!(printed_ids, keys);
+
+    // 5a2. `review list` before the first decision (Req 26.6 as amended): it
+    // lists all five pending proposals in script order, comes before the
+    // first approval in the runbook, and creates and changes no file.
+    let position = |id: &str| records.iter().position(|r| r.id == id).unwrap();
+    assert!(position("s02") < position("s02b") && position("s02b") < position("s03a"));
+    assert!(records.iter().all(|r| r.id != "s03b"), "s03b is retired");
+    let listing = &records[position("s02b")].captured;
+    assert!(listing.stderr.is_empty());
+    let listed = String::from_utf8(listing.stdout.clone())?;
+    let listed_rules: Vec<&str> = listed
+        .lines()
+        .filter(|l| l.starts_with("pending proposal "))
+        .map(|l| l.split('\'').nth(3).unwrap())
+        .collect();
+    assert_eq!(
+        listed_rules,
+        [
+            "elig.entry",
+            "score.weighted",
+            "rank.standing",
+            "prize.split",
+            "junior.flag"
+        ]
+    );
+    let early = TempDir::new("list-first");
+    copy_demo(&demo, &early.0)?;
+    for id in ["s01", "s02"] {
+        run_expecting(step_by_id(&runbook, id), 0, &bin, &early.0);
+    }
+    let (mut before, mut after) = (Default::default(), Default::default());
+    tree(&early.0, Path::new(""), &mut before);
+    let again = run_expecting(step_by_id(&runbook, "s02b"), 0, &bin, &early.0);
+    tree(&early.0, Path::new(""), &mut after);
+    assert!(before == after, "`review list` changed or created a file");
+    assert!(!early.0.join("work/ledger.jsonl").exists());
+    assert_eq!(again.stdout, listing.stdout);
 
     // 5b. The accepted response bytes sit in the stored batch, one batch per
     // script entry, and the Transmission_Log names each request without text.
@@ -675,12 +741,149 @@ fn ai_profile_acceptance() -> TestResult {
     ] {
         run_expecting(&adhoc(id, &words), exit, &bin, hand);
     }
+    let mut equality = Vec::new();
     for name in ["compiled.json", "results.json"] {
+        let hand_bytes = std::fs::read(hand.join("work").join(name))?;
+        let ai_bytes = std::fs::read(work.join("work").join(name))?;
         assert!(
-            std::fs::read(hand.join("work").join(name))?
-                == std::fs::read(work.join("work").join(name))?,
+            hand_bytes == ai_bytes,
             "{name}: the hand-authored and AI-origin artifacts differ"
         );
+        equality.push(format!(
+            "{name}: {} bytes, sha256 {}, identical from the AI-origin flow and from the hand-authored flow",
+            ai_bytes.len(),
+            sha256(&ai_bytes)
+        ));
+    }
+
+    // 5e3. The happy path (Req 16 criterion 13): over `data-complete.json`
+    // every Outcome is decided and `evaluate` exits 0. The expected values were
+    // worked out by hand from the rules, not read from the tool:
+    //   score = 0.6 * judges + 0.4 * technical
+    //   p1 17/8/7: 4.8 + 2.8 = 7.6   p2 20/7/9: 4.2 + 3.6 = 7.8
+    //   p3 15/6/6: 3.6 + 2.4 = 6     p4 21/9/6: 5.4 + 2.4 = 7.8
+    //   p5 19/6/6: 3.6 + 2.4 = 6
+    //   eligible = age >= 16 and licence: only p3 (age 15) is not.
+    //   ranking: score descending, then technical descending: p2 (7.8, 9),
+    //   p4 (7.8, 6), p1 (7.6), then p3 and p5 tie on 6 and technical 6.
+    let expected_complete = [
+        ("eligible p1", "true"),
+        ("eligible p2", "true"),
+        ("eligible p3", "false"),
+        ("eligible p4", "true"),
+        ("eligible p5", "true"),
+        ("score p1", "7.6"),
+        ("score p2", "7.8"),
+        ("score p3", "6"),
+        ("score p4", "7.8"),
+        ("score p5", "6"),
+        ("standing", "1:p2 2:p4 3:p1 4:p3=p5"),
+    ];
+    for (step_id, out) in [
+        ("s06c", "work/results-complete.json"),
+        ("s07b", "work/results-complete.proof-run.json"),
+    ] {
+        let record = &records[position(step_id)];
+        assert_eq!(step_by_id(&runbook, step_id).expect_exit, 0);
+        assert_eq!(record.captured.exit, 0, "{step_id}");
+        assert!(
+            record.captured.stderr.is_empty(),
+            "{step_id} has diagnostics"
+        );
+        let complete = json(out, &std::fs::read(work.join(out))?);
+        let mut found = Vec::new();
+        for (trace, outcome) in items(at(&complete, "traces"))
+            .iter()
+            .zip(items(at(&complete, "outcomes")))
+        {
+            assert_eq!(text(at(outcome, "state")), "decided", "{step_id}");
+            let question = at(trace, "question");
+            let label = match question.get("participant").and_then(|m| m.value.as_str()) {
+                Some(p) => format!("{} {p}", text(at(question, "target"))),
+                None => text(at(question, "target")).to_owned(),
+            };
+            let value = at(outcome, "value");
+            let described = if text(at(value, "type")) == "standings" {
+                items(at(value, "places"))
+                    .iter()
+                    .map(|p| {
+                        let members: Vec<&str> = items(at(p, "members")).iter().map(text).collect();
+                        format!(
+                            "{}:{}",
+                            at(p, "position").as_u64().unwrap(),
+                            members.join("=")
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            } else {
+                match at(value, "value").kind() {
+                    Kind::Bool(b) => b.to_string(),
+                    Kind::String(s) => s.clone(),
+                    other => panic!("unexpected value {other:?}"),
+                }
+            };
+            found.push((label, described));
+        }
+        let wanted: Vec<(String, String)> = expected_complete
+            .iter()
+            .map(|(q, v)| ((*q).to_owned(), (*v).to_owned()))
+            .collect();
+        assert_eq!(found, wanted, "{step_id}");
+        assert!(items(at(&complete, "diagnostics")).is_empty(), "{step_id}");
+        let verification = items(at(&complete, "verification"));
+        assert_eq!(verification.len(), 11, "{step_id}");
+        assert!(
+            verification
+                .iter()
+                .all(|v| text(at(v, "status")) == "verified"),
+            "{step_id}: a trace is not verified"
+        );
+    }
+    assert_eq!(
+        std::fs::read(work.join("work/results-complete.json"))?,
+        std::fs::read(work.join("work/results-complete.proof-run.json"))?
+    );
+    let complete_proof = json(
+        "proof-complete.json",
+        &std::fs::read(work.join("work/proof-complete.json"))?,
+    );
+    assert_eq!(
+        at(at(&complete_proof, "header"), "verified_traces").as_u64(),
+        Some(11)
+    );
+    assert!(items(at(&complete_proof, "decisions"))
+        .iter()
+        .all(|s| text(at(at(s, "verification"), "status")) == "verified"));
+    // The data differ from the canonical data only by the age of p2.
+    let canonical = json(
+        "data.json",
+        &std::fs::read(demo.join("data/canonical/data.json"))?,
+    );
+    let complete_data = json(
+        "data-complete.json",
+        &std::fs::read(demo.join("data/canonical/data-complete.json"))?,
+    );
+    let (old_p, new_p) = (
+        items(at(&canonical, "participants")),
+        items(at(&complete_data, "participants")),
+    );
+    assert_eq!(old_p.len(), new_p.len());
+    for (o, n) in old_p.iter().zip(new_p) {
+        let id = text(at(o, "id"));
+        assert_eq!(id, text(at(n, "id")));
+        let Kind::Object(new_fields) = at(n, "fields").kind() else {
+            panic!("fields of {id} is not an object")
+        };
+        for member in new_fields {
+            match at(o, "fields").get(&member.key) {
+                Some(old) => assert!(same(&old.value, &member.value), "{id}.{}", member.key),
+                None => assert_eq!(
+                    (id, member.key.as_str(), text(&member.value)),
+                    ("p2", "age", "20")
+                ),
+            }
+        }
     }
 
     // 5f. The dependency tree of `ruletrace` has no network, provider or AI
@@ -709,13 +912,98 @@ fn ai_profile_acceptance() -> TestResult {
     )?;
     assert!(members > 0);
 
+    println!("\nSLICE 1 SUMMARY, profile `ai`");
+    println!(
+        "\nTHIS IS A STAND-IN. The document below was written for the RuleTrace project. It is not \
+         the rules of any real competition."
+    );
+    println!(
+        "THE SCRIPT ENTRIES ARE AUTHORED. No AI provider produced them: a person wrote them by hand, \
+         and the mock provider replays them offline (no network, no credential)."
+    );
+    println!("\nstand-in document (documents/stand-in-rules.md):\n{document}");
+    println!("proposals (read from the stored batches in work/store/batches):");
+    for batch in &batches {
+        let origin = entries
+            .iter()
+            .find(|e| e.0 == batch.request_id.as_str())
+            .map_or("?", |e| e.1.as_str());
+        println!(
+            "  Request_Identifier {} (script entry origin: {origin}, provider {}, model {})",
+            batch.request_id, batch.provider, batch.model
+        );
+        for proposal in &batch.proposals {
+            let rule = proposal
+                .rule
+                .as_ref()
+                .map_or_else(|| "(no rule)".to_owned(), |r| r.0.id.to_string());
+            println!(
+                "    proposal {} kind {} rule {rule}",
+                proposal.proposal_id,
+                proposal.kind.as_str()
+            );
+            for e in &proposal.evidence {
+                println!(
+                    "      source span {} bytes {}..{} (line {}, column {}): \"{}\"",
+                    e.document, e.start, e.end, e.line, e.column, e.quote
+                );
+            }
+        }
+    }
+    println!("\nreview steps (each a human decision recorded by `ruletrace review`):");
+    for s in runbook.steps_for(PROFILE)? {
+        if s.argv.get(1).map(String::as_str) != Some("review") {
+            continue;
+        }
+        let verb = s.argv.get(2).map_or("", String::as_str);
+        match verb {
+            "list" => println!("  {}: review list", s.id),
+            _ => {
+                let reason =
+                    option(s, "--reason").map_or(String::new(), |r| format!(", reason: {r}"));
+                println!(
+                    "  {}: review {verb} {} @ {} by \"{}\" at {}{reason}",
+                    s.id,
+                    option(s, "--rule").unwrap_or("?"),
+                    option(s, "--revision").unwrap_or("?"),
+                    option(s, "--reviewer").unwrap_or("?"),
+                    option(s, "--time").unwrap_or("?"),
+                );
+            }
+        }
+    }
+    println!("\ndecisions in the ledger (work/ledger.jsonl):");
+    for line in describe_ledger(&std::fs::read(work.join("work/ledger.jsonl"))?)? {
+        println!("  {line}");
+    }
     println!("\nstep  exit  command");
     for s in runbook.steps_for(PROFILE)? {
         let words: Vec<&str> = s.argv.iter().take(3).map(String::as_str).collect();
         println!("{:<5} {:<5} {}", s.id, s.expect_exit, words.join(" "));
     }
-    println!("\nCoverage_Statement:\n{}", print_markdown(&statement));
-    println!("script entries are authored (not provider output); the document is a stand-in\n");
+    println!(
+        "\nevaluate steps (exit 4 = at least one Outcome is Indeterminate, exit 0 = all decided):"
+    );
+    for record in &records {
+        let step = step_by_id(&runbook, &record.id);
+        if step.argv.get(1).map(String::as_str) != Some("evaluate") {
+            continue;
+        }
+        let out = option(step, "--out").expect("evaluate has --out");
+        let described = describe_evaluate(
+            &record.id,
+            record.captured.exit,
+            &std::fs::read(work.join(out))?,
+            &record.captured.stderr,
+        )?;
+        println!("\n{described}");
+    }
+    println!("Coverage_Statement:\n{}", print_markdown(&statement));
+    println!("compiled and evaluated artifacts of the ai flow and of the hand-authored flow:");
+    for line in &equality {
+        println!("  {line}");
+    }
+    println!("\nscript entries are authored (not provider output); the document is a stand-in\n");
     Ok(())
 }
 

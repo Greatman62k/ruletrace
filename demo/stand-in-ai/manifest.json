@@ -30,6 +30,13 @@
       "seeded_difference": false
     },
     {
+      "path": "data/canonical/data-complete.json",
+      "sha256": "8034be202afb871fd26f37a02d6cdcdb7cc6d245a0effddc142c9cc5f0a0edab",
+      "nature": "synthetic",
+      "note": "The same five synthetic participants as data.json, with the age of p2 supplied (20), so that every Outcome is decided.",
+      "seeded_difference": false
+    },
+    {
       "path": "data/canonical/questions.json",
       "sha256": "a75046be57c84cedc54b1fc03a863f83a1372e676dbdb9400873276e84ed1a39",
       "nature": "synthetic",
