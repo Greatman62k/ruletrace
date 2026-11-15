@@ -820,10 +820,11 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 23.35, 23.36, 30.1, 30.2, 27.8_
     - Design §9.3
 
-  - [ ] 8.4 Implement `rt-ai-tool` configuration, consent, credential and redaction
-    - Parse the TOML AI_Configuration with `toml_edit` (parse-only, with line and column spans) and record the dependency justification. Run the checks in the exact order of Req 28 criterion 17: inline-secret and key-like field rejection (`RT-AI-0003`), endpoint https except loopback (`0004`), limit ranges (`0005`), enabled state (`0001`), provider (`0006`), consent equal to the documents of the run (`0008`), then credential (`0007`) read last from the named environment variable only. Support the `mock-replay` provider kind with no endpoint and no credential.
+  - [-] 8.4 Implement `rt-ai-tool` configuration, consent, credential and redaction
+    - Parse the TOML AI_Configuration with `toml_edit` (parse-only, with line and column spans) and record the dependency justification. Run the checks in the exact order of Req 28 criterion 17: inline-secret and key-like field rejection (`RT-AI-0003`), limit ranges (`0005`), endpoint https except loopback (`0004`), enabled state (`0001`), provider (`0006`), consent equal to the documents of the run (`0008`), then credential (`0007`) read last from the named environment variable only. Support the `mock-replay` provider kind with no endpoint and no credential.
     - Implement `Credential` (redacted `Debug`, no `Display`), the single `Out` type applying `Redactor` (also the `Bearer <value>` form), the Transmission_Log append before every attempt (no text, no credential, `RT-AI-0010` on failure), and the permission Warning.
     - Observable: a config with an inline secret exits 2 with `RT-AI-0003` and sends nothing, and a canary credential appears in no output.
+    - Deviations for user decision: (1) the `script` field of provider `mock-replay` is not listed in Req 28.2 and needs a Req 28.2 amendment by the user. (2) A non-http(s) scheme such as `ftp://localhost` is rejected as `RT-AI-0004`, which is stricter than Req 28.6.
     - Blocked by: 8.2.
     - _Requirements: 28.1, 28.2, 28.3, 28.4, 28.5, 28.6, 28.7, 28.8, 28.9, 28.10, 28.15, 28.17, 28.18, 23.19, 23.22_
     - Design §3.7.8, §3.7.9, §3.9.2
