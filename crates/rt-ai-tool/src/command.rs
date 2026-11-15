@@ -22,6 +22,7 @@ use crate::plan::{build_plan, PlanInput, RunPlan};
 use crate::redact::Redactor;
 use crate::run::{run_requests, RunInput};
 use crate::store::StoreMeta;
+use crate::store_check::check_store;
 use crate::txlog::{FileLog, TransmissionLog};
 use crate::vocab::Ud32Option;
 use rt_ai_adapter::{AiAdapter, AttemptReport, MonotonicClock, ProviderRequest};
@@ -312,6 +313,9 @@ fn propose<O: Write, E: Write>(
         Ok(plan) => plan,
         Err(found) => return report.fail(&found),
     };
+    if let Err(found) = check_store(fs, &args.store) {
+        return report.fail(&found);
+    }
     let (adapter, adapter_version) =
         match providers.adapter(&config, authorized.credential.as_ref()) {
             Ok(found) => found,

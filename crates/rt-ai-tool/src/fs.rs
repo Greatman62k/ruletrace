@@ -5,8 +5,8 @@
 //! implementation and the only one that touches the disk.
 
 use std::fs::{File, OpenOptions};
-use std::io::{self, Write};
-use std::path::Path;
+use std::io::{self, Read, Write};
+use std::path::{Path, PathBuf};
 
 /// A file that was created by [`StoreFs::create_new`].
 pub trait StoreFile {
@@ -31,6 +31,19 @@ pub trait StoreFs {
     /// # Errors
     /// Any failure other than a missing path.
     fn exists(&self, path: &Path) -> io::Result<bool>;
+
+    /// The entries of the directory `path`, as full paths in ascending
+    /// order.
+    ///
+    /// # Errors
+    /// `NotFound` when the directory is missing, or any other failure.
+    fn list_dir(&self, path: &Path) -> io::Result<Vec<PathBuf>>;
+
+    /// Reads at most `limit` bytes of the file `path`.
+    ///
+    /// # Errors
+    /// Any read failure.
+    fn read(&self, path: &Path, limit: u64) -> io::Result<Vec<u8>>;
 
     /// Creates `path` and its missing parents.
     ///
@@ -85,6 +98,21 @@ impl StoreFile for DiskFile {
 impl StoreFs for StdFs {
     fn exists(&self, path: &Path) -> io::Result<bool> {
         path.try_exists()
+    }
+
+    fn list_dir(&self, path: &Path) -> io::Result<Vec<PathBuf>> {
+        let mut found = Vec::new();
+        for entry in std::fs::read_dir(path)? {
+            found.push(entry?.path());
+        }
+        found.sort();
+        Ok(found)
+    }
+
+    fn read(&self, path: &Path, limit: u64) -> io::Result<Vec<u8>> {
+        let mut bytes = Vec::new();
+        File::open(path)?.take(limit).read_to_end(&mut bytes)?;
+        Ok(bytes)
     }
 
     fn create_dir_all(&self, path: &Path) -> io::Result<()> {

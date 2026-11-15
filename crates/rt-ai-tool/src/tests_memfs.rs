@@ -28,6 +28,9 @@ pub(crate) enum Link {
 #[derive(Default)]
 pub(crate) struct Faults {
     pub(crate) exists: Option<ErrorKind>,
+    pub(crate) list_dir: Option<ErrorKind>,
+    /// Reads of paths ending in this text fail; others succeed.
+    pub(crate) read: Option<(String, ErrorKind)>,
     pub(crate) create_dir: Option<ErrorKind>,
     pub(crate) create_temp: Option<ErrorKind>,
     /// Bytes that reach the file before the write fails.
@@ -169,6 +172,40 @@ impl StoreFs for MemFs {
             Some(kind) => Err(io_error(kind)),
             None => Ok(state.names.contains_key(path)),
         }
+    }
+
+    fn list_dir(&self, path: &Path) -> io::Result<Vec<PathBuf>> {
+        self.begin(format!("list_dir {}", show(path)))?;
+        let state = self.0.borrow();
+        if let Some(kind) = state.faults.list_dir {
+            return Err(io_error(kind));
+        }
+        let found: Vec<PathBuf> = state
+            .names
+            .keys()
+            .filter(|p| p.parent() == Some(path))
+            .cloned()
+            .collect();
+        if found.is_empty() && !state.dirs.contains(path) {
+            return Err(io_error(ErrorKind::NotFound));
+        }
+        Ok(found)
+    }
+
+    fn read(&self, path: &Path, limit: u64) -> io::Result<Vec<u8>> {
+        self.begin(format!("read {}", show(path)))?;
+        let state = self.0.borrow();
+        if let Some((suffix, kind)) = &state.faults.read {
+            if show(path).ends_with(suffix.as_str()) {
+                return Err(io_error(*kind));
+            }
+        }
+        let Some(inode) = state.names.get(path).copied() else {
+            return Err(io_error(ErrorKind::NotFound));
+        };
+        let bytes = state.inodes.get(inode).cloned().unwrap_or_default();
+        let take = usize::try_from(limit).map_or(bytes.len(), |n| n.min(bytes.len()));
+        Ok(bytes.get(..take).unwrap_or_default().to_vec())
     }
 
     fn create_dir_all(&self, path: &Path) -> io::Result<()> {

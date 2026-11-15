@@ -32,6 +32,7 @@ mod run;
 mod scan;
 mod secret;
 mod store;
+mod store_check;
 mod summary;
 mod txlog;
 mod vocab;
@@ -109,6 +110,8 @@ mod tests_scratch;
 #[cfg(test)]
 mod tests_store;
 #[cfg(test)]
+mod tests_store_invalid;
+#[cfg(test)]
 mod tests_summary;
 
 pub use accept::{accept_batch, AcceptInput, AcceptedBatch};
@@ -133,6 +136,7 @@ pub use store::{
     already_stored_warning, batch_exists, batch_path, store_batch, FailureOutcome, StoreFailure,
     StoreMeta, StoreOutcome, StoreReport,
 };
+pub use store_check::check_store;
 pub use summary::RunSummary;
 pub use txlog::{FileLog, LogContext, LogSink, TransmissionLog};
 pub use vocab::Ud32Option;

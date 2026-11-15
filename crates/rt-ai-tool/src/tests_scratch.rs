@@ -88,6 +88,14 @@ impl StoreFs for GateFs {
         StdFs.exists(path)
     }
 
+    fn list_dir(&self, path: &Path) -> io::Result<Vec<std::path::PathBuf>> {
+        StdFs.list_dir(path)
+    }
+
+    fn read(&self, path: &Path, limit: u64) -> io::Result<Vec<u8>> {
+        StdFs.read(path, limit)
+    }
+
     fn create_dir_all(&self, path: &Path) -> io::Result<()> {
         StdFs.create_dir_all(path)
     }
