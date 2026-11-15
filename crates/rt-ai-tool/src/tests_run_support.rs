@@ -13,7 +13,12 @@ use std::rc::Rc;
 /// A response whose rule suggestion is well formed and unsupported, so the
 /// batch is stored with a blocking finding.
 pub(crate) fn blocking_payload() -> String {
-    let (start, end, line, _) = CLAUSES[1];
+    blocking_payload_for(1)
+}
+
+/// The same response citing clause `index`.
+pub(crate) fn blocking_payload_for(index: usize) -> String {
+    let (start, end, line, _) = CLAUSES[index];
     let span = format!(
         r#"{{"document":"rules.md","start":{start},"end":{end},"line":{line},"column":1}}"#
     );
@@ -22,7 +27,7 @@ pub(crate) fn blocking_payload() -> String {
     );
     format!(
         r#"{{"schema_version":"1","proposals":[{{"kind":"rule_suggestion","proposer":"model-1","rationale":"why","evidence":[{}],"rule":{rule}}}]}}"#,
-        crate::tests_rig::evidence(1)
+        crate::tests_rig::evidence(index)
     )
 }
 

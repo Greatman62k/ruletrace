@@ -51,6 +51,8 @@ mod tests_cli_order;
 #[cfg(test)]
 mod tests_cli_rig;
 #[cfg(test)]
+mod tests_cli_run;
+#[cfg(test)]
 mod tests_config_order;
 #[cfg(test)]
 mod tests_identifier_property;
