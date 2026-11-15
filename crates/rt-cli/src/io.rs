@@ -23,15 +23,12 @@ pub trait Fs {
     /// The size in bytes of the file, without reading its content where the
     /// file system allows it.
     ///
-    /// The default reads the whole file, which is only fit for in-memory
-    /// test file systems; `StdFs` asks the file metadata.
+    /// Required, so that a wrapper cannot fall back to reading an untrusted
+    /// file in full by forgetting to forward it.
     ///
     /// # Errors
     /// Any I/O error, including a missing file.
-    fn len(&self, path: &Path) -> io::Result<u64> {
-        self.read(path, u64::MAX)
-            .map(|bytes| u64::try_from(bytes.len()).unwrap_or(u64::MAX))
-    }
+    fn len(&self, path: &Path) -> io::Result<u64>;
 
     /// Whether a directory entry of this name exists. A symbolic link counts
     /// as existing even when its target does not.

@@ -302,6 +302,9 @@ fn a_rulebook_field_cannot_set_approved() {
 
 struct NoFs;
 impl Fs for NoFs {
+    fn len(&self, _: &Path) -> io::Result<u64> {
+        Err(io::ErrorKind::NotFound.into())
+    }
     fn read(&self, _: &Path, _: u64) -> io::Result<Vec<u8>> {
         Err(io::ErrorKind::NotFound.into())
     }

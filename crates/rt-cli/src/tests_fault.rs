@@ -73,6 +73,7 @@ struct Inner {
     pending: Vec<(PathBuf, Vec<u8>)>,
     dead: bool,
     log: Vec<OpRecord>,
+    len_calls: Vec<PathBuf>,
 }
 
 /// Changes that take effect right after the `nth` read of `path`.
@@ -166,6 +167,7 @@ impl FaultFs {
                 pending: Vec::new(),
                 dead: false,
                 log: Vec::new(),
+                len_calls: Vec::new(),
             }),
             locks_unsupported: Cell::new(false),
             locks: Rc::new(RefCell::new(BTreeSet::new())),
@@ -189,6 +191,7 @@ impl FaultFs {
         inner.pending.clear();
         inner.ops = 0;
         inner.log.clear();
+        inner.len_calls.clear();
     }
 
     /// Replaces or creates the listed files right after the `nth` (1-based)
@@ -235,6 +238,12 @@ impl FaultFs {
 
     pub(super) fn log(&self) -> Vec<OpRecord> {
         self.inner.borrow().log.clone()
+    }
+
+    /// The paths whose size was asked, in order. Kept apart from `log` so
+    /// that operation numbers and positions stay as the schedules expect.
+    pub(super) fn len_calls(&self) -> Vec<PathBuf> {
+        self.inner.borrow().len_calls.clone()
     }
 
     pub(super) fn is_dead(&self) -> bool {
@@ -306,10 +315,12 @@ impl FaultFs {
 }
 
 impl Fs for FaultFs {
-    // A size query is not a counted operation, so the fault schedules of the
+    // A size query is recorded in `len_calls` but not counted, so the fault schedules of the
     // tests that number every read, write and rename stay as they are.
     fn len(&self, path: &Path) -> io::Result<u64> {
-        match self.inner.borrow().files.get(path) {
+        let mut inner = self.inner.borrow_mut();
+        inner.len_calls.push(path.to_path_buf());
+        match inner.files.get(path) {
             Some(b) => Ok(u64::try_from(b.len()).unwrap_or(u64::MAX)),
             None => Err(io::ErrorKind::NotFound.into()),
         }
@@ -493,4 +504,18 @@ impl Fs for FaultFs {
         self.die_if(&act);
         result
     }
+}
+
+#[test]
+fn fault_fs_len_is_the_true_length_and_is_not_a_counted_operation() {
+    let fs = FaultFs::with(&[("a", b"12345"), ("empty", b"")]);
+    assert_eq!(fs.len(Path::new("a")).expect("len"), 5);
+    assert_eq!(fs.len(Path::new("empty")).expect("len"), 0);
+    assert_eq!(
+        fs.len(Path::new("gone")).expect_err("missing").kind(),
+        io::ErrorKind::NotFound
+    );
+    assert_eq!(fs.len_calls().len(), 3);
+    assert!(fs.log().is_empty());
+    assert_eq!(fs.inner.borrow().ops, 0);
 }

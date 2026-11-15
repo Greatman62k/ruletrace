@@ -143,6 +143,11 @@ impl Files {
 }
 
 impl Fs for Files {
+    fn len(&self, path: &Path) -> io::Result<u64> {
+        let bytes = self.0.get(path).ok_or(io::ErrorKind::NotFound)?;
+        Ok(u64::try_from(bytes.len()).unwrap_or(u64::MAX))
+    }
+
     fn read(&self, path: &Path, max_bytes: u64) -> io::Result<Vec<u8>> {
         let bytes = self.0.get(path).ok_or(io::ErrorKind::NotFound)?;
         Ok(bytes.iter().take(max_bytes as usize).copied().collect())

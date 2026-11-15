@@ -51,6 +51,11 @@ impl Fs for Recording {
         Err(io::ErrorKind::PermissionDenied.into())
     }
 
+    fn len(&self, path: &Path) -> io::Result<u64> {
+        self.log("len", path);
+        Err(io::ErrorKind::NotFound.into())
+    }
+
     fn read(&self, path: &Path, _: u64) -> io::Result<Vec<u8>> {
         self.log("read", path);
         Err(io::ErrorKind::NotFound.into())

@@ -65,6 +65,11 @@ impl Fs for MemFs {
         }
     }
 
+    fn len(&self, path: &Path) -> io::Result<u64> {
+        let files = self.0.borrow();
+        let bytes = files.get(path).ok_or(io::ErrorKind::NotFound)?;
+        Ok(u64::try_from(bytes.len()).unwrap_or(u64::MAX))
+    }
     fn read(&self, path: &Path, max: u64) -> io::Result<Vec<u8>> {
         let files = self.0.borrow();
         let bytes = files.get(path).ok_or(io::ErrorKind::NotFound)?;

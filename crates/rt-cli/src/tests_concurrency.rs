@@ -60,6 +60,10 @@ const WRITER: Slow = Slow {
 };
 
 impl Fs for Slow {
+    fn len(&self, path: &Path) -> std::io::Result<u64> {
+        StdFs.len(path)
+    }
+
     fn read(&self, path: &Path, max_bytes: u64) -> std::io::Result<Vec<u8>> {
         let bytes = StdFs.read(path, max_bytes);
         if path.ends_with("rb.json") {
