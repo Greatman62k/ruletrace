@@ -170,6 +170,25 @@ fn a_valid_rule_suggestion_is_stored_with_no_findings() {
     assert_eq!(hash, &declared);
 }
 
+const SHUFFLED_RULE: &str = r#"{ "spans" : [ {"column":1,"line":2,"end":27,"start":12,"document":"rules.md"} ],
+  "markers" : [],
+  "expr" : {"right":{"value":"16","t":"number","node":"num"},"op":"ge",
+            "left":{"name":"age","t":"number","node":"field"},
+            "t":"boolean","node":"cmp"},
+  "type":"boolean", "target":"eligible2", "kind":"eligibility", "id":"elig.new" }"#;
+
+#[test]
+fn equal_drafts_are_stored_as_equal_canonical_text_and_hashes() {
+    let canonical = eligibility("age");
+    let a = accepted(&wrap(&[suggestion(&canonical)]));
+    let b = accepted(&wrap(&[suggestion(SHUFFLED_RULE)]));
+    let (draft_a, hash_a) = a.proposals()[0].rule.as_ref().unwrap();
+    let (draft_b, hash_b) = b.proposals()[0].rule.as_ref().unwrap();
+    assert_eq!(draft_a.json, canonical);
+    assert_eq!(draft_b.json, canonical);
+    assert_eq!(hash_a, hash_b);
+}
+
 #[test]
 fn a_well_formed_unsupported_clause_is_kept_as_a_non_executable_proposal() {
     let batch = accepted(&wrap(&[suggestion(&unsupported())]));
@@ -334,6 +353,10 @@ fn canary_proposal(rationale: &str) -> String {
 }
 
 fn assert_refused(found: &[Diagnostic], field: &str) {
+    assert_refused_text(found, field, CANARY);
+}
+
+fn assert_refused_text(found: &[Diagnostic], field: &str, secret: &str) {
     only_code(found, Code::AiResponseCredentialEcho, ExitCode::Response);
     assert_eq!(found[0].code().id(), "RT-AI-0206");
     let Location::Input(at) = found[0].primary() else {
@@ -346,7 +369,7 @@ fn assert_refused(found: &[Diagnostic], field: &str) {
         render_diagnostic(&found[0]),
     ];
     for text in shown {
-        assert!(!text.contains(CANARY), "{text}");
+        assert!(!text.contains(secret), "{text}");
     }
 }
 
@@ -439,4 +462,14 @@ fn a_credential_echoed_by_a_stored_finding_is_refused_at_the_finding() {
     };
     assert_eq!(at.field.as_deref(), Some("proposals[1].outcome[0]"));
     assert!(!format!("{found:?}").contains("undeclared field"));
+}
+
+#[test]
+fn a_credential_that_only_the_canonical_draft_contains_is_refused() {
+    let needle = r#""kind":"eligibility","target":"eligible2""#;
+    let text = wrap(&[suggestion(SHUFFLED_RULE)]);
+    assert!(!text.contains(needle));
+    let only_canonical = Redactor::new(&Credential::new(needle.to_owned()).unwrap());
+    let found = accept_with(&text, Completion::Complete, &only_canonical).unwrap_err();
+    assert_refused_text(&found, "proposals[0].rule", needle);
 }

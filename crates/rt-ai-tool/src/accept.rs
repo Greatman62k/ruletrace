@@ -17,7 +17,7 @@ use crate::response::{
 use rt_ai_adapter::Completion;
 use rt_foundation::{Code, Diagnostic, InputId, InputLocation, Location};
 use rt_hash::{sha256, Sha256Hex};
-use rt_ir::{draft_hash, DocumentDecl, Loc, Rulebook};
+use rt_ir::{draft_hash, print_draft, DocumentDecl, Loc, Rulebook};
 use rt_proposals::{
     proposal_id, Completion as StoredCompletion, Evidence, Proposal, ProposalKind as StoredKind,
     RuleDraft as StoredDraft, StoredDiagnostic, StoredLocation,
@@ -171,7 +171,10 @@ fn accept_unscrubbed(input: &AcceptInput<'_>) -> Result<AcceptedBatch, Vec<Diagn
         .map(|(index, p)| stored(input, p, index))
         .collect::<Result<Vec<_>, _>>()
         .map_err(|d| vec![d])?;
-    if let Some(d) = leak.in_outcomes(&proposals) {
+    if let Some(d) = leak
+        .in_drafts(&proposals)
+        .or_else(|| leak.in_outcomes(&proposals))
+    {
         return Err(vec![d]);
     }
     Ok(AcceptedBatch {
@@ -253,7 +256,7 @@ fn stored(
             })?;
             let stored = StoredDraft {
                 id: r.id.clone(),
-                json: r.json.clone(),
+                json: print_draft(&r.id, &r.content),
             };
             let outcome = findings.as_slice().iter().map(stored_diagnostic).collect();
             (Some((stored, hash)), outcome)
@@ -382,6 +385,16 @@ impl Leak<'_> {
                 .into_iter()
                 .find(|(_, t)| self.redactor.finds(t))
                 .map(|(field, _)| self.found(field))
+        })
+    }
+
+    // The stored draft is the canonical print, not the provider's text.
+    fn in_drafts(&self, proposals: &[Proposal]) -> Option<Diagnostic> {
+        proposals.iter().enumerate().find_map(|(i, p)| {
+            let (draft, _) = p.rule.as_ref()?;
+            self.redactor
+                .finds(&draft.json)
+                .then(|| self.found(format!("proposals[{i}].rule")))
         })
     }
 

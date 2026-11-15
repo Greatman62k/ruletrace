@@ -155,7 +155,9 @@ pub struct ParsedRule {
     pub id: RuleId,
     /// The kind name, for an unrecognized kind the name the model gave.
     pub kind_name: String,
-    /// The draft in compact RT-JSON form.
+    /// The draft as the provider wrote it, in compact RT-JSON form with the
+    /// provider's key order. The stored draft is the canonical print of
+    /// `content`, not this text.
     pub json: String,
     /// The decoded Rule_Content, for the semantic validator.
     pub content: Box<RuleContent>,
