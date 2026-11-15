@@ -24,3 +24,4 @@ toml_edit = { version = "0.25", default-features = false, features = ["parse"] }
 
 [dev-dependencies]
 proptest = { version = "1", default-features = false, features = ["std"] }
+rt-ledger = { path = "../rt-ledger" }

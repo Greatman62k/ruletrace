@@ -276,6 +276,7 @@ dependencies = [
  "rt-hash",
  "rt-ir",
  "rt-json",
+ "rt-ledger",
  "rt-proposals",
  "rt-srcmodel",
  "rt-validate",

@@ -42,6 +42,8 @@ mod tests_identifier_property;
 #[cfg(test)]
 mod tests_log;
 #[cfg(test)]
+mod tests_origin_property;
+#[cfg(test)]
 mod tests_plan;
 #[cfg(test)]
 mod tests_provenance;
