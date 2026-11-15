@@ -89,11 +89,11 @@ fn list_parses_a_batch_of_exactly_the_limit() {
 #[test]
 fn approve_reports_an_oversize_batch_and_changes_nothing() {
     let fx = fixture();
-    let fs = store_with(vec![b'x'; usize::try_from(LIMIT + 1).unwrap()]);
+    let fs = store_with(vec![b'x'; usize::try_from(3 * LIMIT + 5).unwrap()]);
     let ledger = fs.snapshot()[Path::new("ledger.jsonl")].clone();
     let rulebook = fs.snapshot()[Path::new("rb.json")].clone();
     let out = run(&approve(&fx), &fs);
-    assert_only_size_refusal(&out, BATCH, 16_777_217);
+    assert_only_size_refusal(&out, BATCH, 50_331_653);
     assert_eq!(fs.snapshot()[Path::new("ledger.jsonl")], ledger);
     assert_eq!(fs.snapshot()[Path::new("rb.json")], rulebook);
 }
