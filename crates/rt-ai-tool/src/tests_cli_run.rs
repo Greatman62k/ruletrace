@@ -5,6 +5,7 @@
 
 use crate::tests::MapEnv;
 use crate::tests_cli_rig::{run_std, run_with, Fixture, CREATED_AT};
+use crate::tests_gate_rig::{skip_shapes, COMPLETE_ONE};
 use crate::tests_memfs::{Faults, MemFs};
 use crate::tests_provenance::RULES_HASH;
 use crate::tests_rig::{evidence, payload};
@@ -52,11 +53,8 @@ fn observable_a_mock_replay_run_stores_a_batch_and_a_log_entry_and_exits_0() {
     let ran = run_std(&fixture.consented());
 
     assert_eq!(ran.code, ExitCode::Success, "{}", ran.stderr);
-    assert!(ran.shapes().is_empty(), "{}", ran.stderr);
-    assert_eq!(
-        ran.stdout,
-        "run summary: complete\nprocessed:\n  rules.md 0 11\nstored:\n  rules.md 0 11\nunprocessed:\n  (none)\n"
-    );
+    assert_eq!(ran.shapes(), skip_shapes(), "{}", ran.stderr);
+    assert_eq!(ran.stdout, COMPLETE_ONE);
     let batch = std::fs::read(fixture.path(&batch_path(&id))).unwrap();
     let parsed = rt_proposals::parse_batch(&InputId::new("batch").unwrap(), &batch).unwrap();
     assert_eq!(parsed.request_id.as_str(), id);
@@ -214,10 +212,9 @@ fn a_stored_batch_with_blocking_findings_is_a_warning_and_exit_0() {
     fixture.write_script(&blocking_payload_for(0));
     let ran = run_std(&fixture.consented());
     assert_eq!(ran.code, ExitCode::Success, "{}", ran.stderr);
-    assert_eq!(
-        ran.shapes(),
-        [("warning".to_owned(), "RT-AI-0305".to_owned())]
-    );
+    let mut expected = vec![("warning".to_owned(), "RT-AI-0305".to_owned())];
+    expected.extend(skip_shapes());
+    assert_eq!(ran.shapes(), expected);
     assert!(fixture.path(&batch_path(&fixture.request_id())).exists());
 }
 
@@ -241,7 +238,7 @@ fn a_warning_never_changes_the_exit_code() {
         [("warning".to_owned(), "RT-AI-0009".to_owned())]
     );
     #[cfg(not(unix))]
-    assert!(ran.shapes().is_empty());
+    assert_eq!(ran.shapes(), skip_shapes());
 }
 
 #[test]

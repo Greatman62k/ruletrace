@@ -12,8 +12,9 @@ use crate::tests::MapEnv;
 use crate::tests_cli_rig::{run_std, Fixture};
 use crate::tests_gate_rig::{
     announced_size, announcements, batch_path, findings, inputs_and_log, log_line, log_lines,
-    request_ids, run_providers, shapes_of, three_requests, work_dir, write_script_entries, Probe,
-    Steps, COMPLETE_ONE, NONE_PROCESSED,
+    request_ids, run_providers, shapes_of, skip_findings, skip_shapes, three_requests, work_dir,
+    write_script_entries, Probe, Steps, COMPLETE_ONE, COMPLETE_THREE, INCOMPLETE_FIRST_STORED,
+    NONE_PROCESSED,
 };
 use crate::tests_provenance::doc;
 use crate::tests_rig::payload;
@@ -74,14 +75,13 @@ fn transport_failure_then_success_stores_one_batch_and_exits_0() {
         vec![fail(ProviderFailure::Unavailable, 0), ok(0)],
     );
     assert_eq!(ran.code, ExitCode::Success, "{}", ran.stderr);
-    assert_eq!(
-        findings(&ran),
-        [finding(
-            "warning",
-            "RT-AI-0101",
-            "attempt 1 failed: AI_PROVIDER_UNAVAILABLE"
-        )]
-    );
+    let mut expected = vec![finding(
+        "warning",
+        "RT-AI-0101",
+        "attempt 1 failed: AI_PROVIDER_UNAVAILABLE",
+    )];
+    expected.extend(skip_findings());
+    assert_eq!(findings(&ran), expected);
     assert_eq!(ran.stdout, COMPLETE_ONE);
     assert_eq!(probe.attempts(), 2);
     // Req 29.3: a fixed wait of 2 s, then the 100 ms of the second step.
@@ -274,7 +274,9 @@ fn a_well_formed_unsupported_clause_is_stored_as_a_non_executable_proposal() {
     let ran = run_std(&fixture.consented());
     assert_eq!(ran.code, ExitCode::Success, "{}", ran.stderr);
     assert_eq!(ran.code.value(), 0);
-    assert_eq!(shapes_of(&ran), [pair("warning", "RT-AI-0305")]);
+    let mut expected = vec![pair("warning", "RT-AI-0305")];
+    expected.extend(skip_shapes());
+    assert_eq!(shapes_of(&ran), expected);
     assert_eq!(ran.stdout, COMPLETE_ONE);
     assert_eq!(log_lines(&fixture), log_of_attempts(&id, &ran, 1));
     assert_eq!(
@@ -317,13 +319,7 @@ fn a_failing_second_request_keeps_the_first_batch_and_never_sends_the_third() {
     write_script_entries(&good, &all);
     let clean = run_std(&good.consented());
     assert_eq!(clean.code, ExitCode::Success, "{}", clean.stderr);
-    assert_eq!(
-        clean.stdout,
-        "run summary: complete\n\
-         processed:\n  rules.md 0 11\n  rules.md 12 27\n  rules.md 28 32\n\
-         stored:\n  rules.md 0 11\n  rules.md 12 27\n  rules.md 28 32\n\
-         unprocessed:\n  (none)\n"
-    );
+    assert_eq!(clean.stdout, COMPLETE_THREE);
     let first = std::fs::read(good.path(&batch_path(&ids[0]))).unwrap();
 
     let bad = Fixture::new("gate-three-bad");
@@ -343,17 +339,10 @@ fn a_failing_second_request_keeps_the_first_batch_and_never_sends_the_third() {
     let ran = run_std(&bad.consented());
     assert_eq!(ran.code, ExitCode::Blocked, "{}", ran.stderr);
     assert_eq!(ran.code.value(), 3);
-    assert_eq!(
-        shapes_of(&ran),
-        [pair("error", "RT-PRV-0101"), pair("warning", "RT-AI-0306")]
-    );
-    assert_eq!(
-        ran.stdout,
-        "run summary: incomplete\n\
-         processed:\n  rules.md 0 11\n\
-         stored:\n  rules.md 0 11\n\
-         unprocessed:\n  rules.md 12 27\n  rules.md 28 32\n"
-    );
+    let mut expected = vec![pair("error", "RT-PRV-0101"), pair("warning", "RT-AI-0306")];
+    expected.extend(skip_shapes());
+    assert_eq!(shapes_of(&ran), expected);
+    assert_eq!(ran.stdout, INCOMPLETE_FIRST_STORED);
     let sent = announcements(&ran);
     assert_eq!(sent.len(), 2, "{}", ran.stderr);
     let expected: Vec<String> = (0..2)

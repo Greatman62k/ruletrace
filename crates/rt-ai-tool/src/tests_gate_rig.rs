@@ -192,10 +192,61 @@ pub(crate) const NONE_PROCESSED: &str = "run summary: incomplete\n\
     stored:\n  (none)\n\
     unprocessed:\n  rules.md 0 11\n";
 
+/// Where the platform skips the directory sync (Req 7.17, 29.19), a
+/// complete run lists its batches under the separate heading, states the
+/// header note and warns with RT-AI-0309. Hand-written for each platform.
+#[cfg(not(windows))]
 pub(crate) const COMPLETE_ONE: &str = "run summary: complete\n\
     processed:\n  rules.md 0 11\n\
     stored:\n  rules.md 0 11\n\
     unprocessed:\n  (none)\n";
+
+#[cfg(windows)]
+pub(crate) const COMPLETE_ONE: &str = "run summary: complete, directory durability not confirmed\n\
+    processed:\n  rules.md 0 11\n\
+    stored:\n  (none)\n\
+    stored, directory durability not confirmed (skipped by platform):\n  rules.md 0 11\n\
+    unprocessed:\n  (none)\n";
+
+#[cfg(not(windows))]
+pub(crate) const COMPLETE_THREE: &str = "run summary: complete\n\
+    processed:\n  rules.md 0 11\n  rules.md 12 27\n  rules.md 28 32\n\
+    stored:\n  rules.md 0 11\n  rules.md 12 27\n  rules.md 28 32\n\
+    unprocessed:\n  (none)\n";
+
+#[cfg(windows)]
+pub(crate) const COMPLETE_THREE: &str =
+    "run summary: complete, directory durability not confirmed\n\
+    processed:\n  rules.md 0 11\n  rules.md 12 27\n  rules.md 28 32\n\
+    stored:\n  (none)\n\
+    stored, directory durability not confirmed (skipped by platform):\n  \
+    rules.md 0 11\n  rules.md 12 27\n  rules.md 28 32\n\
+    unprocessed:\n  (none)\n";
+
+/// An incomplete run keeps the plain `incomplete` header on every
+/// platform; only the heading of the one stored batch differs.
+#[cfg(not(windows))]
+pub(crate) const INCOMPLETE_FIRST_STORED: &str = "run summary: incomplete\n\
+    processed:\n  rules.md 0 11\n\
+    stored:\n  rules.md 0 11\n\
+    unprocessed:\n  rules.md 12 27\n  rules.md 28 32\n";
+
+#[cfg(windows)]
+pub(crate) const INCOMPLETE_FIRST_STORED: &str = "run summary: incomplete\n\
+    processed:\n  rules.md 0 11\n\
+    stored:\n  (none)\n\
+    stored, directory durability not confirmed (skipped by platform):\n  rules.md 0 11\n\
+    unprocessed:\n  rules.md 12 27\n  rules.md 28 32\n";
+
+/// The `(severity, code id)` pairs a run adds where the platform skips
+/// the directory sync after a stored batch.
+pub(crate) fn skip_shapes() -> Vec<(String, String)> {
+    if cfg!(windows) {
+        vec![("warning".to_owned(), "RT-AI-0309".to_owned())]
+    } else {
+        Vec::new()
+    }
+}
 
 /// Rewrites the candidates of a fixture to the three clauses of
 /// `rules.md`, one request each.
@@ -257,4 +308,20 @@ pub(crate) fn write_script_entries(fixture: &Fixture, entries: &[(String, String
     ])
     .unwrap();
     std::fs::write(fixture.path("script.json"), write_compact(&script)).unwrap();
+}
+
+/// The finding the skip warning adds on standard error, with its message
+/// written by hand from the design (3.7.5).
+pub(crate) fn skip_findings() -> Vec<(String, String, String)> {
+    if cfg!(windows) {
+        vec![(
+            "warning".to_owned(),
+            "RT-AI-0309".to_owned(),
+            "the platform skipped the directory sync of a stored batch; \
+             the durability of its directory entry is not confirmed"
+                .to_owned(),
+        )]
+    } else {
+        Vec::new()
+    }
 }

@@ -7,7 +7,7 @@
 use crate::revise::Unknown;
 use crate::tests::MapEnv;
 use crate::tests_cli_rig::{run_std, Fixture, Ran};
-use crate::tests_gate_rig::{batch_path, log_lines, work_dir};
+use crate::tests_gate_rig::{batch_path, log_lines, work_dir, COMPLETE_ONE};
 use crate::tests_plan::{HEAD, VOCAB_RANK};
 use crate::tests_provenance::{model, RULES, RULES_HASH};
 use crate::tests_redact_fragments::{canaries, leaked};
@@ -185,10 +185,7 @@ fn observable_a_revision_run_sends_the_hand_written_request_and_stores_a_proposa
     ));
 
     assert_eq!(ran.code, ExitCode::Success, "{}", ran.stderr);
-    assert_eq!(
-        ran.stdout,
-        "run summary: complete\nprocessed:\n  rules.md 0 11\nstored:\n  rules.md 0 11\nunprocessed:\n  (none)\n"
-    );
+    assert_eq!(ran.stdout, COMPLETE_ONE);
     let batch = std::fs::read(fixture.path(&batch_path(&id))).unwrap();
     let parsed = rt_proposals::parse_batch(&InputId::new("batch").unwrap(), &batch).unwrap();
     assert_eq!(parsed.request_id.as_str(), id);

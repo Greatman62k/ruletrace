@@ -5,7 +5,7 @@
 
 use crate::tests::MapEnv;
 use crate::tests_cli_rig::{run_std, Fixture};
-use crate::tests_gate_rig::{run_providers, Steps};
+use crate::tests_gate_rig::{run_providers, skip_shapes, Steps};
 use crate::tests_memfs::{Faults, MemFs};
 use crate::tests_provenance::{doc, model, RULES};
 use crate::tests_rig::payload;
@@ -103,7 +103,7 @@ fn temp_files_and_foreign_names_are_not_batches() {
     garbage(&fixture, "notes.txt", "not a batch");
     let ran = run_std(&fixture.consented());
     assert_eq!(ran.code, ExitCode::Success, "{}", ran.stderr);
-    assert!(ran.shapes().is_empty(), "{}", ran.stderr);
+    assert_eq!(ran.shapes(), skip_shapes(), "{}", ran.stderr);
 }
 
 #[test]
@@ -125,7 +125,7 @@ fn a_valid_batch_of_another_request_is_accepted() {
     fixture.write_script_for(&id, &payload(1));
     let ran = run_std(&fixture.consented());
     assert_eq!(ran.code, ExitCode::Success, "{}", ran.stderr);
-    assert!(ran.shapes().is_empty(), "{}", ran.stderr);
+    assert_eq!(ran.shapes(), skip_shapes(), "{}", ran.stderr);
     let mut found: Vec<String> = std::fs::read_dir(fixture.path("store/batches"))
         .unwrap()
         .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
