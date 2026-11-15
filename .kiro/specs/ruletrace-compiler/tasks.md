@@ -1103,6 +1103,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Confirm that `tools/decisions/UD-15.md` is `Confirmed`. Implement the deterministic request body: `POST {endpoint}/v1/responses` with `text.format = {"type":"json_schema","name":..,"schema":..,"strict":true}`, `"store": false`, no `tools`, `max_output_tokens` a crate constant, and the strict-mode schema (all properties required, `additionalProperties:false`, recursion by `$ref` and `$defs`) that includes the `unrecognized` variants. The model and provider come only from configuration.
     - Map the envelope: require `status == "completed"` with exactly one output message and one `output_text`; map refusal and incomplete to `Completion::Refused` or `Incomplete`; 401 and 403 to `AuthFailed`, TLS errors to `TlsFailed`, 429 with an integer `Retry-After` of 1 to 9 digits to `RateLimited`, 5xx and connection errors to `Unavailable`, 3xx and other 4xx to `Other`. Read at most `response_bytes + 1` bytes. The credential is read only in this crate, from the named environment variable, and is redacted from every output.
     - Observable: a canned envelope for each status maps to its `Completion` or `ProviderFailure` in a unit test.
+    - Carried from 8.21 review: the provider body is the scanned request bytes plus constants; any text derived from request content must pass the RT-AI-0308 scan.
     - Blocked by: 8.19.
     - _Requirements: 23.27, 23.28, 23.29, 23.30, 23.31, 28.12, 28.13, 28.14_
     - Design §3.7.3
