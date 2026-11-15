@@ -464,7 +464,7 @@ forbid-class core -> app
 forbid-name rt-ai-* -> rt-compile rt-engine rt-review rt-cli
 forbid-name rt-engine -> rt-explain
 forbid-transitive prize-check -> rt-cli rt-ai-*
-forbid-external ureq rustls ring except-under rt-ai-openai
+forbid-external ureq rustls ring except-under rt-ai-responses
 external sha2 allowed-in rt-hash
 ";
 
@@ -754,7 +754,7 @@ external sha2 allowed-in rt-hash
         for name in [
             "rt-hash",
             "rt-cli",
-            "rt-ai-openai",
+            "rt-ai-responses",
             "prize-check",
             "rt-tests-ai",
             "rt-xtask",

@@ -1,5 +1,5 @@
 # cargo-deny configuration (task 2.2, design §7.4, Req 21.7).
-# The network and AI crate bans are added in task 10.2.
+# Network and AI crates are banned except through rt-ai-responses (task 10.2).
 # Note: cargo-deny spells the licence section `licenses`.
 
 [advisories]
@@ -15,6 +15,8 @@ allow = [
     "BSD-3-Clause",
     "ISC",
     "Unicode-3.0",
+    # webpki-roots, the embedded root store of rt-ai-responses (task 10.2).
+    "CDLA-Permissive-2.0",
 ]
 confidence-threshold = 0.9
 
@@ -26,8 +28,25 @@ ignore = true
 multiple-versions = "warn"
 wildcards = "deny"
 allow-wildcard-paths = true
-# Network and AI crate bans: task 10.2.
-deny = []
+# A wrapper is the only crate that may depend on the banned crate directly.
+# The TLS stack is reached through ureq and rt-ai-responses only.
+deny = [
+    { crate = "ureq", wrappers = ["rt-ai-responses"] },
+    { crate = "ureq-proto", wrappers = ["ureq"] },
+    { crate = "rustls", wrappers = ["rt-ai-responses", "ureq"] },
+    { crate = "rustls-webpki", wrappers = ["rustls"] },
+    { crate = "ring", wrappers = ["rustls", "rustls-webpki"] },
+    { crate = "webpki-roots", wrappers = ["ureq"] },
+    { crate = "hyper" },
+    { crate = "reqwest" },
+    { crate = "h2" },
+    { crate = "tokio" },
+    { crate = "openssl" },
+    { crate = "native-tls" },
+    { crate = "curl" },
+    { crate = "isahc" },
+    { crate = "attohttpc" },
+]
 
 [sources]
 unknown-registry = "deny"

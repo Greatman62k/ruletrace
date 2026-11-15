@@ -242,7 +242,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       AUX_EXCLUDE: >-
-        --exclude rt-ai-adapter --exclude rt-ai-mock --exclude rt-ai-openai
+        --exclude rt-ai-adapter --exclude rt-ai-mock --exclude rt-ai-responses
         --exclude rt-ai-tool --exclude rt-tests-ai
     steps:
       - uses: actions/checkout@v5

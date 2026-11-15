@@ -20,14 +20,14 @@ crate rt-review      class core   deps rt-foundation rt-hash rt-json rt-ir rt-le
 crate rt-cli         class core   deps rt-foundation rt-hash rt-json rt-numeric rt-srcmodel rt-source rt-ir rt-ledger rt-proposals rt-validate rt-compiled rt-compile rt-data rt-trace rt-engine rt-explain rt-review
 crate rt-ai-adapter  class aux    deps rt-foundation rt-hash rt-json
 crate rt-ai-mock     class aux    deps rt-ai-adapter rt-foundation rt-json rt-hash
-crate rt-ai-openai   class aux    deps rt-ai-adapter rt-foundation rt-json rt-hash
-crate rt-ai-tool     class aux    deps rt-ai-adapter rt-ai-mock rt-ai-openai rt-foundation rt-hash rt-json rt-srcmodel rt-ir rt-ledger rt-validate rt-proposals
+crate rt-ai-responses class aux    deps rt-ai-adapter rt-foundation rt-json rt-hash
+crate rt-ai-tool     class aux    deps rt-ai-adapter rt-ai-mock rt-ai-responses rt-foundation rt-hash rt-json rt-srcmodel rt-ir rt-ledger rt-validate rt-proposals
 crate prize-check    class app    deps rt-foundation rt-numeric rt-data rt-compiled rt-engine rt-explain rt-srcmodel
 crate bracket-check  class app    deps rt-foundation rt-numeric rt-data rt-compiled rt-engine rt-explain rt-srcmodel
 crate rt-demo        class tool   deps rt-foundation rt-json rt-hash rt-srcmodel rt-ir rt-ledger rt-proposals rt-validate rt-trace rt-explain rt-xtask
 crate rt-xtask       class tool   deps rt-foundation rt-json rt-proposals
 crate rt-tests-core  class test   deps rt-hash rt-foundation rt-numeric rt-json rt-srcmodel rt-source rt-ir rt-ledger rt-proposals rt-validate rt-compiled rt-compile rt-data rt-trace rt-engine rt-explain rt-review rt-cli prize-check bracket-check
-crate rt-tests-ai    class test   deps rt-hash rt-foundation rt-numeric rt-json rt-srcmodel rt-source rt-ir rt-ledger rt-proposals rt-validate rt-compiled rt-compile rt-data rt-trace rt-engine rt-explain rt-review rt-cli rt-ai-adapter rt-ai-mock rt-ai-openai rt-ai-tool
+crate rt-tests-ai    class test   deps rt-hash rt-foundation rt-numeric rt-json rt-srcmodel rt-source rt-ir rt-ledger rt-proposals rt-validate rt-compiled rt-compile rt-data rt-trace rt-engine rt-explain rt-review rt-cli rt-ai-adapter rt-ai-mock rt-ai-responses rt-ai-tool
 stage rt-srcmodel 1
 stage rt-source 1
 stage rt-ir 3
@@ -45,7 +45,9 @@ forbid-name  prize-check -> bracket-check
 forbid-name  bracket-check -> prize-check
 forbid-name  rt-ai-* -> rt-compile rt-engine rt-review rt-cli rt-compiled
 forbid-name  rt-engine -> rt-explain rt-ir rt-hash
-forbid-external ureq rustls hyper reqwest h2 tokio openssl native-tls curl isahc attohttpc ring except-under rt-ai-openai
+forbid-external ureq rustls hyper reqwest h2 tokio openssl native-tls curl isahc attohttpc ring except-under rt-ai-responses
 # external <crate> allowed-in <crate...>   (dev-only entries are marked dev)
 external sha2 allowed-in rt-hash
 external toml_edit allowed-in rt-ai-tool
+external ureq allowed-in rt-ai-responses
+external rustls allowed-in rt-ai-responses
