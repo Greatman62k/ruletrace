@@ -3,7 +3,12 @@
 //! The Rule_IR decoder carries any well-formed unknown kind or node name as
 //! an opaque construct, which suits authored files (Req 4.9). A provider
 //! response may only use the vocabulary it was sent, or the one explicit
-//! `unrecognized` variant with exactly its three fields (Req 23.4).
+//! `unrecognized` variant, which adds only `name` and `detail` to its tag
+//! and, for a rule, to the ordinary rule fields (Req 23.4).
+//!
+//! A node whose `op` or `fn` is unknown but well formed is carried by the
+//! decoder with every member it has. Every node therefore has its field set
+//! checked here, so no member of a draft is left unchecked.
 
 use super::{child, shown};
 use crate::vocab::RULE_KINDS;
@@ -12,23 +17,23 @@ use rt_json::{Kind, Member, Position, Value};
 
 const UNRECOGNIZED: &str = "unrecognized";
 
-const NODES: [&str; 16] = [
-    "num",
-    "bool",
-    "text",
-    "date",
-    "enum",
-    "field",
-    "ref",
-    "binary",
-    "cmp",
-    "and",
-    "or",
-    "not",
-    "in",
-    "agg",
-    "round",
-    "rank_reference",
+const NODE_FIELDS: [(&str, &[&str]); 16] = [
+    ("num", &["node", "t", "value"]),
+    ("bool", &["node", "t", "value"]),
+    ("text", &["node", "t", "value"]),
+    ("date", &["node", "t", "value"]),
+    ("enum", &["node", "t", "enum", "member"]),
+    ("field", &["node", "t", "name"]),
+    ("ref", &["node", "t", "target"]),
+    ("binary", &["node", "t", "op", "left", "right"]),
+    ("cmp", &["node", "t", "op", "left", "right"]),
+    ("and", &["node", "t", "args"]),
+    ("or", &["node", "t", "args"]),
+    ("not", &["node", "t", "arg"]),
+    ("in", &["node", "t", "value", "set"]),
+    ("agg", &["node", "t", "fn", "collection", "field"]),
+    ("round", &["node", "t", "arg", "places", "mode"]),
+    ("rank_reference", &["node", "t", "target"]),
 ];
 
 // Fields a rule of the unrecognized kind keeps from every other rule.
@@ -107,18 +112,64 @@ fn node_name(
     if name == UNRECOGNIZED {
         return variant(value, members, path, "node", &[]);
     }
-    if NODES.contains(&name) {
-        return Ok(());
+    let Some((_, fields)) = NODE_FIELDS.iter().find(|(n, _)| *n == name) else {
+        return Err(breach(
+            *node.value.pos(),
+            child(path, "node"),
+            format!(
+                "unknown expression node '{}'; a capability outside the vocabulary \
+                 is stated as node \"{UNRECOGNIZED}\"",
+                shown(name)
+            ),
+        ));
+    };
+    for m in members {
+        if !fields.contains(&m.key.as_str()) {
+            return Err(breach(
+                m.key_pos,
+                child(path, &m.key),
+                format!("unknown field '{}' in a '{name}' node", shown(&m.key)),
+            ));
+        }
     }
-    Err(breach(
-        *node.value.pos(),
-        child(path, "node"),
-        format!(
-            "unknown expression node '{}'; a capability outside the vocabulary \
-             is stated as node \"{UNRECOGNIZED}\"",
-            shown(name)
-        ),
-    ))
+    operands(name, members, path)
+}
+
+/// Every operand of an operator must itself be a node, so that no member of
+/// an operator the decoder carries unread escapes the walk.
+fn operands(name: &str, members: &[Member<Position>], path: &str) -> Result<(), Breach> {
+    let keys: &[&str] = match name {
+        "binary" | "cmp" => &["left", "right"],
+        "and" | "or" => &["args"],
+        "not" | "round" => &["arg"],
+        "in" => &["value"],
+        _ => &[],
+    };
+    for m in members.iter().filter(|m| keys.contains(&m.key.as_str())) {
+        let here = child(path, &m.key);
+        let list = m.value.as_array().filter(|_| m.key == "args");
+        let items: Vec<(&Value<Position>, String)> = match list {
+            Some(list) => list
+                .iter()
+                .enumerate()
+                .map(|(i, v)| (v, format!("{here}[{i}]")))
+                .collect(),
+            None => vec![(&m.value, here)],
+        };
+        for (v, at) in items {
+            let is_node = v
+                .as_object()
+                .is_some_and(|o| o.iter().any(|x| x.key == "node"));
+            if !is_node {
+                return Err(breach(
+                    *v.pos(),
+                    at,
+                    "an operand must be an object with a 'node' field".to_owned(),
+                ));
+            }
+        }
+    }
+    Ok(())
 }
 
 /// The unrecognized variant: its tag, `name` and `detail`, plus `extra`.
