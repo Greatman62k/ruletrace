@@ -9,18 +9,73 @@ use crate::plan::RunPlan;
 use crate::redact::Redactor;
 use rt_ai_adapter::ProviderRequest;
 use rt_foundation::{Code, Diagnostic, InputLocation, Location};
-use rt_json::write_compact;
+use rt_json::{write_compact, Value};
 
 fn hit(redactor: &Redactor, text: &str) -> bool {
     redactor.finds(text) || redactor.finds_fragment(text)
 }
 
+// Where the matched text comes from, which decides the advice of the message.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Source {
+    // A clause, the feedback or the revised content: input the user supplied
+    // for this run, which needs no advice.
+    Input,
+    // A declaration of the Rulebook.
+    Declarations,
+    // The `--revise-rule` value.
+    ReviseRule,
+    // The `--revise-revision` value.
+    ReviseRevision,
+    // Text that RuleTrace writes: the fixed head, keys and the vocabulary.
+    Fixed,
+}
+
+// The members are examined in this order, so that a value that the user gave
+// for the revision, which the declarations repeat, is named by its own
+// member. Any other member follows.
+const MEMBER_ORDER: [&str; 4] = ["clauses", "revise", "declarations", "vocabulary"];
+
+fn member_rank(name: &str) -> usize {
+    MEMBER_ORDER
+        .iter()
+        .position(|n| *n == name)
+        .unwrap_or(MEMBER_ORDER.len())
+}
+
+// Whether a string value of the declarations, or a rule identifier of
+// `highest_revision`, holds the match. A match that only crosses keys or
+// punctuation of the fixed layout is not user text.
+fn declarations_hold_user_text(redactor: &Redactor, declarations: &Value<()>) -> bool {
+    fn walk(redactor: &Redactor, value: &Value<()>) -> bool {
+        if let Some(text) = value.as_str() {
+            return hit(redactor, text);
+        }
+        if let Some(items) = value.as_array() {
+            return items.iter().any(|item| walk(redactor, item));
+        }
+        value
+            .as_object()
+            .is_some_and(|members| members.iter().any(|m| walk(redactor, &m.value)))
+    }
+    let rule_ids = declarations
+        .get("highest_revision")
+        .and_then(|m| m.value.as_object())
+        .is_some_and(|members| members.iter().any(|m| hit(redactor, &m.key)));
+    rule_ids || walk(redactor, declarations)
+}
+
 // The member of the request that holds the match, as a path of names that
-// RuleTrace writes and of indexes that it counts, and whether the member
-// is one that carries a clause, the feedback or revised content. The path
-// never holds text of the request.
-fn member_path(redactor: &Redactor, request: &ProviderRequest, base: &str) -> (String, bool) {
-    for (name, value) in &request.context {
+// RuleTrace writes and of indexes that it counts, and where the match comes
+// from. The path never holds text of the request.
+pub(crate) fn member_path(
+    redactor: &Redactor,
+    request: &ProviderRequest,
+    base: &str,
+) -> (String, Source) {
+    let mut members: Vec<_> = request.context.iter().collect();
+    members.sort_by_key(|(name, _)| member_rank(name));
+    for (name, value) in members {
         if !hit(redactor, &write_compact(value)) {
             continue;
         }
@@ -39,13 +94,41 @@ fn member_path(redactor: &Redactor, request: &ProviderRequest, base: &str) -> (S
             }),
             _ => None,
         };
-        let from_input = inner.as_deref().is_some_and(|p| {
-            p.starts_with("clauses[") || p == "revise.feedback" || p == "revise.content"
-        });
+        let source = match inner.as_deref() {
+            Some(p) if p.starts_with("clauses[") => Source::Input,
+            Some("revise.feedback" | "revise.content") => Source::Input,
+            Some("revise.rule") => Source::ReviseRule,
+            Some("revise.revision") => Source::ReviseRevision,
+            _ if name == "declarations" && declarations_hold_user_text(redactor, value) => {
+                Source::Declarations
+            }
+            _ => Source::Fixed,
+        };
         let path = format!("{base}.{}", inner.unwrap_or_else(|| name.clone()));
-        return (path, from_input);
+        return (path, source);
     }
-    (base.to_owned(), false)
+    (base.to_owned(), Source::Fixed)
+}
+
+pub(crate) fn advice(source: Source) -> &'static str {
+    match source {
+        Source::Input => "",
+        Source::Declarations => {
+            "; the credential or part of it occurs in the Rulebook declarations"
+        }
+        Source::ReviseRule => {
+            "; the credential or part of it occurs in the revision target given \
+             with --revise-rule"
+        }
+        Source::ReviseRevision => {
+            "; the credential or part of it occurs in the revision target given \
+             with --revise-revision"
+        }
+        Source::Fixed => {
+            "; the credential or part of it occurs in fixed request text, so it \
+             is likely too short or too common"
+        }
+    }
 }
 
 fn located(at: &Location, field: Option<String>) -> Location {
@@ -80,14 +163,9 @@ pub(crate) fn refuse_credential(
             continue;
         }
         let base = format!("requests[{index}]");
-        let (path, from_input) = member_path(redactor, planned.request(), &base);
+        let (path, source) = member_path(redactor, planned.request(), &base);
         let field = [path, base].into_iter().find(|p| !hit(redactor, p));
-        let advice = if from_input {
-            ""
-        } else {
-            "; the credential or part of it occurs in fixed request text, so it \
-             is likely too short or too common"
-        };
+        let advice = advice(source);
         return Err(Diagnostic::new(
             Code::AiRequestContainsCredential,
             format!(

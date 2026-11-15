@@ -172,43 +172,94 @@ fn the_credential_scan_precedes_the_store_check() {
     assert_eq!(memory.read(&batch), Some(b"{".to_vec()));
 }
 
-// A match outside the clause, the feedback and the revised content has no
-// member of the input to name, so the message points at the credential.
+const FIXED_ADVICE: &str = "the credential or part of it occurs in fixed request text, \
+     so it is likely too short or too common";
+const DECLARATIONS_ADVICE: &str =
+    "the credential or part of it occurs in the Rulebook declarations";
+const REVISE_RULE_ADVICE: &str = "the credential or part of it occurs in the revision \
+     target given with --revise-rule";
+
+// The message of a refusal whose match is outside a clause, the feedback and
+// the revised content: the common text, then the advice of its source.
+fn assert_advised(
+    got: &(Ran, Probe),
+    fixture: &Fixture,
+    before: &[String],
+    at: &str,
+    advice: &str,
+) {
+    let (ran, probe) = got;
+    assert_eq!(ran.code, ExitCode::InvalidInput, "{at}: {}", ran.stderr);
+    let found = findings(ran);
+    assert_eq!(found.len(), 1, "{at}: {found:?}");
+    assert_eq!(found[0].1, "RT-AI-0308", "{at}");
+    assert_eq!(
+        found[0].2,
+        format!(
+            "request 1 of 1 contains the credential value or a run of at least 8 \
+             consecutive characters of it; {advice}; nothing was sent or written"
+        ),
+        "{at}"
+    );
+    assert!(
+        ran.stderr.contains(&format!(" field {at}\n")),
+        "{at}: {}",
+        ran.stderr
+    );
+    assert_eq!(probe.attempts(), 0);
+    assert_eq!(fixture.files(), before, "{at}: a file changed");
+}
+
+// Text that RuleTrace writes has no member of the input to name, so the
+// message points at the credential. A key of the declarations is such text.
 #[test]
 fn a_credential_in_fixed_request_text_says_it_is_too_short_or_too_common() {
     let cases = [
         ("response_bytes", "requests[0]"),
         ("highest_revision", "requests[0].declarations"),
+        ("half_away_from_zero", "requests[0].vocabulary"),
     ];
     for (i, (credential, at)) in cases.into_iter().enumerate() {
         let fixture = clause_fixture(&format!("req-cred-fixed-{i}"), "Alpha beta.");
         let before = fixture.files();
-        let (ran, probe) = run_hosted(&fixture, credential, &fixture.consented());
-        assert_eq!(
-            ran.code,
-            ExitCode::InvalidInput,
-            "{credential}: {}",
-            ran.stderr
-        );
-        let found = findings(&ran);
-        assert_eq!(found.len(), 1, "{credential}: {found:?}");
-        assert_eq!(found[0].1, "RT-AI-0308", "{credential}");
-        assert_eq!(
-            found[0].2,
-            "request 1 of 1 contains the credential value or a run of at least 8 \
-             consecutive characters of it; the credential or part of it occurs in \
-             fixed request text, so it is likely too short or too common; nothing \
-             was sent or written",
-            "{credential}"
-        );
-        assert!(
-            ran.stderr.contains(&format!(" field {at}\n")),
-            "{credential}: {}",
-            ran.stderr
-        );
-        assert_eq!(probe.attempts(), 0);
-        assert_eq!(fixture.files(), before, "{credential}: a file changed");
+        let got = run_hosted(&fixture, credential, &fixture.consented());
+        assert_advised(&got, &fixture, &before, at, FIXED_ADVICE);
     }
+}
+
+#[test]
+fn a_credential_in_the_rulebook_declarations_names_the_declarations() {
+    let fixture = clause_fixture("req-cred-declarations", "Alpha beta.");
+    let rulebook = std::fs::read_to_string(fixture.path("rulebook.json")).unwrap();
+    let renamed = rulebook.replacen(r#""name":"age""#, r#""name":"participant_age""#, 1);
+    assert_ne!(renamed, rulebook, "the fixture declares the input age");
+    std::fs::write(fixture.path("rulebook.json"), renamed).unwrap();
+    let before = fixture.files();
+    let got = run_hosted(&fixture, "participant_age", &fixture.consented());
+    assert_advised(
+        &got,
+        &fixture,
+        &before,
+        "requests[0].declarations",
+        DECLARATIONS_ADVICE,
+    );
+}
+
+// The rule identifier is also a key of `highest_revision`, but the user gave
+// it with `--revise-rule`, so that member is the one that is named.
+#[test]
+fn a_credential_in_the_revision_target_rule_names_the_revise_rule_option() {
+    let fixture = revise_fixture("req-cred-revise-rule");
+    let before = fixture.files();
+    let args = consented_with(&fixture, &revise_opts(&fixture, "elig.basic", "1"));
+    let got = run_hosted(&fixture, "elig.basic", &args);
+    assert_advised(
+        &got,
+        &fixture,
+        &before,
+        "requests[0].revise.rule",
+        REVISE_RULE_ADVICE,
+    );
 }
 
 #[test]

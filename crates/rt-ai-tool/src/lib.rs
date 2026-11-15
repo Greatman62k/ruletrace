@@ -92,6 +92,8 @@ mod tests_redaction_property;
 #[cfg(test)]
 mod tests_request_credential;
 #[cfg(test)]
+mod tests_request_scan;
+#[cfg(test)]
 mod tests_response;
 #[cfg(test)]
 mod tests_response_closed;
