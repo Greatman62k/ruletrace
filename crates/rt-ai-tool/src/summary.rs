@@ -14,8 +14,10 @@
 //! run is not failed, but the entry is not confirmed durable. Its clauses
 //! are processed and are listed under `stored, directory durability not
 //! confirmed (skipped by platform)`, not under `stored`, which lists only
-//! batches whose directory sync succeeded. That section does not change
-//! `complete`, and it never appears when empty.
+//! batches whose directory sync succeeded. That section never appears
+//! when empty. It does not make the run incomplete, but a complete run
+//! with such a section states `complete, directory durability not
+//! confirmed`. An incomplete run keeps the plain `incomplete`.
 
 use crate::plan::ClauseId;
 use crate::redact::Redactor;
@@ -152,10 +154,10 @@ impl RunSummary {
     /// [`Redactor::redact_fragments`].
     #[must_use]
     pub fn render(&self, redactor: &Redactor) -> String {
-        let state = if self.is_complete() {
-            "complete"
-        } else {
-            "incomplete"
+        let state = match (self.is_complete(), self.platform_skipped.is_empty()) {
+            (true, true) => "complete",
+            (true, false) => "complete, directory durability not confirmed",
+            (false, _) => "incomplete",
         };
         let mut text = format!("run summary: {state}\n");
         for (name, list, always) in [

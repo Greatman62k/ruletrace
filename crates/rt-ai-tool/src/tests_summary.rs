@@ -63,7 +63,7 @@ fn platform_skipped_clauses_move_out_of_stored_into_their_own_section() {
     assert!(marked.is_complete());
     assert_eq!(
         render(&marked),
-        "run summary: complete\n\
+        "run summary: complete, directory durability not confirmed\n\
          processed:\n  rules.md 0 11\n  rules.md 12 27\n  rules.md 28 32\n\
          stored:\n  rules.md 0 11\n\
          stored, directory durability not confirmed (skipped by platform):\n  \

@@ -331,7 +331,7 @@ fn a_failed_directory_sync_of_the_second_request_keeps_that_batch_listed_as_unco
     );
 }
 
-// An expected platform skip is a success: exit 0, no diagnostic, and the
+// An expected platform skip is a success: exit 0, one Warning, and the
 // summary names the batches whose directory durability is not confirmed.
 #[test]
 fn a_directory_sync_skipped_by_the_platform_is_exit_0_with_an_explicit_status() {
@@ -345,7 +345,7 @@ fn a_directory_sync_skipped_by_the_platform_is_exit_0_with_an_explicit_status() 
     let report = h.run(&mut p, &fs, &VecSink::default());
     assert_eq!(report.exit, ExitCode::Success);
     assert_eq!(report.exit.value(), 0);
-    assert_eq!(shapes(&report.diagnostics), Vec::<(&str, &str)>::new());
+    assert_eq!(shapes(&report.diagnostics), vec![("RT-AI-0309", "warning")]);
     assert!(report
         .diagnostics
         .iter()
@@ -357,7 +357,7 @@ fn a_directory_sync_skipped_by_the_platform_is_exit_0_with_an_explicit_status() 
     assert!(report.summary.is_complete());
     assert_eq!(
         report.summary.render(&Redactor::no_credential()),
-        "run summary: complete\n\
+        "run summary: complete, directory durability not confirmed\n\
          processed:\n  rules.md 0 11\n  rules.md 12 27\n  rules.md 28 32\n\
          stored:\n  (none)\n\
          stored, directory durability not confirmed (skipped by platform):\n  \
@@ -769,10 +769,17 @@ fn two_runs_on_one_real_disk_store_each_batch_once() {
     for r in &reports {
         assert_eq!(r.exit, ExitCode::Success);
         assert!(r.summary.is_complete());
+        let warnings = r
+            .diagnostics
+            .iter()
+            .filter(|d| d.code().id() == "RT-AI-0309")
+            .count();
+        let expected = usize::from(!r.summary.platform_skipped().is_empty());
+        assert_eq!(warnings, expected);
         assert!(r
             .diagnostics
             .iter()
-            .all(|d| d.code() == Code::AiBatchAlreadyStored));
+            .all(|d| matches!(d.code().id(), "RT-AI-0301" | "RT-AI-0309")));
     }
     let mut stored: Vec<ClauseId> = reports
         .iter()

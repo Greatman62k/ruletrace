@@ -370,7 +370,8 @@ fn last_name(code: Option<Code>) -> &'static str {
 /// When the platform skips the directory sync, the batch is kept and the
 /// run is not failed. The Run_Summary lists those clauses under a separate
 /// heading, not as stored with confirmed durability. The run is still
-/// complete, and no diagnostic is added. Such a batch counts as kept for
+/// complete, and the Warning `RT-AI-0309` is added once for the run, after
+/// `RT-AI-0306` when both occur. Such a batch counts as kept for
 /// `RT-AI-0306`.
 ///
 /// A Transmission_Log entry is appended before each attempt. When the
@@ -425,6 +426,15 @@ pub fn run_requests<S: LogSink>(
             Code::AiRunIncomplete,
             "an earlier batch was kept and a later request failed; \
              the run is incomplete"
+                .to_owned(),
+            Location::Cli(CliLocation::Command("propose".to_owned())),
+        ));
+    }
+    if !unsynced.is_empty() {
+        diagnostics.push(Diagnostic::new(
+            Code::AiStoreDirectorySyncSkipped,
+            "the platform skipped the directory sync of a stored batch; \
+             the durability of its directory entry is not confirmed"
                 .to_owned(),
             Location::Cli(CliLocation::Command("propose".to_owned())),
         ));

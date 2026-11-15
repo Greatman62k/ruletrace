@@ -287,6 +287,8 @@ pub enum Code {
     AiStoreTempNotRemoved,
     /// `RT-AI-0308`: A Provider_Request holds the credential value or a run of at least 8 consecutive characters of it, in a clause text, the feedback or the revised rule content; nothing is sent, logged or stored
     AiRequestContainsCredential,
+    /// `RT-AI-0309`: The platform skipped the directory sync of at least one stored batch, so the durability of its directory entry is not confirmed; the run is not failed
+    AiStoreDirectorySyncSkipped,
     /// `RT-APP-0001`: Application input not well formed: CSV syntax, unknown column, wrong cell count (Req 31.9)
     AppInputMalformed,
     /// `RT-APP-0002`: Required column or declared input absent
@@ -303,7 +305,7 @@ pub enum Code {
 
 impl Code {
     /// Every code, in catalogue order.
-    pub const ALL: [Code; 146] = [
+    pub const ALL: [Code; 147] = [
         Code::DiagnosticStateContradiction,
         Code::DiagnosticStateBothFlags,
         Code::LifecycleFlagContradiction,
@@ -444,6 +446,7 @@ impl Code {
         Code::AiRunIncomplete,
         Code::AiStoreTempNotRemoved,
         Code::AiRequestContainsCredential,
+        Code::AiStoreDirectorySyncSkipped,
         Code::AppInputMalformed,
         Code::AppInputFieldMissing,
         Code::AppInputDuplicateParticipant,
@@ -596,6 +599,7 @@ impl Code {
             Self::AiRunIncomplete => "RT-AI-0306",
             Self::AiStoreTempNotRemoved => "RT-AI-0307",
             Self::AiRequestContainsCredential => "RT-AI-0308",
+            Self::AiStoreDirectorySyncSkipped => "RT-AI-0309",
             Self::AppInputMalformed => "RT-APP-0001",
             Self::AppInputFieldMissing => "RT-APP-0002",
             Self::AppInputDuplicateParticipant => "RT-APP-0003",
@@ -749,6 +753,7 @@ impl Code {
             Self::AiRunIncomplete => "AI_RUN_INCOMPLETE",
             Self::AiStoreTempNotRemoved => "AI_STORE_TEMP_NOT_REMOVED",
             Self::AiRequestContainsCredential => "AI_REQUEST_CONTAINS_CREDENTIAL",
+            Self::AiStoreDirectorySyncSkipped => "AI_STORE_DIRECTORY_SYNC_SKIPPED",
             Self::AppInputMalformed => "APP_INPUT_MALFORMED",
             Self::AppInputFieldMissing => "APP_INPUT_FIELD_MISSING",
             Self::AppInputDuplicateParticipant => "APP_INPUT_DUPLICATE_PARTICIPANT",
@@ -902,6 +907,7 @@ impl Code {
             Self::AiRunIncomplete => Severity::Warning,
             Self::AiStoreTempNotRemoved => Severity::Warning,
             Self::AiRequestContainsCredential => Severity::Error,
+            Self::AiStoreDirectorySyncSkipped => Severity::Warning,
             Self::AppInputMalformed => Severity::Error,
             Self::AppInputFieldMissing => Severity::Error,
             Self::AppInputDuplicateParticipant => Severity::Error,
@@ -1055,6 +1061,7 @@ impl Code {
             Self::AiRunIncomplete => ExitCode::Success,
             Self::AiStoreTempNotRemoved => ExitCode::Success,
             Self::AiRequestContainsCredential => ExitCode::InvalidInput,
+            Self::AiStoreDirectorySyncSkipped => ExitCode::Success,
             Self::AppInputMalformed => ExitCode::InvalidInput,
             Self::AppInputFieldMissing => ExitCode::InvalidInput,
             Self::AppInputDuplicateParticipant => ExitCode::InvalidInput,
@@ -1208,6 +1215,7 @@ impl Code {
             "RT-AI-0306" => Some(Self::AiRunIncomplete),
             "RT-AI-0307" => Some(Self::AiStoreTempNotRemoved),
             "RT-AI-0308" => Some(Self::AiRequestContainsCredential),
+            "RT-AI-0309" => Some(Self::AiStoreDirectorySyncSkipped),
             "RT-APP-0001" => Some(Self::AppInputMalformed),
             "RT-APP-0002" => Some(Self::AppInputFieldMissing),
             "RT-APP-0003" => Some(Self::AppInputDuplicateParticipant),
@@ -1362,6 +1370,7 @@ impl Code {
             "AI_RUN_INCOMPLETE" => Some(Self::AiRunIncomplete),
             "AI_STORE_TEMP_NOT_REMOVED" => Some(Self::AiStoreTempNotRemoved),
             "AI_REQUEST_CONTAINS_CREDENTIAL" => Some(Self::AiRequestContainsCredential),
+            "AI_STORE_DIRECTORY_SYNC_SKIPPED" => Some(Self::AiStoreDirectorySyncSkipped),
             "APP_INPUT_MALFORMED" => Some(Self::AppInputMalformed),
             "APP_INPUT_FIELD_MISSING" => Some(Self::AppInputFieldMissing),
             "APP_INPUT_DUPLICATE_PARTICIPANT" => Some(Self::AppInputDuplicateParticipant),

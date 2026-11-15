@@ -358,3 +358,20 @@ User decision: skip the directory fsync on Windows, consistently with UD-27, and
 - Amended: Req 23 criteria 35, 36 and 38, Req 29 criterion 19, the `RT-AI-0303` row of the Req 7.17 table, design 3.7.5 step 4, 3.7.7 (failure table, Run_Summary paragraph) and the property on incomplete runs.
 - Windows limit, stated plainly: a power loss shortly after a store write may lose the directory entry of the batch, and RuleTrace does not claim otherwise. File content is still flushed before the link.
 - `rt-cli` `Fs::sync_dir` for the ledger commit already returns `Ok(())` on Windows without syncing. It has the same skipped-versus-confirmed ambiguity in type, but the ledger commit reports no durability status, so nothing is claimed. It was not changed.
+
+## Directory sync skip Warning and summary header (8.16 platform verification)
+
+User decisions: the skip gets a Warning code, the Run_Summary header says so, and CI runs every test on every platform.
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 7 | Diagnostics Model | Changed | 7.17 | - | New row `RT-AI-0309` `AI_STORE_DIRECTORY_SYNC_SKIPPED`, Warning, exit 0, `ruletrace-ai`. It is in the catalogue, the generated enum, the Req 7.17 table and the design table |
+| 23 | AI-Assisted Proposal Pipeline | Changed | 23.36, 23.38 | - | 23.36 adds the Warning, its location, the once-per-run rule, the header text and the order. 23.38 adds the Warning and the header to the test of the skipped outcome |
+| 29 | Provider Call Policy | Changed | 29.19 | - | The reason for the skip is now stated accurately: the standard library cannot open a directory for a flush on Windows, so RuleTrace does not attempt one. The Warning is named |
+
+- This supersedes the earlier line "No Warning code is added" of the Windows directory sync section. The Run_Summary stays the full status. The Warning makes the skip visible on standard error for a reader who does not look at the summary.
+- Location: the command `propose`, as `RT-AI-0306`, because the skip belongs to the run and not to one file. It is emitted once per run, also when a later request fails, and never when no stored batch was skipped. The exit code does not change.
+- Order of Warnings: the Diagnostic ordering sorts by location, then code, then message. `RT-AI-0301`, `RT-AI-0305` and `RT-AI-0307` point at input files and come first. `RT-AI-0306` and `RT-AI-0309` point at the command, `RT-AI-0306` first.
+- Header: `run summary: complete, directory durability not confirmed` when the run is complete and the skip list is not empty. An incomplete run keeps `run summary: incomplete` with or without a skip list. The failed-sync heading and the skip heading already name the cause, and a second clause on the header would not change what a reader must do.
+- Design 3.7.5 step 4 and 3.7.7 (failure table, Run_Summary paragraph, three rendered texts) and the property on incomplete runs are amended.
+- Real-file CLI tests that expect the Unix text (`stored:` holding the batch, no Warning) were written for a platform that syncs the directory. They are not changed here and will differ on Windows.
