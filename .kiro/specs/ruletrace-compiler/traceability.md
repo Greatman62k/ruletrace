@@ -182,6 +182,7 @@ User decisions on the 8.6 stage C review, all accepted:
 1. A stored rule draft is the canonical compact print of the decoded Rule_Content (`rt_ir::print_draft`), so equal content gives equal stored bytes (UD-36, canonical proposals). The provider's key order and spacing are not kept. The retained response payload still holds the provider's exact bytes.
 2. The draft keeps the document hash of the verified Source_Model. Adoption recomputes the Draft hash against the Rulebook and refuses a mismatch with `RT-APR-0213`. A test in `rt-review` covers it.
 3. A validator finding on a proposed rule is stored with location `Field("rule.<field>")`, or `Field("rule")` when no field is known.
+4. Exception to "the earliest failing stage decides the code": a provenance rejection (exit 3) that echoes the credential, whole or as a run of 8 or more characters, is replaced by `RT-AI-0206` with exit 6. The replacement must not carry the echoed text, and a different code would reveal which stage held it. Logged as an intentional security exception. Design section 3.7.4 step 5 states it.
 
 Defect fixed with the amendment: a rejected batch could return Diagnostics that quoted the credential from an untrusted key, kind or document id. `accept_batch` now replaces such a rejection by one `RT-AI-0206` (design section 3.7.4 step 5). No requirement criterion was changed, and no safety criterion was removed or weakened.
 
@@ -189,4 +190,4 @@ Defect fixed with the amendment: a rejected batch could return Diagnostics that 
 | --- | --- | --- | --- | --- | --- |
 | 23 | AI-Assisted Proposal Pipeline | Unchanged | - | - | User decisions on the stage C review refine design section 3.7.4 only |
 
-Other sections changed: design section 3.7.4 (step 4 stored findings and draft, new step 5).
+Other sections changed: design section 3.7.4 (step 4 stored findings and draft, new step 5, with the 8-character guarantee and the structural field path).

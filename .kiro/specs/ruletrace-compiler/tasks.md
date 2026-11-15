@@ -860,6 +860,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Implement the argument parser, exit codes 0, 2, 3, 5, 6 and 70 with the earliest-failing-stage order of Req 16.17, and stdout and stderr through `Out`. The tool never opens a ledger file and never writes the Rulebook. `rt-ai-tool` has no edge to `rt-review`, `rt-compile`, `rt-engine` or `rt-compiled`, which `check-graph` enforces. Extend Property 30 to `ruletrace-ai`.
     - Observable: `ruletrace-ai propose --config ai/mock-replay.toml ... --consent D` writes a batch to the store and a Transmission_Log entry and exits 0.
     - Carried from 8.5: wire `--dry-run` to `dryrun::dry_run` (print each Request_Identifier, send nothing, write no log), with a CLI-level test that runs the parsed command and asserts the identifiers on standard output and no transmission.
+    - Carried from 8.6 review: `Out` and `Redactor::redact` match only the whole credential, so a truncated or cut copy of it passes unredacted. The `Out`, Run_Summary and Transmission_Log canary tests must use a credential longer than 60 characters, a dotted canary and a bracketed canary, and must assert that no run of 8 characters of the credential appears in any output.
     - Blocked by: 8.7.
     - _Requirements: 16.16, 16.17, 16.24, 17.7, 18.1, 18.13, 23.1, 27.1, 27.2, 27.3, 27.4, 27.8_
     - Design §3.9.2, §6.1
