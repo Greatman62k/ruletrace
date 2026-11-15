@@ -429,6 +429,14 @@ fn print_summary(runbook: &Runbook, work: &Path, records: &[StepRecord]) {
     let proof = std::fs::read_to_string(work.join("work/proof.txt")).unwrap();
     let first = proof.split("\nDECISION 2 ").next().unwrap_or(&proof);
     println!("first Proof_Report section (s07):\n{first}");
+    let ranking: Vec<&str> = proof
+        .split("\nDECISION ")
+        .filter(|section| section.contains("decided standings"))
+        .collect();
+    println!("ranking decision of the Proof_Report (s07):");
+    for section in ranking {
+        println!("DECISION {section}");
+    }
 }
 
 const RANKING_LABEL: &str = "Score ranking \u{2014} all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.";

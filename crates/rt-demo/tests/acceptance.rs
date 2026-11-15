@@ -622,6 +622,17 @@ fn ai_profile_acceptance() -> TestResult {
     let proof = json("proof.json", &std::fs::read(work.join("work/proof.json"))?);
     let sections = items(at(&proof, "decisions"));
     assert_eq!(sections.len(), verification.len());
+    {
+        let report = std::fs::read_to_string(work.join("work/proof.txt"))?;
+        let ranking: Vec<&str> = report
+            .split("\nDECISION ")
+            .filter(|section| section.contains("decided standings"))
+            .collect();
+        println!("\nranking decision of the Proof_Report (s07):");
+        for section in ranking {
+            println!("DECISION {section}");
+        }
+    }
     assert_ranking_label(
         &std::fs::read_to_string(work.join("work/proof.txt"))?,
         &proof,
