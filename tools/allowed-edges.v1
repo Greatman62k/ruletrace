@@ -19,7 +19,7 @@ crate rt-explain     class core   deps rt-foundation rt-srcmodel rt-trace rt-jso
 crate rt-review      class core   deps rt-foundation rt-hash rt-json rt-ir rt-ledger rt-proposals rt-validate rt-srcmodel rt-explain
 crate rt-cli         class core   deps rt-foundation rt-hash rt-json rt-numeric rt-srcmodel rt-source rt-ir rt-ledger rt-proposals rt-validate rt-compiled rt-compile rt-data rt-trace rt-engine rt-explain rt-review
 crate rt-ai-adapter  class aux    deps rt-foundation rt-hash rt-json
-crate rt-ai-mock     class aux    deps rt-ai-adapter rt-foundation rt-json
+crate rt-ai-mock     class aux    deps rt-ai-adapter rt-foundation rt-json rt-hash
 crate rt-ai-openai   class aux    deps rt-ai-adapter rt-foundation rt-json rt-hash
 crate rt-ai-tool     class aux    deps rt-ai-adapter rt-ai-mock rt-ai-openai rt-foundation rt-hash rt-json rt-srcmodel rt-ir rt-ledger rt-validate rt-proposals
 crate prize-check    class app    deps rt-foundation rt-numeric rt-data rt-compiled rt-engine rt-explain rt-srcmodel

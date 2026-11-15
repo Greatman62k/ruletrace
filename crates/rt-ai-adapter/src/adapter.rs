@@ -29,6 +29,9 @@ pub struct AttemptReport {
     pub outcome: AttemptOutcome,
     /// Monotonic time spent in the attempt.
     pub elapsed: Duration,
+    /// Explanation of a failure that the typed failure cannot carry, for
+    /// example the Request_Identifier of a replay miss. `None` otherwise.
+    pub detail: Option<String>,
 }
 
 /// Either a complete 2xx response or a typed failure.

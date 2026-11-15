@@ -132,6 +132,7 @@ fn timeout_report() -> AttemptReport {
     AttemptReport {
         outcome: AttemptOutcome::Failure(ProviderFailure::Timeout),
         elapsed: Duration::from_secs(20),
+        detail: None,
     }
 }
 
@@ -182,6 +183,7 @@ fn driver_succeeds_after_one_retry_with_waits_on_the_simulated_clock() {
             },
         }),
         elapsed: Duration::from_secs(1),
+        detail: None,
     };
     let mut a = Scripted {
         clock: Sim(Cell::new(Duration::ZERO)),

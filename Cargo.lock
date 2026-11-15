@@ -233,6 +233,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rt-ai-mock"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+ "rt-ai-adapter",
+ "rt-foundation",
+ "rt-hash",
+ "rt-json",
+]
+
+[[package]]
 name = "rt-cli"
 version = "0.1.0"
 dependencies = [

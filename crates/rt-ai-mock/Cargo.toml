@@ -1,0 +1,20 @@
+[package]
+name = "rt-ai-mock"
+description = "Deterministic mock provider with step scripts and recorded replay (class aux)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rt-ai-adapter = { path = "../rt-ai-adapter" }
+rt-foundation = { path = "../rt-foundation" }
+rt-hash = { path = "../rt-hash" }
+rt-json = { path = "../rt-json" }
+
+[dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }
