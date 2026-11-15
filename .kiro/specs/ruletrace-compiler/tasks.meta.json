@@ -119,6 +119,14 @@
     "8.10 Write property test for the retry decision function": {
       "status": "passed",
       "lastRunTimestamp": 1794714207707
+    },
+    "8.14 Write property test for configuration checks": {
+      "status": "passed",
+      "lastRunTimestamp": 1794719723335
+    },
+    "8.13 Write property test for credential redaction": {
+      "status": "passed",
+      "lastRunTimestamp": 1794720003408
     }
   },
   "executionHistory": {
@@ -1916,6 +1924,16 @@
         "executionId": "24a94c1c-968a-451e-9605-46484c9d6a38",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794654920589
+      },
+      {
+        "executionId": "9ef9c8c9-f906-4073-87f7-f03a4b69d163",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794719283757
+      },
+      {
+        "executionId": "9ef9c8c9-f906-4073-87f7-f03a4b69d163",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794720692871
       }
     ],
     "8.6 Implement response parsing, strict schema, provenance and semantic validation": [
@@ -1982,6 +2000,11 @@
         "executionId": "24a94c1c-968a-451e-9605-46484c9d6a38",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794654920697
+      },
+      {
+        "executionId": "9ef9c8c9-f906-4073-87f7-f03a4b69d163",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794719284553
       }
     ],
     "8.14 Write property test for configuration checks": [
@@ -1989,6 +2012,16 @@
         "executionId": "24a94c1c-968a-451e-9605-46484c9d6a38",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794654920709
+      },
+      {
+        "executionId": "9ef9c8c9-f906-4073-87f7-f03a4b69d163",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794719285379
+      },
+      {
+        "executionId": "9ef9c8c9-f906-4073-87f7-f03a4b69d163",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794720334106
       }
     ],
     "8.15 Write gate-level mock-provider failure tests": [

@@ -829,12 +829,16 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 28.1, 28.2, 28.3, 28.4, 28.5, 28.6, 28.7, 28.8, 28.9, 28.10, 28.15, 28.17, 28.18, 23.19, 23.22_
     - Design §3.7.8, §3.7.9, §3.9.2
 
-  - [ ] 8.5 Implement request building, Request_Identifier and `--dry-run`
+  - [x] 8.5 Implement request building, Request_Identifier and `--dry-run`
     - Sort candidates by (start, document id bytes, end), split into consecutive chunks (default 20, range 1 to 100, at most 256 KiB), reject a clause over 8,192 bytes with `RT-AI-0304` before any transmission, and build canonical request bytes with the `vocabulary` for the UD-32 option. `request_id = SHA-256(canonical bytes)`, computed once. Only clause texts are sent as document text. Add `ruletrace-ai propose --dry-run`, which prints each Request_Identifier and sends nothing.
     - Observable: `--dry-run` prints the identifier for each request, and the identifier changes when the vocabulary or one clause changes.
     - Blocked by: 1.11, 8.4.
     - _Requirements: 23.2, 23.3, 23.32, 29.7, 29.9, 29.16, 28.2_
     - Design §3.7.2, §8.9, §8.11.7
+    - Note (8.5 review): exact duplicate Candidate_Clauses (same document id, start and end) are rejected with `RT-AI-0304` naming the duplicate, before any transmission; they are never deduplicated silently.
+    - Note (8.5 review): Rulebook set members are not sent. Req 23.2 asks for the type declarations, and set members are values, not types.
+    - Note (8.5 review): the CLI wiring of `ruletrace-ai propose --dry-run` belongs to task 8.8. Only `dryrun::dry_run` exists now.
+    - Note (8.5 review): the unsupported names in `vocab.rs` are hard-coded and `tools/known-unsupported.v1` (design.md, Reserved names) does not exist. No task in this file creates it. When it or an equivalent validator capability list exists, a test must tie the request vocabulary to those names. Track it under the task that creates the file; until a task names it, this note stands and task 8.6 (validator side of `unrecognized`) is the nearest owner.
 
   - [ ] 8.6 Implement response parsing, strict schema, provenance and semantic validation
     - Parse with `rt-json` (depth 32, duplicate keys rejected). The single Diagnostic follows the order: too large, malformed, incomplete or refusal, forbidden field (`RT-AI-0204` for any listed name, agreeing or contradictory), schema violation. Implement the five proposal kinds with closed field sets and the `unrecognized` expression and kind variants of §3.7.3 so that an unsupported clause reaches `validate_content` and yields `RT-VAL-0003`.
@@ -854,6 +858,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
   - [ ] 8.8 Implement the `ruletrace-ai propose` command
     - Implement the argument parser, exit codes 0, 2, 3, 5, 6 and 70 with the earliest-failing-stage order of Req 16.17, and stdout and stderr through `Out`. The tool never opens a ledger file and never writes the Rulebook. `rt-ai-tool` has no edge to `rt-review`, `rt-compile`, `rt-engine` or `rt-compiled`, which `check-graph` enforces. Extend Property 30 to `ruletrace-ai`.
     - Observable: `ruletrace-ai propose --config ai/mock-replay.toml ... --consent D` writes a batch to the store and a Transmission_Log entry and exits 0.
+    - Carried from 8.5: wire `--dry-run` to `dryrun::dry_run` (print each Request_Identifier, send nothing, write no log), with a CLI-level test that runs the parsed command and asserts the identifiers on standard output and no transmission.
     - Blocked by: 8.7.
     - _Requirements: 16.16, 16.17, 16.24, 17.7, 18.1, 18.13, 23.1, 27.1, 27.2, 27.3, 27.4, 27.8_
     - Design §3.9.2, §6.1
@@ -882,13 +887,14 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: the validator gives identical Diagnostics for equal content whatever its Origin.
     - **Validates: Requirements 18.3, 18.5, 18.6, 18.14, 18.16, 23.9, 30.8, 20.20**
 
-  - [ ] 8.13 Write property test for credential redaction
+  - [-] 8.13 Write property test for credential redaction
     - **Property 37: Credential redaction**
     - Embed a canary credential in generated provider text for every failure mode. Required for credential safety.
     - Observable: the canary appears in no stdout, stderr, log, store or file.
     - **Validates: Requirements 23.22, 23.23, 28.9, 28.15, 28.20**
+    - Note (8.13 coverage is partial): the property covers the Redactor, `Out` streams, Diagnostics of every `RT-AI` code and the Transmission_Log line. Proposal_Store entries, provider-failure texts and files are not yet covered. Re-run and extend the property when tasks 8.6, 8.7 and 8.8 land.
 
-  - [ ] 8.14 Write property test for configuration checks
+  - [x] 8.14 Write property test for configuration checks
     - **Property 38: Configuration checks are ordered and total**
     - Required: configuration is the consent boundary.
     - Observable: for generated configurations exactly one earliest check fails and nothing is transmitted.
