@@ -26,6 +26,7 @@ fn request() -> ProviderRequest {
             retries: 2,
             response_bytes: 1_048_576,
         },
+        reasoning_effort: None,
         context: vec![("clauses".into(), Value::array(vec![]))],
     }
 }
@@ -109,7 +110,7 @@ fn attempts_consume_steps_and_advance_only_the_simulated_clock() {
     };
     assert_eq!(resp.payload, b"x".to_vec());
     assert_eq!(resp.completion, Completion::Complete);
-    assert_eq!(resp.meta.provider, "mock");
+    assert_eq!(resp.meta.identity.provider.as_str(), "mock");
     assert_eq!(resp.meta.model, "m1");
     assert_eq!(p.clock().now(), ms(23_050));
     assert_eq!(p.steps_consumed(), 3);

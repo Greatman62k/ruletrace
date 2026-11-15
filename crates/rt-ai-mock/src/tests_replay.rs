@@ -32,6 +32,7 @@ fn request() -> ProviderRequest {
             retries: 2,
             response_bytes: 1_048_576,
         },
+        reasoning_effort: None,
         context: vec![
             ("clauses".into(), Value::array(vec![])),
             ("revise".into(), Value::null()),
@@ -80,7 +81,7 @@ fn matching_request_yields_the_stored_payload_with_zero_elapsed() {
     };
     assert_eq!(resp.payload, br#"{"clauses":[]}"#.to_vec());
     assert_eq!(resp.completion, Completion::Complete);
-    assert_eq!(resp.meta.provider, "mock-replay");
+    assert_eq!(resp.meta.identity.provider.as_str(), "mock-replay");
     assert_eq!(resp.meta.model, "gpt-x");
     assert_eq!(report.detail, None);
     assert_eq!(p.clock().now(), Duration::ZERO);

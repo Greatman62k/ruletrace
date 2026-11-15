@@ -38,13 +38,16 @@ pub struct ProviderRequest {
     pub model: String,
     /// Deadline, retry and size limits.
     pub limits: RequestLimits,
+    /// The reasoning effort, part of the canonical bytes only when set
+    /// (Req 35.11).
+    pub reasoning_effort: Option<String>,
     /// Further ordered members of the canonical object.
     pub context: Vec<(String, Value<()>)>,
 }
 
 impl ProviderRequest {
     /// RT-JSON compact bytes with the fixed key order `v`, `task`, `model`,
-    /// `limits`, then the context members. Returns `None` when a context
+    /// `limits`, `reasoning_effort` (only when set), then the context members. Returns `None` when a context
     /// key repeats one of the fixed keys or another context key.
     #[must_use]
     pub fn canonical_bytes(&self) -> Option<Vec<u8>> {
@@ -70,6 +73,12 @@ impl ProviderRequest {
             ("model".to_owned(), Value::string(self.model.as_str())),
             ("limits".to_owned(), limits),
         ];
+        if let Some(effort) = &self.reasoning_effort {
+            members.push((
+                "reasoning_effort".to_owned(),
+                Value::string(effort.as_str()),
+            ));
+        }
         members.extend(self.context.iter().cloned());
         let object = Value::object(members).ok()?;
         Some(write_compact(&object).into_bytes())

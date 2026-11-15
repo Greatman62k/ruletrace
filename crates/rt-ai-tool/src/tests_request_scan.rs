@@ -45,6 +45,7 @@ fn request(input: &str, rule: &str, revision: u32, feedback: &str) -> ProviderRe
             retries: 2,
             response_bytes: 1_048_576,
         },
+        reasoning_effort: None,
         context: vec![
             ("clauses".to_owned(), Value::array(Vec::new())),
             (

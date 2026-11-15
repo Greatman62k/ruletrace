@@ -3,9 +3,9 @@
 
 use crate::retry::AttemptRecord;
 use crate::{
-    next_step, AiAdapter, AttemptOutcome, AttemptReport, Completion, MonotonicClock,
-    ProviderFailure, ProviderMeta, ProviderRequest, ProviderResponse, RequestLimits, RetryPolicy,
-    RetryStep, RetryStop,
+    next_step, AiAdapter, AttemptOutcome, AttemptReport, Completion, Identity, MonotonicClock,
+    Protocol, ProviderFailure, ProviderId, ProviderMeta, ProviderRequest, ProviderResponse,
+    RequestLimits, RetryPolicy, RetryStep, RetryStop,
 };
 use rt_json::Value;
 use std::cell::Cell;
@@ -21,6 +21,7 @@ fn request() -> ProviderRequest {
             retries: 2,
             response_bytes: 1_048_576,
         },
+        reasoning_effort: None,
         context: vec![
             ("clauses".into(), Value::array(vec![])),
             ("revise".into(), Value::null()),
@@ -55,6 +56,46 @@ fn any_difference_changes_the_id() {
         assert_ne!(changed.request_id().unwrap(), base);
     }
     assert_eq!(request().request_id().unwrap(), base);
+}
+
+#[test]
+fn a_request_without_an_effort_keeps_its_pinned_identifier() {
+    // The same bytes and sha256sum as before the effort field existed.
+    let r = request();
+    assert!(r.reasoning_effort.is_none());
+    assert!(!String::from_utf8(r.canonical_bytes().unwrap())
+        .unwrap()
+        .contains("reasoning_effort"));
+    assert_eq!(
+        r.request_id().unwrap().as_str(),
+        "b98f2750b87a8a8a1776233fa312f81bc685e75f07d5a91b4562915a47ac7a1f"
+    );
+}
+
+#[test]
+fn an_effort_is_in_the_bytes_after_the_limits_and_changes_the_identifier() {
+    let mut r = request();
+    r.reasoning_effort = Some("low".to_owned());
+    let expected = r#"{"v":1,"task":"propose_rules","model":"m1","limits":{"deadline_s":60,"attempt_s":20,"retries":2,"response_bytes":1048576},"reasoning_effort":"low","clauses":[],"revise":null}"#;
+    assert_eq!(r.canonical_bytes().unwrap(), expected.as_bytes());
+    // sha256sum of the bytes above, computed outside this code base.
+    assert_eq!(
+        r.request_id().unwrap().as_str(),
+        "76dbc119c31c34d4e501b2142bd44ae3737888f3c976e2bd4f800e383bbf7911"
+    );
+    let mut high = request();
+    high.reasoning_effort = Some("high".to_owned());
+    assert_ne!(high.request_id(), r.request_id());
+    assert_ne!(r.request_id(), request().request_id());
+}
+
+#[test]
+fn a_context_key_that_repeats_the_effort_gives_no_bytes() {
+    let mut r = request();
+    r.reasoning_effort = Some("low".to_owned());
+    r.context
+        .push(("reasoning_effort".into(), Value::string("high")));
+    assert!(r.canonical_bytes().is_none());
 }
 
 #[test]
@@ -177,10 +218,10 @@ fn driver_succeeds_after_one_retry_with_waits_on_the_simulated_clock() {
         outcome: AttemptOutcome::Response(ProviderResponse {
             completion: Completion::Complete,
             payload: b"{}".to_vec(),
-            meta: ProviderMeta {
-                provider: "mock".into(),
-                model: "m1".into(),
-            },
+            meta: ProviderMeta::new(
+                Identity::new(ProviderId::new("mock").unwrap(), Protocol::MockReplay, "1"),
+                "m1",
+            ),
         }),
         elapsed: Duration::from_secs(1),
         detail: None,

@@ -3,8 +3,8 @@
 use crate::clock::SimulatedClock;
 use crate::script::{MockScript, ScriptResult};
 use rt_ai_adapter::{
-    AiAdapter, AttemptOutcome, AttemptReport, MonotonicClock, ProviderFailure, ProviderMeta,
-    ProviderRequest, ProviderResponse,
+    AdapterInfo, AiAdapter, AttemptOutcome, AttemptReport, Capabilities, Identity, MonotonicClock,
+    Protocol, ProviderFailure, ProviderId, ProviderMeta, ProviderRequest, ProviderResponse, Tri,
 };
 use std::time::Duration;
 
@@ -54,6 +54,28 @@ impl MockProvider {
     }
 }
 
+const PROVIDER: ProviderId = ProviderId::literal("mock");
+
+/// The adapter version that the step-script provider reports.
+const ADAPTER_VERSION: &str = "mock-step-1";
+
+impl AdapterInfo for MockProvider {
+    fn identity(&self) -> Identity {
+        Identity::new(PROVIDER, Protocol::MockReplay, ADAPTER_VERSION)
+    }
+
+    fn capabilities(&self) -> Capabilities {
+        // A scripted answer is whatever the script holds. The provider can
+        // stand in for one that follows a schema, applies no reasoning
+        // effort and reports no usage.
+        Capabilities {
+            structured_output: Tri::Yes,
+            reasoning_effort: Tri::No,
+            usage_reporting: Tri::No,
+        }
+    }
+}
+
 impl AiAdapter for MockProvider {
     fn attempt(&mut self, request: &ProviderRequest, timeout: Duration) -> AttemptReport {
         let index = self.next;
@@ -74,10 +96,7 @@ impl AiAdapter for MockProvider {
             } => AttemptOutcome::Response(ProviderResponse {
                 completion,
                 payload,
-                meta: ProviderMeta {
-                    provider: "mock".to_owned(),
-                    model: request.model.clone(),
-                },
+                meta: ProviderMeta::new(self.identity(), &request.model),
             }),
         };
         let report = if step.elapsed > timeout {

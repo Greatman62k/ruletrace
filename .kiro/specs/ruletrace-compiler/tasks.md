@@ -1128,11 +1128,12 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 7.15 to 7.20, 35.3, 35.6, 35.8, 35.18, 35.19_
     - Design §3.9.2, §5 (catalogue table)
 
-  - [ ] 10.11 Add the capability model, provider identity, usage and pure negotiation to `rt-ai-adapter`
+  - [-] 10.11 Add the capability model, provider identity, usage and pure negotiation to `rt-ai-adapter`
     - Implement `Tri`, `Capabilities`, `StructuredOutput`, `Required`, `Unmet`, pure `negotiate()`, `Identity { provider, protocol, adapter_version }`, `Usage` and `ProviderMeta` (non-exhaustive, built through a constructor) as in design §3.4.5, and the optional reasoning effort in `ProviderRequest` (in the canonical bytes only when set). Update `rt-ai-mock` to build `ProviderMeta` through the constructor and to declare its Capabilities. No network, no environment, no provider-specific type. `rt-ai-tool` maps `negotiate()` failures to `RT-AI-0011` in task 10.13.
     - Observable: the truth table of `negotiate` (every combination of required and of yes, no, unknown) returns the exact `Unmet` list in ascending capability-name order, and an unknown required capability is unmet; `ProviderMeta` cannot be built with a struct literal outside the crate (compile-fail test); a request without an effort has the same Request_Identifier as before this task (a pinned hash), and a request with an effort has a different one.
     - Red/green: a mutant that treats unknown as yes is killed by the truth-table test; a mutant that always writes the effort field changes the pinned identifier and fails the test.
     - Blocked by: 8.19.
+    - Status note: implemented and run locally, no new dependency. `ProviderId` (lowercase letters, digits, hyphen; 1 to 64 bytes; a `const` literal constructor so a mock names itself without a run-time failure), `Protocol` (`#[non_exhaustive]`), `Identity`, `Usage`, `Tri`, `Capabilities`, `StructuredOutput`, `Required`, `Unmet`, `negotiate`, and `ProviderMeta::new` with `with_` methods. A separate trait `AdapterInfo` (`identity`, `capabilities`) carries what an adapter declares, so that the eleven existing `AiAdapter` implementations are unchanged; the two mock providers implement it. The struct-literal refusal is a `compile_fail,E0639` doctest. `ProviderMeta` keeps the configured `model` beside the new fields. Not claimed complete: the CI run on three platforms and the independent review remain.
     - _Requirements: 35.1, 35.2, 35.11, 29.7, 18.12_
     - Design §3.4.5
 

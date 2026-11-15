@@ -224,6 +224,7 @@ impl Shared {
             task: TASK.to_owned(),
             model: self.config.model.clone(),
             limits: self.config.limits,
+            reasoning_effort: None,
             context: vec![
                 ("clauses".to_owned(), Value::array(clauses)),
                 ("declarations".to_owned(), self.declarations.clone()),

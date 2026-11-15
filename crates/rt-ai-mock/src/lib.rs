@@ -16,6 +16,8 @@ mod support;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod tests_info;
+#[cfg(test)]
 mod tests_replay;
 #[cfg(test)]
 mod tests_retry_after;

@@ -34,6 +34,7 @@ fn request() -> ProviderRequest {
             retries: 2,
             response_bytes: 1_048_576,
         },
+        reasoning_effort: None,
         context: vec![(
             "clauses".to_owned(),
             Value::array(vec![Value::string(CLAUSE_TEXT)]),

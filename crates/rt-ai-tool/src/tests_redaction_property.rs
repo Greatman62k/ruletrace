@@ -230,6 +230,7 @@ fn record_with_model(redactor: &Redactor, model: &str) -> String {
             retries: 2,
             response_bytes: 1_048_576,
         },
+        reasoning_effort: None,
         context: Vec::new(),
     };
     let context = LogContext {

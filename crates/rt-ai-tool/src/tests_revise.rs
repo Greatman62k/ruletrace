@@ -230,10 +230,14 @@ impl AiAdapter for Recording {
             outcome: AttemptOutcome::Response(ProviderResponse {
                 completion: Completion::Complete,
                 payload: self.payload.clone().into_bytes(),
-                meta: ProviderMeta {
-                    provider: "openai-responses".to_owned(),
-                    model: "model-1".to_owned(),
-                },
+                meta: ProviderMeta::new(
+                    rt_ai_adapter::Identity::new(
+                        rt_ai_adapter::ProviderId::new("openai-responses").unwrap(),
+                        rt_ai_adapter::Protocol::OpenAiResponses,
+                        "1",
+                    ),
+                    "model-1",
+                ),
             }),
             elapsed: Duration::ZERO,
             detail: None,

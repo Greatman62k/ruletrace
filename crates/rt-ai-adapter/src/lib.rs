@@ -6,17 +6,25 @@
 #![forbid(unsafe_code)]
 
 mod adapter;
+mod capability;
+mod identity;
 mod request;
 pub mod retry;
 
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod tests_capability;
+#[cfg(test)]
+mod tests_identity;
+#[cfg(test)]
 mod tests_retry;
 
 pub use adapter::{
-    AiAdapter, AttemptOutcome, AttemptReport, Completion, MonotonicClock, ProviderFailure,
-    ProviderMeta, ProviderResponse,
+    AdapterInfo, AiAdapter, AttemptOutcome, AttemptReport, Completion, MonotonicClock,
+    ProviderFailure, ProviderMeta, ProviderResponse,
 };
+pub use capability::{negotiate, Capabilities, Required, StructuredOutput, Tri, Unmet};
+pub use identity::{Identity, Protocol, ProviderId, ProviderIdError, Usage, MAX_PROVIDER_ID_LEN};
 pub use request::{ProviderRequest, RequestId, RequestLimits};
 pub use retry::{next_step, AttemptRecord, RetryPolicy, RetryPolicyError, RetryStep, RetryStop};

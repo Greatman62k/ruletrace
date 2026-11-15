@@ -711,10 +711,14 @@ fn two_runs_on_one_real_disk_store_each_batch_once() {
                 Some((_, text)) => AttemptOutcome::Response(ProviderResponse {
                     completion: Completion::Complete,
                     payload: text.clone().into_bytes(),
-                    meta: ProviderMeta {
-                        provider: "mock".to_owned(),
-                        model: request.model.clone(),
-                    },
+                    meta: ProviderMeta::new(
+                        rt_ai_adapter::Identity::new(
+                            rt_ai_adapter::ProviderId::new("mock").unwrap(),
+                            rt_ai_adapter::Protocol::MockReplay,
+                            "1",
+                        ),
+                        &request.model,
+                    ),
                 }),
                 None => AttemptOutcome::Failure(ProviderFailure::AuthFailed),
             };

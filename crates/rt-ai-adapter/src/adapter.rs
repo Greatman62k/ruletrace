@@ -1,6 +1,6 @@
 //! The adapter trait and the types that cross it. No provider-specific type.
 
-use crate::ProviderRequest;
+use crate::{Capabilities, Identity, ProviderRequest, Usage};
 use std::time::Duration;
 
 /// A source of monotonic time. Only an integration crate reads a real timer;
@@ -20,6 +20,16 @@ pub trait AiAdapter {
     fn attempt(&mut self, request: &ProviderRequest, timeout: Duration) -> AttemptReport;
     /// The clock the caller uses to measure waits and the deadline.
     fn clock(&self) -> &dyn MonotonicClock;
+}
+
+/// What an adapter declares about itself, apart from how it attempts a
+/// request. Pure and network-free.
+pub trait AdapterInfo {
+    /// Who this adapter is.
+    fn identity(&self) -> Identity;
+    /// What it supports. An adapter that establishes nothing returns
+    /// [`Capabilities::UNKNOWN`].
+    fn capabilities(&self) -> Capabilities;
 }
 
 /// The result of one attempt and the monotonic time it took.
@@ -54,13 +64,72 @@ pub struct ProviderResponse {
     pub meta: ProviderMeta,
 }
 
-/// Provider and model names reported for a response.
+/// Metadata of a response. Built only through [`ProviderMeta::new`] and the
+/// `with_` methods, so that a later field does not break an implementation.
+///
+/// `model` is the configured model that the request carried. The reported
+/// model, response identifier and usage are untrusted audit data: no
+/// decision, identifier or approval reads them (Req 35.15).
+///
+/// ```compile_fail,E0639
+/// use rt_ai_adapter::{Identity, Protocol, ProviderId, ProviderMeta};
+/// let identity = Identity::new(ProviderId::new("mock").unwrap(), Protocol::MockReplay, "1");
+/// let _ = ProviderMeta {
+///     identity,
+///     model: "m".to_owned(),
+///     reported_model: None,
+///     response_id: None,
+///     usage: None,
+/// };
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct ProviderMeta {
-    /// Provider kind, for example `mock`.
-    pub provider: String,
-    /// Model identifier.
+    /// Who answered.
+    pub identity: Identity,
+    /// The configured model identifier, as sent.
     pub model: String,
+    /// The model name that the provider reported, if it did.
+    pub reported_model: Option<String>,
+    /// The response identifier that the provider reported, if it did.
+    pub response_id: Option<String>,
+    /// The token counts that the provider reported, if it did.
+    pub usage: Option<Usage>,
+}
+
+impl ProviderMeta {
+    /// Metadata with nothing reported.
+    #[must_use]
+    pub fn new(identity: Identity, model: &str) -> Self {
+        Self {
+            identity,
+            model: model.to_owned(),
+            reported_model: None,
+            response_id: None,
+            usage: None,
+        }
+    }
+
+    /// Sets the model name that the provider reported.
+    #[must_use]
+    pub fn with_reported_model(mut self, reported: &str) -> Self {
+        self.reported_model = Some(reported.to_owned());
+        self
+    }
+
+    /// Sets the response identifier that the provider reported.
+    #[must_use]
+    pub fn with_response_id(mut self, id: &str) -> Self {
+        self.response_id = Some(id.to_owned());
+        self
+    }
+
+    /// Sets the token counts that the provider reported.
+    #[must_use]
+    pub fn with_usage(mut self, usage: Usage) -> Self {
+        self.usage = Some(usage);
+        self
+    }
 }
 
 /// How the provider ended a complete response.

@@ -3,8 +3,9 @@
 use crate::clock::SimulatedClock;
 use crate::support::{invalid, members, text, ScriptError};
 use rt_ai_adapter::{
-    AiAdapter, AttemptOutcome, AttemptReport, Completion, MonotonicClock, ProviderFailure,
-    ProviderMeta, ProviderRequest, ProviderResponse,
+    AdapterInfo, AiAdapter, AttemptOutcome, AttemptReport, Capabilities, Completion, Identity,
+    MonotonicClock, Protocol, ProviderFailure, ProviderId, ProviderMeta, ProviderRequest,
+    ProviderResponse, Tri,
 };
 use rt_foundation::InputId;
 use rt_hash::{sha256, Sha256Hex};
@@ -199,6 +200,24 @@ impl ReplayProvider {
     }
 }
 
+const PROVIDER: ProviderId = ProviderId::literal("mock-replay");
+
+impl AdapterInfo for ReplayProvider {
+    fn identity(&self) -> Identity {
+        Identity::new(PROVIDER, Protocol::MockReplay, &self.script.adapter_version)
+    }
+
+    fn capabilities(&self) -> Capabilities {
+        // A replay returns a stored payload. It sends nothing, so it applies
+        // no reasoning effort and reports no usage.
+        Capabilities {
+            structured_output: Tri::Yes,
+            reasoning_effort: Tri::No,
+            usage_reporting: Tri::No,
+        }
+    }
+}
+
 impl AiAdapter for ReplayProvider {
     fn attempt(&mut self, request: &ProviderRequest, _timeout: Duration) -> AttemptReport {
         self.attempts += 1;
@@ -213,10 +232,7 @@ impl AiAdapter for ReplayProvider {
             outcome: AttemptOutcome::Response(ProviderResponse {
                 completion: Completion::Complete,
                 payload,
-                meta: ProviderMeta {
-                    provider: "mock-replay".to_owned(),
-                    model: self.script.model.clone(),
-                },
+                meta: ProviderMeta::new(self.identity(), &self.script.model),
             }),
             elapsed: Duration::ZERO,
             detail: None,
