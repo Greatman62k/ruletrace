@@ -347,3 +347,14 @@ User decisions and corrections of the 8.15 review.
 | Req | Title | Status | Changed criteria | New criteria | Cause |
 | --- | --- | --- | --- | --- | --- |
 | 21 | Cross-Platform CI | Changed | 21.10 | - | GitHub rejected `macos-14` on run 43720278618 (every macOS job cancelled with zero steps). User decision: the macOS label is `macos-15`. `ubuntu-24.04`, `windows-2022` and the toolchain pin 1.99.1 are unchanged. No macOS job ever ran. Updated: `ci.yml`, design 3.6.3 and 7.4 text, tasks 1.1 and the CI task, UD-15 section 5 |
+
+## Windows directory sync (8.16 platform verification)
+
+User decision: skip the directory fsync on Windows, consistently with UD-27, and keep the status explicit.
+
+- `StoreFs::sync_dir` returns `DirSync::Synced` or `DirSync::SkippedByPlatform`, or an error. `StdFs` syncs on Unix and skips elsewhere. A skip is a successful store, exit 0, no diagnostic. `RT-AI-0303` stays reserved for a real failure, and a PermissionDenied from a Unix sync is still `RT-AI-0303`.
+- The skipped clauses are processed and are listed in their own section, `stored, directory durability not confirmed (skipped by platform)`, and not in `stored`. This keeps the earlier decision that `stored` lists durable batches, and mirrors the failed-sync section. The section does not make the run incomplete. No Warning code is added, because the Run_Summary on standard output is the status channel and a constant per-platform notice would need a catalogue entry and change no outcome.
+- `RT-AI-0306` counts a skipped batch as kept, like any batch the run wrote.
+- Amended: Req 23 criteria 35, 36 and 38, Req 29 criterion 19, the `RT-AI-0303` row of the Req 7.17 table, design 3.7.5 step 4, 3.7.7 (failure table, Run_Summary paragraph) and the property on incomplete runs.
+- Windows limit, stated plainly: a power loss shortly after a store write may lose the directory entry of the batch, and RuleTrace does not claim otherwise. File content is still flushed before the link.
+- `rt-cli` `Fs::sync_dir` for the ledger commit already returns `Ok(())` on Windows without syncing. It has the same skipped-versus-confirmed ambiguity in type, but the ledger commit reports no durability status, so nothing is claimed. It was not changed.

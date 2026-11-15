@@ -910,7 +910,7 @@ Write algorithm (all within `rt-ai-tool`, via its own `Fs` trait):
 1. Check `batches/<request_id>.json` exists (idempotency, step 4). If yes: Warning `RT-AI-0301`, exit 0.
 2. Write `.tmp/<request_id>.tmp` fully, flush, `sync_all`.
 3. `hard_link(tmp, final)`. Success means this process stored the batch. `AlreadyExists` means a concurrent run won: remove tmp, Warning `RT-AI-0301`, exit 0 (Req 29.11). The store fails closed. There is no `.lock` marker and no `rename` fallback. If `hard_link` is unsupported or fails for any reason other than "already exists", the write is refused with `RT-AI-0303`, exit 70, the store is unchanged and tmp is removed. If the link target already exists the outcome is `RT-AI-0301` (user decision of 2026-11-15).
-4. `sync` the directory, remove tmp. A failure to sync the directory after the link is `RT-AI-0303` (exit 70) and leaves the whole batch file in place, because a concurrent run may already have reported it as stored. A later run reports it as `RT-AI-0301`. The Run_Summary lists the clauses of that batch as `stored, durability not confirmed` (section 3.7.7), and the failure carries a `kept` marker so the call loop can tell it from a refused write.
+4. `sync` the directory, remove tmp. `sync_dir` returns `DirSync::Synced` or `DirSync::SkippedByPlatform`, or an error. `Synced` is stored and durability confirmed. `SkippedByPlatform` is stored and visible, exit 0, no diagnostic, and the batch is never reported as durability confirmed (section 3.7.7). `StdFs` syncs on Unix and skips on every other platform, Windows included, because a directory cannot be opened for a flush there. The temporary file is still flushed with `sync_all` before the link, and the link still makes the batch appear whole or not at all. *Windows limit:* a power loss shortly after a store write may lose the directory entry of the batch, and RuleTrace does not claim otherwise. A later run then finds no batch and repeats the request. A failure to sync the directory after the link is `RT-AI-0303` (exit 70) and leaves the whole batch file in place, because a concurrent run may already have reported it as stored. A later run reports it as `RT-AI-0301`. The Run_Summary lists the clauses of that batch as `stored, durability not confirmed` (section 3.7.7), and the failure carries a `kept` marker so the call loop can tell it from a refused write.
 
 If any step before the link fails: remove tmp, `RT-AI-0303`, exit 70, no file in `batches/` (Req 29.19). A temp file that cannot be removed gives the Warning `RT-AI-0307` and changes no outcome. With all eight temp names taken, the `RT-AI-0303` message lists the eight paths so the operator can delete the stale ones. The final file appears whole or not at all. A malformed existing store (unparseable batch file) gives `RT-AI-0302` exit 2 before any provider call.
 
@@ -968,10 +968,29 @@ stateDiagram-v2
 | Semantic outcome with blocking findings | RT-AI-0305 | Warning | 0 | batch stored | proposals non-executable |
 | Store write failed (write, link or name exhaustion) | RT-AI-0303 | Error | 70 | none | |
 | Store write failed at the directory sync after the link | RT-AI-0303 | Error | 70 | the whole batch file stays | clauses listed as stored, durability not confirmed |
+| Directory sync skipped by the platform after the link | none | none | 0 | the whole batch file stays | clauses listed as stored, directory durability not confirmed (skipped by platform) |
 | Temp file not removed | RT-AI-0307 | Warning | 0 | none | file is never read |
 | Earlier batch kept, later request failed | RT-AI-0306 | Warning | exit of failing request | earlier batches kept | Run_Summary incomplete |
 
-**Run_Summary and incomplete runs (decision 5).** Requests run in order of first clause. After the first failure no further request is sent. The summary on stdout lists `complete` or `incomplete` and three sorted lists of clause ids, each written as document, start and end: `processed` (requests that completed steps 1 to 8, including `RT-AI-0301`), `stored` (clauses of batches this run wrote, subset of processed), `unprocessed` (the rest). `complete` only if `unprocessed` is empty. One exception adds a fourth list. When the directory sync after the link fails for a request, its batch file is whole in the store, so its clauses are neither processed nor unprocessed. They are listed under the heading `stored, durability not confirmed`. The heading and its list appear only when the list is not empty. The run then states `incomplete` even when `unprocessed` is empty. The text is, for a three-request run whose second sync failed:
+**Run_Summary and incomplete runs (decision 5).** Requests run in order of first clause. After the first failure no further request is sent. The summary on stdout lists `complete` or `incomplete` and three sorted lists of clause ids, each written as document, start and end: `processed` (requests that completed steps 1 to 8, including `RT-AI-0301`), `stored` (clauses of batches this run wrote, subset of processed), `unprocessed` (the rest). `complete` only if `unprocessed` is empty. Two exceptions add further lists. When the platform skips the directory sync after the link, the request succeeded: its clauses are processed, are not in `stored`, and are listed under `stored, directory durability not confirmed (skipped by platform)`. That list appears only when it is not empty, does not make the run `incomplete`, adds no diagnostic and no exit code, and `RT-AI-0306` treats such a batch as kept. For a successful three-request run on Windows the text is:
+
+```text
+run summary: complete
+processed:
+  rules.md 0 11
+  rules.md 12 27
+  rules.md 28 32
+stored:
+  (none)
+stored, directory durability not confirmed (skipped by platform):
+  rules.md 0 11
+  rules.md 12 27
+  rules.md 28 32
+unprocessed:
+  (none)
+```
+
+The second exception is the failed sync. When the directory sync after the link fails for a request, its batch file is whole in the store, so its clauses are neither processed nor unprocessed. They are listed under the heading `stored, durability not confirmed`. The heading and its list appear only when the list is not empty. The run then states `incomplete` even when `unprocessed` is empty. The text is, for a three-request run whose second sync failed:
 
 ```text
 run summary: incomplete
@@ -1918,7 +1937,7 @@ For any Request_Identifier, repeated or concurrent runs leave exactly one batch 
 
 ### Property 36: Run_Summary partitions the requested clauses
 
-For any multi-request run that fails at request k (or succeeds), processed and unprocessed are disjoint and their union is every requested clause (a request whose batch is whole but whose directory sync failed is a third part, listed as stored with durability not confirmed), stored is a subset of processed, the summary says complete only if unprocessed and the unconfirmed list are empty, RT-AI-0306 appears exactly when an earlier batch was kept and a later request failed, the exit code is that of the failing request, and no later request is sent.
+For any multi-request run that fails at request k (or succeeds), processed and unprocessed are disjoint and their union is every requested clause (a request whose batch is whole but whose directory sync failed is a third part, listed as stored with durability not confirmed), stored and the platform-skipped list are disjoint subsets of processed, the summary says complete only if unprocessed and the unconfirmed list are empty, RT-AI-0306 appears exactly when an earlier batch was kept and a later request failed, the exit code is that of the failing request, and no later request is sent.
 
 **Validates: Requirements 23.35, 23.36, 23.37, 23.38, 16.24, 27.8**
 
