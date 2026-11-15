@@ -292,7 +292,9 @@ fn a_failed_directory_sync_reports_the_failure_and_keeps_the_whole_file() {
         sync_dir: Some(ErrorKind::Other),
         ..Faults::default()
     });
-    let err = store(&h, &fs, &accepted(&h, 0)).unwrap_err();
+    let failure = store_full(&h, &fs, &accepted(&h, 0)).unwrap_err();
+    assert!(failure.kept);
+    let err = failure.error;
     expect_failure(&err, &h.batch_file(0));
     assert!(err.message().contains("complete batch file stays in place"));
     let bytes = fs.read(&h.batch_file(0)).unwrap();
@@ -338,6 +340,7 @@ fn a_failed_removal_after_a_failed_write_is_a_warning_beside_the_error() {
         ..Faults::default()
     });
     let failure = store_full(&h, &fs, &accepted(&h, 0)).unwrap_err();
+    assert!(!failure.kept);
     expect_failure(&failure.error, &h.batch_file(0));
     assert_eq!(
         failure.error.message(),

@@ -35,6 +35,8 @@ pub(crate) struct Faults {
     pub(crate) sync_file: Option<ErrorKind>,
     pub(crate) links: VecDeque<Link>,
     pub(crate) sync_dir: Option<ErrorKind>,
+    /// Directory syncs that succeed before `sync_dir` takes effect.
+    pub(crate) sync_dir_after: usize,
     pub(crate) remove: Option<ErrorKind>,
 }
 
@@ -227,7 +229,12 @@ impl StoreFs for MemFs {
 
     fn sync_dir(&self, dir: &Path) -> io::Result<()> {
         self.begin(format!("sync_dir {}", show(dir)))?;
-        match self.0.borrow().faults.sync_dir {
+        let mut state = self.0.borrow_mut();
+        if state.faults.sync_dir_after > 0 {
+            state.faults.sync_dir_after -= 1;
+            return Ok(());
+        }
+        match state.faults.sync_dir {
             Some(kind) => Err(io_error(kind)),
             None => Ok(()),
         }

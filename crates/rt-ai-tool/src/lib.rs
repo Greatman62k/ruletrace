@@ -83,6 +83,8 @@ mod tests_scan;
 mod tests_scratch;
 #[cfg(test)]
 mod tests_store;
+#[cfg(test)]
+mod tests_summary;
 
 pub use accept::{accept_batch, AcceptInput, AcceptedBatch};
 pub use config::{

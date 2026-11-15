@@ -66,6 +66,9 @@ struct Done {
 
 struct Failed {
     diagnostics: Vec<Diagnostic>,
+    // The complete batch file is in the store and its durability is not
+    // confirmed.
+    kept: bool,
 }
 
 fn input_at(id: &str) -> Location {
@@ -225,12 +228,14 @@ impl Loop<'_, '_> {
                     "the request or response identifier could not be built".to_owned(),
                     request,
                 )],
+                kept: false,
             });
         };
         match batch_exists(fs, root, &request_id) {
             Err(d) => {
                 return Err(Failed {
                     diagnostics: vec![d],
+                    kept: false,
                 })
             }
             Ok(true) => {
@@ -245,7 +250,10 @@ impl Loop<'_, '_> {
             Ok(r) => r,
             Err(d) => {
                 notes.push(d);
-                return Err(Failed { diagnostics: notes });
+                return Err(Failed {
+                    diagnostics: notes,
+                    kept: false,
+                });
             }
         };
         let accepted = accept_batch(&AcceptInput {
@@ -263,7 +271,10 @@ impl Loop<'_, '_> {
             Ok(a) => a,
             Err(found) => {
                 notes.extend(found);
-                return Err(Failed { diagnostics: notes });
+                return Err(Failed {
+                    diagnostics: notes,
+                    kept: false,
+                });
             }
         };
         match store_batch(fs, root, &accepted, self.input.meta) {
@@ -288,8 +299,16 @@ impl Loop<'_, '_> {
             }
             Err(failure) => {
                 notes.extend(failure.warnings);
+                // A kept batch is in the store, so a reviewer will meet its
+                // blocking findings and the Warning says so.
+                if failure.kept {
+                    notes.extend(accepted.blocking_warning());
+                }
                 notes.push(failure.error);
-                Err(Failed { diagnostics: notes })
+                Err(Failed {
+                    diagnostics: notes,
+                    kept: failure.kept,
+                })
             }
         }
     }
@@ -322,6 +341,12 @@ fn last_name(code: Option<Code>) -> &'static str {
 /// of earlier requests stay, and `RT-AI-0306` is added when this run
 /// stored one of them. The report never calls an incomplete run complete.
 ///
+/// When the directory sync of a request fails after the link, the whole
+/// batch file stays in the store. The run ends with `RT-AI-0303` and the
+/// Run_Summary lists those clauses as stored with durability not
+/// confirmed, not as unprocessed. `RT-AI-0306` still depends only on
+/// batches of earlier requests.
+///
 /// A Transmission_Log entry is appended before each attempt. When the
 /// append fails, `RT-AI-0010` ends the run and that attempt is not made.
 pub fn run_requests<S: LogSink>(
@@ -339,6 +364,7 @@ pub fn run_requests<S: LogSink>(
         .collect();
     let mut processed: Vec<ClauseId> = Vec::new();
     let mut stored: Vec<ClauseId> = Vec::new();
+    let mut unconfirmed: Vec<ClauseId> = Vec::new();
     let mut diagnostics: Vec<Diagnostic> = Vec::new();
     let mut exit = ExitCode::Success;
     for request in input.plan.requests() {
@@ -351,6 +377,9 @@ pub fn run_requests<S: LogSink>(
                 }
             }
             Err(failed) => {
+                if failed.kept {
+                    unconfirmed.extend(request.clauses().iter().cloned());
+                }
                 exit = failed
                     .diagnostics
                     .iter()
@@ -371,7 +400,7 @@ pub fn run_requests<S: LogSink>(
         ));
     }
     RunReport {
-        summary: RunSummary::new(&requested, &processed, &stored),
+        summary: RunSummary::with_unconfirmed(&requested, &processed, &stored, &unconfirmed),
         diagnostics,
         exit,
     }

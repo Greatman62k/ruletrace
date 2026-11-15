@@ -277,6 +277,127 @@ fn a_failing_first_request_stores_nothing_and_leaves_the_store_as_it_was() {
     }
 }
 
+// Req 23.36, 23.38 and 29.19 name one exception: a batch whose directory
+// sync failed after the link is whole in the store and is listed as stored
+// with durability not confirmed. The second request is the one that fails.
+#[test]
+fn a_failed_directory_sync_of_the_second_request_keeps_that_batch_listed_as_unconfirmed() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        sync_dir: Some(ErrorKind::Other),
+        sync_dir_after: 1,
+        ..Faults::default()
+    });
+    let sink = VecSink::default();
+    let mut p = provider(vec![ok(0), ok(1), ok(2)]);
+    let report = h.run(&mut p, &fs, &sink);
+    assert_eq!(report.exit, ExitCode::Internal);
+    assert_eq!(report.exit.value(), 70);
+    assert_eq!(
+        shapes(&report.diagnostics),
+        vec![("RT-AI-0303", "error"), ("RT-AI-0306", "warning")]
+    );
+    assert_eq!(
+        report.diagnostics[0].message(),
+        "the batch was not stored: making the batch durable failed (Other); \
+         the complete batch file stays in place"
+    );
+    let mut both = vec![h.batch_file(0), h.batch_file(1)];
+    both.sort();
+    assert_eq!(stored_names(&fs), both);
+    for i in 0..2 {
+        let bytes = fs.read(&h.batch_file(i)).unwrap();
+        let batch = parse_batch(&InputId::new("b").unwrap(), &bytes).unwrap();
+        assert_eq!(batch.request_id.as_str(), h.id(i));
+        assert_eq!(batch.response.payload, payload(i));
+    }
+    assert_eq!(fs.names_under("store/.tmp/"), Vec::<String>::new());
+    assert_eq!(p.steps_consumed(), 2);
+    assert_eq!(sink.lines().len(), 2);
+    assert!(!sink.text().contains(&h.id(2)));
+    assert_eq!(report.summary.processed(), [cid(0)]);
+    assert_eq!(report.summary.stored(), [cid(0)]);
+    assert_eq!(report.summary.unconfirmed(), [cid(1)]);
+    assert_eq!(report.summary.unprocessed(), [cid(2)]);
+    assert!(!report.summary.is_complete());
+    assert_eq!(
+        report.summary.render(&Redactor::no_credential()),
+        "run summary: incomplete\n\
+         processed:\n  rules.md 0 11\n\
+         stored:\n  rules.md 0 11\n\
+         stored, durability not confirmed:\n  rules.md 12 27\n\
+         unprocessed:\n  rules.md 28 32\n"
+    );
+}
+
+#[test]
+fn a_failed_directory_sync_of_the_first_request_adds_no_rt_ai_0306() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        sync_dir: Some(ErrorKind::Other),
+        ..Faults::default()
+    });
+    let mut p = provider(vec![ok(0), ok(1), ok(2)]);
+    let report = h.run(&mut p, &fs, &VecSink::default());
+    assert_eq!(report.exit.value(), 70);
+    assert_eq!(shapes(&report.diagnostics), vec![("RT-AI-0303", "error")]);
+    assert_eq!(stored_names(&fs), vec![h.batch_file(0)]);
+    assert_eq!(p.steps_consumed(), 1);
+    assert_eq!(
+        report.summary.render(&Redactor::no_credential()),
+        "run summary: incomplete\n\
+         processed:\n  (none)\n\
+         stored:\n  (none)\n\
+         stored, durability not confirmed:\n  rules.md 0 11\n\
+         unprocessed:\n  rules.md 12 27\n  rules.md 28 32\n"
+    );
+}
+
+#[test]
+fn an_unconfirmed_last_batch_never_makes_the_run_complete() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        sync_dir: Some(ErrorKind::Other),
+        sync_dir_after: 2,
+        ..Faults::default()
+    });
+    let mut p = provider(vec![ok(0), ok(1), ok(2)]);
+    let report = h.run(&mut p, &fs, &VecSink::default());
+    assert_eq!(report.exit.value(), 70);
+    assert!(report.summary.unprocessed().is_empty());
+    assert_eq!(report.summary.unconfirmed(), [cid(2)]);
+    assert!(!report.summary.is_complete());
+    let text = report.summary.render(&Redactor::no_credential());
+    assert!(text.starts_with("run summary: incomplete\n"), "{text}");
+    assert!(text.ends_with("unprocessed:\n  (none)\n"), "{text}");
+}
+
+#[test]
+fn an_unconfirmed_batch_with_blocking_findings_still_gets_rt_ai_0305() {
+    let h = Harness::new("");
+    let fs = MemFs::new();
+    fs.with_faults(Faults {
+        sync_dir: Some(ErrorKind::Other),
+        sync_dir_after: 1,
+        ..Faults::default()
+    });
+    let mut p = provider(vec![ok(0), blocking_resp(), ok(2)]);
+    let report = h.run(&mut p, &fs, &VecSink::default());
+    assert_eq!(report.exit.value(), 70);
+    assert_eq!(
+        shapes(&report.diagnostics),
+        vec![
+            ("RT-AI-0305", "warning"),
+            ("RT-AI-0303", "error"),
+            ("RT-AI-0306", "warning")
+        ]
+    );
+    assert!(fs.read(&h.batch_file(1)).is_some());
+}
+
 #[test]
 fn a_temporary_file_that_cannot_be_removed_warns_and_the_run_completes() {
     let h = Harness::new("");
