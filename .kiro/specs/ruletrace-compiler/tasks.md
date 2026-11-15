@@ -887,7 +887,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: the validator gives identical Diagnostics for equal content whatever its Origin.
     - **Validates: Requirements 18.3, 18.5, 18.6, 18.14, 18.16, 23.9, 30.8, 20.20**
 
-  - [-] 8.13 Write property test for credential redaction
+  - [x] 8.13 Write property test for credential redaction
     - **Property 37: Credential redaction**
     - Embed a canary credential in generated provider text for every failure mode. Required for credential safety.
     - Observable: the canary appears in no stdout, stderr, log, store or file.
