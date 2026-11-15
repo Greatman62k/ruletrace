@@ -144,8 +144,10 @@ fn assert_credential_free(label: &str, canary: &str, found: &[Diagnostic]) {
 }
 
 // True when the path is built only from names that RuleTrace itself
-// writes: `response`, `payload`, `proposals[n]`, `evidence[n]`, `rule`,
-// and the fixed member names of a proposal.
+// writes: `payload` and the fallback `response`, the counted indexes
+// `proposals[n]`, `evidence[n]` and `outcome[n]`, and the fixed schema
+// member names that production keeps (`kind`, `proposer`, `rationale`,
+// `rule`, `expr`, `node`, `document`, `quote`).
 fn is_structural(field: &str) -> bool {
     let index = |s: &str, name: &str| {
         s.strip_prefix(name)
@@ -398,4 +400,118 @@ fn rejections_that_do_not_echo_stay_credential_free_and_keep_their_code() {
             assert_eq!(found[0].code(), expected, "{at_label}: {found:?}");
         }
     }
+}
+
+// An accepted batch must not hold a run of 8 characters of the credential
+// either (Req 28.9). The payload below is otherwise valid, so only the
+// credential check can refuse it.
+
+fn with_texts(proposer: &str, rationale: &str) -> String {
+    let base = proposal("", &good_rule());
+    let swapped = base
+        .replace(
+            r#""proposer":"model-1""#,
+            &format!(r#""proposer":"{proposer}""#),
+        )
+        .replace(
+            r#""rationale":"why""#,
+            &format!(r#""rationale":"{rationale}""#),
+        );
+    wrap(&[swapped])
+}
+
+// Writes every seventh character as a JSON `\u` escape, so the raw bytes
+// never hold a run of 8 plain characters while the decoded text does.
+fn spelled(text: &str) -> String {
+    text.chars()
+        .enumerate()
+        .map(|(i, c)| {
+            if i % 7 == 0 {
+                format!("\\u{:04x}", u32::from(c))
+            } else {
+                c.to_string()
+            }
+        })
+        .collect()
+}
+
+// A realistic key whose every eighth character is a quote, so no plain run
+// of 8 characters is free of an escape in the JSON text.
+fn quoted_key() -> String {
+    REALISTIC
+        .chars()
+        .enumerate()
+        .map(|(i, c)| if i % 8 == 7 { '"' } else { c })
+        .collect()
+}
+
+fn refused_at(canary: &str, payload: &str, field: &str) {
+    let found = run(canary, payload, Completion::Complete).expect_err(field);
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(found[0].code(), Code::AiResponseCredentialEcho, "{found:?}");
+    assert_eq!(found[0].code().exit_code(), ExitCode::Response);
+    let Location::Input(at) = found[0].primary() else {
+        panic!("not an input location: {found:?}");
+    };
+    assert_eq!(at.field.as_deref(), Some(field));
+    assert_credential_free(field, canary, &found);
+}
+
+#[test]
+fn a_60_character_prefix_in_a_rationale_is_refused() {
+    let payload = with_texts("model-1", &REALISTIC[..60]);
+    refused_at(REALISTIC, &payload, "payload");
+}
+
+#[test]
+fn a_tail_of_the_key_in_the_proposer_is_refused() {
+    let tail = &REALISTIC[REALISTIC.len() - 40..];
+    let payload = with_texts(tail, "why");
+    refused_at(REALISTIC, &payload, "payload");
+}
+
+#[test]
+fn a_prefix_spelled_with_json_escapes_is_refused_at_its_decoded_field() {
+    let payload = with_texts("model-1", &spelled(&REALISTIC[..60]));
+    assert!(!payload.contains(&REALISTIC[..8]));
+    refused_at(REALISTIC, &payload, "proposals[0].rationale");
+
+    let tail = spelled(&REALISTIC[REALISTIC.len() - 40..]);
+    let payload = with_texts(&tail, "why");
+    refused_at(REALISTIC, &payload, "proposals[0].proposer");
+}
+
+#[test]
+fn a_prefix_that_the_payload_holds_only_in_json_escaped_form_is_refused() {
+    let key = quoted_key();
+    let payload = with_texts("model-1", &js(&key[..60]));
+    assert!(!payload.contains(&key[..16]));
+    refused_at(&key, &payload, "payload");
+}
+
+#[test]
+fn a_window_of_7_characters_is_accepted() {
+    let payload = with_texts("model-1", &REALISTIC[10..17]);
+    assert_eq!(run(REALISTIC, &payload, Completion::Complete), Ok(()));
+}
+
+// Stated limit: the match is case-sensitive.
+#[test]
+fn an_upper_cased_copy_is_accepted() {
+    let upper = REALISTIC[..60].to_uppercase();
+    assert_ne!(upper, REALISTIC[..60]);
+    let payload = with_texts("model-1", &upper);
+    assert_eq!(run(REALISTIC, &payload, Completion::Complete), Ok(()));
+}
+
+// Stated limit: pieces are matched one text at a time, and a window never
+// spans two texts or two pieces.
+#[test]
+fn a_credential_split_into_pieces_shorter_than_8_is_accepted() {
+    let payload = with_texts(&REALISTIC[..7], &REALISTIC[7..14]);
+    assert_eq!(run(REALISTIC, &payload, Completion::Complete), Ok(()));
+
+    let spaced = format!("{} {}", &REALISTIC[..7], &REALISTIC[7..14]);
+    let payload = with_texts("model-1", &spaced);
+    assert_eq!(run(REALISTIC, &payload, Completion::Complete), Ok(()));
 }

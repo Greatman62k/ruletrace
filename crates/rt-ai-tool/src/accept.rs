@@ -136,7 +136,8 @@ impl AcceptedBatch {
 /// batch: one Diagnostic from [`parse_response`] (`RT-AI-0201` to
 /// `RT-AI-0205`, exit 6), every provenance Diagnostic (`RT-PRV-0101` to
 /// `RT-PRV-0104`, exit 3), or `RT-AI-0206` (exit 6) when the payload or any
-/// text of the batch contains the credential value.
+/// text of the batch contains the credential value or a run of eight
+/// characters of it.
 pub fn accept_batch(input: &AcceptInput<'_>) -> Result<AcceptedBatch, Vec<Diagnostic>> {
     accept_unscrubbed(input).map_err(|found| scrub(input, found))
 }
@@ -378,14 +379,21 @@ fn plain(id: &InputId, field: Option<String>) -> Location {
     })
 }
 
-// Finds the credential in everything the store would keep. The Diagnostic
-// names the field and never the value.
+// Finds the credential, or a run of eight characters of it, in everything
+// the store would keep. The Diagnostic names the field and never the
+// value. Matching is case-sensitive and per text, so a changed case or a
+// value split across texts is not found.
 struct Leak<'a> {
     redactor: &'a Redactor,
     id: &'a InputId,
 }
 
 impl Leak<'_> {
+    // The whole credential, or any run of eight characters of it.
+    fn hits(&self, text: &str) -> bool {
+        self.redactor.finds(text) || self.redactor.finds_fragment(text)
+    }
+
     fn found(&self, field: String) -> Diagnostic {
         Diagnostic::new(
             Code::AiResponseCredentialEcho,
@@ -395,9 +403,7 @@ impl Leak<'_> {
     }
 
     fn in_payload(&self, payload: &str) -> Option<Diagnostic> {
-        self.redactor
-            .finds(payload)
-            .then(|| self.found("payload".to_owned()))
+        self.hits(payload).then(|| self.found("payload".to_owned()))
     }
 
     // Decoded text catches a value that the payload spells with JSON
@@ -416,7 +422,7 @@ impl Leak<'_> {
             }
             texts
                 .into_iter()
-                .find(|(_, t)| self.redactor.finds(t))
+                .find(|(_, t)| self.hits(t))
                 .map(|(field, _)| self.found(field))
         })
     }
@@ -425,8 +431,7 @@ impl Leak<'_> {
     fn in_drafts(&self, proposals: &[Proposal]) -> Option<Diagnostic> {
         proposals.iter().enumerate().find_map(|(i, p)| {
             let (draft, _) = p.rule.as_ref()?;
-            self.redactor
-                .finds(&draft.json)
+            self.hits(&draft.json)
                 .then(|| self.found(format!("proposals[{i}].rule")))
         })
     }
@@ -435,7 +440,7 @@ impl Leak<'_> {
         proposals.iter().enumerate().find_map(|(i, p)| {
             p.outcome
                 .iter()
-                .position(|d| self.redactor.finds(&d.message))
+                .position(|d| self.hits(&d.message))
                 .map(|k| self.found(format!("proposals[{i}].outcome[{k}]")))
         })
     }

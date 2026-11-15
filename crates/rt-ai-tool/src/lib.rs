@@ -48,6 +48,8 @@ mod tests_provenance;
 #[cfg(test)]
 mod tests_provenance_property;
 #[cfg(test)]
+mod tests_redact;
+#[cfg(test)]
 mod tests_redaction_property;
 #[cfg(test)]
 mod tests_response;

@@ -65,7 +65,7 @@ impl Needle {
 #[derive(Clone)]
 pub struct Redactor {
     needles: Vec<Needle>,
-    fragments: BTreeSet<Vec<char>>,
+    forms: Vec<Vec<char>>,
 }
 
 fn json_escaped(value: &str) -> String {
@@ -103,17 +103,8 @@ impl Redactor {
             .flat_map(|f| [format!("Bearer {f}"), f.clone()])
             .map(|f| Needle::new(&f))
             .collect();
-        let fragments = forms
-            .iter()
-            .flat_map(|f| {
-                let chars: Vec<char> = f.chars().collect();
-                chars
-                    .windows(FRAGMENT_CHARS)
-                    .map(<[char]>::to_vec)
-                    .collect::<Vec<_>>()
-            })
-            .collect();
-        Self { needles, fragments }
+        let forms = forms.iter().map(|f| f.chars().collect()).collect();
+        Self { needles, forms }
     }
 
     /// A redactor that changes nothing, for a run that has no credential
@@ -122,7 +113,7 @@ impl Redactor {
     pub fn no_credential() -> Self {
         Self {
             needles: Vec::new(),
-            fragments: BTreeSet::new(),
+            forms: Vec::new(),
         }
     }
 
@@ -146,10 +137,15 @@ impl Redactor {
     /// credential that [`Redactor::finds`] does not match.
     #[must_use]
     pub fn finds_fragment(&self, text: &str) -> bool {
+        // The windows of the text are indexed, not those of the credential,
+        // so the memory held for a long credential stays linear in its size.
         let chars: Vec<char> = text.chars().collect();
-        chars
-            .windows(FRAGMENT_CHARS)
-            .any(|w| self.fragments.contains(w))
+        let seen: BTreeSet<&[char]> = chars.windows(FRAGMENT_CHARS).collect();
+        !seen.is_empty()
+            && self
+                .forms
+                .iter()
+                .any(|f| f.windows(FRAGMENT_CHARS).any(|w| seen.contains(w)))
     }
 
     /// `text` with every occurrence replaced.

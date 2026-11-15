@@ -409,10 +409,19 @@ fn the_bearer_form_and_the_escaped_form_are_refused() {
 
 #[test]
 fn a_credential_spelled_with_json_escapes_is_found_in_the_decoded_text() {
-    let escaped = CANARY.replace("Zq7", r"\u005aq\u0037");
+    // Every seventh character is a `\u` escape, so no run of 8 plain
+    // characters of the credential is left in the raw payload.
+    let escaped: String = CANARY
+        .chars()
+        .enumerate()
+        .map(|(i, c)| match i % 7 {
+            0 => format!("\\u{:04x}", u32::from(c)),
+            _ => c.to_string(),
+        })
+        .collect();
     assert!(!escaped.contains(CANARY));
     let text = wrap(&[canary_proposal(&format!("see {escaped}"))]);
-    assert!(!text.contains(CANARY));
+    assert!(!text.contains(&CANARY[..8]));
     let found = accept_canary(&text);
     assert_refused(&found, "proposals[0].rationale");
 
@@ -427,9 +436,12 @@ fn a_credential_spelled_with_json_escapes_is_found_in_the_decoded_text() {
 
 #[test]
 fn a_payload_without_the_credential_is_accepted_with_a_credential_configured() {
-    let text = wrap(&[canary_proposal("sk-canary is only a prefix")]);
+    let text = wrap(&[canary_proposal("sk-cana is only a prefix")]);
     let batch = accept_with(&text, Completion::Complete, &redactor()).unwrap();
     assert_eq!(batch.proposals().len(), 1);
+
+    let text = wrap(&[canary_proposal("sk-canar is a run of 8")]);
+    assert_refused(&accept_canary(&text), "payload");
 }
 
 #[test]
@@ -465,8 +477,28 @@ fn a_credential_echoed_by_a_stored_finding_is_refused_at_the_finding() {
 }
 
 #[test]
+fn a_run_of_the_credential_in_a_stored_finding_is_refused_at_the_finding() {
+    let value = "QQ-undeclared field-QQ";
+    let partial = Redactor::new(&Credential::new(value.to_owned()).unwrap());
+    let text = wrap(&[
+        suggestion(&eligibility("age")),
+        suggestion(&eligibility("missing")),
+    ]);
+    assert!(!text.contains("undeclar"));
+    let found = accept_with(&text, Completion::Complete, &partial).unwrap_err();
+    only_code(&found, Code::AiResponseCredentialEcho, ExitCode::Response);
+    let Location::Input(at) = found[0].primary() else {
+        panic!("not an input location");
+    };
+    assert_eq!(at.field.as_deref(), Some("proposals[1].outcome[0]"));
+    assert!(!format!("{found:?}").contains("undeclar"));
+}
+
+#[test]
 fn a_credential_that_only_the_canonical_draft_contains_is_refused() {
-    let needle = r#""kind":"eligibility","target":"eligible2""#;
+    // Eight characters across the join of two members. The provider's text
+    // separates them with a space, so only the canonical print has them.
+    let needle = r#"ty","tar"#;
     let text = wrap(&[suggestion(SHUFFLED_RULE)]);
     assert!(!text.contains(needle));
     let only_canonical = Redactor::new(&Credential::new(needle.to_owned()).unwrap());
