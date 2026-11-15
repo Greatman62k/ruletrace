@@ -1832,6 +1832,11 @@
         "executionId": "5aafbe5b-041c-4498-a63b-c50bfad4329e",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794706989156
+      },
+      {
+        "executionId": "5aafbe5b-041c-4498-a63b-c50bfad4329e",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794707959401
       }
     ],
     "8.1 Implement `rt-ai-adapter`": [
@@ -2385,6 +2390,13 @@
         "executionId": "24a94c1c-968a-451e-9605-46484c9d6a38",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794660786561
+      }
+    ],
+    "7. Phase 5: Proposals and adoption (`rt-proposals`, adoption in `rt-review`, `FaultFs`; Demo Slice 1 begins)": [
+      {
+        "executionId": "5aafbe5b-041c-4498-a63b-c50bfad4329e",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794707959417
       }
     ]
   }

@@ -739,7 +739,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: the user sees one hand-authored rulebook go from source text to a proved decision. Then stop for the user's review before the Slice 1 gates 1.8 to 1.10.
     - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Phase 5: Proposals and adoption (`rt-proposals`, adoption in `rt-review`, `FaultFs`; Demo Slice 1 begins)
+- [x] 7. Phase 5: Proposals and adoption (`rt-proposals`, adoption in `rt-review`, `FaultFs`; Demo Slice 1 begins)
   - [x] 7.1 Implement `rt-proposals` (Proposal_Store data model)
     - Define the batch file model (`format`, `version`, `request_id`, `response_sha256`, provider, model, adapter version, AI identities, `created_at`, proposals with `proposal_id = SHA-256(request_id ":" index)`, kind, proposer, evidence, rule draft with Draft hash, Semantic_Outcome Diagnostics), its parser and printer, and the Pending_Proposal derivation (a `rule_suggestion` whose id is not referenced by an Origin in the Rulebook). Store the accepted response as the `response` member (`completion` and exact `payload`) as the UD-36 record says. Reject flag and lifecycle keys with the RT-DGN codes. No AI logic and no network dependency.
     - Observable: a batch round-trips byte-identically, and a batch with a `has_errors` key is rejected with `RT-DGN-0001`.
@@ -793,7 +793,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: every input kind rejects each flag and lifecycle key with the specified code.
     - **Validates: Requirements 22.6, 22.7, 22.9, 22.10, 22.11, 22.12, 22.13, 22.16, 22.17, 22.18, 20.25**
 
-  - [-] 7.9 Checkpoint - Phase 5 exit
+  - [x] 7.9 Checkpoint - Phase 5 exit
     - Run the full gate set. Confirm the `ruletrace` tree has no AI or network crate.
     - Exit criteria: Properties 15 and 16 pass with fault injection; recovery and concurrency tests pass; the no-other-channel test still passes; UD-36 is `Confirmed`.
     - Ensure all tests pass, ask the user if questions arise.
