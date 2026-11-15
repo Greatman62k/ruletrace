@@ -9,7 +9,7 @@
 //! any sweep (Req 26.30).
 
 use super::commit_tests::{
-    adoption_fs, approve, args_for, clean_run, fixture, journal_after_crash, pair, position, probe,
+    adoption_fs, args_for, clean_run, fixture, journal_after_crash, pair, position, probe,
     refused_with_0208, Clean, Fixture,
 };
 use super::fault_tests::{Fault, FaultFs};
@@ -714,6 +714,7 @@ fn an_adopted_ledger_that_was_created_is_removed_when_the_rollback_was_interrupt
 
 #[cfg(unix)]
 mod dangling {
+    use super::super::commit_tests::approve;
     use super::*;
     use crate::io::scratch;
 

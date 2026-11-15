@@ -3,8 +3,8 @@
 
 use crate::tests::{MapEnv, CANARY};
 use crate::{
-    file_mode, load, permission_warning, render_diagnostic, Consent, Credential, FileLog,
-    LogContext, LogSink, Out, ProcessEnv, Redactor, TransmissionLog,
+    load, permission_warning, render_diagnostic, Consent, Credential, FileLog, LogContext, LogSink,
+    Out, ProcessEnv, Redactor, TransmissionLog,
 };
 use proptest::prelude::*;
 use rt_ai_adapter::{
@@ -431,6 +431,7 @@ fn permission_warning_depends_only_on_group_and_other_read_bits() {
 #[cfg(unix)]
 #[test]
 fn file_mode_reports_the_real_permission_bits() {
+    use crate::file_mode;
     use std::os::unix::fs::PermissionsExt;
     let scratch = crate::tests_scratch::ScratchDir::new("log-mode");
     let path = scratch.path().join("mode.toml");
@@ -442,6 +443,16 @@ fn file_mode_reports_the_real_permission_bits() {
     assert!(permission_warning(&input, file_mode(&path)).is_none());
     std::fs::remove_file(&path).unwrap();
     assert_eq!(file_mode(&path), None);
+}
+
+// Req 28.10 applies only where the platform reports permissions.
+#[cfg(not(unix))]
+#[test]
+fn file_mode_reports_nothing_where_the_platform_has_no_permission_bits() {
+    let scratch = crate::tests_scratch::ScratchDir::new("log-mode");
+    let path = scratch.path().join("mode.toml");
+    std::fs::write(&path, "x").unwrap();
+    assert_eq!(crate::file_mode(&path), None);
 }
 
 #[test]

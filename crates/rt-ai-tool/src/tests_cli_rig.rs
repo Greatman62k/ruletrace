@@ -112,9 +112,12 @@ impl Fixture {
     pub(crate) fn write_config(&self, text: &str) {
         let path = self.path("ai.toml");
         write(&path, text);
-        use std::os::unix::fs::PermissionsExt;
-        let private = std::fs::Permissions::from_mode(0o600);
-        std::fs::set_permissions(&path, private).unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let private = std::fs::Permissions::from_mode(0o600);
+            std::fs::set_permissions(&path, private).unwrap();
+        }
     }
 
     /// The arguments of a run over this fixture's files.

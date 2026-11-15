@@ -216,9 +216,7 @@ fn run_case(case: &Case) -> Ran {
         fixture.write_config("schema_version = 1\nenabled =\n");
     }
     if case.warning {
-        use std::os::unix::fs::PermissionsExt;
-        let open = std::fs::Permissions::from_mode(0o644);
-        std::fs::set_permissions(fixture.path("ai.toml"), open).unwrap();
+        open_configuration(&fixture);
     }
     if case.input {
         std::fs::remove_file(fixture.path("candidates.json")).unwrap();
@@ -281,4 +279,17 @@ proptest! {
         let want: Vec<String> = error.into_iter().map(str::to_owned).collect();
         prop_assert_eq!(errors, want, "{:?}\n{}", case, ran.stderr);
     }
+}
+
+// Without permission bits no Warning arises, and the expected exit code
+// does not depend on one.
+fn open_configuration(fixture: &Fixture) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let open = std::fs::Permissions::from_mode(0o644);
+        std::fs::set_permissions(fixture.path("ai.toml"), open).unwrap();
+    }
+    #[cfg(not(unix))]
+    let _ = fixture;
 }

@@ -226,15 +226,22 @@ fn a_warning_never_changes_the_exit_code() {
     let fixture = Fixture::new("run-warning");
     with_work_dir(&fixture);
     fixture.write_script(&payload(0));
-    use std::os::unix::fs::PermissionsExt;
-    let open = std::fs::Permissions::from_mode(0o644);
-    std::fs::set_permissions(fixture.path("ai.toml"), open).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let open = std::fs::Permissions::from_mode(0o644);
+        std::fs::set_permissions(fixture.path("ai.toml"), open).unwrap();
+    }
     let ran = run_std(&fixture.consented());
     assert_eq!(ran.code, ExitCode::Success);
+    // Where no permission bits exist, Req 28.10 gives no Warning.
+    #[cfg(unix)]
     assert_eq!(
         ran.shapes(),
         [("warning".to_owned(), "RT-AI-0009".to_owned())]
     );
+    #[cfg(not(unix))]
+    assert!(ran.shapes().is_empty());
 }
 
 #[test]

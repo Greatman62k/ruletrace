@@ -288,11 +288,24 @@ fn a_revision_number_must_be_a_positive_decimal_integer() {
     }
 }
 
+// A lone surrogate is the Windows counterpart of the byte 0xff.
+fn not_utf8_argument() -> OsString {
+    #[cfg(unix)]
+    {
+        use std::os::unix::ffi::OsStringExt;
+        OsString::from_vec(vec![0x66, 0xff])
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::ffi::OsStringExt;
+        OsString::from_wide(&[0x66, 0xd800])
+    }
+}
+
 #[test]
 fn an_argument_that_is_not_utf8_is_refused_with_its_position() {
-    use std::os::unix::ffi::OsStringExt;
     let mut raw = os(&["propose"]);
-    raw.push(OsString::from_vec(vec![0x66, 0xff]));
+    raw.push(not_utf8_argument());
     let found = problems(&raw);
     assert_eq!(found.len(), 1);
     assert_eq!(found[0].code(), Code::CliArgumentInvalid);

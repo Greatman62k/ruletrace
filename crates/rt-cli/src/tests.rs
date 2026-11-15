@@ -399,13 +399,19 @@ fn argument_errors_name_the_argument_and_touch_nothing() {
 
 #[test]
 fn non_utf8_argument_is_refused() {
-    use std::os::unix::ffi::OsStringExt;
+    // A lone surrogate is the Windows counterpart of the byte 0xff.
+    #[cfg(unix)]
+    let bad = {
+        use std::os::unix::ffi::OsStringExt;
+        OsString::from_vec(vec![0x66, 0xff])
+    };
+    #[cfg(windows)]
+    let bad = {
+        use std::os::windows::ffi::OsStringExt;
+        OsString::from_wide(&[0x66, 0xd800])
+    };
     let fs = MemFs::default();
-    let args = vec![
-        OsString::from("ingest"),
-        OsString::from("--document"),
-        OsString::from_vec(vec![0x66, 0xff]),
-    ];
+    let args = vec![OsString::from("ingest"), OsString::from("--document"), bad];
     let out = run(&args, &fs);
     assert_eq!(out.code, ExitCode::InvalidInput);
     assert!(out.stderr.contains("RT-CLI-0004") && out.stderr.contains("argument 2"));
