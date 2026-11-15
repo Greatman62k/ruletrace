@@ -918,7 +918,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 16.18, 18.6, 18.14, 18.16, 23.14, 23.15, 26.17, 20.20_
     - Design §7.3
 
-  - [-] 8.17 Author the provider script and add the `ai` profile with the full Coverage_Statement
+  - [x] 8.17 Author the provider script and add the `ai` profile with the full Coverage_Statement
     - Under `demo/<name>/`, add `provider/authored-script.json` keyed by the Request_Identifiers that `ruletrace-ai propose --dry-run` prints for the stand-in, every entry labelled `authored` (never described as provider output), `ai/mock-replay.toml`, and the `ai` profile steps of the runbook (s02 `propose`; s02b `review list` before any decision (no ledger yet; read-only, Req 26.6), then s03a, s03c to s03e one `approve` or `reject` per proposal with `--create-ledger` on the first, s03f a last `review list`; the same s04 to s07 and the complete-data steps s06c and s07b). Include one unsupported clause (so it reaches the Coverage_Statement as `unsupported`) and one rejected proposal with a reason. Extend `classify` to read the store batches and the ledger rejection records. Bless the goldens, including the proposal store and the Transmission_Log.
     - Observable: the `ai` profile acceptance test passes, and the Coverage_Statement classifies every clause or names the unclassified clause.
     - Blocked by: 8.16, 8.21, 6.7, 1.11.
@@ -927,7 +927,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 33.6, 33.7, 33.8, 33.9, 33.11, 33.12, 23.25_
     - Design §8.11.4, §8.11.7, §8.11.8, §7.5 (Slice 1)
 
-  - [-] 8.18 Write the AI-independence and origin-independence tests
+  - [x] 8.18 Write the AI-independence and origin-independence tests
     - **Property 41: AI tool and CLI are independent**
     - For every combination of presence of `ruletrace-ai`, an AI_Configuration file and the credential variable, `ruletrace` stdout, stderr, files and exit code are byte identical for the same inputs, and equal between a full build and a core-only build (all AI crates and `rt-tests-ai` excluded). Run `check-tree` for `rt-cli` and every core crate. The matrix over three booleans is exhaustive (8 cells), which replaces generated cases (decision of the orchestrator, recorded in the 8.18 review). Origin independence (Req 16.18): the `hand` and `ai` demo documents differ, so a hand-authored rulebook over the `ai` document is compiled and its bytes are asserted equal to the `ai` profile's. Required.
     - Observable: the `core-only` job still passes with the AI crates present in the workspace, and the origin-independence assertion passes.
@@ -936,7 +936,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Also: 21.8, 21.13, 27.5, 27.6_
     - Status note: the matrix is exhaustive (user approved the 8 cells in place of 256 generated cases). Strengthened in the demo follow-up: the planted files are in the before/after snapshot and must be unchanged; produced files are compared across cells; a canary string (whole and 8-byte fragments) is scanned in stdout, stderr, every file and path of the cell, and, for the `ruletrace-ai` runs of the `ai` profile, in stdout, stderr, the proposal store, the Transmission_Log, the ledger and the run summary; origin independence is asserted field by field (document bytes and hash, identifiers, revisions, content, spans, ledger records, compiled bytes, Outcomes over both data files). The core-only CI job checks that its build holds no `ruletrace-ai`. CI run 43743980937 was green in `core-only` and `demo-offline` for the earlier version of these tests. The task stays in progress until a CI run of the changed tests and the review. Not claimed complete. See `traceability.md` (Task 8.18, Demo follow-up).
 
-  - [ ] 8.19 Checkpoint - Phase 6 exit and Demo Slice 1 exit
+  - [x] 8.19 Checkpoint - Phase 6 exit and Demo Slice 1 exit
     - Run the full gate set including `core-only`. Confirm the steering decision of 8.3 is recorded.
     - Exit criteria: Properties 31, 32, 33, 34, 37, 38 and 41 pass; the `slice-ai` fixture and the `ai` profile are green on three platforms; a script entry is keyed by the identifier that `--dry-run` prints and the accepted response bytes sit in the stored batch; every clause is classified or named; steering items 1 to 4 are merged or declined.
     - Ensure all tests pass, ask the user if questions arise.

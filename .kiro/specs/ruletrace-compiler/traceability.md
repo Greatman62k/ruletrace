@@ -509,3 +509,11 @@ Expected values, worked out by hand before the run (score = 0.6 judges + 0.4 tec
 One test fixture of mine was wrong at first (`rtc-Zq7x` is eight bytes, not seven); the fixture was corrected to a real seven-byte piece, and no assertion was weakened.
 
 **Limitations and open points.** No CI run of these changes yet (three platforms, `core-only`, `demo-offline`). Windows: the new code compiles for `x86_64-pc-windows-gnu` (`cargo check --all-targets`); nothing ran on Windows. `ai_independence` takes about 30 to 45 s on Linux in debug (it reads and scans the executables copied into each cell). A refused `review approve` on a missing ledger leaves a `<ledger>.lock` file next to it (seen in a scratch run; the matrix treats it as produced output and compares it across cells); whether this is intended is a question for the owner of `rt-cli`. In the `rank.standing` ranking, p2 (Indeterminate eligibility) ranks first and p3 (ineligible) ranks last in the tie, because the ranking is not gated by eligibility; the documents do not say otherwise, and this is not changed here.
+
+## Closure of 8.17, 8.18 and 8.19 (run 43751816991, commit 15be01d, 2026-11-15)
+
+- CI: all 22 jobs succeeded on ubuntu-24.04, windows-2022 and macos-15.
+- Independent reviews: `docs/reviews/2026-11-15-200623-review-ddfdb6d-c46d61a.md`, `2026-11-16-120000-review-f4e0250-9724798.md`, `2026-11-16-130000-review-a5dc07b-2834071.md` and `2026-11-15-221856-review-2834071-fda9f37.md`, all with no open blocking finding.
+- User decisions confirmed: `review list` before the first approval (Req 26.6 amended), Property 41 as an exhaustive 8-cell matrix, origin independence against a hand-authored rulebook over identical source bytes.
+- Still open: 6.12 and 8.20, which need the user's review of the transcripts.
+- Known limits: `.windows` goldens are hand-derived; `rank.standing` is not gated by eligibility; a refused `approve` leaves an empty `.lock` file; the macOS golden flake mitigation is unproven (no recurrence in six runs).
