@@ -56,7 +56,9 @@ fn propose(name: &str, variant: &str, response: &str) -> Proposed {
     work.copy_from(&fixture(""), "ledger.empty.jsonl", LEDGER);
     let ingested = work.ingest();
     assert_eq!(ingested.code, 0, "{}", ingested.stderr);
-    work.write_config(&[AI_LISTED, MODEL, AI_EXTRA]);
+    // The model is deliberately not listed, so refusing it relies on the
+    // Origin of the revision alone.
+    work.write_config(&[AI_LISTED, AI_EXTRA]);
     let id = work.request_id(RB);
     work.write_script(&id, response);
     let ran = work.propose(RB);

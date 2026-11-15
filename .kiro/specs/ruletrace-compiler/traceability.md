@@ -375,3 +375,9 @@ User decisions: the skip gets a Warning code, the Run_Summary header says so, an
 - Header: `run summary: complete, directory durability not confirmed` when the run is complete and the skip list is not empty. An incomplete run keeps `run summary: incomplete` with or without a skip list. The failed-sync heading and the skip heading already name the cause, and a second clause on the header would not change what a reader must do.
 - Design 3.7.5 step 4 and 3.7.7 (failure table, Run_Summary paragraph, three rendered texts) and the property on incomplete runs are amended.
 - Real-file CLI tests that expect the Unix text (`stored:` holding the batch, no Warning) were written for a platform that syncs the directory. They are not changed here and will differ on Windows.
+
+## Task 8.16 audit: model identity masked in the self-approval test
+
+No requirement text changes. In `slice_ai_attacks.rs` the configuration listed the model in `ai_identities`, so a mutant that dropped the model from the Origin identities (`AiIdentitySet::from_origin`) survived. The model is no longer listed, so Req 23.15 and 26.17 refusal of a Reviewer equal to the model rests on the revision Origin. The mutants for the model, provider, proposer, the whole identity check and the `status` forbidden field are killed (Req 23.15, 26.17, 18.14, 20.20).
+
+Open: "green on three platforms" of the 8.16 observable is pending the CI run of the current main and is not claimed. Req 20.20 "no credential value in any output" is not exercised by the mock path, which reads no credential; it stays covered by the tool-level canary tests, not by `slice-ai`.

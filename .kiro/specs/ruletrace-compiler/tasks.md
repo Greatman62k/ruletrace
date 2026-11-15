@@ -913,6 +913,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - End to end with the Mock_Provider: propose, `review approve`, validate, compile, evaluate. The compiled output is byte-identical to the manually authored equivalent (Req 16.18). Add the self-approval attempt (Reviewer equal to the proposer, provider, model or an AI identity) and the prompt-injection fixture (clause text instructing approval). Neither may change any ledger, status or Diagnostic code. Required.
     - Observable: the fixture is green on three platforms, and both attack fixtures leave the ledger unchanged.
     - Blocked by: 8.8, 8.12.
+    - Status note: every behaviour sentence is covered by `rt-tests-ai` (`slice_ai`, `slice_ai_attacks`) and verified locally on Linux. The task stays in progress because "green on three platforms" is not yet shown: it is pending the CI run of the current main. Not claimed.
     - _Requirements: 16.18, 18.6, 18.14, 18.16, 23.14, 23.15, 26.17, 20.20_
     - Design §7.3
 
