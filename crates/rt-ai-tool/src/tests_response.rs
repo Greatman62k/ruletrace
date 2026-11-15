@@ -560,8 +560,10 @@ fn wrong_types_are_0202_at_the_value() {
 }
 
 #[test]
-fn schema_version_must_be_one() {
-    for v in ["2", "", "1.0"] {
+fn schema_version_must_be_one_or_two() {
+    // "2" became valid with the flat schema (UD-37, task 10.4). It is
+    // accepted by tests_flat; "3" takes its place here.
+    for v in ["3", "", "1.0"] {
         let text = format!(r#"{{"schema_version":"{v}","proposals":[]}}"#);
         let d = fail(&text);
         assert_eq!(

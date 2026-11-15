@@ -1067,7 +1067,7 @@ fn build(valid: &Spec, op: &Op, a: usize, b: usize) -> Built {
             want = Some(ai("RT-AI-0202", Field::Is(path_text(&segs))));
         }
         Op::BadVersion => {
-            *at(&mut root, &[key("schema_version")]) = s("2");
+            *at(&mut root, &[key("schema_version")]) = s("3");
             want = Some(ai("RT-AI-0202", Field::Is("schema_version".to_owned())));
         }
         Op::BadKind(k) => {

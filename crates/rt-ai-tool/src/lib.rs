@@ -23,6 +23,7 @@ mod locate;
 mod out;
 mod perm;
 mod plan;
+mod proposal_schema;
 pub mod provenance;
 mod raw;
 mod reader;
@@ -64,6 +65,8 @@ mod tests_dir_sync_skip;
 #[cfg(test)]
 mod tests_exit_order_property;
 #[cfg(test)]
+mod tests_flat;
+#[cfg(test)]
 mod tests_gate_failures;
 #[cfg(test)]
 mod tests_gate_rig;
@@ -79,6 +82,8 @@ mod tests_out_canary;
 mod tests_overredaction;
 #[cfg(test)]
 mod tests_plan;
+#[cfg(test)]
+mod tests_proposal_schema;
 #[cfg(test)]
 mod tests_provenance;
 #[cfg(test)]
@@ -142,6 +147,7 @@ pub use plan::{
     build_plan, ClauseId, PlanInput, PlannedRequest, RunPlan, MAX_CLAUSE_BYTES, MAX_REQUEST_BYTES,
     TASK,
 };
+pub use proposal_schema::{proposal_schema, proposal_schema_bytes, SCHEMA_NAME};
 pub use redact::{Redactor, REDACTED};
 pub use revise::{ReviseContext, MAX_FEEDBACK_BYTES};
 pub use run::{run_requests, RunInput, RunReport};

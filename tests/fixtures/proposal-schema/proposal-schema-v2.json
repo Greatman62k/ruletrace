@@ -1,0 +1,3823 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "proposals"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "2"
+      ]
+    },
+    "proposals": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "proposer",
+              "rationale",
+              "evidence"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "clause_interpretation"
+                ]
+              },
+              "proposer": {
+                "type": "string"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "document",
+                    "sha256",
+                    "start",
+                    "end",
+                    "line",
+                    "column",
+                    "quote"
+                  ],
+                  "properties": {
+                    "document": {
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": "integer"
+                    },
+                    "end": {
+                      "type": "integer"
+                    },
+                    "line": {
+                      "type": "integer"
+                    },
+                    "column": {
+                      "type": "integer"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "proposer",
+              "rationale",
+              "evidence"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "clause_relationship"
+                ]
+              },
+              "proposer": {
+                "type": "string"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "document",
+                    "sha256",
+                    "start",
+                    "end",
+                    "line",
+                    "column",
+                    "quote"
+                  ],
+                  "properties": {
+                    "document": {
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": "integer"
+                    },
+                    "end": {
+                      "type": "integer"
+                    },
+                    "line": {
+                      "type": "integer"
+                    },
+                    "column": {
+                      "type": "integer"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "proposer",
+              "rationale",
+              "evidence"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "conflict_highlight"
+                ]
+              },
+              "proposer": {
+                "type": "string"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "document",
+                    "sha256",
+                    "start",
+                    "end",
+                    "line",
+                    "column",
+                    "quote"
+                  ],
+                  "properties": {
+                    "document": {
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": "integer"
+                    },
+                    "end": {
+                      "type": "integer"
+                    },
+                    "line": {
+                      "type": "integer"
+                    },
+                    "column": {
+                      "type": "integer"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "proposer",
+              "rationale",
+              "evidence"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "candidate_test"
+                ]
+              },
+              "proposer": {
+                "type": "string"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "document",
+                    "sha256",
+                    "start",
+                    "end",
+                    "line",
+                    "column",
+                    "quote"
+                  ],
+                  "properties": {
+                    "document": {
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": "integer"
+                    },
+                    "end": {
+                      "type": "integer"
+                    },
+                    "line": {
+                      "type": "integer"
+                    },
+                    "column": {
+                      "type": "integer"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "proposer",
+              "rationale",
+              "evidence",
+              "rule"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "rule_suggestion"
+                ]
+              },
+              "proposer": {
+                "type": "string"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "document",
+                    "sha256",
+                    "start",
+                    "end",
+                    "line",
+                    "column",
+                    "quote"
+                  ],
+                  "properties": {
+                    "document": {
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": "integer"
+                    },
+                    "end": {
+                      "type": "integer"
+                    },
+                    "line": {
+                      "type": "integer"
+                    },
+                    "column": {
+                      "type": "integer"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "rule": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "kind",
+                  "target",
+                  "type",
+                  "expr",
+                  "nodes",
+                  "markers",
+                  "spans"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "eligibility"
+                    ]
+                  },
+                  "target": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "expr": {
+                    "type": "integer"
+                  },
+                  "nodes": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "num"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "bool"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "text"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "date"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "enum",
+                            "member"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "enum"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "enum": {
+                              "type": "string"
+                            },
+                            "member": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "name"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "field"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "target"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "ref"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "target": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "target"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "rank_reference"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "target": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "op",
+                            "left",
+                            "right"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "binary"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "add",
+                                "sub",
+                                "mul",
+                                "div"
+                              ]
+                            },
+                            "left": {
+                              "type": "integer"
+                            },
+                            "right": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "op",
+                            "left",
+                            "right"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "cmp"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "eq",
+                                "ne",
+                                "lt",
+                                "le",
+                                "gt",
+                                "ge"
+                              ]
+                            },
+                            "left": {
+                              "type": "integer"
+                            },
+                            "right": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "args"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "and"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "args": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "args"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "or"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "args": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "arg"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "not"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "arg": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value",
+                            "set"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "in"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "integer"
+                            },
+                            "set": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "fn",
+                            "collection",
+                            "field"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "agg"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "fn": {
+                              "type": "string",
+                              "enum": [
+                                "sum",
+                                "min",
+                                "max",
+                                "count"
+                              ]
+                            },
+                            "collection": {
+                              "type": "string"
+                            },
+                            "field": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "arg",
+                            "places",
+                            "mode"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "round"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "arg": {
+                              "type": "integer"
+                            },
+                            "places": {
+                              "type": "integer"
+                            },
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "half_even",
+                                "half_away_from_zero",
+                                "toward_zero"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "name",
+                            "detail"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "unrecognized"
+                              ]
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "detail": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "markers": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "kind",
+                            "interpretations"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "ambiguous"
+                              ]
+                            },
+                            "interpretations": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "kind",
+                            "missing"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "incomplete"
+                              ]
+                            },
+                            "missing": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "spans": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "document",
+                        "start",
+                        "end",
+                        "line",
+                        "column"
+                      ],
+                      "properties": {
+                        "document": {
+                          "type": "string"
+                        },
+                        "start": {
+                          "type": "integer"
+                        },
+                        "end": {
+                          "type": "integer"
+                        },
+                        "line": {
+                          "type": "integer"
+                        },
+                        "column": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "proposer",
+              "rationale",
+              "evidence",
+              "rule"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "rule_suggestion"
+                ]
+              },
+              "proposer": {
+                "type": "string"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "document",
+                    "sha256",
+                    "start",
+                    "end",
+                    "line",
+                    "column",
+                    "quote"
+                  ],
+                  "properties": {
+                    "document": {
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": "integer"
+                    },
+                    "end": {
+                      "type": "integer"
+                    },
+                    "line": {
+                      "type": "integer"
+                    },
+                    "column": {
+                      "type": "integer"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "rule": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "kind",
+                  "target",
+                  "type",
+                  "expr",
+                  "nodes",
+                  "markers",
+                  "spans"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "derived"
+                    ]
+                  },
+                  "target": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "expr": {
+                    "type": "integer"
+                  },
+                  "nodes": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "num"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "bool"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "text"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "date"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "enum",
+                            "member"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "enum"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "enum": {
+                              "type": "string"
+                            },
+                            "member": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "name"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "field"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "target"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "ref"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "target": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "target"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "rank_reference"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "target": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "op",
+                            "left",
+                            "right"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "binary"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "add",
+                                "sub",
+                                "mul",
+                                "div"
+                              ]
+                            },
+                            "left": {
+                              "type": "integer"
+                            },
+                            "right": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "op",
+                            "left",
+                            "right"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "cmp"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "eq",
+                                "ne",
+                                "lt",
+                                "le",
+                                "gt",
+                                "ge"
+                              ]
+                            },
+                            "left": {
+                              "type": "integer"
+                            },
+                            "right": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "args"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "and"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "args": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "args"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "or"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "args": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "arg"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "not"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "arg": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value",
+                            "set"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "in"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "integer"
+                            },
+                            "set": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "fn",
+                            "collection",
+                            "field"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "agg"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "fn": {
+                              "type": "string",
+                              "enum": [
+                                "sum",
+                                "min",
+                                "max",
+                                "count"
+                              ]
+                            },
+                            "collection": {
+                              "type": "string"
+                            },
+                            "field": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "arg",
+                            "places",
+                            "mode"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "round"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "arg": {
+                              "type": "integer"
+                            },
+                            "places": {
+                              "type": "integer"
+                            },
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "half_even",
+                                "half_away_from_zero",
+                                "toward_zero"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "name",
+                            "detail"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "unrecognized"
+                              ]
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "detail": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "markers": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "kind",
+                            "interpretations"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "ambiguous"
+                              ]
+                            },
+                            "interpretations": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "kind",
+                            "missing"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "incomplete"
+                              ]
+                            },
+                            "missing": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "spans": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "document",
+                        "start",
+                        "end",
+                        "line",
+                        "column"
+                      ],
+                      "properties": {
+                        "document": {
+                          "type": "string"
+                        },
+                        "start": {
+                          "type": "integer"
+                        },
+                        "end": {
+                          "type": "integer"
+                        },
+                        "line": {
+                          "type": "integer"
+                        },
+                        "column": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "proposer",
+              "rationale",
+              "evidence",
+              "rule"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "rule_suggestion"
+                ]
+              },
+              "proposer": {
+                "type": "string"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "document",
+                    "sha256",
+                    "start",
+                    "end",
+                    "line",
+                    "column",
+                    "quote"
+                  ],
+                  "properties": {
+                    "document": {
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": "integer"
+                    },
+                    "end": {
+                      "type": "integer"
+                    },
+                    "line": {
+                      "type": "integer"
+                    },
+                    "column": {
+                      "type": "integer"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "rule": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "kind",
+                  "target",
+                  "type",
+                  "terms",
+                  "rounding",
+                  "nodes",
+                  "markers",
+                  "spans"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "weighted_score"
+                    ]
+                  },
+                  "target": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "terms": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "weight",
+                        "value"
+                      ],
+                      "properties": {
+                        "weight": {
+                          "type": "integer"
+                        },
+                        "value": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "rounding": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "mode",
+                          "places"
+                        ],
+                        "properties": {
+                          "mode": {
+                            "type": "string",
+                            "enum": [
+                              "half_even",
+                              "half_away_from_zero",
+                              "toward_zero"
+                            ]
+                          },
+                          "places": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "nodes": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "num"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "bool"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "text"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "date"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "enum",
+                            "member"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "enum"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "enum": {
+                              "type": "string"
+                            },
+                            "member": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "name"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "field"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "target"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "ref"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "target": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "target"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "rank_reference"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "target": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "op",
+                            "left",
+                            "right"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "binary"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "add",
+                                "sub",
+                                "mul",
+                                "div"
+                              ]
+                            },
+                            "left": {
+                              "type": "integer"
+                            },
+                            "right": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "op",
+                            "left",
+                            "right"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "cmp"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "eq",
+                                "ne",
+                                "lt",
+                                "le",
+                                "gt",
+                                "ge"
+                              ]
+                            },
+                            "left": {
+                              "type": "integer"
+                            },
+                            "right": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "args"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "and"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "args": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "args"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "or"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "args": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "arg"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "not"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "arg": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value",
+                            "set"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "in"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "integer"
+                            },
+                            "set": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "fn",
+                            "collection",
+                            "field"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "agg"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "fn": {
+                              "type": "string",
+                              "enum": [
+                                "sum",
+                                "min",
+                                "max",
+                                "count"
+                              ]
+                            },
+                            "collection": {
+                              "type": "string"
+                            },
+                            "field": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "arg",
+                            "places",
+                            "mode"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "round"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "arg": {
+                              "type": "integer"
+                            },
+                            "places": {
+                              "type": "integer"
+                            },
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "half_even",
+                                "half_away_from_zero",
+                                "toward_zero"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "name",
+                            "detail"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "unrecognized"
+                              ]
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "detail": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "markers": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "kind",
+                            "interpretations"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "ambiguous"
+                              ]
+                            },
+                            "interpretations": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "kind",
+                            "missing"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "incomplete"
+                              ]
+                            },
+                            "missing": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "spans": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "document",
+                        "start",
+                        "end",
+                        "line",
+                        "column"
+                      ],
+                      "properties": {
+                        "document": {
+                          "type": "string"
+                        },
+                        "start": {
+                          "type": "integer"
+                        },
+                        "end": {
+                          "type": "integer"
+                        },
+                        "line": {
+                          "type": "integer"
+                        },
+                        "column": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "proposer",
+              "rationale",
+              "evidence",
+              "rule"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "rule_suggestion"
+                ]
+              },
+              "proposer": {
+                "type": "string"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "document",
+                    "sha256",
+                    "start",
+                    "end",
+                    "line",
+                    "column",
+                    "quote"
+                  ],
+                  "properties": {
+                    "document": {
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": "integer"
+                    },
+                    "end": {
+                      "type": "integer"
+                    },
+                    "line": {
+                      "type": "integer"
+                    },
+                    "column": {
+                      "type": "integer"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "rule": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "kind",
+                  "target",
+                  "type",
+                  "key",
+                  "direction",
+                  "tie_breakers",
+                  "ties",
+                  "nodes",
+                  "markers",
+                  "spans"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "ranking"
+                    ]
+                  },
+                  "target": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "key": {
+                    "type": "integer"
+                  },
+                  "direction": {
+                    "type": "string",
+                    "enum": [
+                      "asc",
+                      "desc"
+                    ]
+                  },
+                  "tie_breakers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "expr",
+                        "direction"
+                      ],
+                      "properties": {
+                        "expr": {
+                          "type": "integer"
+                        },
+                        "direction": {
+                          "type": "string",
+                          "enum": [
+                            "asc",
+                            "desc"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "ties": {
+                    "type": "string",
+                    "enum": [
+                      "group"
+                    ]
+                  },
+                  "nodes": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "num"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "bool"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "text"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "date"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "enum",
+                            "member"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "enum"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "enum": {
+                              "type": "string"
+                            },
+                            "member": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "name"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "field"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "target"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "ref"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "target": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "target"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "rank_reference"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "target": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "op",
+                            "left",
+                            "right"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "binary"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "add",
+                                "sub",
+                                "mul",
+                                "div"
+                              ]
+                            },
+                            "left": {
+                              "type": "integer"
+                            },
+                            "right": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "op",
+                            "left",
+                            "right"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "cmp"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "eq",
+                                "ne",
+                                "lt",
+                                "le",
+                                "gt",
+                                "ge"
+                              ]
+                            },
+                            "left": {
+                              "type": "integer"
+                            },
+                            "right": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "args"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "and"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "args": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "args"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "or"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "args": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "arg"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "not"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "arg": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value",
+                            "set"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "in"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "integer"
+                            },
+                            "set": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "fn",
+                            "collection",
+                            "field"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "agg"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "fn": {
+                              "type": "string",
+                              "enum": [
+                                "sum",
+                                "min",
+                                "max",
+                                "count"
+                              ]
+                            },
+                            "collection": {
+                              "type": "string"
+                            },
+                            "field": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "arg",
+                            "places",
+                            "mode"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "round"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "arg": {
+                              "type": "integer"
+                            },
+                            "places": {
+                              "type": "integer"
+                            },
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "half_even",
+                                "half_away_from_zero",
+                                "toward_zero"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "name",
+                            "detail"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "unrecognized"
+                              ]
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "detail": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "markers": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "kind",
+                            "interpretations"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "ambiguous"
+                              ]
+                            },
+                            "interpretations": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "kind",
+                            "missing"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "incomplete"
+                              ]
+                            },
+                            "missing": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "spans": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "document",
+                        "start",
+                        "end",
+                        "line",
+                        "column"
+                      ],
+                      "properties": {
+                        "document": {
+                          "type": "string"
+                        },
+                        "start": {
+                          "type": "integer"
+                        },
+                        "end": {
+                          "type": "integer"
+                        },
+                        "line": {
+                          "type": "integer"
+                        },
+                        "column": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "proposer",
+              "rationale",
+              "evidence",
+              "rule"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "rule_suggestion"
+                ]
+              },
+              "proposer": {
+                "type": "string"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "document",
+                    "sha256",
+                    "start",
+                    "end",
+                    "line",
+                    "column",
+                    "quote"
+                  ],
+                  "properties": {
+                    "document": {
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": "integer"
+                    },
+                    "end": {
+                      "type": "integer"
+                    },
+                    "line": {
+                      "type": "integer"
+                    },
+                    "column": {
+                      "type": "integer"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "rule": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "kind",
+                  "target",
+                  "type",
+                  "value",
+                  "nodes",
+                  "markers",
+                  "spans"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "default"
+                    ]
+                  },
+                  "target": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "integer"
+                  },
+                  "nodes": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "num"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "bool"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "text"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "date"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "enum",
+                            "member"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "enum"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "enum": {
+                              "type": "string"
+                            },
+                            "member": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "name"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "field"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "target"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "ref"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "target": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "target"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "rank_reference"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "target": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "op",
+                            "left",
+                            "right"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "binary"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "add",
+                                "sub",
+                                "mul",
+                                "div"
+                              ]
+                            },
+                            "left": {
+                              "type": "integer"
+                            },
+                            "right": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "op",
+                            "left",
+                            "right"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "cmp"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "eq",
+                                "ne",
+                                "lt",
+                                "le",
+                                "gt",
+                                "ge"
+                              ]
+                            },
+                            "left": {
+                              "type": "integer"
+                            },
+                            "right": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "args"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "and"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "args": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "args"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "or"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "args": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "arg"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "not"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "arg": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "value",
+                            "set"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "in"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "integer"
+                            },
+                            "set": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "fn",
+                            "collection",
+                            "field"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "agg"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "fn": {
+                              "type": "string",
+                              "enum": [
+                                "sum",
+                                "min",
+                                "max",
+                                "count"
+                              ]
+                            },
+                            "collection": {
+                              "type": "string"
+                            },
+                            "field": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "t",
+                            "arg",
+                            "places",
+                            "mode"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "round"
+                              ]
+                            },
+                            "t": {
+                              "type": "string"
+                            },
+                            "arg": {
+                              "type": "integer"
+                            },
+                            "places": {
+                              "type": "integer"
+                            },
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "half_even",
+                                "half_away_from_zero",
+                                "toward_zero"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "node",
+                            "name",
+                            "detail"
+                          ],
+                          "properties": {
+                            "node": {
+                              "type": "string",
+                              "enum": [
+                                "unrecognized"
+                              ]
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "detail": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "markers": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "kind",
+                            "interpretations"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "ambiguous"
+                              ]
+                            },
+                            "interpretations": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "kind",
+                            "missing"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "incomplete"
+                              ]
+                            },
+                            "missing": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "spans": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "document",
+                        "start",
+                        "end",
+                        "line",
+                        "column"
+                      ],
+                      "properties": {
+                        "document": {
+                          "type": "string"
+                        },
+                        "start": {
+                          "type": "integer"
+                        },
+                        "end": {
+                          "type": "integer"
+                        },
+                        "line": {
+                          "type": "integer"
+                        },
+                        "column": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "proposer",
+              "rationale",
+              "evidence",
+              "rule"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "rule_suggestion"
+                ]
+              },
+              "proposer": {
+                "type": "string"
+              },
+              "rationale": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "document",
+                    "sha256",
+                    "start",
+                    "end",
+                    "line",
+                    "column",
+                    "quote"
+                  ],
+                  "properties": {
+                    "document": {
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": "integer"
+                    },
+                    "end": {
+                      "type": "integer"
+                    },
+                    "line": {
+                      "type": "integer"
+                    },
+                    "column": {
+                      "type": "integer"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "rule": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "kind",
+                  "target",
+                  "type",
+                  "name",
+                  "detail",
+                  "markers",
+                  "spans"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "unrecognized"
+                    ]
+                  },
+                  "target": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "detail": {
+                    "type": "string"
+                  },
+                  "markers": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "kind",
+                            "interpretations"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "ambiguous"
+                              ]
+                            },
+                            "interpretations": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "kind",
+                            "missing"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "incomplete"
+                              ]
+                            },
+                            "missing": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "spans": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "document",
+                        "start",
+                        "end",
+                        "line",
+                        "column"
+                      ],
+                      "properties": {
+                        "document": {
+                          "type": "string"
+                        },
+                        "start": {
+                          "type": "integer"
+                        },
+                        "end": {
+                          "type": "integer"
+                        },
+                        "line": {
+                          "type": "integer"
+                        },
+                        "column": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

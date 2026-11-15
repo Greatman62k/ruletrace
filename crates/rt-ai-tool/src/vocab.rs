@@ -32,7 +32,7 @@ const OPERATIONS: [&str; 21] = [
 
 const TYPES: [&str; 5] = ["number", "boolean", "text", "date", "enum"];
 
-const ROUNDING_MODES: [&str; 3] = ["half_even", "half_away_from_zero", "toward_zero"];
+pub(crate) const ROUNDING_MODES: [&str; 3] = ["half_even", "half_away_from_zero", "toward_zero"];
 
 // Capabilities that Req 14.5 excludes, in ascending name order.
 const UNSUPPORTED: [(&str, &str); 5] = [

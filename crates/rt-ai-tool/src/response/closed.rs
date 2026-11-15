@@ -30,7 +30,7 @@ pub(super) struct Breach {
     pub(super) message: String,
 }
 
-fn breach(pos: Position, path: String, message: String) -> Breach {
+pub(super) fn breach(pos: Position, path: String, message: String) -> Breach {
     Breach { pos, path, message }
 }
 
@@ -40,6 +40,61 @@ pub(super) fn check(rule: &Value<Position>, path: &str) -> Result<(), Breach> {
     let Some(members) = rule.as_object() else {
         return Ok(());
     };
+    check_kind(rule, members, path)?;
+    for m in members {
+        walk(&m.value, &child(path, &m.key))?;
+    }
+    Ok(())
+}
+
+/// The flat form of [`check`] (Proposal_Schema version "2"): the rule kind
+/// and every node of the `nodes` table. Operands are node indexes, which
+/// the table rules of the lowering check.
+pub(super) fn check_flat(rule: &Value<Position>, path: &str) -> Result<(), Breach> {
+    let Some(members) = rule.as_object() else {
+        return Ok(());
+    };
+    check_kind(rule, members, path)?;
+    let Some(nodes) = members.iter().find(|m| m.key == "nodes") else {
+        return Ok(());
+    };
+    let here = child(path, "nodes");
+    let Some(items) = nodes.value.as_array() else {
+        return Ok(());
+    };
+    for (i, item) in items.iter().enumerate() {
+        let at = format!("{here}[{i}]");
+        let Some(fields) = item.as_object() else {
+            return Err(breach(
+                *item.pos(),
+                at,
+                "a node must be an object with a 'node' field".to_owned(),
+            ));
+        };
+        let Some(tag) = fields.iter().find(|m| m.key == "node") else {
+            return Err(breach(
+                *item.pos(),
+                at,
+                "a node must be an object with a 'node' field".to_owned(),
+            ));
+        };
+        if tag.value.as_str().is_none() {
+            return Err(breach(
+                *tag.value.pos(),
+                child(&at, "node"),
+                "field 'node' must be a string".to_owned(),
+            ));
+        }
+        node_name(item, fields, tag, &at, true)?;
+    }
+    Ok(())
+}
+
+fn check_kind(
+    rule: &Value<Position>,
+    members: &[Member<Position>],
+    path: &str,
+) -> Result<(), Breach> {
     if let Some(kind) = members.iter().find(|m| m.key == "kind") {
         if let Some(name) = kind.value.as_str() {
             let here = child(path, "kind");
@@ -58,9 +113,6 @@ pub(super) fn check(rule: &Value<Position>, path: &str) -> Result<(), Breach> {
             }
         }
     }
-    for m in members {
-        walk(&m.value, &child(path, &m.key))?;
-    }
     Ok(())
 }
 
@@ -73,7 +125,7 @@ fn walk(value: &Value<Position>, path: &str) -> Result<(), Breach> {
         }
         Kind::Object(members) => {
             if let Some(node) = members.iter().find(|m| m.key == "node") {
-                node_name(value, members, node, path)?;
+                node_name(value, members, node, path, false)?;
             }
             for m in members {
                 walk(&m.value, &child(path, &m.key))?;
@@ -89,6 +141,7 @@ fn node_name(
     members: &[Member<Position>],
     node: &Member<Position>,
     path: &str,
+    flat: bool,
 ) -> Result<(), Breach> {
     let Some(name) = node.value.as_str() else {
         return Ok(());
@@ -117,7 +170,11 @@ fn node_name(
         }
     }
     scalars(name, members, path)?;
-    operands(name, members, path)
+    if flat {
+        indexes(name, members, path)
+    } else {
+        operands(name, members, path)
+    }
 }
 
 /// Members of an aggregate that name a collection or a field. The decoder
@@ -149,16 +206,21 @@ fn scalars(name: &str, members: &[Member<Position>], path: &str) -> Result<(), B
     Ok(())
 }
 
-/// Every operand of an operator must itself be a node, so that no member of
-/// an operator the decoder carries unread escapes the walk.
-fn operands(name: &str, members: &[Member<Position>], path: &str) -> Result<(), Breach> {
-    let keys: &[&str] = match name {
+/// The members of a node that hold operands, in the decoder's naming.
+pub(super) fn operand_keys(name: &str) -> &'static [&'static str] {
+    match name {
         "binary" | "cmp" => &["left", "right"],
         "and" | "or" => &["args"],
         "not" | "round" => &["arg"],
         "in" => &["value"],
         _ => &[],
-    };
+    }
+}
+
+/// Every operand of an operator must itself be a node, so that no member of
+/// an operator the decoder carries unread escapes the walk.
+fn operands(name: &str, members: &[Member<Position>], path: &str) -> Result<(), Breach> {
+    let keys = operand_keys(name);
     for m in members.iter().filter(|m| keys.contains(&m.key.as_str())) {
         let here = child(path, &m.key);
         let list = m.value.as_array().filter(|_| m.key == "args");
@@ -179,6 +241,35 @@ fn operands(name: &str, members: &[Member<Position>], path: &str) -> Result<(), 
                     *v.pos(),
                     at,
                     "an operand must be an object with a 'node' field".to_owned(),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Flat form of [`operands`]: every operand is a node index.
+fn indexes(name: &str, members: &[Member<Position>], path: &str) -> Result<(), Breach> {
+    for m in members
+        .iter()
+        .filter(|m| operand_keys(name).contains(&m.key.as_str()))
+    {
+        let here = child(path, &m.key);
+        let list = m.value.as_array().filter(|_| m.key == "args");
+        let items: Vec<(&Value<Position>, String)> = match list {
+            Some(list) => list
+                .iter()
+                .enumerate()
+                .map(|(i, v)| (v, format!("{here}[{i}]")))
+                .collect(),
+            None => vec![(&m.value, here)],
+        };
+        for (v, at) in items {
+            if v.as_u64().is_none() {
+                return Err(breach(
+                    *v.pos(),
+                    at,
+                    "an operand must be a node index, a non-negative integer".to_owned(),
                 ));
             }
         }

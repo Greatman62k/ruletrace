@@ -14,11 +14,15 @@ use rt_foundation::{
     RevisionNumber, RuleId,
 };
 use rt_hash::Sha256Hex;
-use rt_ir::{parse_draft, Identity, Origin, RuleContent};
+use rt_ir::{parse_draft, Identity, Origin, RuleContent, DECODER_DEPTH_CAP};
 use rt_json::{parse_keeping_duplicates, Kind, Member, ParseLimits, Position, Value};
 
-/// The only schema version this parser accepts.
+/// The nested schema version, which the mock provider and recorded
+/// scripts use.
 pub const SCHEMA_VERSION: &str = "1";
+/// The flat node-table schema version that providers are sent (UD-37). The
+/// parser lowers it to the same Rule_Content as version "1".
+pub const FLAT_SCHEMA_VERSION: &str = crate::proposal_schema::FLAT_SCHEMA_VERSION;
 /// Largest number of proposals in one response.
 pub const MAX_PROPOSALS: usize = 100;
 /// Largest number of evidence items of one proposal.
@@ -45,6 +49,7 @@ pub const FORBIDDEN_FIELDS: [&str; 13] = [
 ];
 
 mod closed;
+mod flat;
 
 const SHOWN_CHARS: usize = 60;
 
@@ -580,12 +585,13 @@ impl Dec<'_> {
     fn response(&self, root: &Value<Position>) -> Result<ParsedResponse, Diagnostic> {
         let members = self.object(root, "", &["schema_version", "proposals"])?;
         let version = self.string(members, root, "", "schema_version")?;
-        if version != SCHEMA_VERSION {
+        let flat = version == FLAT_SCHEMA_VERSION;
+        if version != SCHEMA_VERSION && !flat {
             let pos = self.need(members, root, "", "schema_version")?.value.pos();
             return Err(self.violation(
                 *pos,
                 "schema_version",
-                format!("schema_version must be \"{SCHEMA_VERSION}\""),
+                format!("schema_version must be \"{SCHEMA_VERSION}\" or \"{FLAT_SCHEMA_VERSION}\""),
             ));
         }
         let list = self.need(members, root, "", "proposals")?;
@@ -605,7 +611,7 @@ impl Dec<'_> {
         }
         let mut proposals = Vec::with_capacity(items.len());
         for (i, item) in items.iter().enumerate() {
-            proposals.push(self.proposal(item, i)?);
+            proposals.push(self.proposal(item, i, flat)?);
         }
         Ok(ParsedResponse { proposals })
     }
@@ -614,6 +620,7 @@ impl Dec<'_> {
         &self,
         value: &Value<Position>,
         index: usize,
+        flat: bool,
     ) -> Result<ParsedProposal, Diagnostic> {
         let path = format!("proposals[{index}]");
         let Some(all) = value.as_object() else {
@@ -659,7 +666,8 @@ impl Dec<'_> {
         let kind = match name {
             "rule_suggestion" => {
                 let rule = self.need(members, value, &path, "rule")?;
-                let parsed = self.rule(&rule.value, &child(&path, "rule"), &evidence)?;
+                let at = child(&path, "rule");
+                let parsed = self.rule(&rule.value, &at, &evidence, flat)?;
                 ProposalKind::RuleSuggestion(parsed)
             }
             "clause_interpretation" => ProposalKind::ClauseInterpretation,
@@ -766,11 +774,17 @@ impl Dec<'_> {
         value: &Value<Position>,
         path: &str,
         evidence: &[ParsedEvidence],
+        flat: bool,
     ) -> Result<ParsedRule, Diagnostic> {
-        if let Err(b) = closed::check(value, path) {
-            return Err(self.violation(b.pos, &b.path, b.message));
-        }
-        let json = rt_json::write_compact(value);
+        let lowered = if flat {
+            closed::check_flat(value, path).and_then(|()| flat::lower(value, path))
+        } else {
+            closed::check(value, path).map(|()| rt_json::write_compact(value))
+        };
+        let json = lowered.map_err(|b| self.violation(b.pos, &b.path, b.message))?;
+        // A lowered draft has a different shape from the response text, so
+        // only a nested draft can map a decoder position back to its key.
+        let depth = if flat { DECODER_DEPTH_CAP } else { MAX_DEPTH };
         let origin = Origin::Manual { author: None };
         let draft = parse_draft(
             json.as_bytes(),
@@ -778,7 +792,7 @@ impl Dec<'_> {
             RevisionNumber::FIRST,
             origin,
             self.limit,
-            MAX_DEPTH,
+            depth,
         );
         let rev = match draft {
             Ok(staged) => staged.into_parts().0,
@@ -794,7 +808,7 @@ impl Dec<'_> {
                     format!("{}: {}", d.code().id(), d.message())
                 });
                 let pos = first
-                    .filter(|d| d.code() == Code::IrUnknownField)
+                    .filter(|d| d.code() == Code::IrUnknownField && !flat)
                     .and_then(|d| key_position(value, &json, d))
                     .unwrap_or(*value.pos());
                 return Err(self.violation(

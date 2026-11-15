@@ -1109,12 +1109,13 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
   - Rust code, `Cargo.toml`, `deny.toml`, `tools/allowed-edges.v1` and `ci.yml` edits belong to the tasks below. None was made when UD-37 was recorded.
   - Every new task below follows the red/green rule of the testing policy: the named regression or negative test is shown failing against a controlled mutant or the absent behaviour, then passing.
 
-  - [ ] 10.4 Write the flat Proposal schema generator and its limit tests (no longer optional, runs first)
+  - [-] 10.4 Write the flat Proposal schema generator and its limit tests (no longer optional, runs first)
     - Un-deferred by UD-37. Implement the pure, provider-neutral generator (module `proposal_schema` of `rt-ai-tool`, not in `rt-ai-responses`) that writes the canonical flat node-table schema of design §3.7.3 from the request vocabulary, and the lowering of a Proposal_Schema version "2" document to the same Rule_Content as version "1" in the local strict parser, with the table rules (child index greater than the parent index, in range, each node referenced exactly once or the root, none unreferenced) refused with `RT-AI-0202`. Keep version "1" accepted unchanged. Commit the generated schema as a reviewed golden file.
     - Limits, measured by a counter that does not reuse the generator: nesting depth at most 10, at most 5,000 properties, at most 120,000 characters of names and enum values, at most 1,000 enum values, no `$ref` and no `$defs`, `additionalProperties:false` on every object, every property in `required`, no `oneOf` or `allOf`, `anyOf` only below the root.
     - Observable: the limit test passes with the exact bounds; an expression of depth 16 and one of depth 17 lower to Rule_Content equal to the original (fixed cases plus a property test of at least 256 cases); the schema bytes equal the golden file; a table with a cycle, a forward-violating child, a shared node, an unreferenced node or an out-of-range index gives `RT-AI-0202` with its location.
     - Red/green: each of these mutants of the generator or the lowering is killed by a named test: reintroduced `$ref` recursion, depth 11, a property count above 5,000, a missing `additionalProperties:false`, a property missing from `required`, an accepted child index not greater than its parent, an accepted shared node.
     - Blocked by: 8.19.
+    - Status note: implemented and run locally (limit counter, golden, depth 16 and 17 round trips with 256-case property tests, table refusals, the seven named mutants). The task stays in progress until a CI run on the three platforms and the independent review. The `root` member of design §3.7.3 is replaced by one index per expression field (see the implementation notes there). Not claimed complete.
     - _Requirements: 23.4, 23.27, 23.39_
     - Design §3.7.3, §9.1 (R-D1)
 
