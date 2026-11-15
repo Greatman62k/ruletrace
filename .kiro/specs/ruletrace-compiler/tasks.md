@@ -917,11 +917,12 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 16.18, 18.6, 18.14, 18.16, 23.14, 23.15, 26.17, 20.20_
     - Design §7.3
 
-  - [ ] 8.17 Author the provider script and add the `ai` profile with the full Coverage_Statement
+  - [-] 8.17 Author the provider script and add the `ai` profile with the full Coverage_Statement
     - Under `demo/<name>/`, add `provider/authored-script.json` keyed by the Request_Identifiers that `ruletrace-ai propose --dry-run` prints for the stand-in, every entry labelled `authored` (never described as provider output), `ai/mock-replay.toml`, and the `ai` profile steps of the runbook (s02 `propose`; s03 `review list` then one `approve` or `reject` per proposal, with `--create-ledger` on the first; the same s04 to s07). Include one unsupported clause (so it reaches the Coverage_Statement as `unsupported`) and one rejected proposal with a reason. Extend `classify` to read the store batches and the ledger rejection records. Bless the goldens, including the proposal store and the Transmission_Log.
     - Observable: the `ai` profile acceptance test passes, and the Coverage_Statement classifies every clause or names the unclassified clause.
     - Blocked by: 8.16, 8.21, 6.7, 1.11.
     - Carried from 8.16 review: the runbook approves proposals in dependency order; a rule reading a sibling's declaration is refused with RT-APR-0205 until that sibling is adopted.
+    - Status note: everything is implemented in `demo/stand-in-ai` and verified locally on Linux (`cargo test -p rt-demo --test acceptance ai`, four controlled mutants killed). The task stays in progress for two reasons, see `traceability.md` (Task 8.17). (1) `review list` needs an existing ledger, so the first listing follows the first approval and not the other way round; this needs a user decision. (2) The Windows variants of the s02 goldens are hand-derived and unrun, and "green on three platforms" is pending the CI run. Not claimed.
     - _Requirements: 33.6, 33.7, 33.8, 33.9, 33.11, 33.12, 23.25_
     - Design §8.11.4, §8.11.7, §8.11.8, §7.5 (Slice 1)
 

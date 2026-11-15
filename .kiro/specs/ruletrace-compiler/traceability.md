@@ -381,3 +381,31 @@ User decisions: the skip gets a Warning code, the Run_Summary header says so, an
 No requirement text changes. In `slice_ai_attacks.rs` the configuration listed the model in `ai_identities`, so a mutant that dropped the model from the Origin identities (`AiIdentitySet::from_origin`) survived. The model is no longer listed, so Req 23.15 and 26.17 refusal of a Reviewer equal to the model rests on the revision Origin. The mutants for the model, provider, proposer, the whole identity check and the `status` forbidden field are killed (Req 23.15, 26.17, 18.14, 20.20).
 
 Open: "green on three platforms" of the 8.16 observable is pending the CI run of the current main and is not claimed. Req 20.20 "no credential value in any output" is not exercised by the mock path, which reads no credential; it stays covered by the tool-level canary tests, not by `slice-ai`.
+
+## Task 8.17: the `ai` profile and the full Coverage_Statement
+
+No requirement text changes. Evidence in `crates/rt-demo/tests/acceptance.rs` (run with `cargo test -p rt-demo --test acceptance ai`), `crates/rt-demo/tests/coverage_store.rs` and `demo/stand-in-ai/`.
+
+| Req | What is shown | Evidence |
+| --- | --- | --- |
+| 33.6 | Every Candidate_Clause once, by start offset: three `rule_approved`, one `unsupported` (`RT-VAL-0003`, capability `prize_allocation`), one `proposal_rejected` with its reason. Offsets are found in the committed document by the test, not read from the tools. A statement without the store, or without the rejection, fails naming clause 4 or 5 | `ai_profile_acceptance`, `ai_profile_coverage_names_the_unclassified_clause_without_the_store_or_the_rejection`, `coverage_store.rs` |
+| 33.7 | Steps s01, s02, s03a to s03f, s04 to s07 of the `ai` profile, each with its command and expected exit code, executed as written | `RUNBOOK.md` block, `ai_profile_acceptance` |
+| 33.8 | Both script entries are labelled `authored` in the file, in the manifest `origins` (authored 2, recorded 0) and in `captured`. Each `response_sha256` equals the payload hash, and a changed payload is reported with its Request_Identifier. No credential-looking string. A request the script does not hold gives `RT-AI-0105`, exit 5, and keeps the batch of the earlier request | `ai_profile_acceptance`, `ai_profile_a_script_entry_whose_hash_differs_is_reported_with_its_request_identifier`, `ai_profile_a_credential_looking_string_is_found`, `ai_profile_a_request_the_script_does_not_hold_is_a_provider_error_and_keeps_earlier_batches` |
+| 33.9 | The proposal store, the Transmission_Log and every other artifact are compared byte for byte with the committed goldens. No network, no credential, empty environment | `ai_profile_acceptance` |
+| 33.11 | The ledger holds three approvals and one rejection, written by `ruletrace review`, with reviewer `Demo Reviewer`, which no batch lists as an AI identity | `ai_profile_acceptance` |
+| 33.12 | The runbook block is the executed flow | `ai_profile_acceptance` |
+| 23.25 | The accepted response payload and its hash sit in the stored batch of the matching script entry | `ai_profile_acceptance` |
+| 8.21 / 8.16 note | `rank.standing` approved before `score.weighted` is refused with `RT-APR-0205`, exit 3, and ledger and Rulebook are unchanged | `ai_profile_a_rule_that_reads_an_unadopted_target_is_refused_and_nothing_changes` |
+
+Decisions and deviations, all for the user:
+
+- A new demonstration directory, `demo/stand-in-ai`. The five-clause document keeps the three clauses of `demo/stand-in-hand` at the same offsets and adds clause 4 (prize money, unsupported) and clause 5 (junior by age, rejected). The `hand` document and its goldens are untouched (confirmed with `git status`). Because the document hash is part of every content hash, the `ai` and `hand` compiled artifacts differ in bytes, so the origin-independence assertion of task 8.18 ("equal Rule_Content") needs either a shared document or a decision on what is compared. The `ai` and `hand` Outcomes are equal and the test asserts it.
+- Order of `review list`. `review list` needs an existing ledger (`RT-CLI-0003`, exit 2, otherwise) and only `approve` or `reject` with `--create-ledger` may create one (Req 33.11). The first listing therefore follows the first approval (s03b), and a second listing closes the review (s03f). The text of 8.17 and design 8.11.4 put the listing first.
+- The unsupported proposal is neither approved nor rejected: approving is refused for a blocking Diagnostic, and a rejection would class the clause `proposal_rejected`. It stays pending and is classed `unsupported`.
+- The validator message of an unrecognized draft names the kind (`unrecognized`), not the capability. The generator takes the capability from the `name` of the stored draft.
+- Content hashes in the approve steps come from `review list`; the tool refuses a stale one (`RT-APR-0203`). They are not independent of the tool.
+- The Windows output of s02 differs (Warning `RT-AI-0309`, Run_Summary header and heading). `golden/steps/s02.stdout.windows` and `s02.stderr.windows` were derived by hand from the `RT-AI-0309` wording and ordering stated above and are checked on Linux only against hand-written literals. They have not run on Windows.
+- `ai/mock-replay.toml` is made owner-only in the work copy on Unix, so `RT-AI-0009` does not depend on the checkout umask.
+- CI: the `core-only` job skips tests named `ai_profile_` (the `ai` profile needs `ruletrace-ai`); `demo-offline` runs `--test acceptance` on the three platforms. Also moved `actions/checkout` to v5 and `actions/upload-artifact` to v6 (Node 20 deprecation).
+
+Open: "green on three platforms" is pending the CI run and is not claimed. The Proof_Report replay check is asserted in the `hand` acceptance test only; the `ai` test checks that every section is verified.
