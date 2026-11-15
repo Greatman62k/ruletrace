@@ -18,6 +18,7 @@ rt-srcmodel = { path = "../rt-srcmodel" }
 rt-ir = { path = "../rt-ir" }
 rt-ledger = { path = "../rt-ledger" }
 rt-validate = { path = "../rt-validate" }
+rt-proposals = { path = "../rt-proposals" }
 
 [dev-dependencies]
 # The acceptance test calls the `check-tree` library function (design §8.11.12 step 5).

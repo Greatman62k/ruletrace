@@ -51,8 +51,24 @@ fn io_error(path: &Path, e: &std::io::Error) -> DemoError {
     }
 }
 
+/// The golden file that applies on this platform: `<golden>.windows` on
+/// Windows when such a file exists, otherwise `golden`.
+///
+/// Only output that the tools word differently on Windows has a variant (the
+/// skipped directory sync of `ruletrace-ai propose`). The runbook names one
+/// path, so the choice stays out of the runbook.
+fn platform_golden(demo_dir: &Path, golden: &str) -> String {
+    let variant = format!("{golden}.windows");
+    if cfg!(windows) && demo_dir.join(&variant).is_file() {
+        variant
+    } else {
+        golden.to_owned()
+    }
+}
+
 /// Compares `actual` with the golden file `demo_dir/golden` (or writes it in
-/// bless mode).
+/// bless mode). On Windows a sibling `<golden>.windows` replaces it when it
+/// exists.
 ///
 /// # Errors
 /// [`DemoError::Golden`] with the step, the golden path and the first differing
@@ -64,6 +80,8 @@ pub fn check_golden(
     golden: &str,
     actual: &[u8],
 ) -> Result<(), DemoError> {
+    let chosen = platform_golden(demo_dir, golden);
+    let golden = chosen.as_str();
     let path = demo_dir.join(golden);
     if mode == Mode::Bless {
         if let Some(parent) = path.parent() {

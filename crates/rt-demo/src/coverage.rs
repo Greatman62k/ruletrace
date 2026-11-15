@@ -11,6 +11,7 @@ use rt_foundation::{Code, DocumentId, Location};
 use rt_ir::{ApprovalStatus, RuleKey, Rulebook};
 use rt_json::{write_pretty, Value};
 use rt_ledger::{derive_statuses, effective_revisions, ApprovalLedger, RecordKind};
+use rt_proposals::{pending_proposals, Batch, Proposal};
 use rt_srcmodel::CandidateClause;
 use rt_validate::ValidationResult;
 use std::fmt;
@@ -94,6 +95,58 @@ pub struct PendingEntry {
 pub struct StoreBatches {
     /// Pending proposals in store order.
     pub pending: Vec<PendingEntry>,
+}
+
+impl StoreBatches {
+    /// Reduces parsed Proposal_Store batches to what coverage needs.
+    ///
+    /// Only a Pending_Proposal counts: a `rule_suggestion` that no Origin of
+    /// `rulebook` references. An adopted proposal is a revision of the
+    /// Rulebook and is classified from the Rulebook and the ledger. Each
+    /// evidence span of a proposal gives one entry. The finding comes from the
+    /// stored Semantic_Outcome: RT-VAL-0003 wins over RT-VAL-0004, and a
+    /// proposal with neither has no finding. The capability of an unsupported
+    /// proposal is the `name` of its `unrecognized` draft, because the stored
+    /// message names only the kind. A draft without a name falls back to the
+    /// message.
+    #[must_use]
+    pub fn from_batches(batches: &[Batch], rulebook: &Rulebook) -> Self {
+        let mut pending = Vec::new();
+        for entry in pending_proposals(batches, rulebook) {
+            let finding = finding_of(entry.proposal);
+            for e in &entry.proposal.evidence {
+                pending.push(PendingEntry {
+                    document: e.document.clone(),
+                    start: e.start,
+                    end: e.end,
+                    finding: finding.clone(),
+                });
+            }
+        }
+        Self { pending }
+    }
+}
+
+fn draft_name(proposal: &Proposal) -> Option<String> {
+    let (draft, _) = proposal.rule.as_ref()?;
+    let tree = parse_strict("draft.json", draft.json.as_bytes()).ok()?;
+    string(&tree, "name").ok().map(str::to_owned)
+}
+
+fn finding_of(proposal: &Proposal) -> Option<StoreFinding> {
+    let with = |code: Code| proposal.outcome.iter().filter(move |d| d.code == code);
+    if let Some(d) = with(Code::ValUnsupportedConstruct).next() {
+        let capability = draft_name(proposal).unwrap_or_else(|| d.message.clone());
+        return Some(StoreFinding::Unsupported { capability });
+    }
+    let interpretations: Vec<String> = with(Code::ValAmbiguousInterpretation)
+        .map(|d| d.message.clone())
+        .collect();
+    if interpretations.is_empty() {
+        None
+    } else {
+        Some(StoreFinding::Ambiguity { interpretations })
+    }
 }
 
 /// The class of one Candidate_Clause.

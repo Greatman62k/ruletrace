@@ -66,6 +66,23 @@ pub fn run_step(step: &Step, bin_dir: &Path, work_dir: &Path) -> Result<Captured
     })
 }
 
+/// Makes a copied AI_Configuration readable by its owner only.
+///
+/// A checkout gives the file the mode of the user's umask, and `ruletrace-ai`
+/// warns with RT-AI-0009 about a group or other read bit, so without this the
+/// golden standard error would depend on the umask. Platforms without
+/// permission bits report no such warning and need no change.
+#[cfg(unix)]
+fn make_private(path: &Path) -> Result<(), DemoError> {
+    use std::os::unix::fs::PermissionsExt;
+    fs::set_permissions(path, fs::Permissions::from_mode(0o600)).map_err(|e| io_error(path, &e))
+}
+
+#[cfg(not(unix))]
+fn make_private(_path: &Path) -> Result<(), DemoError> {
+    Ok(())
+}
+
 /// Copies the demonstration into `work_dir`, leaving out the `golden`
 /// directory.
 ///
@@ -89,6 +106,9 @@ pub fn copy_demo(demo_dir: &Path, work_dir: &Path) -> Result<(), DemoError> {
             }
         } else if kind.is_file() {
             fs::copy(&from, &to).map_err(|e| io_error(&from, &e))?;
+            if to.extension().is_some_and(|e| e == "toml") {
+                make_private(&to)?;
+            }
         }
     }
     Ok(())

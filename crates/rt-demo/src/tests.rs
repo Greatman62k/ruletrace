@@ -249,3 +249,25 @@ fn runbook_runs_with_cleared_environment_and_compares_goldens() {
     assert!(matches!(e, DemoError::Step { step, .. } if step == "s01"));
     let _ = std::fs::remove_dir_all(&root);
 }
+
+#[test]
+fn a_windows_variant_replaces_its_golden_file_on_windows_only() {
+    let dir = temp("variant");
+    let steps = dir.join("golden").join("steps");
+    std::fs::create_dir_all(&steps).unwrap();
+    std::fs::write(steps.join("s.stdout"), b"base").unwrap();
+    std::fs::write(steps.join("s.stdout.windows"), b"windows").unwrap();
+    let (applies, other): (&[u8], &[u8]) = if cfg!(windows) {
+        (b"windows", b"base")
+    } else {
+        (b"base", b"windows")
+    };
+    let golden = "golden/steps/s.stdout";
+    check_golden(Mode::Compare, "s", &dir, golden, applies).unwrap();
+    let e = check_golden(Mode::Compare, "s", &dir, golden, other).unwrap_err();
+    assert!(matches!(e, DemoError::Golden { offset: 0, .. }), "{e}");
+    // A golden file without a variant is used on every platform.
+    std::fs::write(steps.join("t.stdout"), b"same").unwrap();
+    check_golden(Mode::Compare, "t", &dir, "golden/steps/t.stdout", b"same").unwrap();
+    let _ = std::fs::remove_dir_all(&dir);
+}
