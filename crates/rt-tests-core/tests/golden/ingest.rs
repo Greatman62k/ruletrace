@@ -4,19 +4,27 @@
 use crate::harness::{compare_bytes, fixtures_root, platform};
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::OnceLock;
 
-/// Builds `ruletrace` and returns its path. The binary lives in the same
-/// profile directory as this test executable.
+/// Builds `ruletrace` once per test process and returns its path. The
+/// binary lives in the same profile directory as this test executable.
+/// Building once keeps parallel tests from running nested `cargo build`
+/// commands that replace the binary while another test launches it.
 pub fn ruletrace_binary() -> PathBuf {
-    let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
-    let status = Command::new(cargo)
-        .args(["build", "--quiet", "-p", "rt-cli", "--bin", "ruletrace"])
-        .status()
-        .unwrap();
-    assert!(status.success(), "building ruletrace failed");
-    let exe = std::env::current_exe().unwrap();
-    let profile_dir = exe.parent().unwrap().parent().unwrap();
-    profile_dir.join(format!("ruletrace{}", std::env::consts::EXE_SUFFIX))
+    static BINARY: OnceLock<PathBuf> = OnceLock::new();
+    BINARY
+        .get_or_init(|| {
+            let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+            let status = Command::new(cargo)
+                .args(["build", "--quiet", "-p", "rt-cli", "--bin", "ruletrace"])
+                .status()
+                .unwrap();
+            assert!(status.success(), "building ruletrace failed");
+            let exe = std::env::current_exe().unwrap();
+            let profile_dir = exe.parent().unwrap().parent().unwrap();
+            profile_dir.join(format!("ruletrace{}", std::env::consts::EXE_SUFFIX))
+        })
+        .clone()
 }
 
 #[test]
@@ -59,4 +67,28 @@ fn golden_slice_basic_ingest_source_model() {
 fn golden_slice_basic_source_is_the_worked_example() {
     let bytes = std::fs::read(fixtures_root().join("slice-basic/source/rules.md")).unwrap();
     assert_eq!(bytes.len(), 171);
+}
+
+/// Regression for the macOS `NotFound` flake: parallel tests each ran
+/// `cargo build`, which re-links the binary and removes it for a moment,
+/// so another thread could fail to launch it. The binary must be built
+/// once per process and stay launchable from every thread.
+#[test]
+fn the_binary_stays_launchable_while_many_threads_ask_for_it() {
+    let launches: Vec<_> = (0..24)
+        .map(|_| {
+            std::thread::spawn(|| {
+                let binary = ruletrace_binary();
+                Command::new(binary).env_clear().arg("--help").output()
+            })
+        })
+        .collect();
+    for launch in launches {
+        let result = launch.join().unwrap();
+        assert!(
+            result.is_ok(),
+            "launching ruletrace failed: {:?}",
+            result.err()
+        );
+    }
 }

@@ -79,12 +79,21 @@ fn copy_tree(from: &Path, to: &Path) {
 }
 
 fn command(work: &Path, args: &[&str]) -> (i32, Vec<u8>) {
-    let output = Command::new(ruletrace_binary())
+    let binary = ruletrace_binary();
+    let output = Command::new(&binary)
         .env_clear()
         .current_dir(work)
         .args(args)
         .output()
-        .unwrap();
+        .unwrap_or_else(|error| {
+            panic!(
+                "launching {} in {} failed: {error} (binary exists: {}, work dir exists: {})",
+                binary.display(),
+                work.display(),
+                binary.exists(),
+                work.exists()
+            )
+        });
     (output.status.code().unwrap(), output.stderr)
 }
 
