@@ -23,6 +23,7 @@ mod locate;
 mod out;
 mod perm;
 mod plan;
+pub mod profile;
 mod proposal_schema;
 pub mod provenance;
 mod raw;
@@ -82,6 +83,8 @@ mod tests_out_canary;
 mod tests_overredaction;
 #[cfg(test)]
 mod tests_plan;
+#[cfg(test)]
+mod tests_profile;
 #[cfg(test)]
 mod tests_proposal_schema;
 #[cfg(test)]
