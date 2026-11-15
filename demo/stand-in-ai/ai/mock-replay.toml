@@ -1,0 +1,10 @@
+# AI_Configuration of the offline flow: mock provider, no endpoint, no credential.
+schema_version = 1
+enabled = true
+provider = "mock-replay"
+model = "authored-script"
+script = "provider/authored-script.json"
+allow_document_text = true
+ai_identities = ["mock-replay", "authored-script"]
+transmission_log = "work/transmission.log.jsonl"
+max_clauses_per_request = 3

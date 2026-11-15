@@ -1,0 +1,17 @@
+run summary: complete, directory durability not confirmed
+processed:
+  stand-in-rules.md 161 241
+  stand-in-rules.md 242 320
+  stand-in-rules.md 321 426
+  stand-in-rules.md 427 500
+  stand-in-rules.md 501 546
+stored:
+  (none)
+stored, directory durability not confirmed (skipped by platform):
+  stand-in-rules.md 161 241
+  stand-in-rules.md 242 320
+  stand-in-rules.md 321 426
+  stand-in-rules.md 427 500
+  stand-in-rules.md 501 546
+unprocessed:
+  (none)

@@ -1,0 +1,6 @@
+request ab5e5c4a688908ce49628b8e0ab189dcd4ef095f97e745f13487e80a9de9f071: provider mock-replay, endpoint host (none), documents ['stand-in-rules.md'], clauses 3, bytes 1824
+request be41f0e453a0518479e65a8da0bb7035989b86e5aa4727e7c851304c37c2d2b7: provider mock-replay, endpoint host (none), documents ['stand-in-rules.md'], clauses 2, bytes 1518
+warning RT-AI-0305: the stored batch has proposals with blocking findings
+  at input 'response-ab5e5c4a688908ce49628b8e0ab189dcd4ef095f97e745f13487e80a9de9f071'
+warning RT-AI-0305: the stored batch has proposals with blocking findings
+  at input 'response-be41f0e453a0518479e65a8da0bb7035989b86e5aa4727e7c851304c37c2d2b7'

@@ -1,0 +1,4 @@
+warning RT-APR-0006: revision 1 of rule 'junior.flag' is Rejected and excluded from compilation
+  at document 'stand-in-rules.md'
+warning RT-ING-0006: the Candidate_Clause at bytes 427..500 of document 'stand-in-rules.md' is referenced by no rule
+  at document 'stand-in-rules.md'

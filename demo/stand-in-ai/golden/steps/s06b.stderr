@@ -1,0 +1,4 @@
+error RT-EXE-0001: rule elig.entry: required input 'age' of participant 'p2' is a Missing_Value
+  at source stand-in-rules.md:161-241 (line 5, column 1)
+warning RT-EXE-0011: participant 'p4', target 'score': published 7.9 differs from computed 7.8
+  at input 'data/canonical/published-seeded.json' field entries[p4/score]

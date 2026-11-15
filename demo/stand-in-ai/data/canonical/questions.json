@@ -1,0 +1,61 @@
+{
+  "format": "ruletrace-questions",
+  "version": 1,
+  "questions": [
+    {
+      "kind": "value",
+      "target": "eligible",
+      "participant": "p1"
+    },
+    {
+      "kind": "value",
+      "target": "eligible",
+      "participant": "p2"
+    },
+    {
+      "kind": "value",
+      "target": "eligible",
+      "participant": "p3"
+    },
+    {
+      "kind": "value",
+      "target": "eligible",
+      "participant": "p4"
+    },
+    {
+      "kind": "value",
+      "target": "eligible",
+      "participant": "p5"
+    },
+    {
+      "kind": "value",
+      "target": "score",
+      "participant": "p1"
+    },
+    {
+      "kind": "value",
+      "target": "score",
+      "participant": "p2"
+    },
+    {
+      "kind": "value",
+      "target": "score",
+      "participant": "p3"
+    },
+    {
+      "kind": "value",
+      "target": "score",
+      "participant": "p4"
+    },
+    {
+      "kind": "value",
+      "target": "score",
+      "participant": "p5"
+    },
+    {
+      "kind": "rank",
+      "target": "standing",
+      "participants": null
+    }
+  ]
+}

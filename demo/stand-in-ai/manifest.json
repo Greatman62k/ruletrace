@@ -1,0 +1,62 @@
+{
+  "format": "ruletrace-demo-manifest",
+  "version": 1,
+  "name": "stand-in-ai",
+  "stand_in": true,
+  "documents": [
+    {
+      "id": "stand-in-rules.md",
+      "path": "documents/stand-in-rules.md",
+      "title": "Stand-in rules for a synthetic demonstration meet",
+      "publisher": "RuleTrace project (original text written for this project)",
+      "address": "not applicable: committed file demo/stand-in-ai/documents/stand-in-rules.md",
+      "retrieved": "not applicable: written for this project",
+      "sha256": "cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce",
+      "licence": "Original text written for this project; no third-party text",
+      "licence_reference": "repository licence terms (Cargo.toml)",
+      "transmission_permitted": true,
+      "ud34_confirmation": "not applicable: stand-in text, not a document confirmed under UD-34; never part of the Demo_Corpus",
+      "original": null,
+      "coverage_note": "Clause 1 holds an eligibility condition, clause 2 a weighted score, clause 3 ranking with a tie-breaker. Clause 4 allocates prize money, which the Rule_IR does not support. Clause 5 defines a junior by age. Synthetic stand-in, not a real competition's rules.",
+      "stand_in": true
+    }
+  ],
+  "data": [
+    {
+      "path": "data/canonical/data.json",
+      "sha256": "cbcb16474ee17fc1d5a625e8d3c853b21e112870ab2909135f0f06be8cf4bbce",
+      "nature": "synthetic",
+      "note": "Five synthetic participants: one eligible with a missing value excluded, one ineligible, one Tie_Group.",
+      "seeded_difference": false
+    },
+    {
+      "path": "data/canonical/questions.json",
+      "sha256": "a75046be57c84cedc54b1fc03a863f83a1372e676dbdb9400873276e84ed1a39",
+      "nature": "synthetic",
+      "note": "Questions over the synthetic data: eligibility and score of each participant, and the ranking.",
+      "seeded_difference": false
+    },
+    {
+      "path": "data/canonical/published.json",
+      "sha256": "2799487300a893099a9f6d9e2a4e21e6cbb505aa43a98f9968f0e37d5366c152",
+      "nature": "synthetic",
+      "note": "Synthetic published result that equals the computed result.",
+      "seeded_difference": false
+    },
+    {
+      "path": "data/canonical/published-seeded.json",
+      "sha256": "85a71018f2ed9cb9fd540349a07e77b511aa3dc8610d9ce49c4c4b932ac634dc",
+      "nature": "synthetic",
+      "note": "Synthetic published result with one deliberately seeded difference (p4 score).",
+      "seeded_difference": true
+    }
+  ],
+  "provider_script": {
+    "path": "provider/authored-script.json",
+    "sha256": "b8a5e45348171359c5f4e03edb061a8d812b76dd51dcd89b31e94dbe390631ee",
+    "origins": {
+      "recorded": 0,
+      "authored": 2
+    }
+  }
+}

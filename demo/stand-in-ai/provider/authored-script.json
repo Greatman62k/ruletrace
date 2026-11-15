@@ -1,0 +1,26 @@
+{
+  "format": "ruletrace-recorded-script",
+  "version": 1,
+  "provider": {
+    "kind": "mock-replay",
+    "model": "authored-script",
+    "adapter_version": "mock-1"
+  },
+  "captured": "authored by hand for this demonstration on 2026-01-15; not provider output",
+  "entries": [
+    {
+      "request_id": "ab5e5c4a688908ce49628b8e0ab189dcd4ef095f97e745f13487e80a9de9f071",
+      "origin": "authored",
+      "completion": "complete",
+      "response_sha256": "3c7e3711b20a2f4634efd78ee7494f50fb6ceb2956d2e0cbe3ba1cf4d619f298",
+      "payload": "{\"schema_version\":\"1\",\"proposals\":[{\"kind\":\"rule_suggestion\",\"proposer\":\"authored-script\",\"rationale\":\"Authored entry: clause 1 states an age threshold and a licence condition.\",\"evidence\":[{\"document\":\"stand-in-rules.md\",\"sha256\":\"cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce\",\"start\":161,\"end\":241,\"line\":5,\"column\":1,\"quote\":\"1. An entrant is eligible if age is at least 16 and the entrant holds a licence.\"}],\"rule\":{\"id\":\"elig.entry\",\"kind\":\"eligibility\",\"target\":\"eligible\",\"type\":\"boolean\",\"expr\":{\"node\":\"and\",\"t\":\"boolean\",\"args\":[{\"node\":\"cmp\",\"t\":\"boolean\",\"op\":\"ge\",\"left\":{\"node\":\"field\",\"t\":\"number\",\"name\":\"age\"},\"right\":{\"node\":\"num\",\"t\":\"number\",\"value\":\"16\"}},{\"node\":\"field\",\"t\":\"boolean\",\"name\":\"licence\"}]},\"markers\":[],\"spans\":[{\"document\":\"stand-in-rules.md\",\"start\":161,\"end\":241,\"line\":5,\"column\":1}]}},{\"kind\":\"rule_suggestion\",\"proposer\":\"authored-script\",\"rationale\":\"Authored entry: clause 2 gives the two weights of the score.\",\"evidence\":[{\"document\":\"stand-in-rules.md\",\"sha256\":\"cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce\",\"start\":242,\"end\":320,\"line\":6,\"column\":1,\"quote\":\"2. The score is 0.6 times the judges score plus 0.4 times the technical score.\"}],\"rule\":{\"id\":\"score.weighted\",\"kind\":\"weighted_score\",\"target\":\"score\",\"type\":\"number\",\"terms\":[{\"weight\":{\"node\":\"num\",\"t\":\"number\",\"value\":\"0.6\"},\"value\":{\"node\":\"field\",\"t\":\"number\",\"name\":\"judges\"}},{\"weight\":{\"node\":\"num\",\"t\":\"number\",\"value\":\"0.4\"},\"value\":{\"node\":\"field\",\"t\":\"number\",\"name\":\"technical\"}}],\"rounding\":null,\"markers\":[],\"spans\":[{\"document\":\"stand-in-rules.md\",\"start\":242,\"end\":320,\"line\":6,\"column\":1}]}},{\"kind\":\"rule_suggestion\",\"proposer\":\"authored-script\",\"rationale\":\"Authored entry: clause 3 ranks by score with the technical score as tie-breaker.\",\"evidence\":[{\"document\":\"stand-in-rules.md\",\"sha256\":\"cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce\",\"start\":321,\"end\":426,\"line\":7,\"column\":1,\"quote\":\"3. Entrants are ranked by score, highest first. Equal scores are separated by the higher technical score.\"}],\"rule\":{\"id\":\"rank.standing\",\"kind\":\"ranking\",\"target\":\"standing\",\"type\":\"ranking\",\"key\":{\"node\":\"ref\",\"t\":\"number\",\"target\":\"score\"},\"direction\":\"desc\",\"tie_breakers\":[{\"expr\":{\"node\":\"field\",\"t\":\"number\",\"name\":\"technical\"},\"direction\":\"desc\"}],\"ties\":\"group\",\"markers\":[],\"spans\":[{\"document\":\"stand-in-rules.md\",\"start\":321,\"end\":426,\"line\":7,\"column\":1}]}}]}"
+    },
+    {
+      "request_id": "be41f0e453a0518479e65a8da0bb7035989b86e5aa4727e7c851304c37c2d2b7",
+      "origin": "authored",
+      "completion": "complete",
+      "response_sha256": "72e2d4076999f5a4401db4d3a66b1ae193d89e54f65c30a4442bafac6d316c8c",
+      "payload": "{\"schema_version\":\"1\",\"proposals\":[{\"kind\":\"rule_suggestion\",\"proposer\":\"authored-script\",\"rationale\":\"Authored entry: clause 4 allocates prize money, which the Rule_IR does not support.\",\"evidence\":[{\"document\":\"stand-in-rules.md\",\"sha256\":\"cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce\",\"start\":427,\"end\":500,\"line\":8,\"column\":1,\"quote\":\"4. The top three entrants share the prize money in the ratio 5 to 3 to 2.\"}],\"rule\":{\"id\":\"prize.split\",\"kind\":\"unrecognized\",\"name\":\"prize_allocation\",\"detail\":\"the top three entrants share the prize money in the ratio 5 to 3 to 2\",\"target\":\"prize\",\"type\":\"number\",\"markers\":[],\"spans\":[{\"document\":\"stand-in-rules.md\",\"start\":427,\"end\":500,\"line\":8,\"column\":1}]}},{\"kind\":\"rule_suggestion\",\"proposer\":\"authored-script\",\"rationale\":\"Authored entry: clause 5 defines a junior by age. This entry deliberately tests at most 18, so that the Reviewer can reject it.\",\"evidence\":[{\"document\":\"stand-in-rules.md\",\"sha256\":\"cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce\",\"start\":501,\"end\":546,\"line\":9,\"column\":1,\"quote\":\"5. An entrant is a junior if age is under 18.\"}],\"rule\":{\"id\":\"junior.flag\",\"kind\":\"eligibility\",\"target\":\"junior\",\"type\":\"boolean\",\"expr\":{\"node\":\"cmp\",\"t\":\"boolean\",\"op\":\"le\",\"left\":{\"node\":\"field\",\"t\":\"number\",\"name\":\"age\"},\"right\":{\"node\":\"num\",\"t\":\"number\",\"value\":\"18\"}},\"markers\":[],\"spans\":[{\"document\":\"stand-in-rules.md\",\"start\":501,\"end\":546,\"line\":9,\"column\":1}]}}]}"
+    }
+  ]
+}

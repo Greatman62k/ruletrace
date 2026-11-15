@@ -1,0 +1,88 @@
+{
+  "format": "ruletrace-source-model",
+  "version": 1,
+  "document": "stand-in-rules.md",
+  "kind": "markdown",
+  "sha256": "cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce",
+  "bytes": 547,
+  "content": "# Stand-in Rules for a Synthetic Demonstration Meet\n\nThis text is a stand-in written for the RuleTrace project. It is not the rulebook of any real competition.\n\n1. An entrant is eligible if age is at least 16 and the entrant holds a licence.\n2. The score is 0.6 times the judges score plus 0.4 times the technical score.\n3. Entrants are ranked by score, highest first. Equal scores are separated by the higher technical score.\n4. The top three entrants share the prize money in the ratio 5 to 3 to 2.\n5. An entrant is a junior if age is under 18.\n",
+  "elements": [
+    {
+      "id": 0,
+      "kind": "heading",
+      "level": 1,
+      "label": null,
+      "start": 0,
+      "end": 51,
+      "line": 1,
+      "column": 1,
+      "parent": null
+    },
+    {
+      "id": 1,
+      "kind": "paragraph",
+      "level": null,
+      "label": null,
+      "start": 53,
+      "end": 159,
+      "line": 3,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 2,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 161,
+      "end": 241,
+      "line": 5,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 3,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 242,
+      "end": 320,
+      "line": 6,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 4,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 321,
+      "end": 426,
+      "line": 7,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 5,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 427,
+      "end": 500,
+      "line": 8,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 6,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 501,
+      "end": 546,
+      "line": 9,
+      "column": 1,
+      "parent": 0
+    }
+  ]
+}

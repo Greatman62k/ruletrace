@@ -1,0 +1,37 @@
+{
+  "format": "ruletrace-rulebook",
+  "ir_version": "1",
+  "name": "stand-in-hand",
+  "version": "2026.1",
+  "documents": [
+    {
+      "id": "stand-in-rules.md",
+      "sha256": "cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce"
+    }
+  ],
+  "types": {
+    "inputs": [
+      {
+        "name": "age",
+        "type": "number"
+      },
+      {
+        "name": "licence",
+        "type": "boolean"
+      },
+      {
+        "name": "judges",
+        "type": "number"
+      },
+      {
+        "name": "technical",
+        "type": "number"
+      }
+    ],
+    "enums": [],
+    "sets": [],
+    "collections": []
+  },
+  "rules": [],
+  "precedence": []
+}
