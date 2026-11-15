@@ -276,7 +276,9 @@ dependencies = [
  "rt-hash",
  "rt-ir",
  "rt-json",
+ "rt-proposals",
  "rt-srcmodel",
+ "rt-validate",
  "toml_edit",
 ]
 

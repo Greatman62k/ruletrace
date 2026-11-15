@@ -14,7 +14,7 @@ use rt_foundation::{
     RevisionNumber, RuleId,
 };
 use rt_hash::Sha256Hex;
-use rt_ir::{parse_draft, Identity, Origin};
+use rt_ir::{parse_draft, Identity, Origin, RuleContent};
 use rt_json::{parse_keeping_duplicates, Kind, Member, ParseLimits, Position, Value};
 
 /// The only schema version this parser accepts.
@@ -157,6 +157,8 @@ pub struct ParsedRule {
     pub kind_name: String,
     /// The draft in compact RT-JSON form.
     pub json: String,
+    /// The decoded Rule_Content, for the semantic validator.
+    pub content: Box<RuleContent>,
 }
 
 /// Parses and schema-checks one provider response payload.
@@ -812,6 +814,7 @@ impl Dec<'_> {
             id: rev.key.id.clone(),
             kind_name: rev.content.body.kind_name().to_owned(),
             json,
+            content: Box::new(rev.content),
         })
     }
 }

@@ -8,6 +8,7 @@
 // Diagnostic is the error type of every fallible operation (design 3.4).
 #![allow(clippy::result_large_err)]
 
+mod accept;
 mod config;
 mod consent;
 mod credential;
@@ -53,6 +54,7 @@ mod tests_response_objects;
 #[cfg(test)]
 mod tests_scan;
 
+pub use accept::{accept_batch, AcceptInput, AcceptedBatch};
 pub use config::{
     disabled_without_configuration, load, AiConfig, Authorized, Endpoint, ProviderKind,
 };

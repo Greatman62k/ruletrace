@@ -109,6 +109,17 @@ impl Redactor {
         }
     }
 
+    /// True when `text` contains the credential in any form that
+    /// [`Redactor::redact`] replaces.
+    #[must_use]
+    pub fn finds(&self, text: &str) -> bool {
+        let mut spans = Vec::new();
+        self.needles.iter().any(|n| {
+            n.find_all(text.as_bytes(), &mut spans);
+            !spans.is_empty()
+        })
+    }
+
     /// `text` with every occurrence replaced.
     ///
     /// Matches are found in the original text only, so a marker is never
