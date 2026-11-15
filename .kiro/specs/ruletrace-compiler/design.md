@@ -1674,7 +1674,7 @@ The catalogue is one file, `catalogue/diagnostics.v1.json` (RT-JSON array of `{c
 | RT-AI-0301 (R) | AI_BATCH_ALREADY_STORED | Warning | Batch with this request id exists | 0 | ai |
 | RT-AI-0302 (R) | AI_STORE_INVALID | Error | Existing Proposal_Store malformed | 2 | ai |
 | RT-AI-0303 (R) | AI_STORE_WRITE_FAILED | Error | Atomic store write failed | 70 | ai |
-| RT-AI-0304 (R) | AI_REQUEST_INVALID | Error | Clauses, models, declarations or time missing or invalid | 2 | ai |
+| RT-AI-0304 (R) | AI_REQUEST_INVALID | Error | Clauses, models, declarations or time missing or invalid, an unknown revision target (rule or revision), or invalid feedback (empty or not UTF-8) | 2 | ai |
 | RT-AI-0305 (R) | AI_BATCH_HAS_BLOCKING_PROPOSALS | Warning | Stored batch has proposals with blocking findings | 0 | ai |
 | RT-AI-0306 (R) | AI_RUN_INCOMPLETE | Warning | Earlier batch kept, later request failed | exit of the failing request | ai |
 | RT-AI-0307 (N) | AI_STORE_TEMP_NOT_REMOVED | Warning | A temporary file of the store writer could not be removed | 0 | ai |

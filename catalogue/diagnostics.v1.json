@@ -133,7 +133,7 @@
   {"code": "RT-AI-0301", "mnemonic": "AI_BATCH_ALREADY_STORED", "severity": "Warning", "meaning": "Batch with this request id exists", "exit": 0, "executable": "ai"},
   {"code": "RT-AI-0302", "mnemonic": "AI_STORE_INVALID", "severity": "Error", "meaning": "Existing Proposal_Store malformed", "exit": 2, "executable": "ai"},
   {"code": "RT-AI-0303", "mnemonic": "AI_STORE_WRITE_FAILED", "severity": "Error", "meaning": "Atomic store write failed", "exit": 70, "executable": "ai"},
-  {"code": "RT-AI-0304", "mnemonic": "AI_REQUEST_INVALID", "severity": "Error", "meaning": "Clauses, models, declarations or time missing or invalid", "exit": 2, "executable": "ai"},
+  {"code": "RT-AI-0304", "mnemonic": "AI_REQUEST_INVALID", "severity": "Error", "meaning": "Clauses, models, declarations or time missing or invalid, an unknown revision target (rule or revision), or invalid feedback (empty or not UTF-8)", "exit": 2, "executable": "ai"},
   {"code": "RT-AI-0305", "mnemonic": "AI_BATCH_HAS_BLOCKING_PROPOSALS", "severity": "Warning", "meaning": "Stored batch has proposals with blocking findings", "exit": 0, "executable": "ai"},
   {"code": "RT-AI-0306", "mnemonic": "AI_RUN_INCOMPLETE", "severity": "Warning", "meaning": "Earlier batch kept, later request failed; the run exits with the code of the failing request", "exit": 0, "executable": "ai"},
   {"code": "RT-AI-0307", "mnemonic": "AI_STORE_TEMP_NOT_REMOVED", "severity": "Warning", "meaning": "A temporary file of the Proposal_Store writer could not be removed; it is never read and can be deleted", "exit": 0, "executable": "ai"},

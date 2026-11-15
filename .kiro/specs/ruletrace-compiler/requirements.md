@@ -408,7 +408,7 @@ The smallest meaningful end-to-end slice takes a Source_Document, a structured R
 | RT-AI-0301 | AI_BATCH_ALREADY_STORED | Warning | A batch with this Request_Identifier exists, so no call was made | 0 | ruletrace-ai |
 | RT-AI-0302 | AI_STORE_INVALID | Error | The existing Proposal_Store is malformed | 2 | ruletrace-ai |
 | RT-AI-0303 | AI_STORE_WRITE_FAILED | Error | The atomic Proposal_Store write failed and the store is unchanged, except that a failed directory sync after the hard link keeps the complete batch file (Requirement 29 criterion 19) | 70 | ruletrace-ai |
-| RT-AI-0304 | AI_REQUEST_INVALID | Error | Candidate_Clauses, Source_Models, or Rulebook type declarations are missing or invalid | 2 | ruletrace-ai |
+| RT-AI-0304 | AI_REQUEST_INVALID | Error | Candidate_Clauses, Source_Models, or Rulebook type declarations are missing or invalid, a revision request names an unknown Rule identifier or Revision_Number, or the feedback file is empty or not UTF-8 | 2 | ruletrace-ai |
 | RT-AI-0305 | AI_BATCH_HAS_BLOCKING_PROPOSALS | Warning | The stored batch contains Proposals whose Semantic_Outcome has a Blocking_Diagnostic | 0 | ruletrace-ai |
 | RT-AI-0306 | AI_RUN_INCOMPLETE | Warning | A run kept the batch of an earlier Provider_Request and a later Provider_Request failed, so some Candidate_Clauses are unprocessed (Requirement 23 criterion 37) | 0 as a Warning; the run exits with the code of the failing Provider_Request (Requirement 16 criterion 24) | ruletrace-ai |
 | RT-AI-0307 | AI_STORE_TEMP_NOT_REMOVED | Warning | A temporary file of the Proposal_Store writer could not be removed after the batch was stored or the write was refused, and the file is never read | 0 | ruletrace-ai |
@@ -896,7 +896,7 @@ The smallest meaningful end-to-end slice takes a Source_Document, a structured R
 
 | Step (Requirement 16 criterion 17) | Failure | Diagnostic | Severity | Primary Location | Exit code | Further effect |
 | --- | --- | --- | --- | --- | --- | --- |
-| 4 | Candidate_Clauses, Source_Models, Rulebook type declarations, or the caller-supplied creation time are missing or invalid | AI_REQUEST_INVALID | Error | Cli_Location of the argument or Input_Location of the invalid input | 2 | No provider call, no Transmission_Log entry |
+| 4 | Candidate_Clauses, Source_Models, Rulebook type declarations, or the caller-supplied creation time are missing or invalid, a revision request names an unknown Rule identifier or Revision_Number, or the feedback file is empty or not UTF-8 | AI_REQUEST_INVALID | Error | Cli_Location of the argument or Input_Location of the invalid input | 2 | No provider call, no Transmission_Log entry |
 | 4 | The existing Proposal_Store is malformed | AI_STORE_INVALID | Error | Input_Location of the first malformed entry | 2 | No provider call, no Transmission_Log entry |
 | 4 | A supplied input carries contradictory validity flags (Requirement 22) | the code of Requirement 22 | Error | Input_Location of the field | 2 | No provider call, no Transmission_Log entry |
 | 4 | The Proposal_Store holds a batch with the Request_Identifier (Requirement 29 criterion 10) | AI_BATCH_ALREADY_STORED | Warning | Cli_Location of the argument | 0 | No provider call, nothing sent |

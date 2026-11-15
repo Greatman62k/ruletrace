@@ -275,7 +275,7 @@ pub enum Code {
     AiStoreInvalid,
     /// `RT-AI-0303`: Atomic store write failed
     AiStoreWriteFailed,
-    /// `RT-AI-0304`: Clauses, models, declarations or time missing or invalid
+    /// `RT-AI-0304`: Clauses, models, declarations or time missing or invalid, an unknown revision target (rule or revision), or invalid feedback (empty or not UTF-8)
     AiRequestInvalid,
     /// `RT-AI-0305`: Stored batch has proposals with blocking findings
     AiBatchHasBlockingProposals,

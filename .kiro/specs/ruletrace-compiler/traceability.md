@@ -309,3 +309,10 @@ User decisions and corrections of the 8.15 review.
 | Req | Title | Status | Changed criteria | New criteria | Cause |
 | --- | --- | --- | --- | --- | --- |
 | 23 | AI-Assisted Proposal Pipeline | Changed | 23.16 | - | User decision: the feedback file has an 8,192-byte limit, recorded in 23.16 and in design 3.7.2 item 4 and 3.9.2. A larger file is `RT-LIM-0001` (Req 19.3) with the size from file metadata, exit 2, not `RT-AI-0304` with a message that names no size. Expected values changed: code `RT-AI-0304` to `RT-LIM-0001`, message `the feedback file given by --feedback-file is larger than 8192 bytes` to `input file '<path>' is <size> bytes, larger than the effective limit of 8192 bytes`. Design 3.9.2 also says that a Reviewer may paste text into the feedback file and that the tool cannot detect text from a document that the consent does not name |
+
+## Task 8.21 follow-up: wording of RT-AI-0304
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 7 | Diagnostics Model | Changed | 7.17 | - | User decision: the meaning of `RT-AI-0304` names an unknown revision target (Rule identifier or Revision_Number) and invalid feedback (empty or not UTF-8). Same code, severity, exit code and executable. The catalogue, the generated enum, the Req 7.17 table and the design table carry the new text. An oversize feedback file is `RT-LIM-0001` and is not part of this meaning |
+| 23 | AI-Assisted Proposal Pipeline | Changed | 23.33 | - | Row 1 of the table (step 4) carries the same wording |
