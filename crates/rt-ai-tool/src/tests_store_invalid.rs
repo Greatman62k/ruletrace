@@ -18,7 +18,7 @@ use std::io::ErrorKind;
 const CREDENTIAL: &str = "credential-value-0123456789";
 
 fn garbage(fixture: &Fixture, name: &str, bytes: &str) {
-    let path = fixture.path(&format!("store/batches/{name}"));
+    let path = fixture.store_file(&format!("batches/{name}"));
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     std::fs::write(path, bytes).unwrap();
 }
@@ -97,7 +97,7 @@ fn temp_files_and_foreign_names_are_not_batches() {
     let fixture = Fixture::new("store-ignored");
     fixture.write_script(&payload(0));
     std::fs::create_dir_all(fixture.path("work")).unwrap();
-    let temp = fixture.path(&format!("store/.tmp/{}.tmp", "c".repeat(64)));
+    let temp = fixture.store_file(&format!(".tmp/{}.tmp", "c".repeat(64)));
     std::fs::create_dir_all(temp.parent().unwrap()).unwrap();
     std::fs::write(temp, "{").unwrap();
     garbage(&fixture, "notes.txt", "not a batch");
@@ -146,7 +146,7 @@ fn memory_run(
     let memory = MemFs::new();
     memory.plant(
         &fixture
-            .path(&format!("store/batches/{}", name("a")))
+            .store_file(&format!("batches/{}", name("a")))
             .to_string_lossy(),
         bytes,
     );
@@ -211,8 +211,8 @@ fn run_then_rename(label: &str, target_name: &str) -> (Fixture, String) {
     fixture.write_script(&payload(0));
     let id = fixture.request_id();
     assert_eq!(run_std(&fixture.consented()).code, ExitCode::Success);
-    let from = fixture.path(&format!("store/batches/{id}.json"));
-    let to = fixture.path(&format!("store/batches/{target_name}"));
+    let from = fixture.store_file(&format!("batches/{id}.json"));
+    let to = fixture.store_file(&format!("batches/{target_name}"));
     std::fs::rename(from, to).unwrap();
     (fixture, id)
 }
@@ -240,7 +240,7 @@ fn a_batch_whose_file_stem_is_its_request_id_is_accepted() {
     fixture.write_script(&payload(0));
     let id = fixture.request_id();
     assert_eq!(run_std(&fixture.consented()).code, ExitCode::Success);
-    assert!(fixture.path(&format!("store/batches/{id}.json")).exists());
+    assert!(fixture.store_file(&format!("batches/{id}.json")).exists());
     let (providers, probe) = Steps::new(vec![ok(0)]);
     let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", CREDENTIAL)]);
     let ran = run_providers(&fixture.consented(), &env, &providers, &StdFs);
@@ -260,7 +260,7 @@ fn an_oversize_batch_file_is_rt_lim_0001_with_its_true_size() {
     for extra in [1_u64, 1_000_003] {
         let size = BATCH_LIMIT + extra;
         let fixture = hosted("store-oversize");
-        let path = fixture.path(&format!("store/batches/{}", name("a")));
+        let path = fixture.store_file(&format!("batches/{}", name("a")));
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, vec![b' '; usize::try_from(size).unwrap()]).unwrap();
         assert_eq!(std::fs::metadata(&path).unwrap().len(), size);
@@ -286,7 +286,7 @@ fn an_oversize_batch_file_is_rt_lim_0001_with_its_true_size() {
 #[test]
 fn a_batch_file_at_the_limit_is_read_and_is_not_oversize() {
     let fixture = hosted("store-at-limit");
-    let path = fixture.path(&format!("store/batches/{}", name("a")));
+    let path = fixture.store_file(&format!("batches/{}", name("a")));
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     std::fs::write(&path, vec![b' '; usize::try_from(BATCH_LIMIT).unwrap()]).unwrap();
     let (providers, probe) = Steps::new(vec![ok(0)]);
@@ -302,7 +302,7 @@ fn a_batch_file_at_the_limit_is_read_and_is_not_oversize() {
 fn the_first_batch_in_name_order_decides_when_it_is_oversize() {
     let fixture = hosted("store-oversize-order");
     garbage(&fixture, &name("b"), "{");
-    let path = fixture.path(&format!("store/batches/{}", name("a")));
+    let path = fixture.store_file(&format!("batches/{}", name("a")));
     std::fs::write(&path, vec![b' '; usize::try_from(BATCH_LIMIT).unwrap() + 7]).unwrap();
     let (providers, _) = Steps::new(vec![ok(0)]);
     let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", CREDENTIAL)]);

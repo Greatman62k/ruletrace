@@ -13,7 +13,7 @@ use crate::tests::{MapEnv, BASE};
 use crate::tests_memfs::MemFs;
 use crate::tests_provenance::{doc, escaped, model};
 use crate::tests_response::{FORBIDDEN_NAMES, LIMIT};
-use crate::tests_rig::{meta, Harness};
+use crate::tests_rig::{meta, native, Harness};
 use crate::tests_run_support::{shapes, VecSink};
 use crate::{
     accept_batch, build_plan, load, AcceptInput, AiConfig, ClauseId, Consent, PlanInput, Redactor,
@@ -1329,7 +1329,7 @@ fn check_rejected(valid: &Spec, op: &Op, a: usize, b: usize) -> &'static str {
     assert_diagnostic(&found[0], &built.want, &label);
 
     let fs = MemFs::new();
-    fs.plant("store/batches/sentinel.json", b"{\"kept\":true}");
+    fs.plant(&native("store/batches/sentinel.json"), b"{\"kept\":true}");
     let before = fs.files();
     let mut mock = provider(built.completion, &built.payload);
     let sink = VecSink::default();
@@ -1447,7 +1447,7 @@ fn check_stored(spec: &Spec) {
     assert_eq!(shapes(&report.diagnostics), expected);
     assert!(report.summary.is_complete());
     assert_eq!(report.summary.stored(), all_clauses(&h).as_slice());
-    let names = fs.names_under("store/batches/");
+    let names = fs.names_under(&native("store/batches/"));
     assert_eq!(names.len(), 1, "{names:?}");
     let bytes = fs.read(&names[0]).unwrap();
     let batch = parse_batch(&InputId::new("stored").unwrap(), &bytes).unwrap();

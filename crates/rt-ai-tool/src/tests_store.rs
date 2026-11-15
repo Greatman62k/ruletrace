@@ -7,7 +7,7 @@
 use crate::accept::{accept_batch, AcceptInput, AcceptedBatch};
 use crate::tests_memfs::{Faults, Link, MemFs};
 use crate::tests_response::LIMIT;
-use crate::tests_rig::{payload, Harness, ROOT};
+use crate::tests_rig::{native, payload, Harness, ROOT};
 use crate::tests_scratch::{GateFs, ScratchDir};
 use crate::{store_batch, FailureOutcome, StoreFailure, StoreOutcome, StoreReport};
 use rt_foundation::{Code, Diagnostic, ExitCode, InputId, Location, Severity};
@@ -94,7 +94,7 @@ fn expect_already(outcome: Result<StoreOutcome, Diagnostic>, final_name: &str) {
 }
 
 fn tmp_name(h: &Harness, request: usize, slot: &str) -> String {
-    format!("{ROOT}/.tmp/{}{slot}.tmp", h.id(request))
+    native(&format!("{ROOT}/.tmp/{}{slot}.tmp", h.id(request)))
 }
 
 #[test]
@@ -117,7 +117,7 @@ fn a_stored_batch_is_whole_canonical_and_leaves_no_temporary_file() {
     assert_eq!(parsed.proposals.len(), 1);
     assert_eq!(bytes.last(), Some(&b'\n'));
     assert_eq!(
-        fs.names_under(&format!("{ROOT}/.tmp")),
+        fs.names_under(&native(&format!("{ROOT}/.tmp"))),
         Vec::<String>::new()
     );
 }
@@ -131,13 +131,22 @@ fn the_steps_run_in_the_documented_order() {
     let ops = fs.ops();
     assert_eq!(ops.len(), 9, "{ops:?}");
     assert_eq!(ops[0], format!("exists {}", h.batch_file(0)));
-    assert_eq!(ops[1], format!("create_dir_all {ROOT}/batches"));
-    assert_eq!(ops[2], format!("create_dir_all {ROOT}/.tmp"));
+    assert_eq!(
+        ops[1],
+        format!("create_dir_all {}", native(&format!("{ROOT}/batches")))
+    );
+    assert_eq!(
+        ops[2],
+        format!("create_dir_all {}", native(&format!("{ROOT}/.tmp")))
+    );
     assert_eq!(ops[3], format!("create_new {tmp}"));
     assert!(ops[4].starts_with("write "), "{ops:?}");
     assert_eq!(ops[5], "sync_file");
     assert_eq!(ops[6], format!("link {tmp} {}", h.batch_file(0)));
-    assert_eq!(ops[7], format!("sync_dir {ROOT}/batches"));
+    assert_eq!(
+        ops[7],
+        format!("sync_dir {}", native(&format!("{ROOT}/batches")))
+    );
     assert_eq!(ops[8], format!("remove {tmp}"));
 }
 
@@ -219,7 +228,7 @@ fn a_rerun_after_a_crash_stores_the_batch_and_keeps_the_stale_temporary_file() {
     );
     let bytes = fs.read(&h.batch_file(0)).unwrap();
     parse_batch(&InputId::new("batch").unwrap(), &bytes).unwrap();
-    let left: Vec<String> = fs.names_under(&format!("{ROOT}/.tmp"));
+    let left: Vec<String> = fs.names_under(&native(&format!("{ROOT}/.tmp")));
     assert_eq!(left, vec![tmp_name(&h, 0, "")]);
     assert!(fs
         .ops()
@@ -279,7 +288,7 @@ fn a_concurrent_winner_gives_the_warning_and_keeps_the_winner_bytes() {
     expect_already(store(&h, &fs, &accepted(&h, 0)), &h.batch_file(0));
     assert_eq!(fs.read(&h.batch_file(0)).unwrap(), b"winner bytes");
     assert_eq!(
-        fs.names_under(&format!("{ROOT}/.tmp")),
+        fs.names_under(&native(&format!("{ROOT}/.tmp"))),
         Vec::<String>::new()
     );
     assert_eq!(fs.files().len(), 1);
@@ -301,7 +310,7 @@ fn a_failed_directory_sync_reports_the_failure_and_keeps_the_whole_file() {
     let bytes = fs.read(&h.batch_file(0)).unwrap();
     parse_batch(&InputId::new("batch").unwrap(), &bytes).unwrap();
     assert_eq!(
-        fs.names_under(&format!("{ROOT}/.tmp")),
+        fs.names_under(&native(&format!("{ROOT}/.tmp"))),
         Vec::<String>::new()
     );
 }
@@ -459,13 +468,17 @@ fn the_stale_file_hint_escapes_control_characters_of_the_store_path() {
     let fs = MemFs::new();
     let root = "st\nore";
     let id = h.id(0);
-    fs.plant(&format!("{root}/.tmp/{id}.tmp"), b"stale");
+    fs.plant(&native(&format!("{root}/.tmp/{id}.tmp")), b"stale");
     for n in 1..8 {
-        fs.plant(&format!("{root}/.tmp/{id}.{n}.tmp"), b"stale");
+        fs.plant(&native(&format!("{root}/.tmp/{id}.{n}.tmp")), b"stale");
     }
     let failure = store_batch(&fs, Path::new(root), &accepted(&h, 0), &h.meta).unwrap_err();
+    let sep = std::path::MAIN_SEPARATOR;
     assert!(
-        failure.error.message().contains("st\\u{a}ore/.tmp/"),
+        failure
+            .error
+            .message()
+            .contains(&format!("st\\u{{a}}ore{sep}.tmp{sep}")),
         "{}",
         failure.error.message()
     );

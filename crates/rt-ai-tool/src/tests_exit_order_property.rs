@@ -237,10 +237,11 @@ fn run_case(case: &Case) -> Ran {
         });
     }
     if case.store_invalid {
-        let name = format!("store/batches/{}.json", "a".repeat(64));
-        std::fs::create_dir_all(fixture.path("store/batches")).unwrap();
-        std::fs::write(fixture.path(&name), "{").unwrap();
-        memory.plant(&fixture.path(&name).to_string_lossy(), b"{");
+        let batches = fixture.path("store").join("batches");
+        let file = batches.join(format!("{}.json", "a".repeat(64)));
+        std::fs::create_dir_all(&batches).unwrap();
+        std::fs::write(&file, "{").unwrap();
+        memory.plant(&file.to_string_lossy(), b"{");
     }
     let fs: &dyn StoreFs = if case.store { &memory } else { &StdFs };
     let linked;

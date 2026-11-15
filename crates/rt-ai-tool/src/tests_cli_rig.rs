@@ -53,6 +53,16 @@ fn rulebook_text() -> String {
     )
 }
 
+/// A path as the inside of a TOML basic string. Windows paths hold `\`,
+/// which a basic string reads as the start of an escape.
+pub(crate) fn toml_path(path: &Path) -> String {
+    escape_toml_basic(&path.to_string_lossy())
+}
+
+pub(crate) fn escape_toml_basic(text: &str) -> String {
+    text.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
 fn write(path: &Path, text: &str) {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).unwrap();
@@ -83,6 +93,14 @@ impl Fixture {
         self.dir.path().join(name)
     }
 
+    /// A file below the `store` directory, joined with the separators of
+    /// this platform as the tool joins its own store paths.
+    pub(crate) fn store_file(&self, relative: &str) -> PathBuf {
+        relative
+            .split('/')
+            .fold(self.path("store"), |path, part| path.join(part))
+    }
+
     pub(crate) fn text(&self, name: &str) -> String {
         std::fs::read_to_string(self.path(name)).unwrap()
     }
@@ -93,8 +111,8 @@ impl Fixture {
              model = \"model-1\"\nscript = \"{}\"\nallow_document_text = true\n\
              ai_identities = [\"openai-responses\", \"model-1\"]\n\
              transmission_log = \"{}\"\n{extra}",
-            self.path("script.json").display(),
-            self.path("work/tx.jsonl").display()
+            toml_path(&self.path("script.json")),
+            toml_path(&self.path("work/tx.jsonl"))
         )
     }
 
@@ -105,7 +123,7 @@ impl Fixture {
              credential_env_var = \"PROVIDER_CREDENTIAL\"\nallow_document_text = true\n\
              ai_identities = [\"openai-responses\", \"model-1\"]\n\
              transmission_log = \"{}\"\n{extra}",
-            self.path("work/tx.jsonl").display()
+            toml_path(&self.path("work/tx.jsonl"))
         )
     }
 
@@ -199,7 +217,8 @@ impl Fixture {
                     walk(&path, root, out);
                 } else {
                     let rel = path.strip_prefix(root).unwrap();
-                    out.push(rel.to_string_lossy().into_owned());
+                    let parts: Vec<_> = rel.iter().map(|c| c.to_string_lossy()).collect();
+                    out.push(parts.join("/"));
                 }
             }
         }
@@ -226,4 +245,18 @@ pub(crate) fn run_with(args: &[OsString], env: &MapEnv, fs: &dyn StoreFs) -> Ran
 
 pub(crate) fn run_std(args: &[OsString]) -> Ran {
     run_with(args, &MapEnv::new(&[]), &StdFs)
+}
+
+#[test]
+fn a_windows_path_survives_the_toml_basic_string_round_trip() {
+    let path = r"D:\a\ruletrace\crates/../target\test-scratch\run\ai.toml";
+    let text = format!("v = \"{}\"\n", escape_toml_basic(path));
+    let parsed: toml_edit::Document<String> = text.parse().unwrap();
+    assert_eq!(parsed["v"].as_str(), Some(path));
+}
+
+#[test]
+fn an_unescaped_windows_path_is_not_valid_toml() {
+    let text = "v = \"D:\\a\\b\"\n";
+    assert!(text.parse::<toml_edit::Document<String>>().is_err());
 }

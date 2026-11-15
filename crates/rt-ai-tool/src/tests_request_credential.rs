@@ -142,7 +142,7 @@ fn the_credential_scan_precedes_the_store_check() {
     let fixture = clause_fixture("req-cred-order", &format!("Alpha {CANARY} b."));
     fixture.write_config(&fixture.real_config(""));
     let batch = fixture
-        .path(&format!("store/batches/{}", batch_name()))
+        .store_file(&format!("batches/{}", batch_name()))
         .to_string_lossy()
         .into_owned();
     let memory = MemFs::new();

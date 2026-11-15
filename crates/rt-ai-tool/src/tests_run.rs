@@ -6,7 +6,7 @@
 
 use crate::tests_memfs::{Faults, Link, MemFs};
 use crate::tests_provenance::doc;
-use crate::tests_rig::{payload, Harness, CLAUSES};
+use crate::tests_rig::{native, payload, Harness, CLAUSES};
 use crate::tests_run_support::{blocking_payload, shapes, VecSink};
 use crate::{ClauseId, Redactor, RunReport};
 use rt_ai_adapter::{Completion, ProviderFailure};
@@ -61,7 +61,7 @@ pub(crate) fn provider(steps: Vec<Step>) -> MockProvider {
 }
 
 fn stored_names(fs: &MemFs) -> Vec<String> {
-    fs.names_under("store/batches/")
+    fs.names_under(&native("store/batches/"))
 }
 
 fn command_propose() -> Location {
@@ -220,7 +220,7 @@ fn a_failing_second_request_keeps_exactly_the_first_batch_for_each_named_code() 
         assert_eq!(report.exit.value(), v.exit, "{kind}");
         assert_eq!(stored_names(&fs), vec![h.batch_file(0)], "{kind}");
         assert_eq!(
-            fs.names_under("store/.tmp/"),
+            fs.names_under(&native("store/.tmp/")),
             Vec::<String>::new(),
             "{kind}"
         );
@@ -247,7 +247,7 @@ fn a_failing_first_request_stores_nothing_and_leaves_the_store_as_it_was() {
     for kind in ["provenance", "exhausted", "schema", "write"] {
         let h = Harness::new("");
         let fs = MemFs::new();
-        fs.plant("store/batches/earlier.json", b"an earlier batch");
+        fs.plant(&native("store/batches/earlier.json"), b"an earlier batch");
         let before = fs.files();
         let sink = VecSink::default();
         let (mut p, faults, v) = script_for(kind, 0);
@@ -312,7 +312,7 @@ fn a_failed_directory_sync_of_the_second_request_keeps_that_batch_listed_as_unco
         assert_eq!(batch.request_id.as_str(), h.id(i));
         assert_eq!(batch.response.payload, payload(i));
     }
-    assert_eq!(fs.names_under("store/.tmp/"), Vec::<String>::new());
+    assert_eq!(fs.names_under(&native("store/.tmp/")), Vec::<String>::new());
     assert_eq!(p.steps_consumed(), 2);
     assert_eq!(sink.lines().len(), 2);
     assert!(!sink.text().contains(&h.id(2)));

@@ -14,6 +14,15 @@ use std::collections::BTreeSet;
 
 pub(crate) const ROOT: &str = "store";
 
+/// A `/`-separated relative name with the separators of this platform, as
+/// the in-memory file system and the writer's locations spell it.
+pub(crate) fn native(name: &str) -> String {
+    name.split('/')
+        .collect::<std::path::PathBuf>()
+        .to_string_lossy()
+        .into_owned()
+}
+
 /// Start, end, line and quote of the three clauses of `rules.md`.
 pub(crate) const CLAUSES: [(u32, u32, u32, &str); 3] = [
     (0, 11, 1, "Alpha beta."),
@@ -142,6 +151,6 @@ impl Harness {
     }
 
     pub(crate) fn batch_file(&self, request: usize) -> String {
-        format!("{ROOT}/batches/{}.json", self.id(request))
+        native(&format!("{ROOT}/batches/{}.json", self.id(request)))
     }
 }
