@@ -93,9 +93,21 @@ pub(crate) fn shape(d: &Diagnostic) -> (Code, Severity, Option<u32>, Option<u32>
     }
 }
 
-/// 1-based column of the first occurrence of `needle` in single-line `text`.
+/// 1-based column of the only occurrence of `needle` in single-line `text`.
+/// A needle that occurs more than once or not at all fails the test, so
+/// that an expectation never points at the wrong occurrence.
 pub(crate) fn col(text: &str, needle: &str) -> Option<u32> {
-    let at = text.find(needle).unwrap();
+    assert_eq!(
+        text.matches(needle).count(),
+        1,
+        "needle {needle:?} must occur exactly once in the text"
+    );
+    col_nth(text, needle, 0)
+}
+
+/// 1-based column of occurrence `index` (0-based) of `needle`.
+pub(crate) fn col_nth(text: &str, needle: &str, index: usize) -> Option<u32> {
+    let (at, _) = text.match_indices(needle).nth(index).unwrap();
     Some(u32::try_from(text[..at].chars().count()).unwrap() + 1)
 }
 
@@ -616,7 +628,7 @@ fn proposal_and_evidence_counts_are_bounded() {
             Code::AiResponseSchemaViolation,
             Severity::Error,
             Some(1),
-            col(&text, "["),
+            col_nth(&text, r#""proposals":["#, 0).map(|c| c + 12),
             Some("proposals".to_owned())
         )
     );
@@ -712,6 +724,42 @@ fn a_rule_that_is_not_valid_rule_ir_is_0202_at_the_key_or_the_rule() {
             Some(1),
             rule_start(&text),
             Some("proposals[0].rule".to_owned())
+        )
+    );
+}
+
+#[test]
+fn a_first_decoder_diagnostic_that_is_not_an_unknown_field_stays_at_the_rule() {
+    // The invalid id comes before the unknown member, so the decoder reports
+    // the id first and the position stays at the start of the rule.
+    let draft = DRAFT.replacen(r#""id":"elig.new""#, r#""id":"has space","revision":2"#, 1);
+    let text = wrap(&[rule_proposal(&draft)]);
+    let d = fail(&text);
+    let (code, severity, line, column, field) = shape(&d);
+    assert_eq!(
+        (code, severity, line),
+        (Code::AiResponseSchemaViolation, Severity::Error, Some(1))
+    );
+    assert_eq!(column, rule_start(&text), "{}", d.message());
+    assert_eq!(field.as_deref(), Some("proposals[0].rule.id"));
+    assert!(d.message().contains("RT-IR-0010"), "{}", d.message());
+}
+
+#[test]
+fn an_escaped_rule_key_is_located_by_its_character_column() {
+    let key = r#""revisi\u006fn""#;
+    let draft = DRAFT.replacen('{', &format!("{{{key}:2,"), 1);
+    let text =
+        wrap(&[rule_proposal(&draft)]).replace(r#""rationale":"why""#, r#""rationale":"why é""#);
+    assert!(text.contains("é") && text.len() > text.chars().count());
+    assert_eq!(
+        shape(&fail(&text)),
+        (
+            Code::AiResponseSchemaViolation,
+            Severity::Error,
+            Some(1),
+            col(&text, key),
+            Some("proposals[0].rule.revision".to_owned())
         )
     );
 }
