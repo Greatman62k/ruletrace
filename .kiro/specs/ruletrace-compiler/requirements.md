@@ -903,6 +903,8 @@ The smallest meaningful end-to-end slice takes a Source_Document, a structured R
 | 5 | The Transmission_Log entry cannot be appended | AI_TRANSMISSION_LOG_FAILED | Error | Input_Location naming the Transmission_Log path of the AI_Configuration | 70 | Nothing sent |
 | 11 | The atomic Proposal_Store write fails | AI_STORE_WRITE_FAILED | Error | Input_Location naming the Proposal_Store path | 70 | The store holds no part of the batch, except under the failed-run store state of criterion 35 |
 
+Note on the table of criterion 33: the order of its rows is not a precedence among failures of one Requirement 16 criterion 17 step. Within step 4, the inputs load before the existing Proposal_Store is checked (design §3.7.1), so a failure in an input file (the first and third rows) is returned before a malformed Proposal_Store (the second row), whatever the row order.
+
 34. IF a review approve or review reject request fails a check of the following table, THEN THE Review_Group SHALL return exactly the listed Diagnostic with Severity Error and the listed exit code, SHALL write it to standard error, SHALL append no Ledger_Record, and SHALL leave the Approval_Ledger, the Rulebook, and the Proposal_Store byte-identical.
 
 | Failure | Diagnostic | Exit code |

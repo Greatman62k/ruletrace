@@ -297,3 +297,9 @@ User decisions and corrections of the 8.15 review.
 | Req | Title | Status | Changed criteria | New criteria | Cause |
 | --- | --- | --- | --- | --- | --- |
 | 19 | Safety of Document Content | Unchanged | - | - | User decision (8.15 review): 19.8 applies 19.3 to Proposal_Store files, so an oversize batch file is `RT-LIM-0001` with the true size from file metadata, exit 2. This reverses the 8.15 reading that listed `RT-AI-0302` for it. Design 3.7.5. `parse_batch` is unchanged and still reports a size fault of the bytes it is given as `RT-AI-0302`, because the review path hands it bytes cut at the limit plus one. That path is a follow-up |
+
+## Task 8.21 follow-up: row order of the Req 23.33 table
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 23 | AI-Assisted Proposal Pipeline | Unchanged | - | - | User decision (8.15 review): the row order of the 23.33 table is not a precedence among failures of one Req 16.17 step, and inputs load before the store check (design 3.7.1, 3.7.5). A note after the table says so. This confirms the reading recorded under "Task 8.15 final follow-ups" and changes no verdict |
