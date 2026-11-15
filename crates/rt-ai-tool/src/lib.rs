@@ -129,6 +129,8 @@ mod tests_store;
 #[cfg(test)]
 mod tests_store_invalid;
 #[cfg(test)]
+mod tests_store_v2;
+#[cfg(test)]
 mod tests_summary;
 
 pub use accept::{accept_batch, AcceptInput, AcceptedBatch};
@@ -152,8 +154,8 @@ pub use redact::{Redactor, REDACTED};
 pub use revise::{ReviseContext, MAX_FEEDBACK_BYTES};
 pub use run::{run_requests, RunInput, RunReport};
 pub use store::{
-    already_stored_warning, batch_exists, batch_path, store_batch, FailureOutcome, StoreFailure,
-    StoreMeta, StoreOutcome, StoreReport,
+    already_stored_warning, batch_exists, batch_path, store_batch, FailureOutcome, Reported,
+    StoreFailure, StoreMeta, StoreOutcome, StoreReport,
 };
 pub use store_check::check_store;
 pub use summary::RunSummary;

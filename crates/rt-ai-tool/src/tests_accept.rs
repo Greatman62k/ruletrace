@@ -14,8 +14,8 @@ use rt_foundation::{Code, Diagnostic, ExitCode, InputId, Location, Severity};
 use rt_hash::{sha256, Sha256Hex};
 use rt_ir::{draft_hash, parse_rulebook, Rulebook};
 use rt_proposals::{
-    parse_batch, print_batch, Batch, Completion as StoredCompletion, ProposalKind, StoredLocation,
-    StoredResponse,
+    parse_batch, print_batch, Batch, Completion as StoredCompletion, Format, ProposalKind,
+    StoredLocation, StoredResponse,
 };
 
 const CANARY: &str = "sk-canary-Zq7x93LmN";
@@ -298,6 +298,7 @@ fn a_stored_batch_round_trips_through_the_store_format() {
     ]);
     let a = accepted(&text);
     let batch = Batch {
+        format: Format::V1,
         request_id: a.request_id().clone(),
         response_sha256: a.response_sha256().clone(),
         response: StoredResponse {

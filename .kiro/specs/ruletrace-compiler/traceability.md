@@ -547,3 +547,28 @@ Tasks (Phase 10): `rt-ai-openai` is `rt-ai-responses` in 10.1 to 10.9. Task 10.4
 Deferred, with the reason: Modal (UD-37 D6), a Chat Completions adapter (`rt-ai-compatible`, only for a real use case), custom compatible endpoints (need their own trust decision), the OpenAI profile's reasoning effort and usage capabilities (unknown until verified), the catalogue JSON rows (task 10.10).
 
 Open: OD-37-1 (HTTP 504 and Req 29.2, options in UD-37 section 4); the loopback exception for the ids `meta` and `openai` is the existing Req 28.6 behaviour at run time, not a test-only build.
+
+## Phase 10 progress: tasks 10.4, 10.10, 10.11 and 10.14 (local evidence, 2026-11)
+
+Status: implemented and run locally on Linux. All four tasks stay `[-]` until the CI run on the three platforms and the independent review. No requirement text was changed.
+
+| Task | Requirement | Production code | Tests (evidence) |
+| --- | --- | --- | --- |
+| 10.4 | 23.39, 23.27, 23.4 | `rt-ai-tool` `proposal_schema.rs`, `response/flat.rs`, `response/closed.rs` (`check_flat`), `response.rs` (version "2") | `tests_proposal_schema.rs` (independent counter, golden `tests/fixtures/proposal-schema/proposal-schema-v2.json`), `tests_flat.rs` (depth 16 and 17, 256-case properties, table refusals, schema conformance) |
+| 10.10 | 7 (catalogue), 35.3, 35.6, 35.8, 35.18, 35.19 | `catalogue/diagnostics.v1.json`, `rt-foundation/src/code_generated.rs` | `rt-foundation/tests/catalogue_ud37.rs` |
+| 10.11 | 35.1, 35.2, 35.11, 29.7, 18.12 | `rt-ai-adapter` `identity.rs`, `capability.rs`, `adapter.rs`, `request.rs`; `rt-ai-mock` `AdapterInfo` | `tests_capability.rs`, `tests_identity.rs`, `tests.rs`, `rt-ai-mock/src/tests_info.rs`, `compile_fail,E0639` doctest |
+| 10.14 | 35.15, 35.16, 35.17, 29.10 | `rt-proposals` `model.rs`, `parse.rs`, `print.rs`; `rt-ai-tool` `store.rs`, `run.rs`, `command.rs`, `config.rs` | `rt-proposals/src/tests_v2.rs`, `rt-ai-tool/src/tests_store_v2.rs`, `rt-cli/src/tests_review_adopt.rs`, `tests/fixtures/proposal-store-v1/` |
+
+Changed expected values and goldens, disclosed:
+
+- Two existing tests rejected `schema_version` "2". Version "2" is valid since 10.4, so `tests_response::schema_version_must_be_one_or_two` and the `BadVersion` case of `tests_batch_property` now use "3". No other assertion changed.
+- The two Proposal_Store batch goldens of `demo/stand-in-ai` changed from `"version":1` to `"version":2` and gained `"protocol":"mock-replay",` after `adapter_version` (+25 bytes each). Request identifiers, file names, payloads, hashes, proposals and the recorded script are unchanged. The old bytes are kept as the fixtures of `tests/fixtures/proposal-store-v1/`.
+- Mechanical migrations without a changed expected value: `ProviderMeta` literals use the constructor, eight `ProviderRequest` literals gain `reasoning_effort: None`, ten `Batch` literals gain `format: Format::V1`, and two mock assertions read `identity.provider.as_str()`.
+
+Deviations and limits:
+
+- The flat schema has no single `root` member. Each expression field of a rule holds its own node index (design 3.7.3, implementation notes).
+- `Required` is the name used for what the orders of this task called `Requirements`, as in design 3.4.5.
+- The lowered draft of a version "2" response is decoded with the decoder depth cap (512), not the response container limit of 32, so an expression above 16 levels reaches the validator as `RT-LIM-0003`. A decoder error inside a lowered draft is located at the rule, with the inner field path of the lowered text.
+- The depth of the generated schema is 10 when each `anyOf` alternative, `items` and property counts as a level. The Meta documentation does not say how it counts. If it counts differently, the schema stays within 10 in this stricter count.
+- Not verified here: the three-platform CI run, the Windows runs of the new tests (a `cargo check` for `x86_64-pc-windows-gnu` was run), and that the Meta API accepts the generated schema (a live step, not run).

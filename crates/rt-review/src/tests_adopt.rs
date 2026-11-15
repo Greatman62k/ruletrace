@@ -3,7 +3,8 @@
 use super::*;
 use rt_ir::{draft_hash, print_pretty, Identity};
 use rt_proposals::{
-    proposal_id, Batch, Completion, Evidence, Proposal, ProposalKind, RuleDraft, StoredResponse,
+    proposal_id, Batch, Completion, Evidence, Format, Proposal, ProposalKind, RuleDraft,
+    StoredResponse,
 };
 
 fn draft_json(id: &str, target: &str) -> String {
@@ -47,6 +48,7 @@ fn batch_with(rb: &Rulebook, seed: &str, drafts: &[(&str, &str)]) -> Batch {
         })
         .collect();
     Batch {
+        format: Format::V1,
         request_id: request_id.clone(),
         response_sha256: sha256(b"payload"),
         response: StoredResponse {

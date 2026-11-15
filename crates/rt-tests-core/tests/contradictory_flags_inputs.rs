@@ -32,8 +32,8 @@ use rt_foundation::{Code, DiagnosticState, DocumentId, ExitCode, InputId, RuleId
 use rt_hash::{sha256, Sha256Hex};
 use rt_ir::Identity;
 use rt_proposals::{
-    parse_batch, print_batch, proposal_id, Batch, Completion, Evidence, Proposal, ProposalKind,
-    RuleDraft, StoredDiagnostic, StoredLocation, StoredResponse,
+    parse_batch, print_batch, proposal_id, Batch, Completion, Evidence, Format, Proposal,
+    ProposalKind, RuleDraft, StoredDiagnostic, StoredLocation, StoredResponse,
 };
 use std::collections::BTreeMap;
 use std::ffi::OsString;
@@ -97,6 +97,7 @@ fn batch() -> Batch {
     let request_id = sha256(b"request");
     let payload = "{\"schema_version\":\"1\",\"proposals\":[]}";
     Batch {
+        format: Format::V1,
         request_id: request_id.clone(),
         response_sha256: sha256(payload.as_bytes()),
         response: StoredResponse {

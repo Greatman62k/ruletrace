@@ -15,7 +15,8 @@ use rt_hash::sha256;
 use rt_ir::{draft_hash, parse_draft, parse_rulebook, Identity};
 use rt_proposals::{parse_batch, print_batch, StoredDiagnostic, StoredLocation};
 use rt_proposals::{
-    proposal_id, Batch, Completion, Evidence, Proposal, ProposalKind, RuleDraft, StoredResponse,
+    proposal_id, Batch, Completion, Evidence, Format, Proposal, ProposalKind, RuleDraft,
+    StoredResponse,
 };
 
 const CLAUSE1: &str = "1. A competitor is eligible if age is at least 16 and holds a licence.";
@@ -188,6 +189,50 @@ fn a_malformed_store_makes_list_exit_2_with_rt_apr_0213() {
     assert_eq!(fs.snapshot(), before);
 }
 
+// The store of the fixture holds a version 1 batch, built by the test.
+// Version 2 and an unknown version go through the same reader (Req 35.17).
+#[test]
+fn review_list_reads_a_version_2_batch_like_a_version_1_batch() {
+    let fx = fixture();
+    let fs = adoption_fs(&fx, true);
+    let path = PathBuf::from("store/batches/req.json");
+    let v1 = fs.snapshot().get(&path).cloned().unwrap();
+    let v1_text = String::from_utf8(v1.clone()).unwrap();
+    assert!(v1_text.contains(r#""version":1,"#), "{v1_text}");
+    let listed_v1 = list_text(&fs, &["--proposals", "store"]);
+    let v2_text = v1_text
+        .replacen(r#""version":1,"#, r#""version":2,"#, 1)
+        .replacen(
+            r#""ai_identities""#,
+            r#""protocol":"openai-responses","usage":{"total_tokens":9},"ai_identities""#,
+            1,
+        );
+    let mut files = fs.snapshot();
+    files.insert(path, v2_text.into_bytes());
+    fs.replace_all(files);
+    assert_eq!(list_text(&fs, &["--proposals", "store"]), listed_v1);
+}
+
+#[test]
+fn review_list_refuses_an_unknown_batch_version_with_rt_apr_0213() {
+    let fx = fixture();
+    let fs = adoption_fs(&fx, true);
+    let path = PathBuf::from("store/batches/req.json");
+    let text = String::from_utf8(fs.snapshot().get(&path).cloned().unwrap()).unwrap();
+    for version in ["0", "3"] {
+        let mut files = fs.snapshot();
+        let bad = text.replacen(r#""version":1,"#, &format!(r#""version":{version},"#), 1);
+        files.insert(path.clone(), bad.into_bytes());
+        fs.replace_all(files);
+        let before = fs.snapshot();
+        let out = run(&list_args(&["--proposals", "store"]), &fs);
+        assert_eq!(out.code.value(), 2, "{version}: {}", out.stderr);
+        assert!(out.stderr.contains("RT-APR-0213"), "{}", out.stderr);
+        assert!(out.stdout.is_empty());
+        assert_eq!(fs.snapshot(), before);
+    }
+}
+
 #[test]
 fn approving_the_listed_hash_adopts_and_the_rule_is_then_approved() {
     let fx = fixture();
@@ -334,6 +379,7 @@ fn batch_of(rule: &str, target: &str) -> Batch {
     let end = start + CLAUSE1.len();
     let request_id = sha256(b"request-2");
     Batch {
+        format: Format::V1,
         request_id: request_id.clone(),
         response_sha256: sha256(b"payload"),
         response: StoredResponse {

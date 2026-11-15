@@ -30,8 +30,8 @@ use rt_hash::sha256;
 use rt_ir::Identity;
 use rt_ledger::{HEADER_LINE, ZERO_HASH};
 use rt_proposals::{
-    print_batch, proposal_id, Batch, Completion, Evidence, Proposal, ProposalKind, RuleDraft,
-    StoredResponse,
+    print_batch, proposal_id, Batch, Completion, Evidence, Format, Proposal, ProposalKind,
+    RuleDraft, StoredResponse,
 };
 use rt_srcmodel::{DocumentKind, SourceModel};
 use std::cell::{Cell, RefCell};
@@ -227,6 +227,7 @@ fn batch_bytes(who: &Who, rule: &str, json: String, stored: &str) -> (Vec<u8>, S
     let request_id = sha256(b"request-adoption");
     let id = proposal_id(&request_id, 0);
     let batch = Batch {
+        format: Format::V1,
         request_id,
         response_sha256: sha256(b"payload"),
         response: StoredResponse {

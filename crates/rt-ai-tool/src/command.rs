@@ -23,7 +23,7 @@ use crate::redact::Redactor;
 use crate::request_scan::refuse_credential;
 use crate::revise::ReviseContext;
 use crate::run::{run_requests, RunInput};
-use crate::store::StoreMeta;
+use crate::store::{Reported, StoreMeta};
 use crate::store_check::check_store;
 use crate::txlog::{FileLog, TransmissionLog};
 use crate::vocab::Ud32Option;
@@ -316,11 +316,13 @@ fn propose<O: Write, E: Write>(
             Err(d) => return report.fail(&[d]),
         };
     let meta = StoreMeta {
-        provider: config.provider.name().to_owned(),
+        provider: config.provider.provider_id().to_owned(),
+        protocol: config.provider.protocol().to_owned(),
         model: config.model.clone(),
         adapter_version,
         ai_identities,
         created_at: args.created_at.clone(),
+        reported: Reported::default(),
     };
     let mut log = TransmissionLog::new(
         FileLog::new(Path::new(&config.transmission_log).to_path_buf()),

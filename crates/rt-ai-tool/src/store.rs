@@ -7,10 +7,13 @@
 
 use crate::accept::AcceptedBatch;
 use crate::fs::{DirSync, StoreFs};
+use crate::redact::Redactor;
+use rt_ai_adapter::ProviderMeta;
 use rt_foundation::{escape_controls, Code, Diagnostic, InputId, InputLocation, Location};
 use rt_hash::Sha256Hex;
 use rt_ir::Identity;
-use rt_proposals::{print_batch, Batch, StoredResponse};
+use rt_json::MAX_SAFE_INTEGER;
+use rt_proposals::{print_batch, Batch, Extras, Format, StoredResponse, StoredUsage};
 use std::io::{self, ErrorKind};
 use std::path::{Path, PathBuf};
 
@@ -19,13 +22,74 @@ use std::path::{Path, PathBuf};
 /// a live run may own it.
 const TEMP_SLOTS: u32 = 8;
 
+/// The longest reported value that is stored, in Unicode scalar values.
+const MAX_REPORTED_CHARS: usize = 256;
+
+/// What the provider reported about one response, as it is stored.
+///
+/// Untrusted audit data (Req 35.15). A text of more than 256 scalar values
+/// or with a control character is omitted, and the credential redaction
+/// applies to every kept text. A count is kept only as the provider gave
+/// it: nothing is derived, summed or estimated, and no cost is computed.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Reported {
+    /// The model name that the provider reported.
+    pub model: Option<String>,
+    /// The response identifier that the provider reported.
+    pub response_id: Option<String>,
+    /// The token counts that the provider reported.
+    pub usage: Option<StoredUsage>,
+}
+
+impl Reported {
+    /// The storable part of `meta`.
+    #[must_use]
+    pub fn from_meta(meta: &ProviderMeta, redactor: &Redactor) -> Self {
+        let count = |n: Option<u64>| n.filter(|n| *n <= MAX_SAFE_INTEGER);
+        Self {
+            model: meta
+                .reported_model
+                .as_deref()
+                .and_then(|t| storable(t, redactor)),
+            response_id: meta
+                .response_id
+                .as_deref()
+                .and_then(|t| storable(t, redactor)),
+            usage: meta.usage.and_then(|u| {
+                StoredUsage::new(
+                    count(u.input_tokens),
+                    count(u.output_tokens),
+                    count(u.total_tokens),
+                )
+            }),
+        }
+    }
+}
+
+fn plain(text: &str) -> bool {
+    !text.is_empty()
+        && text.chars().count() <= MAX_REPORTED_CHARS
+        && !text.chars().any(char::is_control)
+}
+
+// A text that is too long or has a control character is omitted. The
+// redacted text is checked again, because the marker can lengthen it.
+fn storable(text: &str, redactor: &Redactor) -> Option<String> {
+    if !plain(text) {
+        return None;
+    }
+    Some(redactor.redact_fragments(text)).filter(|t| plain(t))
+}
+
 /// What a batch file records besides the accepted response. Every value is
 /// supplied by the caller; the writer reads no clock and no environment.
 #[derive(Clone, Debug)]
 pub struct StoreMeta {
-    /// Provider kind from the configuration.
+    /// The provider identifier.
     pub provider: String,
-    /// Model name from the configuration.
+    /// The protocol of the provider.
+    pub protocol: String,
+    /// The configured model name, never the reported one.
     pub model: String,
     /// Version of the adapter that made the request.
     pub adapter_version: String,
@@ -33,6 +97,8 @@ pub struct StoreMeta {
     pub ai_identities: Vec<Identity>,
     /// Caller-supplied creation time, stored verbatim.
     pub created_at: String,
+    /// What the provider reported for the response being stored.
+    pub reported: Reported,
 }
 
 /// How a call of [`store_batch`] ended without a failure.
@@ -153,7 +219,14 @@ pub fn already_stored_warning(root: &Path, request_id: &Sha256Hex) -> Diagnostic
 }
 
 fn batch_of(accepted: &AcceptedBatch, meta: &StoreMeta) -> Batch {
+    let extras = Extras {
+        protocol: Some(meta.protocol.clone()),
+        reported_model: meta.reported.model.clone(),
+        response_id: meta.reported.response_id.clone(),
+        usage: meta.reported.usage,
+    };
     Batch {
+        format: Format::V2(extras),
         request_id: accepted.request_id().clone(),
         response_sha256: accepted.response_sha256().clone(),
         response: StoredResponse {

@@ -15,7 +15,7 @@ use rt_hash::sha256;
 use rt_ir::{draft_hash, parse_draft, parse_rulebook, Identity, Origin};
 use rt_json::ParseLimits;
 use rt_proposals::{
-    pending_proposals, print_batch, proposal_id, Batch, Completion, Evidence, Proposal,
+    pending_proposals, print_batch, proposal_id, Batch, Completion, Evidence, Format, Proposal,
     ProposalKind, RuleDraft, StoredResponse,
 };
 
@@ -66,6 +66,7 @@ pub(super) fn fixture() -> Fixture {
     let request_id = sha256(b"request-1");
     let id = proposal_id(&request_id, 0);
     let batch = Batch {
+        format: Format::V1,
         request_id: request_id.clone(),
         response_sha256: sha256(b"payload"),
         response: StoredResponse {

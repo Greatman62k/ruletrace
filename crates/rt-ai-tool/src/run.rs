@@ -13,7 +13,8 @@ use crate::fs::StoreFs;
 use crate::plan::{ClauseId, PlannedRequest, RunPlan};
 use crate::redact::Redactor;
 use crate::store::{
-    already_stored_warning, batch_exists, store_batch, FailureOutcome, StoreMeta, StoreOutcome,
+    already_stored_warning, batch_exists, store_batch, FailureOutcome, Reported, StoreMeta,
+    StoreOutcome,
 };
 use crate::summary::RunSummary;
 use crate::txlog::{LogSink, TransmissionLog};
@@ -295,7 +296,11 @@ impl Loop<'_, '_> {
                 });
             }
         };
-        match store_batch(fs, root, &accepted, self.input.meta) {
+        let meta = StoreMeta {
+            reported: Reported::from_meta(&response.meta, self.input.redactor),
+            ..self.input.meta.clone()
+        };
+        match store_batch(fs, root, &accepted, &meta) {
             Ok(report) => {
                 notes.extend(report.warnings);
                 match report.outcome {

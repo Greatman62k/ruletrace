@@ -23,8 +23,9 @@ mod pending;
 mod print;
 
 pub use model::{
-    proposal_id, Batch, Completion, Evidence, Proposal, ProposalKind, RuleDraft, StoredDiagnostic,
-    StoredLocation, StoredResponse, FORMAT_NAME, FORMAT_VERSION,
+    proposal_id, Batch, Completion, Evidence, Extras, Format, Proposal, ProposalKind, RuleDraft,
+    StoredDiagnostic, StoredLocation, StoredResponse, StoredUsage, FORMAT_NAME, FORMAT_VERSION_1,
+    FORMAT_VERSION_2,
 };
 pub use parse::parse_batch;
 pub use pending::{pending_proposals, PendingProposal};
@@ -34,3 +35,5 @@ pub use print::print_batch;
 mod tests;
 #[cfg(test)]
 mod tests_identifier_property;
+#[cfg(test)]
+mod tests_v2;

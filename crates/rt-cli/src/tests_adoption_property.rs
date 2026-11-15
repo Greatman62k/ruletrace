@@ -23,7 +23,7 @@ use rt_foundation::{DocumentId, InputId, RevisionNumber, RuleId};
 use rt_hash::sha256;
 use rt_ir::{draft_hash, parse_draft, parse_rulebook, print_pretty, Identity, Origin};
 use rt_proposals::{
-    pending_proposals, print_batch, proposal_id, Batch, Completion, Evidence, Proposal,
+    pending_proposals, print_batch, proposal_id, Batch, Completion, Evidence, Format, Proposal,
     ProposalKind, RuleDraft, StoredResponse,
 };
 
@@ -122,6 +122,7 @@ fn build(p: &Params) -> (Fixture, Built) {
     let request_id = sha256(format!("request-{}", p.value).as_bytes());
     let id = proposal_id(&request_id, 0);
     let batch = Batch {
+        format: Format::V1,
         request_id: request_id.clone(),
         response_sha256: sha256(b"payload"),
         response: StoredResponse {

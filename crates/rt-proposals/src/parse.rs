@@ -1,8 +1,9 @@
 //! `parse_batch`: strict decoding, then the canonical-form check.
 
 use crate::model::{
-    proposal_id, Batch, Completion, Evidence, Proposal, ProposalKind, RuleDraft, StoredDiagnostic,
-    StoredLocation, StoredResponse, FORMAT_NAME, FORMAT_VERSION,
+    proposal_id, Batch, Completion, Evidence, Extras, Format, Proposal, ProposalKind, RuleDraft,
+    StoredDiagnostic, StoredLocation, StoredResponse, StoredUsage, FORMAT_NAME, FORMAT_VERSION_1,
+    FORMAT_VERSION_2,
 };
 use crate::print::print_batch;
 use rt_foundation::{Code, Diagnostic, DocumentId, InputId, InputLocation, Location, RuleId};
@@ -62,6 +63,82 @@ fn exact<'a>(
         }
     }
     Ok(members)
+}
+
+/// Like [`exact`], with members that may be absent.
+fn exact_with<'a>(
+    value: &'a Value<Position>,
+    path: &str,
+    required: &[&str],
+    optional: &[&str],
+) -> Res<&'a [rt_json::Member<Position>]> {
+    let Some(members) = value.as_object() else {
+        return fail(path, value, "must be an object");
+    };
+    for m in members {
+        let key = m.key.as_str();
+        if !required.contains(&key) && !optional.contains(&key) {
+            return Err(Fail {
+                path: child(path, key),
+                pos: m.key_pos,
+                message: format!("unknown member '{key}'"),
+            });
+        }
+    }
+    for key in required {
+        if value.get(key).is_none() {
+            return fail(path, value, format!("missing member '{key}'"));
+        }
+    }
+    Ok(members)
+}
+
+/// The longest reported value, in Unicode scalar values (Req 35.15).
+const MAX_REPORTED_CHARS: usize = 256;
+
+/// A reported or protocol text: 1 to 256 scalar values, no control
+/// character. The writer omits any other value, so the reader refuses it.
+fn reported(value: &Value<Position>, path: &str) -> Res<String> {
+    match value.as_str() {
+        Some(s)
+            if !s.is_empty()
+                && s.chars().count() <= MAX_REPORTED_CHARS
+                && !s.chars().any(char::is_control) =>
+        {
+            Ok(s.to_owned())
+        }
+        _ => fail(
+            path,
+            value,
+            "must be 1 to 256 characters without a control character",
+        ),
+    }
+}
+
+fn usage(value: &Value<Position>, path: &str) -> Res<StoredUsage> {
+    const KEYS: [&str; 3] = ["input_tokens", "output_tokens", "total_tokens"];
+    exact_with(value, path, &[], &KEYS)?;
+    let count = |key: &str| -> Res<Option<u64>> {
+        match value.get(key) {
+            None => Ok(None),
+            Some(m) => match m.value.as_u64() {
+                Some(n) => Ok(Some(n)),
+                None => fail(
+                    &child(path, key),
+                    &m.value,
+                    "must be a non-negative integer",
+                ),
+            },
+        }
+    };
+    match StoredUsage::new(
+        count("input_tokens")?,
+        count("output_tokens")?,
+        count("total_tokens")?,
+    ) {
+        Some(u) => Ok(u),
+        None => fail(path, value, "must have at least one count"),
+    }
 }
 
 fn member<'a>(
@@ -295,16 +372,47 @@ fn decode(root: &Value<Position>) -> Res<Batch> {
         "created_at",
         "proposals",
     ];
-    exact(root, "", &KEYS)?;
+    const V2_OPTIONAL: [&str; 4] = ["protocol", "reported_model", "response_id", "usage"];
+    let version = match root.get("version") {
+        None => None,
+        Some(m) => match m.value.as_u64() {
+            Some(n) if n == u64::from(FORMAT_VERSION_1) || n == u64::from(FORMAT_VERSION_2) => {
+                Some(n)
+            }
+            _ => {
+                return fail(
+                    &child("", "version"),
+                    &m.value,
+                    format!("must be {FORMAT_VERSION_1} or {FORMAT_VERSION_2}"),
+                )
+            }
+        },
+    };
+    let v2 = version == Some(u64::from(FORMAT_VERSION_2));
+    exact_with(root, "", &KEYS, if v2 { &V2_OPTIONAL } else { &[] })?;
     let get = |key| member(root, "", key);
     let (v, p) = get("format")?;
     if v.as_str() != Some(FORMAT_NAME) {
         return fail(&p, v, format!("must be \"{FORMAT_NAME}\""));
     }
-    let (v, p) = get("version")?;
-    if v.as_u64() != Some(u64::from(FORMAT_VERSION)) {
-        return fail(&p, v, format!("must be {FORMAT_VERSION}"));
-    }
+    let format = if v2 {
+        let optional = |key: &str, each: fn(&Value<Position>, &str) -> Res<String>| {
+            root.get(key)
+                .map(|m| each(&m.value, &child("", key)))
+                .transpose()
+        };
+        Format::V2(Extras {
+            protocol: optional("protocol", reported)?,
+            reported_model: optional("reported_model", reported)?,
+            response_id: optional("response_id", reported)?,
+            usage: root
+                .get("usage")
+                .map(|m| usage(&m.value, &child("", "usage")))
+                .transpose()?,
+        })
+    } else {
+        Format::V1
+    };
     let (v, p) = get("request_id")?;
     let request_id = hash(v, &p)?;
     let (v, p) = get("response_sha256")?;
@@ -343,6 +451,7 @@ fn decode(root: &Value<Position>) -> Res<Batch> {
         .map(|(i, item)| proposal(item, &format!("{p}[{i}]"), &request_id, i))
         .collect::<Res<Vec<_>>>()?;
     Ok(Batch {
+        format,
         request_id,
         response_sha256,
         response,

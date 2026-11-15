@@ -5,7 +5,8 @@
 use crate::tests::{MapEnv, BASE};
 use crate::tests_provenance::{doc, model, RULES, RULES_HASH};
 use crate::{
-    build_plan, load, AiConfig, Consent, PlanInput, Redactor, RunPlan, StoreMeta, Ud32Option,
+    build_plan, load, AiConfig, Consent, PlanInput, Redactor, Reported, RunPlan, StoreMeta,
+    Ud32Option,
 };
 use rt_foundation::{CliLocation, DocumentId, InputId, Location};
 use rt_ir::{parse_rulebook, Identity, Rulebook};
@@ -112,6 +113,7 @@ pub(crate) fn payload(index: usize) -> String {
 pub(crate) fn meta() -> StoreMeta {
     StoreMeta {
         provider: "openai-responses".to_owned(),
+        protocol: "openai-responses".to_owned(),
         model: "model-1".to_owned(),
         adapter_version: "mock-1".to_owned(),
         ai_identities: vec![
@@ -119,6 +121,7 @@ pub(crate) fn meta() -> StoreMeta {
             Identity::new("model-1").unwrap(),
         ],
         created_at: "2026-11-15T00:00:00Z".to_owned(),
+        reported: Reported::default(),
     }
 }
 

@@ -7,8 +7,94 @@ use rt_ir::Identity;
 /// The `format` string of a batch file.
 pub const FORMAT_NAME: &str = "ruletrace-proposals";
 
-/// The `version` number of a batch file.
-pub const FORMAT_VERSION: u32 = 1;
+/// The first `version` number of a batch file. A batch of this version is
+/// read and printed unchanged.
+pub const FORMAT_VERSION_1: u32 = 1;
+
+/// The `version` number of a batch file that new batches are written in
+/// (UD-37, Req 35.16).
+pub const FORMAT_VERSION_2: u32 = 2;
+
+/// Token counts that the provider reported, each present only when the
+/// provider gave it as a non-negative integer. Nothing is derived or summed.
+/// At least one count is present: a report with none is no usage at all.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct StoredUsage {
+    input_tokens: Option<u64>,
+    output_tokens: Option<u64>,
+    total_tokens: Option<u64>,
+}
+
+impl StoredUsage {
+    /// The usage with these counts, or `None` when all are absent.
+    #[must_use]
+    pub fn new(
+        input_tokens: Option<u64>,
+        output_tokens: Option<u64>,
+        total_tokens: Option<u64>,
+    ) -> Option<Self> {
+        let any = input_tokens.is_some() || output_tokens.is_some() || total_tokens.is_some();
+        any.then_some(Self {
+            input_tokens,
+            output_tokens,
+            total_tokens,
+        })
+    }
+
+    /// Tokens of the request, if reported.
+    #[must_use]
+    pub fn input_tokens(&self) -> Option<u64> {
+        self.input_tokens
+    }
+
+    /// Tokens of the answer, if reported.
+    #[must_use]
+    pub fn output_tokens(&self) -> Option<u64> {
+        self.output_tokens
+    }
+
+    /// Total tokens, if reported.
+    #[must_use]
+    pub fn total_tokens(&self) -> Option<u64> {
+        self.total_tokens
+    }
+}
+
+/// The members that only a version 2 batch has, all optional (Req 35.16).
+/// Reported values are untrusted audit data: no identifier, identity or
+/// decision reads them.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Extras {
+    /// The protocol of the provider.
+    pub protocol: Option<String>,
+    /// The model name that the provider reported, apart from `model`.
+    pub reported_model: Option<String>,
+    /// The response identifier that the provider reported.
+    pub response_id: Option<String>,
+    /// The token counts that the provider reported.
+    pub usage: Option<StoredUsage>,
+}
+
+/// The format version of a batch file. A version 1 batch cannot hold a
+/// version 2 member, so the pair is never inconsistent.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Format {
+    /// Version 1, as written before UD-37.
+    V1,
+    /// Version 2, with its optional members.
+    V2(Extras),
+}
+
+impl Format {
+    /// The `version` number.
+    #[must_use]
+    pub fn version(&self) -> u32 {
+        match self {
+            Format::V1 => FORMAT_VERSION_1,
+            Format::V2(_) => FORMAT_VERSION_2,
+        }
+    }
+}
 
 /// How the stored provider response ended. Only a complete response passes
 /// the acceptance checks, so no other value can be stored (Req 30.1).
@@ -161,15 +247,17 @@ pub struct StoredResponse {
 /// One accepted batch.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Batch {
+    /// The format version and the members that only version 2 has.
+    pub format: Format,
     /// SHA-256 of the request bytes.
     pub request_id: Sha256Hex,
     /// SHA-256 of the payload bytes.
     pub response_sha256: Sha256Hex,
     /// The accepted response.
     pub response: StoredResponse,
-    /// Provider kind.
+    /// The provider identifier in version 2, the provider kind in version 1.
     pub provider: String,
-    /// Model name.
+    /// The configured model name, never the reported one.
     pub model: String,
     /// Adapter version.
     pub adapter_version: String,

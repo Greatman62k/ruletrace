@@ -56,10 +56,11 @@ fn proposal(request: &Sha256Hex, index: usize, kind: ProposalKind) -> Proposal {
     }
 }
 
-fn batch() -> Batch {
+pub(crate) fn batch() -> Batch {
     let request_id = sha256(b"request");
     let payload = "{\"schema_version\":\"1\",\"proposals\":[]}";
     Batch {
+        format: Format::V1,
         request_id: request_id.clone(),
         response_sha256: sha256(payload.as_bytes()),
         response: StoredResponse {

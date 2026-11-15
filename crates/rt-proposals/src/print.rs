@@ -1,7 +1,7 @@
 //! The canonical printer: compact RT-JSON and one line feed.
 
 use crate::model::{
-    Batch, Evidence, Proposal, StoredDiagnostic, StoredLocation, FORMAT_NAME, FORMAT_VERSION,
+    Batch, Evidence, Format, Proposal, StoredDiagnostic, StoredLocation, StoredUsage, FORMAT_NAME,
 };
 use rt_json::{write_compact, Value};
 
@@ -11,6 +11,24 @@ fn text(value: &str) -> String {
 
 fn int(value: u32) -> String {
     write_compact(&Value::integer(value))
+}
+
+fn count(value: u64) -> String {
+    value.to_string()
+}
+
+fn usage(u: &StoredUsage) -> String {
+    let mut members = Vec::new();
+    for (key, value) in [
+        ("input_tokens", u.input_tokens()),
+        ("output_tokens", u.output_tokens()),
+        ("total_tokens", u.total_tokens()),
+    ] {
+        if let Some(n) = value {
+            members.push((key, count(n)));
+        }
+    }
+    object(members)
 }
 
 fn array(items: Vec<String>) -> String {
@@ -95,22 +113,36 @@ pub fn print_batch(batch: &Batch) -> String {
         .iter()
         .map(|i| text(i.as_str()))
         .collect();
-    let mut out = object(vec![
+    let mut members = vec![
         ("format", text(FORMAT_NAME)),
-        ("version", int(FORMAT_VERSION)),
+        ("version", int(batch.format.version())),
         ("request_id", text(batch.request_id.as_str())),
         ("response_sha256", text(batch.response_sha256.as_str())),
         ("response", response),
         ("provider", text(&batch.provider)),
         ("model", text(&batch.model)),
         ("adapter_version", text(&batch.adapter_version)),
-        ("ai_identities", array(identities)),
-        ("created_at", text(&batch.created_at)),
-        (
-            "proposals",
-            array(batch.proposals.iter().map(proposal).collect()),
-        ),
-    ]);
+    ];
+    if let Format::V2(extras) = &batch.format {
+        let optional = [
+            ("protocol", extras.protocol.as_deref().map(text)),
+            ("reported_model", extras.reported_model.as_deref().map(text)),
+            ("response_id", extras.response_id.as_deref().map(text)),
+            ("usage", extras.usage.as_ref().map(usage)),
+        ];
+        for (key, value) in optional {
+            if let Some(value) = value {
+                members.push((key, value));
+            }
+        }
+    }
+    members.push(("ai_identities", array(identities)));
+    members.push(("created_at", text(&batch.created_at)));
+    members.push((
+        "proposals",
+        array(batch.proposals.iter().map(proposal).collect()),
+    ));
+    let mut out = object(members);
     out.push('\n');
     out
 }

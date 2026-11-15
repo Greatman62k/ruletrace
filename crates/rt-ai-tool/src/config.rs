@@ -41,6 +41,22 @@ impl ProviderKind {
         }
     }
 
+    /// The provider identifier that a configuration of schema version 1
+    /// maps to, in memory only (Req 35.9).
+    #[must_use]
+    pub fn provider_id(self) -> &'static str {
+        match self {
+            Self::OpenAiResponses => "openai",
+            Self::MockReplay => "mock-replay",
+        }
+    }
+
+    /// The protocol that a configuration of schema version 1 maps to.
+    #[must_use]
+    pub fn protocol(self) -> &'static str {
+        self.name()
+    }
+
     /// The configuration value of the kind.
     #[must_use]
     pub fn name(self) -> &'static str {
