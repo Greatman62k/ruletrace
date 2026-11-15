@@ -199,7 +199,7 @@ fn rt_ai_0105_carries_the_adapter_detail() {
     assert_eq!(shapes(&r.diagnostics), vec![("RT-AI-0105", "error")]);
     assert_eq!(
         r.diagnostics[0].message(),
-        "AI_PROVIDER_ERROR (script exhausted: it has 0 steps)"
+        "1 attempt failed; the last was AI_PROVIDER_ERROR (script exhausted: it has 0 steps)"
     );
 }
 
@@ -336,5 +336,66 @@ fn every_provider_failure_diagnostic_is_located_at_the_provider_field() {
         for d in &r.diagnostics {
             assert_eq!(d.primary(), &provider_field(), "{}", d.code().id());
         }
+    }
+}
+
+// Req 23.17: the message of every Provider_Failure Diagnostic carries the
+// number of attempts made.
+#[test]
+fn non_transient_failures_state_one_attempt_in_the_message() {
+    let other = ProviderFailure::Other {
+        http_status: Some(400),
+    };
+    let cases = [
+        (
+            ProviderFailure::AuthFailed,
+            "RT-AI-0104",
+            "1 attempt failed; the last was AI_PROVIDER_AUTH_FAILED",
+        ),
+        (
+            ProviderFailure::TlsFailed,
+            "RT-AI-0108",
+            "1 attempt failed; the last was AI_PROVIDER_TLS_FAILED",
+        ),
+        (
+            other,
+            "RT-AI-0105",
+            "1 attempt failed; the last was AI_PROVIDER_ERROR",
+        ),
+    ];
+    for (failure, code, message) in cases {
+        let (r, _, _, _) = run_one(vec![fail(failure, 0)]);
+        assert_eq!(codes(&r), vec![code]);
+        assert_eq!(r.diagnostics[0].message(), message, "{code}");
+    }
+}
+
+#[test]
+fn a_non_transient_failure_after_one_retry_states_two_attempts() {
+    let other = ProviderFailure::Other {
+        http_status: Some(404),
+    };
+    let cases = [
+        (
+            ProviderFailure::AuthFailed,
+            "RT-AI-0104",
+            "2 attempts failed; the last was AI_PROVIDER_AUTH_FAILED",
+        ),
+        (
+            ProviderFailure::TlsFailed,
+            "RT-AI-0108",
+            "2 attempts failed; the last was AI_PROVIDER_TLS_FAILED",
+        ),
+        (
+            other,
+            "RT-AI-0105",
+            "2 attempts failed; the last was AI_PROVIDER_ERROR",
+        ),
+    ];
+    for (failure, code, message) in cases {
+        let (r, _, p, _) = run_one(vec![fail(unavailable(), 0), fail(failure, 0), ok(0)]);
+        assert_eq!(codes(&r), vec!["RT-AI-0101", code]);
+        assert_eq!(r.diagnostics[1].message(), message, "{code}");
+        assert_eq!(p.steps_consumed(), 2);
     }
 }

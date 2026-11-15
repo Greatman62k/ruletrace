@@ -198,10 +198,13 @@ impl Loop<'_, '_> {
                 }
                 RetryStep::Stop(RetryStop::NonTransient(f)) => {
                     let code = final_code(f);
-                    let message = match &last_detail {
-                        Some(detail) => format!("{} ({detail})", code.mnemonic()),
-                        None => code.mnemonic().to_owned(),
-                    };
+                    let attempts = history.len();
+                    let noun = if attempts == 1 { "attempt" } else { "attempts" };
+                    let mut message =
+                        format!("{attempts} {noun} failed; the last was {}", code.mnemonic());
+                    if let Some(detail) = &last_detail {
+                        message.push_str(&format!(" ({detail})"));
+                    }
                     return Err(self.provider_failure(code, message));
                 }
             }

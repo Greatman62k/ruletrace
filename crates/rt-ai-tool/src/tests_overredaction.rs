@@ -75,7 +75,8 @@ fn ordinary_text_with_an_eight_character_window_of_the_credential_is_redacted() 
         [(
             "error".to_owned(),
             "RT-AI-0105".to_owned(),
-            "AI_PROVIDER_ERROR (rotate your [REDACTED] key first)".to_owned()
+            "1 attempt failed; the last was AI_PROVIDER_ERROR (rotate your [REDACTED] key first)"
+                .to_owned()
         )]
     );
     assert!(!ran.stderr.contains("sk-proj-"), "{}", ran.stderr);
@@ -91,7 +92,7 @@ fn text_with_only_seven_characters_of_the_credential_is_left_alone() {
         [(
             "error".to_owned(),
             "RT-AI-0105".to_owned(),
-            "AI_PROVIDER_ERROR (the sk-proj docs say so)".to_owned()
+            "1 attempt failed; the last was AI_PROVIDER_ERROR (the sk-proj docs say so)".to_owned()
         )]
     );
 }
@@ -105,7 +106,7 @@ fn the_whole_credential_and_a_window_in_one_message_become_two_markers() {
         [(
             "error".to_owned(),
             "RT-AI-0105".to_owned(),
-            "AI_PROVIDER_ERROR (sent [REDACTED], saw [REDACTED] again)".to_owned()
+            "1 attempt failed; the last was AI_PROVIDER_ERROR (sent [REDACTED], saw [REDACTED] again)".to_owned()
         )]
     );
 }
