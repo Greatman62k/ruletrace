@@ -336,6 +336,11 @@
         "executionId": "04269d45-1018-4504-877d-5885db73ed5f",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794742987989
+      },
+      {
+        "executionId": "7e0d730d-2e9b-438d-9c26-36c8bb86a4e0",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794747870384
       }
     ],
     "1.13 Decision gate UD-35 (demonstration data and Published_Results)": [
@@ -348,6 +353,11 @@
         "executionId": "04269d45-1018-4504-877d-5885db73ed5f",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794742988010
+      },
+      {
+        "executionId": "7e0d730d-2e9b-438d-9c26-36c8bb86a4e0",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794747886920
       }
     ],
     "2.1 Create the Cargo workspace skeleton": [
@@ -2160,6 +2170,16 @@
         "executionId": "04269d45-1018-4504-877d-5885db73ed5f",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794738649692
+      },
+      {
+        "executionId": "7e0d730d-2e9b-438d-9c26-36c8bb86a4e0",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794747870354
+      },
+      {
+        "executionId": "7e0d730d-2e9b-438d-9c26-36c8bb86a4e0",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794747877984
       }
     ],
     "8.17 Author the provider script and add the `ai` profile with the full Coverage_Statement": [
@@ -2952,6 +2972,18 @@
         "executionId": "04269d45-1018-4504-877d-5885db73ed5f",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794746915704
+      }
+    ],
+    "8.23 Report an oversize Proposal_Store batch in the review path as RT-LIM-0001 with the true size": [
+      {
+        "executionId": "7e0d730d-2e9b-438d-9c26-36c8bb86a4e0",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794747878002
+      },
+      {
+        "executionId": "7e0d730d-2e9b-438d-9c26-36c8bb86a4e0",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794747885800
       }
     ]
   }
