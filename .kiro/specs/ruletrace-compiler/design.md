@@ -38,6 +38,7 @@ Section numbers (`§n.m`) are used by the traceability table in §10.
 | 11 | Reproducible offline demonstration with golden files, an acceptance test that executes the runbook, mutation checks, a Coverage_Statement and a Proof_Report | Designed | §8.11 |
 | 12 | Honest-claims statements and a prohibited-phrase scan | Designed | §8.12 |
 | 13 | Demonstration-first phase plan: Demo Slice 0 (hand-authored rules), Slice 1 (mock AI and human approval), Slice 2 (real provider, two applications, published checks, mutation checks) | Designed | §7.5 |
+| 14 | UD-37: the first real provider is the Meta Model API over the Responses protocol; one crate `rt-ai-responses` (renamed from `rt-ai-openai`) with provider profiles as data in `rt-ai-tool`; flat provider-neutral Proposal schema (task 10.4 required); Proposal_Store format version 2; AI_Configuration version 2 with official-host restriction; capability negotiation; `ruletrace-ai models`; Contributor models refused; Modal deferred. Open: OD-37-1 (HTTP 504 and Req 29.2) | Applied, Confirmed | §3.2, §3.4.5, §3.7.3, §3.7.5, §3.9.2, §9.2 |
 | Open | UD-34 (which public documents: Confirmed, see `tools/decisions/UD-34.md`), UD-35 (real or synthetic data, Open). The harness is document-agnostic and names no document. UD-32: Confirmed, Rank_Reference | UD-34 Confirmed; UD-35 Open | §8.11.1, §9.2 |
 
 ## Architecture
@@ -99,7 +100,7 @@ flowchart TD
   subgraph aux[Auxiliary crates]
     adp[rt-ai-adapter]
     mock[rt-ai-mock]
-    oai[rt-ai-openai]
+    oai[rt-ai-responses]
     tool[rt-ai-tool : ruletrace-ai]
   end
   subgraph appl[Application layers]
@@ -143,7 +144,7 @@ Forbidden edges are listed in §3.3. In particular no `aux` crate points to `cmp
 sequenceDiagram
   participant U as User
   participant T as ruletrace-ai (rt-ai-tool)
-  participant P as AI_Adapter (mock or OpenAI)
+  participant P as AI_Adapter (mock or Responses protocol)
   participant S as Proposal_Store dir
   U->>T: propose --config --consent --source-model --candidates --rulebook --store --created-at
   T->>T: 1 load config, secret scan, endpoint, limits, consent, credential
@@ -257,8 +258,8 @@ All crates: edition 2021, `#![forbid(unsafe_code)]`, `rust-toolchain.toml` pins 
 | rt-cli | C | `ruletrace` binary: arguments, file I/O, `Fs` trait, atomic commit, rendering, exit codes | all | all core crates |
 | rt-ai-adapter | A | `AiAdapter` trait, request/response/failure types, retry policy (pure) | aux | foundation, hash, json |
 | rt-ai-mock | A | Mock_Provider and simulated clock | aux | adapter, foundation, json |
-| rt-ai-openai | A | OpenAI Responses integration, monotonic clock, TLS | aux | adapter, foundation, json, hash |
-| rt-ai-tool | A | `ruletrace-ai` binary and library: config, consent, request build, schema, provenance, store write | aux | adapter, mock, openai, foundation, hash, json, srcmodel, ir, ledger, validate, proposals |
+| rt-ai-responses | A | Responses-protocol integration (Meta and OpenAI profiles use it), request body, response and error mapping, HTTPS transport, monotonic clock, TLS (UD-37; renamed from `rt-ai-openai`) | aux | adapter, foundation, json, hash |
+| rt-ai-tool | A | `ruletrace-ai` binary and library: config, Provider_Profiles (data), consent, request build, flat Proposal schema generator, provenance, store write, `models` command | aux | adapter, mock, responses, foundation, hash, json, srcmodel, ir, ledger, validate, proposals |
 | prize-check | P | Prize_Check Application_Layer: `src/lib.rs` (input mapping call, Question construction, report layout; no I/O) and Demonstration_Executable `prize-check` (`src/main.rs`, `src/io.rs`) | app | foundation, numeric, data, compiled, engine, explain, srcmodel |
 | bracket-check | P | Bracket_Check Application_Layer and Demonstration_Executable `bracket-check`, same layout | app | foundation, numeric, data, compiled, engine, explain, srcmodel |
 | rt-demo | T | Demonstration harness and acceptance tests: manifest and runbook parsers, subprocess runner with a scrubbed environment, golden comparison and bless mode, Coverage_Statement generator, mutation drivers, claims helpers. Runs the four executables as subprocesses in tests only | test | foundation, json, hash, srcmodel, ir, ledger, proposals, validate, trace, explain, xtask (library) |
@@ -287,9 +288,9 @@ Rule: a dependency needs purpose, alternatives including std, and maintenance st
 | proptest (dev) | core unit tests, rt-tests-* | Property tests, seed and shrunk case printed on failure (Req 20.24) | quickcheck (weaker shrinking); hand-rolled generators (reinventing) | proptest. Dev-only. Not network, not AI. |
 | num-bigint (dev) | rt-tests-core | Independent arbitrary-precision reference model for the differential numeric test (Req 20.22) | hand-written test bigint (not independent enough, more code) | Dev-only, test code only. Never in `ruletrace` runtime tree. |
 | toml_edit | rt-ai-tool only | Parse AI_Configuration with spans (line and column for Req 28.3) without serde | `toml` crate with serde (brings serde); hand-written TOML subset parser (risk of divergence from TOML) | toml_edit, parse-only API. Confirm exact span API at Phase 6. |
-| ureq (blocking HTTP client) | rt-ai-openai only | HTTPS POST, per-request timeout, no async runtime | reqwest (pulls tokio, hyper); hyper directly (async); curl bindings (C library) ; std only (no TLS) | ureq with rustls. Redirects disabled (Req 28.19). Proxy autodetection from the environment disabled explicitly (Req 28.5 reads one env var only). Version pinned in lockfile at Phase 8. |
-| rustls and webpki-roots (transitive of ureq) | rt-ai-openai | TLS with certificate and host-name verification, no option to disable (Req 28.6) | native-tls (platform OpenSSL, varying behaviour) | rustls. Root store embedded: reproducible across platforms. |
-| cargo-deny (tool) | CI | Advisories, bans, licences (Req 21.7) | cargo-audit (advisories only) | cargo-deny. Its `bans` section lists network and AI crates with `wrappers = ["rt-ai-openai"]`. |
+| ureq (blocking HTTP client) | rt-ai-responses only | HTTPS POST, per-request timeout, no async runtime | reqwest (pulls tokio, hyper); hyper directly (async); curl bindings (C library) ; std only (no TLS) | ureq with rustls. Redirects disabled (Req 28.19). Proxy autodetection from the environment disabled explicitly (Req 28.5 reads one env var only). Version pinned in lockfile at Phase 8. |
+| rustls and webpki-roots (transitive of ureq) | rt-ai-responses | TLS with certificate and host-name verification, no option to disable (Req 28.6) | native-tls (platform OpenSSL, varying behaviour) | rustls. Root store embedded: reproducible across platforms. |
+| cargo-deny (tool) | CI | Advisories, bans, licences (Req 21.7) | cargo-audit (advisories only) | cargo-deny. Its `bans` section lists network and AI crates with `wrappers = ["rt-ai-responses"]`. |
 
 No dependency is added for argument parsing (hand-written grammar in §3.9; needs Cli_Location diagnostics and byte-identical messages, which clap does not give), for Markdown (hand-written line parser in §3.5, UD-10), for JSON (§4.1) or for temp files (the `Fs` trait in rt-cli).
 
@@ -312,7 +313,7 @@ crate rt-xtask       class tool   deps rt-foundation rt-json rt-proposals
 crate rt-ir          class core   deps rt-foundation rt-hash rt-json rt-numeric
 crate rt-ledger      class core   deps rt-foundation rt-hash rt-json rt-ir
 crate rt-ai-adapter  class aux    deps rt-foundation rt-hash rt-json
-crate rt-ai-tool     class aux    deps rt-ai-adapter rt-ai-mock rt-ai-openai rt-foundation rt-hash rt-json rt-srcmodel rt-ir rt-ledger rt-validate rt-proposals
+crate rt-ai-tool     class aux    deps rt-ai-adapter rt-ai-mock rt-ai-responses rt-foundation rt-hash rt-json rt-srcmodel rt-ir rt-ledger rt-validate rt-proposals
 stage rt-srcmodel 1
 stage rt-source 1
 stage rt-ir 3
@@ -341,7 +342,7 @@ forbid-name  rt-engine -> rt-explain rt-ir rt-hash
 | Any cycle | Tarjan SCC on `cargo metadata` graph |
 | Edge not in list | Set difference |
 | core to aux | Class check |
-| core, rt-cli or rt-ai-mock to a network client, AI provider library or rt-ai-openai | `forbid-external` list: ureq, rustls, hyper, reqwest, h2, tokio, openssl, native-tls, curl, isahc, attohttpc, ring (except under rt-ai-openai) |
+| core, rt-cli or rt-ai-mock to a network client, AI provider library or rt-ai-responses | `forbid-external` list: ureq, rustls, hyper, reqwest, h2, tokio, openssl, native-tls, curl, isahc, attohttpc, ring (except under rt-ai-responses) |
 | AI crate to rt-compile, rt-engine, rt-review (approval and append), rt-compiled | `forbid-name` |
 | rt-engine to rt-explain, rt-ir, rt-hash | `forbid-name` |
 | Stage crate to a later stage crate | `stage` numbers |
@@ -361,7 +362,7 @@ forbid-name  rt-engine -> rt-explain rt-ir rt-hash
 8. `check-tree` also resolves the full tree of each application and fails on any crate of the forbidden-transitive list, and resolves the tree of `ruletrace` and `ruletrace-ai` and fails if either contains an application layer (Req 27.15).
 9. `scan-claims` and `gen-claims`: honest-claims statements and prohibited phrases (Req 34.7), §8.12. `gen-claims` regenerates `rt-explain/src/statements.rs` from `claims/required-statements.v1.json`, and CI fails if the checked-in file differs.
 
-Core-only job: `cargo test --workspace --exclude rt-ai-adapter --exclude rt-ai-mock --exclude rt-ai-openai --exclude rt-ai-tool --exclude rt-tests-ai`, then `ruletrace` output bytes compared with the full build (Req 20.16). The core-only job builds and runs `prize-check` and `bracket-check` and the `hand` profile of the demonstration acceptance test, which needs no AI crate; the `ai` profile runs in the full job (§8.11.12).
+Core-only job: `cargo test --workspace --exclude rt-ai-adapter --exclude rt-ai-mock --exclude rt-ai-responses --exclude rt-ai-tool --exclude rt-tests-ai`, then `ruletrace` output bytes compared with the full build (Req 20.16). The core-only job builds and runs `prize-check` and `bracket-check` and the `hand` profile of the demonstration acceptance test, which needs no AI crate; the `ai` profile runs in the full job (§8.11.12).
 
 ### 3.4 Public Rust interfaces
 
@@ -536,7 +537,7 @@ impl Reviewer {
 pub trait AiAdapter {
     /// One attempt. Never retries, never sleeps. Returns untrusted bytes or a typed failure.
     fn attempt(&mut self, request: &ProviderRequest, timeout: Duration) -> AttemptReport;
-    fn clock(&self) -> &dyn MonotonicClock;          // real in rt-ai-openai, simulated in rt-ai-mock
+    fn clock(&self) -> &dyn MonotonicClock;          // real in rt-ai-responses, simulated in rt-ai-mock
 }
 pub trait MonotonicClock { fn now(&self) -> Duration; fn wait(&self, d: Duration); }
 
@@ -546,18 +547,40 @@ pub enum AttemptOutcome {
     Failure(ProviderFailure),
 }
 pub struct ProviderResponse { pub completion: Completion, pub payload: Vec<u8>, pub meta: ProviderMeta }
+
+/// Built only through `ProviderMeta::new(identity)` and `with_*` methods (UD-37).
+#[non_exhaustive]
+pub struct ProviderMeta {
+    pub identity: Identity,
+    pub reported_model: Option<String>,   // untrusted, never authoritative
+    pub response_id: Option<String>,      // untrusted
+    pub usage: Option<Usage>,             // as reported, never derived
+}
+pub struct Identity { pub provider: String, pub protocol: String, pub adapter_version: String }
+pub struct Usage { pub input_tokens: Option<u64>, pub output_tokens: Option<u64>, pub total_tokens: Option<u64> }
+
+/// Three-valued answer of a Capability. Unknown is not yes.
+pub enum Tri { Unknown, Yes, No }
+pub struct Capabilities { pub structured_output: Tri, pub reasoning_effort: Tri, pub usage_reporting: Tri }
+/// Request side of structured output: the provider-neutral flat schema, strict.
+pub struct StructuredOutput { pub name: String, pub schema: Vec<u8> }
+pub struct Required { pub structured_output: bool, pub reasoning_effort: bool }
+pub struct Unmet { pub capability: &'static str, pub value: Tri }   // value is No or Unknown
+/// Pure (Req 35.2). Unmet entries ascend by capability name. Unknown fails closed.
+pub fn negotiate(required: &Required, available: &Capabilities) -> Result<(), Vec<Unmet>>;
 pub enum Completion { Complete, Refused, Incomplete }
 pub enum ProviderFailure {
     Unavailable, Timeout, RateLimited { retry_after_secs: Option<u32> },
     AuthFailed, TlsFailed, Other { http_status: Option<u16> },
 }
 
-pub struct ProviderRequest { /* version, task, model, limits, clause context, declarations, vocabulary */ }
+pub struct ProviderRequest { /* version, task, model, limits, clause context, declarations, vocabulary, optional reasoning effort (in the canonical bytes only when set, Req 35.11) */ }
+// The StructuredOutput schema is passed beside the request, is a pure function of the vocabulary and the generator, and is not part of the canonical bytes. A golden file pins the generated schema bytes (§3.7.3).
 impl ProviderRequest {
     pub fn canonical_bytes(&self) -> Vec<u8>;
     pub fn request_id(&self) -> RequestId;            // SHA-256 of canonical_bytes, 64 hex chars
 }
-pub trait ProviderFactory {                             // implemented by mock and openai
+pub trait ProviderFactory {                             // implemented by mock and responses
     fn kind(&self) -> &'static str;
     fn build(&self, settings: &ProviderSettings, env: &dyn EnvReader)
         -> Result<Box<dyn AiAdapter>, Diagnostic>;      // reads only credential_env_var
@@ -838,38 +861,60 @@ The endpoint, credential, retention flag and HTTP framing are not part of it. `r
 3. Rulebook declarations are read from the Rulebook file the user names (`--rulebook`, read only). `highest_revision` is informational and lets the tool compute a provisional revision hint (§3.8.2, RN-1).
 4. A revision request (`--revise-rule`, `--revise-revision`, `--feedback-file`, Req 23.16) replaces `"revise":null` in every request of the run by `"revise":{"rule":"<id>","revision":<n>,"content":"<text>","feedback":"<text>"}`. `content` is the canonical compact draft of the named Rule_Revision (the rule object of §4.1.2 without `revision` and `origin`), carried as a string because a draft can hold decimal literals that an RT-JSON number cannot carry. `feedback` is the bytes of the file, which must be UTF-8 of 1 to 8,192 bytes, and is kept unchanged. The Request_Identifier covers both members, so another revision, other content or one other byte of feedback gives another identifier. The feedback is untrusted data and is not a Source_Document. It adds no identifier to the Transmission_Consent, because Req 28.7 compares the identifiers of the documents whose clauses the request holds. It travels inside the same request, so it is sent only when `allow_document_text` and that consent allow the clauses to be sent. The Transmission_Log entry has the fields of Req 28.8 and never holds the feedback. The feedback and the content are part of the request bytes, so a credential in either is refused with `RT-AI-0308` before any send (§3.9.2). Every refusal exits with code 2 before any send: a missing option is `RT-CLI-0002` naming it, a malformed value `RT-CLI-0004`, an unreadable feedback file `RT-CLI-0003`, a feedback file above 8,192 bytes `RT-LIM-0001` (Req 19.3, §3.9.2), and an empty or non-UTF-8 feedback file, an unknown Rule identifier or an unknown Revision_Number is `RT-AI-0304` at the argument or file concerned. The resulting Proposal is an ordinary Proposal. Adoption assigns the next Revision_Number of the rule that its draft names (§3.8.2), so it becomes a new revision of the named rule only when the provider's draft names that rule. The response check of §3.7.4 step 2a makes sure of it: a draft that names another rule rejects the whole batch with `RT-AI-0207`.
 
-#### 3.7.3 Proposal_Schema (UD-24) and OpenAI structured outputs
+#### 3.7.3 Proposal_Schema (UD-24), the flat provider schema (UD-37) and the Responses protocol
 
 **Format and version.** RT-JSON object `{"schema_version":"1","proposals":[...]}`. Proposal kinds (exactly five, Req 18.2): `clause_interpretation`, `rule_suggestion`, `clause_relationship`, `conflict_highlight`, `candidate_test`. Common fields: `kind`, `proposer` (1 to 200 scalar values), `rationale` (text), `evidence` (array of `{document, sha256, start, end, line, column, quote}`, at least one). `rule_suggestion` adds `rule`, a Rule_IR rule draft object (same field set and canonical form as a Rule_IR rule, without `revision`, `origin`, and with `spans` equal to the evidence spans). The schema has no property named approval, reviewer, status, `has_errors`, `no_errors`, `passed`, script, command or reference (Req 23.4). Every object of the schema is closed. The names in §3.7.4 step 1 are RT-AI-0204. Any other field, including `script`, `command` and `reference`, is an unknown field and RT-AI-0202 at every nesting level. The authoritative check is the local strict parser, not the provider-side schema.
 
 **Unrecognized constructs (design addition for Req 14.6, 14.13, 33.6).** The `expr` union and the rule `kind` field each carry one more variant, `{"node":"unrecognized","name":"<[a-z][a-z0-9_]*>","detail":"<text>"}` (for a kind: `{"kind":"unrecognized","name":..,"detail":..}`). It lets a model state that a clause needs a capability the vocabulary does not offer, in place of inventing a construct. The local parser maps it to the opaque construct of §4.1.3 and §4.1.4, and the validator reports RT-VAL-0003 Unsupported with the capability name from `tools/known-unsupported.v1` or, for an unlisted name, `unrecognized construct '<name>'`. The variant never compiles under any IR_Version. On the AI path a rule kind or expression node name outside the request vocabulary is RT-AI-0202, and only `unrecognized` states a missing capability. An `op` or `fn` value that is unknown but well formed is carried as an opaque node (with its field set checked like any node) and reaches the validator as Unsupported, RT-VAL-0003 (Req 14.6, 30.2). No field or value of a provider response is ever executed or interpreted as code, a command or a reference. The code reads provider strings only as data. The `unsupported` list of the request `vocabulary` names the reserved names and their capabilities (§8.9). Where UD-32 selects Rank_Reference, `rank_reference` leaves that list and becomes a supported node.
 
-**JSON Schema sent to the provider** (a strict-mode subset): `type: object`, every property listed in `required`, `additionalProperties: false`, optional values as `anyOf` with `null`, kinds as single-value `enum`, recursion for expressions through `$defs` and `$ref`. Constraints that strict mode may not enforce (`minLength`, `maxLength`, `pattern`, `format`) are advisory. Excerpt:
+**Flat node-table schema sent to every provider (UD-37, Req 23.39; resolves R-D1).** Proposal_Schema version "1" is the nested form above, which the mock provider, the Recorded_Provider_Script and the local parser use. Version "2" is the wire form that the generator describes to a provider. The local parser accepts both and lowers a version "2" document to the same Rule_Content as the version "1" form (the lowering is a pure function with a golden round-trip test). The authoritative check stays the local strict parser.
+
+- One schema for all providers. The generator is a pure function from the request vocabulary to canonical RT-JSON bytes, in the `rt-ai-tool` module `proposal_schema`. It is not in `rt-ai-responses`, which only places the bytes in `text.format.schema`.
+- No `$ref`, no `$defs`, no recursion. Every object has `additionalProperties:false` and lists every property in `required`. Optional values are `anyOf` with `null`. Kinds are single-value enums. `anyOf` appears only below the root. There is no `oneOf` and no `allOf`.
+- An expression is a table. A rule draft carries `nodes`, an array of closed node objects (one `anyOf` variant per node kind of the vocabulary, each with exactly its own fields), and `root`, the index of the root node. Every field that holds a sub-expression in the nested form holds a node index (an integer) here.
+- Table rules, checked by the local parser (RT-AI-0202): a child index is greater than the index of its parent (so there is no cycle), every index is in range, every node is referenced exactly once or is the root (so the table is a tree and the lowered expression equals the nested one, with no shared sub-expression), and no node is unreferenced. Lowering is iterative with an explicit work list. An expression above the depth limit of §4.1.5 lowers unchanged and reaches the validator as RT-LIM-0003.
+- Limits (Meta Model API, structured-output page): nesting depth at most 10, at most 5,000 properties in total, at most 120,000 characters of names and enum values, at most 1,000 enum values, no recursion. The generator test measures depth, property count, string total and enum count with a separate counter that does not reuse the generator, and asserts the exact bounds. The depth budget is root object (1), `proposals` items (2), rule draft (3), `nodes` items (4), a literal value object (5), with levels 6 to 10 spare.
+- Depth 16 round trip: an expression of depth 16 and one of depth 17 lower to Rule_Content equal to the original (property test with at least 256 cases over generated expressions, plus the fixed depth-16 and depth-17 cases).
+- The provider-side schema is advisory: `minLength`, `maxLength`, `pattern` and `format` are not relied on.
+
+Excerpt of the generated schema (shape only; the generator writes the exact bytes and a reviewed golden file pins them):
 
 ```json
 { "type":"object", "additionalProperties":false, "required":["schema_version","proposals"],
   "properties":{
-    "schema_version":{"type":"string","enum":["1"]},
-    "proposals":{"type":"array","items":{"$ref":"#/$defs/proposal"}}},
-  "$defs":{
-    "proposal":{"anyOf":[{"$ref":"#/$defs/rule_suggestion"},{"$ref":"#/$defs/clause_interpretation"},
-                         {"$ref":"#/$defs/clause_relationship"},{"$ref":"#/$defs/conflict_highlight"},
-                         {"$ref":"#/$defs/candidate_test"}]},
-    "expr":{"anyOf":[{"$ref":"#/$defs/num"},{"$ref":"#/$defs/binary"}, "..."]} } }
+    "schema_version":{"type":"string","enum":["2"]},
+    "proposals":{"type":"array","items":{"anyOf":[ {"<rule_suggestion>":"..."}, {"<clause_interpretation>":"..."} ]}}}}
 ```
+
+with, inside the rule draft, `"root":{"type":"integer"}` and `"nodes":{"type":"array","items":{"anyOf":[ {"<num node>":"..."}, {"<binary node with left and right as integers>":"..."} ]}}`.
 
 **OpenAI Responses API (verified 2026-11 from the vendor documentation).** Sources: [Structured model outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs), [Responses create reference](https://developers.openai.com/api/reference/resources/beta/subresources/responses/methods/create), [data retention discussion](https://community.openai.com/t/data-retention-for-model-response-need-clarification/1355501). Content was rephrased for compliance with licensing restrictions.
 
 | Topic | Finding | Design use |
 | --- | --- | --- |
-| Request | `POST {endpoint}/v1/responses`. Structured output is `text.format = {"type":"json_schema","name":..,"schema":..,"strict":true}` | `rt-ai-openai` builds this body deterministically from `ProviderRequest` |
-| Strict-mode rules | Root must be an object (not `anyOf`); every field required (optional emulated with a `null` union); `additionalProperties:false`; up to 5000 object properties and 10 nesting levels; recursion via `$ref`/`$defs` supported | Schema follows these rules. Expression recursion uses `$ref`. Risk R-D1: the 10-level limit may constrain expression depth; verified by the live job; fallback is a flat node-table form lowered to the same IR |
+| Request | `POST {endpoint}/v1/responses`. Structured output is `text.format = {"type":"json_schema","name":..,"schema":..,"strict":true}` | `rt-ai-responses` builds this body deterministically from `ProviderRequest` and the `StructuredOutput` |
+| Strict-mode rules | Root must be an object (not `anyOf`); every field required (optional emulated with a `null` union); `additionalProperties:false`; up to 5000 object properties and 10 nesting levels; recursion via `$ref`/`$defs` supported | Schema follows these rules. Expression recursion uses `$ref`. Risk R-D1 is resolved by the flat node table above |
 | Refusals and incomplete | A refusal is a content item of type `refusal`; truncated output gives `status: "incomplete"` with `incomplete_details.reason` (for example `max_output_tokens`); strict output applies only to completed, non-refusal output | Mapped to `Completion::Refused` or `Incomplete`, then `RT-AI-0205` (exit 6) |
 | Retention | Responses are stored by default; `store: false` disables storage | Always set `"store": false` (Req 28.13). A canary stub test asserts it |
 | Tools | None enabled | Request sets no `tools`, no web or file search; the model cannot call anything |
-| Model and provider | Chosen by `model` string in the configuration | No model name in code; `provider = "openai-responses"` is a configuration value (Req 28.12) |
+| Model and provider | Chosen by `model` string in the configuration | No model name in code; the provider id and protocol are configuration values (Req 28.12, 35.9). The OpenAI limits above were read for the earlier design and are re-checked by task 10.15 before the OpenAI profile is relied on (UD-37, section 3) |
 
-Handling of the HTTP response: read at most `response_bytes + 1` bytes; more gives `RT-AI-0203`. Parse the OpenAI envelope with `rt-json` (the envelope is also untrusted): require `status == "completed"`, exactly one output message with exactly one `output_text` item; its `text` is the `payload`. HTTP 401 and 403 give `AuthFailed`; TLS errors `TlsFailed`; 429 `RateLimited` with `Retry-After` only if a decimal integer of 1 to 9 digits; 5xx and connection errors `Unavailable`; timeouts `Timeout`; 3xx (no redirect followed, no credential or text sent to the target) and other 4xx `Other` (Req 28.19). `max_output_tokens` is a constant of the crate chosen so output fits the response limit; truncation maps to `Incomplete`.
+Handling of the HTTP response: read at most `response_bytes + 1` bytes; more gives `RT-AI-0203`. Parse the Responses envelope with `rt-json` (the envelope is also untrusted): require `status == "completed"`, exactly one output message with exactly one `output_text` item; its `text` is the `payload`. HTTP 401 and 403 give `AuthFailed`; TLS errors `TlsFailed`; 429 `RateLimited` with `Retry-After` only if a decimal integer of 1 to 9 digits; 5xx and connection errors `Unavailable`; timeouts `Timeout`; 3xx (no redirect followed, no credential or text sent to the target) and other 4xx `Other` (Req 28.19). `max_output_tokens` is a constant of the crate chosen so output fits the response limit; truncation maps to `Incomplete`.
+
+**Meta Model API profile (UD-37; verified 2026-11 from [Structured output](https://dev.meta.ai/docs/structured-output), [Reasoning](https://dev.meta.ai/docs/reasoning), [Error handling and retry](https://dev.meta.ai/docs/cookbook/error-handling-retry), [Muse Spark](https://dev.meta.ai/docs/muse-spark)).** The profile is data in `rt-ai-tool`: provider id `meta`, protocol `openai-responses`, official host `api.meta.ai`, base `https://api.meta.ai`, `POST /v1/responses`, `GET /v1/models`, Bearer authentication, credential variable named in the configuration (the documentation example is `MODEL_API_KEY`).
+
+| Topic | Design |
+| --- | --- |
+| Request body | model, input, `text.format` strict json_schema (the flat schema), `store:false`, no tools, `max_output_tokens` (a profile constant of at least 16, sized for reasoning tokens that count toward it and chosen in task 10.1 from a measured run, not by estimate), and `reasoning.effort` when configured. The initial experiment configures `low` |
+| Reasoning effort | Accepted: minimal, low, medium, high, xhigh, max. `none` is refused by Spark and Ember with HTTP 400, so the configuration check refuses it first. When omitted the provider default applies (`high` on Spark) and RuleTrace does not state the effort. `max` is not available on the Contributor variant, which is refused anyway |
+| Models | `muse-spark-1.3` (Standard) first. `muse-ember-1.0` may be compared on one identical small benchmark of public clauses. A model identifier that contains `contributor` is refused (RT-AI-0012) unless `allow_provider_training = true`, which the experiment does not set. No fallback model, no automatic model change |
+| Response mapping | `status` completed; reasoning items ignored; exactly one message item with exactly one `output_text` (its `text` is the payload); a tool call item or any other shape is RT-AI-0201; refusal, incomplete and any other status are `Completion::Refused` or `Completion::Incomplete` then RT-AI-0205 |
+| Errors | Branch on the HTTP status (the provider documentation says `type` and status decide and `code` is often null). 401 invalid_api_key and 403: AuthFailed. 429 with an integer Retry-After: RateLimited. 503 service_overloaded or backend_unavailable: Unavailable (a Retry-After on a 503, for example 60, is absent under Req 29.3). 504 gateway_timeout: Unavailable under Req 29.2 as written (OD-37-1). 400 schema violations and 402 billing: Other. The error `type` may appear in the Diagnostic message after redaction and control-character escaping |
+| Usage | `usage.input_tokens`, `usage.output_tokens`, `usage.total_tokens` as reported, otherwise absent. Nothing is derived. No cost is computed |
+| Catalogue | `GET /v1/models` through the same transport. The result is a list of model identifiers shown by `ruletrace-ai models`. Its response shape is checked by the stub contract of task 10.15 and first observed in the user's run |
+
+**Interplay of HTTP 504 and Req 29.2 (OD-37-1, open).** Req 29.2 retries every 5xx response with byte-identical request bytes (Req 29.16). After a gateway timeout a reasoning provider may still be generating the first answer, and a retry can repeat the work and its billing. The design keeps Req 29.2 and adds no special case. Guidance for the first live run: set `max_retries = 0` and an explicit `attempt_timeout_secs` that exceeds the longest expected reasoning time (the default of 20 s may be too short for a reasoning model). The options for the user (keep, amend Req 29.2 for 504, or a profile-declared non-retried status) are in `tools/decisions/UD-37.md`, section 4.
+
 
 #### 3.7.4 Response parsing, strict validation and provenance
 
@@ -903,7 +948,9 @@ proposal-store/
   .tmp/<request_id>.<pid-free-random-from-request>.tmp    transient
 ```
 
-No pid, clock or random value is used for names: the temp name is `<request_id>.tmp`, or `<request_id>.<n>.tmp` for the first free `n` from 1 to 7 when an interrupted run left an earlier file. Each temp file is made with `create_new`, so no two runs share one, and a file left behind is never reused or removed. With all eight names taken the write is refused with `RT-AI-0303`. A batch file contains: `format`, `version`, `request_id`, `response_sha256`, `response` (`completion` and the exact `payload` text of the accepted Provider_Response, UD-36), provider kind, model, adapter version, the AI identities from the configuration, `created_at` (caller-supplied), and `proposals[]`. Each proposal has `proposal_id = SHA-256(request_id ":" index)`, kind, proposer, evidence, the rule draft with its Draft hash, and the Semantic_Outcome Diagnostics. A `Pending_Proposal` is any `rule_suggestion` whose id is not referenced by an `Origin` in the Rulebook. The `response` member exists only for a batch that passed steps 4 to 7 (a rejected response is never stored, Req 30.1), is the source of the Recorded_Provider_Script export (§8.11.7), and is never written when the payload contains the credential value (RT-AI-0206).
+No pid, clock or random value is used for names: the temp name is `<request_id>.tmp`, or `<request_id>.<n>.tmp` for the first free `n` from 1 to 7 when an interrupted run left an earlier file. Each temp file is made with `create_new`, so no two runs share one, and a file left behind is never reused or removed. With all eight names taken the write is refused with `RT-AI-0303`. A batch file contains: `format`, `version`, `request_id`, `response_sha256`, `response` (`completion` and the exact `payload` text of the accepted Provider_Response, UD-36), `provider` (the provider identifier; in version 1 the provider kind), `model` (the configured model, never the reported one), `adapter_version`, from format version 2 the optional members `protocol`, `reported_model`, `response_id` and `usage` (`input_tokens`, `output_tokens`, `total_tokens`, each optional; an absent value is omitted and never written as null, UD-37, Req 35.15 to 35.17), the AI identities from the configuration, `created_at` (caller-supplied), and `proposals[]`. Each proposal has `proposal_id = SHA-256(request_id ":" index)`, kind, proposer, evidence, the rule draft with its Draft hash, and the Semantic_Outcome Diagnostics. A `Pending_Proposal` is any `rule_suggestion` whose id is not referenced by an `Origin` in the Rulebook. The `response` member exists only for a batch that passed steps 4 to 7 (a rejected response is never stored, Req 30.1), is the source of the Recorded_Provider_Script export (§8.11.7), and is never written when the payload contains the credential value (RT-AI-0206).
+
+**Format version 2 (UD-37).** New batches are written as `"version":2`. The reader accepts versions 1 and 2 in one store, reads a version 1 batch with the optional members absent, never rewrites an existing batch, counts a batch of either version for idempotency (Req 29.10), and refuses any other version, an unknown member or a wrong type (RT-AI-0302, and RT-APR-0213 in `rt-review`). The reader for adoption and for `export-script` is the same `rt-proposals` parser. Reported metadata is audit data only. It is not used for the Request_Identifier, the AI identities, the Reviewer check or any Diagnostic. A reported value above 256 scalar values or with a control character is omitted, and the redactor applies to every reported value. The demonstration goldens that hold a stored batch change from version 1 to 2 when this lands, and each changed golden is shown and reviewed.
 
 Write algorithm (all within `rt-ai-tool`, via its own `Fs` trait):
 
@@ -1047,7 +1094,7 @@ The request that failed this way ends the run with `RT-AI-0303` and exit 70. `RT
 | Clause text tells the model to approve or reveal secrets | Fixed system prompt states that clause text is data. Schema has no approval field. Any approval-like field gives `RT-AI-0204`. Nothing in a response is executed. Only a human `review approve` approves |
 | Model invents spans or quotes | Six provenance checks recomputed from Source_Models; nothing repaired |
 | Document text leaves the machine unintentionally | `allow_document_text` and `--consent` equal to the set of documents of the run (RN-7); log entry before every attempt; clause texts are the only document text sent |
-| Credential leaks | Credential held only in `rt-ai-openai` (`Debug` prints `[REDACTED]`, no `Display`). All tool output goes through one `Out` type that applies `Redactor` (also the `Bearer <value>` form). Clippy `disallowed-macros` forbids `println!`, `eprintln!`, `print!`, `eprint!` in the AI crates. Canary tests for every failure mode (Req 23.23) |
+| Credential leaks | Credential held only in `rt-ai-responses` and read only from the variable named in the configuration (`Debug` prints `[REDACTED]`, no `Display`). All tool output goes through one `Out` type that applies `Redactor` (also the `Bearer <value>` form). Clippy `disallowed-macros` forbids `println!`, `eprintln!`, `print!`, `eprint!` in the AI crates. Canary tests for every failure mode (Req 23.23) |
 | Redirect exfiltration | Redirects disabled; 3xx is `RT-AI-0105` without retry |
 | Oversized or hostile response | Streaming read cap, depth 32, count limits, strict parse |
 | Environment leakage | Only `credential_env_var` is read; proxy auto-detection disabled; tested with `HTTPS_PROXY` set |
@@ -1247,7 +1294,9 @@ ruletrace-ai propose --config <ai.toml> --rulebook <rb.json> --source-model <m.j
                      --feedback-file <path>] [--dry-run]
 ```
 
-Reads: configuration, Source_Models, candidates, Rulebook (declarations only), store directory, one credential environment variable. Writes: `<store>/batches/*`, Transmission_Log. It never opens a ledger file, never writes the Rulebook, and cannot call any approval function because `rt-review` and the append code are not in its dependency tree (Req 27.4). stdout carries the Run_Summary; stderr carries Diagnostics (credential redacted). AI configuration (TOML, schema version 1):
+`ruletrace-ai models --config <ai.toml>` (UD-37, Req 35.18) lists the Model_Catalogue of the configured provider. It loads the configuration through the checks of Req 28.17 up to the credential (it skips consent and capability negotiation, which concern a Provider_Request), appends one Transmission_Log entry without documents, sends `GET /v1/models` with the credential in the authorization header only, and prints the model identifiers one per line in ascending byte order through `escape_controls`. It needs no consent, sends no document text, writes nothing but the Transmission_Log, never selects a model and never writes the configuration. A failure is RT-AI-0109, exit 5. With `verify_model = true`, `propose` runs the same query once before its first Provider_Request and refuses a model that is not listed with RT-AI-0110, exit 5.
+
+Reads: configuration, Source_Models, candidates, Rulebook (declarations only), store directory, one credential environment variable. Writes: `<store>/batches/*`, Transmission_Log. It never opens a ledger file, never writes the Rulebook, and cannot call any approval function because `rt-review` and the append code are not in its dependency tree (Req 27.4). stdout carries the Run_Summary; stderr carries Diagnostics (credential redacted). AI configuration, schema version 1 (still loads; mapped in memory to provider id `openai` and protocol `openai-responses`, or for `mock-replay` to id and protocol `mock-replay`, and the file is never written, UD-37):
 
 ```toml
 schema_version = 1
@@ -1265,6 +1314,37 @@ attempt_timeout_secs = 20
 max_retries = 2
 max_response_bytes = 1048576
 ```
+
+AI configuration, schema version 2 (UD-37, first live experiment with the Meta Model API; the limits are the user's to set):
+
+```toml
+schema_version = 2
+enabled = true
+allow_document_text = true
+ai_identities = ["meta", "muse-spark-1.3"]
+transmission_log = "transmission.log.jsonl"
+max_clauses_per_request = 20
+
+[provider]
+id = "meta"
+protocol = "openai-responses"
+model = "muse-spark-1.3"
+endpoint = "https://api.meta.ai"
+credential_env_var = "MODEL_API_KEY"
+reasoning_effort = "low"
+# verify_model = true
+# allow_provider_training = true   # never set in the experiment
+
+[limits]
+total_deadline_secs = 120
+attempt_timeout_secs = 90
+max_retries = 0
+max_response_bytes = 1048576
+
+# [capabilities]   # optional; may only restate or lower the profile values
+```
+
+Load checks (Req 28.17, 35): the four provider fields and the credential variable name are validated independently; the pair (id, protocol) must be one of (meta, openai-responses), (openai, openai-responses), (mock-replay, mock-replay); for `meta` and `openai` the endpoint host must equal the official host (`api.meta.ai`, `api.openai.com`) or be a loopback address used by the stub tests, otherwise RT-AI-0013; a model identifier containing `contributor` is RT-AI-0012 unless `allow_provider_training = true`; a required capability that is no or unknown is RT-AI-0011. A custom compatible endpoint is not supported in this version and is rejected (AI_PROVIDER_UNKNOWN or RT-AI-0013).
 
 `--dry-run` builds the Provider_Requests and prints each Request_Identifier, the clauses, the document identifiers and the byte count that a real run would send, then exits 0. It opens no network connection, reads no credential, writes no file (not the store and not the Transmission_Log) and needs no consent because nothing is sent. It lets a person review what would be transmitted and lets an author key an authored script entry (§8.11.7). Because it sends nothing, it does not apply the provider-link check (`RT-AI-0006`) or the Proposal_Store check (`RT-AI-0302`): both checks exist to prevent a provider call (Req 23.33, "no provider call"), and a dry run makes none. A dry run therefore succeeds for a provider kind that this build does not link and for a malformed store, and the real run reports both. No requirement forbids it, and Req 27.3 is unaffected (RN-24).
 
@@ -1715,6 +1795,9 @@ The catalogue is one file, `catalogue/diagnostics.v1.json` (RT-JSON array of `{c
 | RT-AI-0008 (R) | AI_CONSENT_MISSING | Error | Consent absent or not equal to the documents sent | 2 | ai |
 | RT-AI-0009 (R) | AI_CONFIG_PERMISSIONS | Warning | Config readable by group or others | 0 | ai |
 | RT-AI-0010 (R) | AI_TRANSMISSION_LOG_FAILED | Error | Log entry not written, nothing sent | 70 | ai |
+| RT-AI-0011 (N) | AI_CAPABILITY_UNSUPPORTED | Error | A required Capability is no or unknown for the Provider_Profile (UD-37; the catalogue row is added by task 10.10) | 2 | ai |
+| RT-AI-0012 (N) | AI_MODEL_TRAINING_MODE_REFUSED | Error | Model identifier contains `contributor` and `allow_provider_training` is not true (UD-37; task 10.10) | 2 | ai |
+| RT-AI-0013 (N) | AI_CONFIG_ENDPOINT_HOST_NOT_PERMITTED | Error | Endpoint host is not the official host of the provider id (UD-37; task 10.10) | 2 | ai |
 | RT-AI-0101 (R) | AI_PROVIDER_UNAVAILABLE | Warning | Attempt failed: refused, reset, DNS, 5xx | 0 | ai |
 | RT-AI-0102 (R) | AI_PROVIDER_TIMEOUT | Warning | Attempt timed out | 0 | ai |
 | RT-AI-0103 (R) | AI_PROVIDER_RATE_LIMITED | Warning | Attempt got HTTP 429 | 0 | ai |
@@ -1723,6 +1806,8 @@ The catalogue is one file, `catalogue/diagnostics.v1.json` (RT-JSON array of `{c
 | RT-AI-0106 (R) | AI_PROVIDER_RETRY_EXHAUSTED | Error | All permitted attempts transient failures | 5 | ai |
 | RT-AI-0107 (R) | AI_PROVIDER_DEADLINE_EXCEEDED | Error | Deadline cannot fit another attempt | 5 | ai |
 | RT-AI-0108 (R) | AI_PROVIDER_TLS_FAILED | Error | TLS or certificate failure | 5 | ai |
+| RT-AI-0109 (N) | AI_MODEL_DISCOVERY_FAILED | Error | The `models` request failed, was refused, or its response was unreadable (UD-37; task 10.10) | 5 | ai |
+| RT-AI-0110 (N) | AI_MODEL_NOT_IN_CATALOGUE | Error | `verify_model` is true and the configured model is not listed (UD-37; task 10.10) | 5 | ai |
 | RT-AI-0201 (R) | AI_RESPONSE_MALFORMED | Error | Not UTF-8 or not parseable | 6 | ai |
 | RT-AI-0202 (R) | AI_RESPONSE_SCHEMA_VIOLATION | Error | Duplicate key, unknown or missing field, wrong type, depth | 6 | ai |
 | RT-AI-0203 (R) | AI_RESPONSE_TOO_LARGE | Error | Response above the limit | 6 | ai |
@@ -2113,7 +2198,7 @@ Library error conversion: every internal error enum converts to `Diagnostic` thr
 | Data exfiltration | Sending more text or to another host | Consent equals documents of the run; log before every attempt; https only (loopback in tests); redirects not followed; `store:false`; no environment or credential in body | 28.6, 28.7, 28.14, 28.19 |
 | Credential leakage | Logs, errors, store, fixtures, config | Env var name only; inline secret and key-field rejection; `Credential` type with redacted `Debug`; single `Out` choke point; `disallowed-macros`; canary tests; scan of fixtures for credential patterns | 28.4, 28.9, 28.15, 23.22, 23.23 |
 | Forged approval | Editing the ledger, a flag, an environment variable, a response | Hash chain detects edits of earlier records; no channel except `review` appends; AI crates cannot reach the append code; stored status never read | 26.18, 26.26, 27.4 |
-| Supply chain | Malicious or vulnerable dependency; build scripts | Few dependencies (§3.2); lockfile committed; `cargo deny` advisories, bans and licences; justification record; `ring` and `rustls` only under `rt-ai-openai`; core tree has no network crate | 21.5 to 21.7, 21.13 |
+| Supply chain | Malicious or vulnerable dependency; build scripts | Few dependencies (§3.2); lockfile committed; `cargo deny` advisories, bans and licences; justification record; `ring` and `rustls` only under `rt-ai-responses`; core tree has no network crate | 21.5 to 21.7, 21.13 |
 | Reviewer impersonation | Appending any name | Not prevented. Documented residual risk | R-8, R-14, 26.22 |
 | Unlicensed demonstration document | Committing or sending a document without permission | The manifest must record licence and `transmission_permitted`; the harness refuses to run `ruletrace-ai` on a document without it; public documents only | 28.11, 28.21, 33.2 |
 | Document text sent to the provider by the demonstration | Live flow | Same configuration, consent and Transmission_Log as any run; `--dry-run` previews; the live store is outside the goldens; competition data, published results and the ledger are never sent (only clause text and declarations are, Req 23.2) | 28.7, 28.8, 33.10 |
@@ -2293,7 +2378,7 @@ Result: the complete demonstration of §8.1 on real documents confirmed by the u
 | Phase | Scope | Entry | Gate tests and exit | Requirements mainly satisfied |
 | --- | --- | --- | --- | --- |
 | 7 Application layers | `rt-data::tabular`, `prize-check`, `bracket-check` (lib and bin), `results` shared with `evaluate`, engine tie annotation for published ranks, Rank_Reference (if UD-32 selects it), `check-app-layers`, `check-executables`, APP codes | Phase 4 (independent of Phases 5 and 6); UD-33 confirmed; UD-32 decided before the Rank_Reference part | Properties 42, 43, 44, 46, 47, 45 (if Rank_Reference); app scan negative fixtures; isolation test with two applications; process test under two clocks, directories, locales | 14.11 to 14.14, 15.8, 15.10, 24.12, 27.1, 27.15, 31, 32 |
-| 8 OpenAI and recording | `rt-ai-openai` (TLS, redirects off, monotonic clock), loopback stub-server tests, canary tests, `rt-xtask export-script`, live recording of the proposals for the confirmed documents, the Recorded_Provider_Script committed with its hashes, `demo-live` job | Phase 6; UD-15 confirmed; UD-34 documents confirmed; UD-32 decided (the vocabulary is frozen) | Stub tests with no external network; Property 37 (canary); script hash and credential checks; live job runnable | 23.27 to 23.31, 28.6, 28.13, 28.19, 28.21, 33.8, 33.10 |
+| 8 Provider integration (Meta first) and recording | flat Proposal schema (10.4), capability and identity types, Provider_Profiles, configuration and store version 2, `rt-ai-responses` (TLS, redirects off, monotonic clock), the `models` command, loopback stub-server tests with the Meta error shapes, a user review gate before the live run, canary tests, `rt-xtask export-script`, live recording of the proposals for the confirmed documents, the Recorded_Provider_Script committed with its hashes, `demo-live` job | Phase 6; UD-15 confirmed; UD-34 documents confirmed; UD-32 decided (the vocabulary is frozen) | Stub tests with no external network; Property 37 (canary); script hash and credential checks; live job runnable | 23.27 to 23.31, 28.6, 28.13, 28.19, 28.21, 33.8, 33.10 |
 | 9 Final demonstration | Real Demo_Corpus and data (UD-35), published checks, mutation checks, claims scan and statements, runbook, `docs/support-boundary.md`, `demo-offline` required job on three platforms | Phases 7 and 8 | Properties 48, 49, 50, 51, 52; the acceptance test with all assertions of Req 33.15 and 33.17; claims scan negative fixtures | 33 (all), 34 (all), 20.26, 20.27 |
 
 Slice 2 exit criteria: all of Req 33.15 passes offline on the three platforms from the committed files; the live flow has been run once by the user and its candidate script committed deliberately; the Proof_Report headers state the limits and the number of Unsupported clauses; applications' results are byte-identical to `ruletrace evaluate`.
@@ -2312,7 +2397,7 @@ Breadth tests complete for all code, parser fuzz-style runs, every provokable ca
 | 3 Ledger and validation, 4 Compile, execute, explain | Phase 3 (one phase, thin) |
 | 5 Review and adoption | Split: review of existing revisions in Phase 4 (Slice 0), adoption and journaled two-file commit in Phase 5 (Slice 1) |
 | 6 AI pipeline with mock | Phase 6 |
-| 7 OpenAI integration | Phase 8 |
+| 7 Provider integration (Responses protocol; Meta Model API first, UD-37) | Phase 8 |
 | 8 Hardening and release | Phase 10 |
 | (new) | Phase 7 application layers, Phase 9 final demonstration |
 
@@ -2647,7 +2732,8 @@ demo/
     rulebook/hand-authored.json      Slice 0 profile only: hand-authored revisions (no AI)
     provider/recorded-script.json    Recorded_Provider_Script (Slice 2); provider/authored-script.json (Slice 1)
     ai/mock-replay.toml              AI_Configuration of the offline flow (no endpoint, no credential)
-    ai/openai.example.toml           example for the live flow (credential named by variable only)
+    ai/meta.example.toml             example for the live flow (credential named by variable only)
+    ai/openai.example.toml           second profile example (credential named by variable only)
     data/participants.csv, collections.csv, published.csv, published-seeded.csv, standings-missing.csv
     data/canonical/*.json            canonical data, questions, published (compared to the apps' --emit output)
     coverage-notes.json              human-authored reasons for "Not a rule" clauses (labelled authored)
@@ -2738,7 +2824,7 @@ sequenceDiagram
 
 #### 8.11.6 Live flow (opt-in, Req 33.10)
 
-The live flow differs from the offline flow in step s02 only. It runs `ruletrace-ai propose --config ai/openai.local.toml --consent D …` with an AI_Configuration the user writes outside the committed files (it names the credential by environment variable only, Req 28), a Transmission_Consent that names each document sent, and `--store target/demo-live/store`. The store is outside the golden directory. Nothing replaces a golden file or the Recorded_Provider_Script automatically. The user inspects the batches, then exports a candidate script (§8.11.7) and commits it in a deliberate commit that also updates the response hashes in `manifest.json` and re-blesses the goldens. It runs in the separate non-required CI job `demo-live` (Req 20.27). Live responses differ between runs (R-12), so the live flow never feeds the golden files.
+The live flow differs from the offline flow in step s02 only. It runs `ruletrace-ai propose --config ai/meta.local.toml --consent D …` (or `ai/openai.local.toml`) with an AI_Configuration the user writes outside the committed files (it names the credential by environment variable only, Req 28), a Transmission_Consent that names each document sent, and `--store target/demo-live/store`. The store is outside the golden directory. Nothing replaces a golden file or the Recorded_Provider_Script automatically. The user inspects the batches, then exports a candidate script (§8.11.7) and commits it in a deliberate commit that also updates the response hashes in `manifest.json` and re-blesses the goldens. It runs in the separate non-required CI job `demo-live` (Req 20.27). Live responses differ between runs (R-12), so the live flow never feeds the golden files.
 
 #### 8.11.7 Capture of the recorded response (UD-36, recommended option 1)
 
@@ -2753,11 +2839,11 @@ Options as the requirements state them: (1) the Proposal_Store retains the accep
 | Export | `rt-xtask export-script --store <dir> --provider <kind> --model <id> --captured "<text>" --out <file>` calls `rt_proposals::export_script` (pure: batches in, canonical bytes out), orders entries by `request_id`, sets `origin: "recorded"` and recomputes each `response_sha256` from the payload, and fails if the stored hash disagrees. It runs the credential-looking-string scan of Req 28.15 over the payload and refuses to write a script that matches. The export is deterministic: equal stores give equal bytes |
 | Alternatives rejected | Option 2 adds a write target to `ruletrace-ai` and an amendment of 27.3. Option 3 records outside the audited store and hides which batch a script entry came from |
 
-Recorded_Provider_Script format (`rt-ai-mock`, RT-JSON):
+Recorded_Provider_Script format (`rt-ai-mock`, RT-JSON). Version 1 is unchanged: `kind` is the protocol label, and the optional `id` member names the provider identifier (UD-37); a script without `id` stays valid:
 
 ```text
 { "format":"ruletrace-recorded-script","version":1,
-  "provider":{"kind":"openai-responses","model":"<model id>","adapter_version":"<version>"},
+  "provider":{"kind":"openai-responses","id":"meta","model":"<model id>","adapter_version":"<version>"},
   "captured":"<text supplied by the user>",
   "entries":[ {"request_id":"<64 hex>","origin":"recorded"|"authored","completion":"complete",
                "response_sha256":"<64 hex of payload bytes>","payload":"<exact response text>"} ] }
@@ -2898,7 +2984,7 @@ Prize allocation, slot-based qualification, seeding, bracket generation, progres
 
 | Id | Risk | Mitigation |
 | --- | --- | --- |
-| R-D1 | OpenAI strict mode limits object nesting to 10 levels; deep expressions may not fit the recursive schema | Expression depth 16 is a local limit; the live job checks; fallback is a flat node table lowered to the same IR |
+| R-D1 | Strict-mode limits (10 nesting levels, 5,000 properties, no recursion at Meta) rule out a recursive expression schema | Resolved by UD-37: one flat node-table schema, no `$ref`, generator and limit tests in task 10.4, depth 16 round trip |
 | R-D2 | Hand-written 256-bit helper and digit-vector codec contain a bug | Differential tests against `num-bigint`; boundary generators; two independent reviews before Phase 1 exit |
 | R-D3 | Hand-written RT-JSON parser diverges from standard JSON | Differential test against `serde_json` (dev-only oracle) on generated valid and invalid documents; RFC 8259 examples |
 | R-D4 | `File::try_lock` needs a recent toolchain; lock files can go stale | Pin the toolchain at or above the stabilizing version (check at Phase 0). No lock-file fallback: a file system without advisory locks is refused with RT-APR-0215 (user decision of 2026-11-14) |
@@ -2913,6 +2999,7 @@ Prize allocation, slot-based qualification, seeding, bracket generation, progres
 | R-D13 | CSV pitfalls from spreadsheet exports (locale decimal commas, date formats, byte order marks, formulas) | Strict dialect, schema-driven typing, no trimming, one Diagnostic per violation with line and column, BOM tolerated (§8.3) |
 | R-D14 | The token scan for duplicated business logic is a heuristic and has false positives and blind spots | The scan is the early alarm; Properties 42 and 43 (differential and metamorphic) are the evidence; per-line allowlist needs a reason (§8.10) |
 | R-D15 | The demonstration acceptance test is slow and platform-sensitive | Runs only the offline flow; three platforms from Phase 0; the `hand` profile runs in the core-only job; process-level properties use 12 environments |
+| R-D16 | A provider gateway timeout (HTTP 504) is retried with the same request while the provider may still be generating (Req 29.2, UD-37 OD-37-1) | Req 29.2 unchanged; the interplay is documented (§3.7.3); guidance `max_retries = 0` for the first live run; the user decides OD-37-1 |
 
 ### 9.1a Handling of requirement risks R-17 to R-20
 
@@ -2945,7 +3032,7 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 | UD-14 | Exit-code classification | Recommended-pending | §6.1 follows the recommendation, including exit 2 for RT-VAL-0017 and 0018 | User |
 | UD-15 | CI pins | **Recommended-pending** | Runner labels in §7.4; toolchain version chosen in Phase 0 | User |
 | UD-16 | Rulebook document references | Resolved-in-design | `documents` array with id and hash (§4.1.2) | Design review |
-| UD-17 | Real provider | Resolved-by-user | OpenAI Responses (§3.7.3) | none |
+| UD-17 | Real provider | Resolved-by-user (first provider amended by UD-37) | Responses protocol; the first real provider is the Meta Model API, OpenAI is the second profile (§3.7.3) | none |
 | UD-18 | AI configuration | Resolved-by-user | TOML, env var name (§3.9.2) | none |
 | UD-19 | Timeouts and retry | Resolved-by-user | §3.7.6 | none |
 | UD-20 | Batch rejection | Resolved-by-user | §3.7.4 | none |
@@ -2968,6 +3055,7 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 | UD-34 | Demonstration documents | **Open** | Selection criteria in §8.11.1; the harness is document-agnostic; no document is named or assumed suitable; Slice 0 and 1 use a labelled stand-in | User |
 | UD-35 | Demonstration Competition_Data and Published_Results | **Open**; recommendation: real published values where they exist and are licensed, otherwise synthetic and labelled, with one equal and one seeded-difference Published_Result | §8.11.10; the manifest `nature` field supports both | User |
 | UD-36 | Capture of the recorded provider response | **Recommended-applied**: option 1, the Proposal_Store retains the accepted response and `rt-xtask export-script` writes the script (§8.11.7) | §3.7.5, §8.11.7; affects Req 27.3 (unchanged under option 1) and Req 30.1 (RN-27) | User confirms |
+| UD-37 | First real provider (Meta Model API over the Responses protocol), crate rename to `rt-ai-responses`, flat schema, store version 2, configuration version 2 with host restrictions, capabilities, `models` command | **Confirmed by the user** (`tools/decisions/UD-37.md`; Req 23.39, 35; OD-37-1 open) | §3.2, §3.4.5, §3.7.3, §3.7.5, §3.9.2 | none |
 
 ### 9.3 Steering updates required (steering files are not edited here)
 
@@ -2984,6 +3072,7 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 8. `rust-engineering-and-testing.md`: "Only the CLI binary, the AI and review tools, and the AI integration crates do I/O" gains "and the `io.rs` and `main.rs` files of the two demonstration executables". Quality gates add "demonstration acceptance test (offline) on three platforms" and "source scan of the application layers (no arithmetic, ordering, tie-breaking, literal parameters or competition field names)". Testing: the isolation test runs two applications as well as two rulebooks, and the regression fixtures include the demonstration goldens with the deliberate-bless rule.
 9. `technical-architecture.md`, "AI": add "The Proposal_Store retains the accepted response payload of each stored batch. Rejected responses are never stored. A payload that contains the credential value is not stored." This is the UD-36 decision.
 10. `product-principles.md` §6 Scope Discipline: add "Demonstration documents and reports state the first-version boundary, the meaning of verified, the need for human approval and the number of unsupported clauses, and a documentation scan enforces the statements."
+11. `technical-architecture.md`, section "AI", bullet "First real provider: OpenAI Responses API ...": proposed replacement: "First real provider: the Meta Model API over the OpenAI Responses protocol (UD-37), with structured JSON Schema output, in the integration crate `rt-ai-responses`. The OpenAI profile uses the same crate. Provider profiles are data in the `ruletrace-ai` crate. The credential is sent only to the official host of the provider id. The response is still untrusted." The same section, "Structure" and `rust-engineering-and-testing.md` name `ai-integration-*` crates generically and need no change. Not applied here, because steering files are not edited without the user's approval (as for items 1 to 10).
 
 ### 9.4 Requirements notes (the design does not silently weaken any criterion)
 
