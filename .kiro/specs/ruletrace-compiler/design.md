@@ -906,7 +906,7 @@ Write algorithm (all within `rt-ai-tool`, via its own `Fs` trait):
 
 1. Check `batches/<request_id>.json` exists (idempotency, step 4). If yes: Warning `RT-AI-0301`, exit 0.
 2. Write `.tmp/<request_id>.tmp` fully, flush, `sync_all`.
-3. `hard_link(tmp, final)`. Success means this process stored the batch. `AlreadyExists` means a concurrent run won: remove tmp, Warning `RT-AI-0301`, exit 0 (Req 29.11). Hard links fail on a few file systems: fallback is `create_new` of a `.lock` marker then `rename`, with the same outcome.
+3. `hard_link(tmp, final)`. Success means this process stored the batch. `AlreadyExists` means a concurrent run won: remove tmp, Warning `RT-AI-0301`, exit 0 (Req 29.11). The store fails closed. There is no `.lock` marker and no `rename` fallback. If `hard_link` is unsupported or fails for any reason other than "already exists", the write is refused with `RT-AI-0303`, exit 70, the store is unchanged and tmp is removed. If the link target already exists the outcome is `RT-AI-0301` (user decision of 2026-11-15).
 4. `sync` the directory, remove tmp.
 
 If any step fails: remove tmp, `RT-AI-0303`, exit 70, no file in `batches/` (Req 29.19). The final file appears whole or not at all. A malformed existing store (unparseable batch file) gives `RT-AI-0302` exit 2 before any provider call.
@@ -2813,7 +2813,7 @@ Prize allocation, slot-based qualification, seeding, bracket generation, progres
 | R-D2 | Hand-written 256-bit helper and digit-vector codec contain a bug | Differential tests against `num-bigint`; boundary generators; two independent reviews before Phase 1 exit |
 | R-D3 | Hand-written RT-JSON parser diverges from standard JSON | Differential test against `serde_json` (dev-only oracle) on generated valid and invalid documents; RFC 8259 examples |
 | R-D4 | `File::try_lock` needs a recent toolchain; lock files can go stale | Pin the toolchain at or above the stabilizing version (check at Phase 0). No lock-file fallback: a file system without advisory locks is refused with RT-APR-0215 (user decision of 2026-11-14) |
-| R-D5 | Hard links unavailable on some file systems | Fallback to copy and to `create_new` plus rename, covered by the same fault-injection tests |
+| R-D5 | Hard links unavailable on some file systems | Fail closed: the Proposal_Store write is refused with `RT-AI-0303` (exit 70), the store is unchanged and the temp file is removed. No copy, `create_new` or rename fallback (user decision of 2026-11-15). Covered by fault-injection tests |
 | R-D6 | `ureq` proxy and redirect defaults change across versions | Explicit config (no proxy, no redirects), tests with `HTTPS_PROXY` set and a 302 stub; lockfile pin |
 | R-D7 | Authors find JSON AST verbose | Templates in the user guide; AI proposals produce the form; a pretty expression view for review is deferred |
 | R-D8 | Chains of unrelated denominators overflow 127 bits | Reported as Indeterminate with operands (R-7); fallback R-Big |

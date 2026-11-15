@@ -205,3 +205,16 @@ User decision: an accepted batch is refused when it holds a partial echo of the 
 | 28 | AI Configuration, Credentials, and Transmission Consent | Changed | 9 (a payload with a run of 8 characters of the credential is not stored) | - | User decision on the stage C follow-up review |
 
 Other sections changed: design section 3.7.4 step 5. No safety criterion was removed or weakened.
+
+## Proposal_Store fail-closed amendment (8.7: no rename fallback)
+
+User decision of 2026-11-15: the Proposal_Store writer fails closed, as the Approval_Ledger readers do (UD-15). There is no `create_new` `.lock` marker and no `rename` fallback. If `hard_link` is unsupported, or fails for any reason other than "already exists", the write is refused with `RT-AI-0303` (exit 70). The store is left unchanged and the temp file is removed. If the link target already exists, the outcome is `RT-AI-0301`.
+
+- Design section 3.7.5 step 3 and risk R-D5 state the rule. The 8.7 task text no longer names the fallback.
+- No requirement criterion was changed. Req 29.19 (no partial batch file) is met by the refusal. No safety criterion was removed or weakened.
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 29 | Provider Call Policy and Proposal_Store | Unchanged | - | - | User decision on the 8.7 store design |
+
+Other sections changed: design section 3.7.5, risk R-D5, task 8.7 text.
