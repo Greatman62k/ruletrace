@@ -286,7 +286,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: any permutation of a generated list sorts to identical bytes.
     - **Validates: Requirements 7.10, 7.22, 6.12, 17.12**
 
-  - [ ] 2.14 Checkpoint - Phase 0 exit
+  - [x] 2.14 Checkpoint - Phase 0 exit
     - Run `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, and `rt-xtask check-graph check-tree scan-sources scan-api check-catalogue check-justification check-decisions`.
     - Exit criteria: Properties 4 and 7 pass; graph and scan negative fixtures pass; the catalogue generator and its freshness check pass; CI is green on three platforms.
     - Ensure all tests pass, ask the user if questions arise.
@@ -469,7 +469,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 20.4, 21.11, 21.12, 28.11, 1.7_
     - Design §7.3
 
-  - [ ] 4.18 Checkpoint - Phase 2 exit
+  - [x] 4.18 Checkpoint - Phase 2 exit
     - Run the full gate set. Confirm `rt-ledger` has no append function and that `check-decisions` passes.
     - Exit criteria: Properties 1, 5 (Rulebook and ledger), 9, 12, 13, 14 pass; the worked-example hash is reproduced; the ingest golden is byte stable on three platforms.
     - Ensure all tests pass, ask the user if questions arise.
@@ -652,7 +652,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7, 20.4, 20.5, 20.6, 21.11, 21.12, 13.7, 13.15_
     - Design §7.3
 
-  - [ ] 5.28 Checkpoint - Phase 3 exit
+  - [x] 5.28 Checkpoint - Phase 3 exit
     - Run the full gate set and the `core-only` job. The core must be usable without AI: ingest, validate, compile and evaluate work from a ledger and a Rulebook written by hand. Exit codes 0, 2, 3, 4 occur as specified.
     - Exit criteria: Properties 2, 8, 10, 11, 20, 23, 24, 25, 26, 30 and 40 pass; the five slice fixtures are green on three platforms with identical bytes.
     - Ensure all tests pass, ask the user if questions arise.
@@ -909,11 +909,11 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Blocked by: 8.8.
     - _Requirements: 20.7, 20.8, 20.9, 23.17, 23.33, 23.38, 29.14_
 
-  - [-] 8.16 Add the `slice-ai` fixture and approval-gating tests
+  - [x] 8.16 Add the `slice-ai` fixture and approval-gating tests
     - End to end with the Mock_Provider: propose, `review approve`, validate, compile, evaluate. The compiled output is byte-identical to the manually authored equivalent (Req 16.18). Add the self-approval attempt (Reviewer equal to the proposer, provider, model or an AI identity) and the prompt-injection fixture (clause text instructing approval). Neither may change any ledger, status or Diagnostic code. Required.
     - Observable: the fixture is green on three platforms, and both attack fixtures leave the ledger unchanged.
     - Blocked by: 8.8, 8.12.
-    - Status note: every behaviour sentence is covered by `rt-tests-ai` (`slice_ai`, `slice_ai_attacks`) and verified locally on Linux. The task stays in progress because "green on three platforms" is not yet shown: it is pending the CI run of the current main. Not claimed.
+    - Status note: every behaviour sentence is covered by `rt-tests-ai` (`slice_ai`, `slice_ai_attacks`). Green on three platforms: `test` jobs of CI run 43743980937 (commit b818ca3). See `traceability.md` (Checkpoint evidence, run 43743980937).
     - _Requirements: 16.18, 18.6, 18.14, 18.16, 23.14, 23.15, 26.17, 20.20_
     - Design §7.3
 
@@ -923,6 +923,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Blocked by: 8.16, 8.21, 6.7, 1.11.
     - Carried from 8.16 review: the runbook approves proposals in dependency order; a rule reading a sibling's declaration is refused with RT-APR-0205 until that sibling is adopted.
     - Status note: everything is implemented in `demo/stand-in-ai` and verified locally on Linux (`cargo test -p rt-demo --test acceptance ai`, four controlled mutants killed). The task stays in progress for two reasons, see `traceability.md` (Task 8.17). (1) `review list` needs an existing ledger, so the first listing follows the first approval and not the other way round; this needs a user decision. (2) The Windows variants of the s02 goldens are hand-derived and unrun, and "green on three platforms" is pending the CI run. Not claimed.
+    - Update (run 43743980937): the CI run is green on three platforms, including the `.windows` goldens. Still open for a user decision: the order of `review list` (first listing follows the first approval). See `traceability.md` (Checkpoint evidence).
     - _Requirements: 33.6, 33.7, 33.8, 33.9, 33.11, 33.12, 23.25_
     - Design §8.11.4, §8.11.7, §8.11.8, §7.5 (Slice 1)
 
@@ -934,6 +935,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - **Validates: Requirements 17.7, 17.8, 18.1, 20.16, 27.9, 16.18**
     - _Also: 21.8, 21.13, 27.5, 27.6_
     - Status note: implemented and verified locally on Linux (`cargo test -p rt-demo --test ai_independence --test origin_independence`, `cargo test -p rt-demo --test acceptance`, a core-only simulation without `ruletrace-ai`, five controlled mutants). The task stays in progress until the CI run: the `core-only` job (which now runs both new test files) and the three-platform `demo-offline` job have not run. Two deviations, see `traceability.md` (Task 8.18): Property 41 is an exhaustive 2x2x2 matrix, not 256 generated cases; the origin-independence comparison uses a hand-authored Rulebook over the `ai` document, not the `hand` profile, whose document differs.
+    - Update (run 43743980937): `core-only` and the three-platform `demo-offline` jobs are green. Still open: the user has not confirmed the 8-cell matrix in place of 256 generated cases. See `traceability.md` (Checkpoint evidence).
 
   - [ ] 8.19 Checkpoint - Phase 6 exit and Demo Slice 1 exit
     - Run the full gate set including `core-only`. Confirm the steering decision of 8.3 is recorded.

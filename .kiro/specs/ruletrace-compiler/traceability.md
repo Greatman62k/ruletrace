@@ -430,3 +430,35 @@ Decisions and deviations:
 
 Open: the `core-only` job and the three-platform `demo-offline` job have not run on the new tests. A Windows run is untested (the test compiles for `x86_64-pc-windows-gnu`; it sets `HOME` and `USERPROFILE` and clears the rest of the environment as the other demo tests do). `ruletrace` is checked not to launch `ruletrace-ai` only by output equality and the source scan.
 
+
+## Checkpoint evidence (run 43743980937, commit b818ca3, 2026-11-15)
+
+CI run 43743980937 (workflow `ci`, commit b818ca3) concluded `success`; `gh run view 43743980937 --json jobs` lists 22 jobs, all `success`. Ids: fmt 132903111605 (ubuntu), 132903111580 (windows), 132903111614 (macos); clippy 132903111686, 132903111660, 132903111832; test 132903111547, 132903111641, 132903111636; golden 132903111682, 132903111847, 132903111629; toolchain 132903111628, 132903111595, 132903111355; demo-offline 132903111734, 132903111741, 132903111787; graph (linux) 132903111684; deny (linux) 132903111755; core-only (linux) 132903111620; ci-gate 132903985425.
+
+Local, same session, exit 0 each: `cargo fmt --all -- --check`; `cargo run -p rt-xtask -- check-graph check-tree scan-sources scan-api check-catalogue check-justification check-decisions`; `cargo clippy --workspace --all-targets --all-features -- -D warnings`; `cargo test --workspace --all-features` (1420 passed, 0 failed, 0 ignored).
+
+| Task | Result | Evidence |
+| --- | --- | --- |
+| 2.14 | Complete | Properties 4 (`rt-foundation/tests/diagnostic_state_flags.rs`) and 7 (`diagnostic_order.rs`) pass. `graph` job and local xtask run pass, including the negative fixtures of rt-xtask. Three-platform CI green |
+| 4.18 | Complete | Properties 1, 5, 9, 12, 13, 14 pass (`span_reproduction`, `contradictory_flags*`, `status_derivation_properties`, `hash_sensitivity_tests`, `hash_invariance_tests`, `ledger_properties`). `worked_example_matches_golden_hash` passes. `rt-ledger` test scans its source for `fn append` and `fn push_record`. `golden` job green on three platforms |
+| 5.28 | Complete | Properties 2, 8, 10, 11, 20, 23, 24, 25, 26, 30, 40 pass (`stage_determinism`, `locations_never_fabricated`, `unresolved_blocks_compile`, `compiled_set_properties`, `missing_values`, `ranking`, `input_order`, `trace_replay`, `provenance`, `exit_code_stage_order`, `isolation`). `core-only` and `golden` jobs green. Five slice fixtures compared on three platforms |
+| 6.12 | Open | Demonstration checkpoint: needs the user to see the printed summary and review. Not claimed |
+| 8.16 | Complete | `slice_ai` and `slice_ai_attacks` ran in the `test` jobs on ubuntu, windows and macos (jobs above), both attack fixtures leave the ledger unchanged |
+| 8.17 | Open | The `ai` profile acceptance test (7 tests) is green in `demo-offline` on three platforms, so the `.windows` goldens have now run on Windows. Missing: user decision on the order of `review list` (the task text lists it before the first approval; `--create-ledger` forces it after) |
+| 8.18 | Open | `ai_independence` and `origin_independence` pass in `core-only` and `demo-offline`. Missing: user confirmation that an exhaustive 8-cell matrix replaces the 256 generated cases (policy section 3 and 7 forbid reducing the count without a specification decision), and for the origin test using a hand-authored Rulebook over the `ai` document |
+| 8.19 | Open | Blocked by the open 8.17 and 8.18. Other criteria below are met |
+
+8.19 criteria checked:
+
+- Properties 31 (`rt-ai-tool` `tests_identifier_property`, `rt-proposals` `tests_identifier_property`), 32 (`rt-ai-adapter` `tests_retry`), 33 (`tests_batch_property::every_single_mutation_rejects_the_whole_batch_and_stores_nothing`), 34 (`rt-tests-ai/tests/origin_property.rs`), 37 (`tests_redaction_property`), 38 (`tests_config_order`) pass. Property 41 (`ai_independence::ruletrace_output_is_identical_in_all_eight_combinations`) passes as an 8-cell matrix, not 256 cases.
+- Script entry keyed by the identifier `--dry-run` prints: `replay_script_is_keyed_by_the_request_identifier` and `ai_profile_acceptance` (Req 33.8). Accepted response bytes in the stored batch: `ai_profile_acceptance` (Req 23.25).
+- Every clause classified or named: `ai_profile_acceptance` and `ai_profile_coverage_names_the_unclassified_clause_without_the_store_or_the_rejection`.
+- Steering items 1 to 4 and 9 of design 9.3 are merged: commits b57c9e7 and 6500ffa, text in `.kiro/steering/technical-architecture.md` (AI bullet, revisions bullet) and `rust-engineering-and-testing.md`. Item 5 is deliberately untouched (DD-2).
+- `core-only` job green with the AI crates in the workspace.
+
+Known limitations:
+
+- macOS golden `NotFound` flake: mitigated by bf25ce2 (one build of the `ruletrace` binary per test process; the cause was not reproduced on Linux), not proven. It was seen once, in run 43727951886 (`golden (macos-15)`, `test (macos-15)`). In the four runs after the mitigation (43735573572, 43736966780, 43739958693, 43743980937) all 6 macOS jobs of each run succeeded (checked with `gh run view`). Run 43735573572 failed on `test (windows-2022)` only (a Windows file-size test and `slice_ai` tests, fixed later), not on macOS. Four clean runs do not prove the cause.
+- Property 41 is an 8-cell matrix, pending user confirmation.
+- The `.windows` goldens of the `ai` profile are hand-derived. They pass on windows-2022 in run 43743980937 but have no independent source.
+- The live AI-origin comparison runs only in `ai_profile_acceptance`, which `core-only` skips.
