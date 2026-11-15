@@ -797,7 +797,7 @@ Trace entries hold Locations and hashes only, no source text (Req 10.11). Replay
 
 *Determinism guarantees.* Pure functions; `BTreeMap` and sorted `Vec` only; no `HashMap`, no float, no time; numbers via `rt-numeric`; text sorting by bytes (never locale); output via canonical writer; golden comparison on the three-OS matrix. Two compiled rulebooks share nothing: `CompiledRulebook` owns all its data and `evaluate` takes `&CompiledRulebook` with no interior mutability (Req 9.7, 10.8).
 
-*Cross-platform CI matrix (Req 21.10).* `ubuntu-24.04` (x86_64), `macos-14` (arm64), `windows-2022` (x86_64) runner labels, pinned in `.github/workflows/ci.yml`, recorded as UD-15 (pending user confirmation). Jobs per platform: fmt, clippy, test, golden byte compare (`.gitattributes` `* -text`), plus Linux-only graph, tree, scan, deny, core-only. Failure output names golden file and platform.
+*Cross-platform CI matrix (Req 21.10).* `ubuntu-24.04` (x86_64), `macos-15` (arm64), `windows-2022` (x86_64) runner labels, pinned in `.github/workflows/ci.yml`, recorded as UD-15 (pending user confirmation). Jobs per platform: fmt, clippy, test, golden byte compare (`.gitattributes` `* -text`), plus Linux-only graph, tree, scan, deny, core-only. Failure output names golden file and platform.
 
 ### 3.7 AI proposal pipeline and provider adapter
 
@@ -2194,7 +2194,7 @@ PBT applies: the core is made of pure functions over parsed values (parsers, ser
 | `demo-offline` | all three | Build the four executables, run the demonstration acceptance test (`ai` profile; `hand` profile in `core-only`) with no network and no credential (Req 33.15, 33.16, 20.27) | yes, and a condition of a release tag (Req 20.26) |
 | `demo-live` | linux | Live-provider step of the demonstration with a repository secret; writes outside the goldens | no (Req 20.27, 33.10) |
 
-Runner labels pinned in the workflow: `ubuntu-24.04`, `macos-14`, `windows-2022` (UD-15). The change fails if any platform is missing, skipped or cancelled; the output of failed checks is kept as an artifact (Req 21.4).
+Runner labels pinned in the workflow: `ubuntu-24.04`, `macos-15`, `windows-2022` (UD-15). The change fails if any platform is missing, skipped or cancelled; the output of failed checks is kept as an artifact (Req 21.4).
 
 ### 7.5 Demonstration slices and implementation phases
 

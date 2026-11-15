@@ -341,3 +341,9 @@ User decisions and corrections of the 8.15 review.
 | 7 | Diagnostics Model | Changed | 7.17 | - | `RT-AI-0206` `AI_RESPONSE_CREDENTIAL_ECHO` was in the catalogue and the design table and missing from the Req 7.17 table. It is added with the catalogue meaning, exit 6 and `ruletrace-ai`. No code, severity or exit code changes |
 | 30 | Proposal Batch Acceptance and Protocol Failures | Changed | 30.1 | - | The list of Protocol_Failures that reject the complete batch names `RT-AI-0206` (credential in the response) and `RT-AI-0207` (revision target). Criterion 29.1 is the call policy and holds no such list. Both codes already reject the whole batch, exit 6, and store nothing. The behavior is unchanged |
 | 23 | AI-Assisted Proposal Pipeline | Unchanged | - | - | Design 3.9.2 no longer says that `RT-AI-0308` can name "the name of another request member". The scan covers all canonical bytes, keys included. A match in a key or in the fixed head names `requests[n]`. The message of `RT-AI-0308` adds a note for a match outside a clause, the feedback and the revised content. No criterion or catalogue meaning changes |
+
+## UD-15 amendment: macOS runner label (task 8.16, 2026-11-15)
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 21 | Cross-Platform CI | Changed | 21.10 | - | GitHub rejected `macos-14` on run 43720278618 (every macOS job cancelled with zero steps). User decision: the macOS label is `macos-15`. `ubuntu-24.04`, `windows-2022` and the toolchain pin 1.99.1 are unchanged. No macOS job ever ran. Updated: `ci.yml`, design 3.6.3 and 7.4 text, tasks 1.1 and the CI task, UD-15 section 5 |

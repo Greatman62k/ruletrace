@@ -26,7 +26,7 @@ Each decision has a gate task in group 1. The recommendation is the one the desi
 
 | Gate task | Decision | Recommendation | Blocks | Needed by |
 | --- | --- | --- | --- | --- |
-| 1.1 | UD-15 and DD-3: CI runner labels, toolchain version, whether `File::try_lock` is accepted | Labels `ubuntu-24.04`, `macos-14`, `windows-2022`. Pin a full `major.minor.patch` at or above 1.89 so `File::try_lock` is available (otherwise the lock-file fallback of §3.8.3 applies). | Workspace skeleton and every later task | Wave 0 |
+| 1.1 | UD-15 and DD-3: CI runner labels, toolchain version, whether `File::try_lock` is accepted | Labels `ubuntu-24.04`, `macos-15`, `windows-2022`. Pin a full `major.minor.patch` at or above 1.89 so `File::try_lock` is available (otherwise the lock-file fallback of §3.8.3 applies). | Workspace skeleton and every later task | Wave 0 |
 | 1.2 | UD-2 and UD-9: serialization format and size limits | RT-JSON, a strict hand-written positioned subset, and the default limits of §4.1.5 | `rt-json` (2.7) and every parser of a serialized artifact | Wave 0 |
 | 1.3 | UD-3: Exact_Number representation | R-128 bounded rational (matches the stated preference for rational) with decimal literals | `rt-numeric` and all crates that use numbers (`rt-ir`, `rt-data`, `rt-compiled`, `rt-engine`) | Wave 0 |
 | 1.4 | UD-27: ledger format and atomic commit | JSON Lines ledger and a journaled two-file commit | `rt-ledger` parse and print (4.7), `rt-review` (6.1), the commit protocol (7.3) | Wave 0 |
@@ -191,7 +191,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Design §3.1, §3.3
 
   - [x] 2.2 Create the CI workflow skeleton on three platforms
-    - Create `.github/workflows/ci.yml` with the jobs `fmt`, `clippy`, `test`, `golden`, `toolchain` on `ubuntu-24.04`, `macos-14` and `windows-2022` (labels from 1.1). Add `graph`, `deny` and `core-only` on Linux as stubs that later tasks fill in. The change fails if any platform is missing, skipped or cancelled. Failed-check output is kept as an artifact.
+    - Create `.github/workflows/ci.yml` with the jobs `fmt`, `clippy`, `test`, `golden`, `toolchain` on `ubuntu-24.04`, `macos-15` and `windows-2022` (labels from 1.1). Add `graph`, `deny` and `core-only` on Linux as stubs that later tasks fill in. The change fails if any platform is missing, skipped or cancelled. Failed-check output is kept as an artifact.
     - Add `deny.toml` with `advisories`, `bans` and `licences` sections. The network and AI crate bans are added in task 10.2.
     - Observable: the workflow file parses, and each job has the three-platform matrix or the Linux runner named in design §7.4. A red platform blocks merging.
     - Blocked by: 2.1.
