@@ -82,7 +82,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
 
 ## Tasks
 
-- [ ] 1. Decision gates
+- [x] 1. Decision gates
   - [x] 1.1 Decision gate UD-15 and DD-3 (toolchain version, runner labels, `File::try_lock`)
     - Create `tools/decisions/UD-15.md` with `status: Pending`. Record the recommended runner labels, a proposed full `major.minor.patch` toolchain version, and whether `File::try_lock` (stable since Rust 1.89) is accepted. Say what the fallback is if it is not.
     - Ask the user with the user_input tool, then stop. Set `status: Confirmed` only after the answer arrives. The `live-openai` secret part of UD-15 is confirmed later, in task 10.5.
@@ -165,14 +165,14 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 14.12, 14.13, 32.3, 32.4 (UD-32)_
     - Design §8.9, §9.2, §9.4 (RN-27)
 
-  - [ ] 1.12 Decision gate UD-33 (packaging of the Application_Layers)
+  - [x] 1.12 Decision gate UD-33 (packaging of the Application_Layers)
     - Create `tools/decisions/UD-33.md` with options A, B and C of design §8.2. Recommend B (two small Demonstration_Executables, one package each). Record that choosing C turns both packages into library-only packages with `examples/` targets and reverts the executable-set test of Req 27.15 to two names. Ask the user, then stop. `prize-check` and `bracket-check` are registered against UD-33 in task 2.1.
     - Observable: record `Confirmed`.
     - Blocked by: Slice 1 complete (8.18).
     - _Requirements: 27.1, 27.15, 31.3 (UD-33)_
     - Design §8.2, §9.2
 
-  - [ ] 1.13 Decision gate UD-35 (demonstration data and Published_Results)
+  - [x] 1.13 Decision gate UD-35 (demonstration data and Published_Results)
     - Create `tools/decisions/UD-35.md` with the recommendation (real published values where licensed, otherwise synthetic and labelled, with one equal and one seeded-difference Published_Result) and the `nature` manifest field of design §8.11.3. Ask the user which data is real and which is synthetic, then stop.
     - Observable: record `Confirmed`.
     - Blocked by: Slice 1 complete (8.18).
@@ -909,7 +909,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Blocked by: 8.8.
     - _Requirements: 20.7, 20.8, 20.9, 23.17, 23.33, 23.38, 29.14_
 
-  - [ ] 8.16 Add the `slice-ai` fixture and approval-gating tests
+  - [-] 8.16 Add the `slice-ai` fixture and approval-gating tests
     - End to end with the Mock_Provider: propose, `review approve`, validate, compile, evaluate. The compiled output is byte-identical to the manually authored equivalent (Req 16.18). Add the self-approval attempt (Reviewer equal to the proposer, provider, model or an AI identity) and the prompt-injection fixture (clause text instructing approval). Neither may change any ledger, status or Diagnostic code. Required.
     - Observable: the fixture is green on three platforms, and both attack fixtures leave the ledger unchanged.
     - Blocked by: 8.8, 8.12.
@@ -958,7 +958,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 7.1, 7.13, 20.13, 7.14_
     - Design §3.8, §3.9.1
 
-  - [ ] 8.23 Report an oversize Proposal_Store batch in the review path as RT-LIM-0001 with the true size
+  - [x] 8.23 Report an oversize Proposal_Store batch in the review path as RT-LIM-0001 with the true size
     - Req 19.8 applies Req 19.3 to Proposal_Store files. `ruletrace-ai` already reports an oversize batch file as `RT-LIM-0001` with the size from file metadata (`rt-ai-tool/src/store_check.rs`). The review path does not: `rt-cli/src/review.rs` (about lines 119 to 131) reads the file with a limit of `MAX_PROPOSAL_BATCH_BYTES` plus one and hands the bytes to `rt-proposals::parse_batch`, which reports a size fault of the bytes it is given as `RT-AI-0302` with the size of the bounded read. Take the size from the file metadata before reading, refuse a file above the limit with `RT-LIM-0001` in the message format of the other size refusals (`input file '<path>' is <size> bytes, larger than the effective limit of <limit> bytes`), and read no content of it. Make the size mapping of `rt-proposals::parse_batch` consistent with that, so that a caller that passes bytes above the limit also gets `RT-LIM-0001` and not `RT-AI-0302`, with the length of the bytes it was given. Keep a file of exactly the limit accepted (Req 19.9).
     - Write the regression test first. It runs `ruletrace review list` over a store whose batch file is the limit plus one byte, and over one that is much larger, and asserts the exact code `RT-LIM-0001`, the exact size in the message and exit code 2. Add a test of exactly the limit, which must still be parsed, and a `parse_batch` test with bytes above the limit. Show that the new tests fail on the current code with `RT-AI-0302`, then fix and show that they pass. A mutant that takes the size from the bounded read must be killed by the much larger file.
     - Observable: the review commands and `ruletrace-ai` report an oversize batch file identically, with the true size, and a batch of exactly the limit is still accepted.

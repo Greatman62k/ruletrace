@@ -341,6 +341,16 @@
         "executionId": "7e0d730d-2e9b-438d-9c26-36c8bb86a4e0",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794747870384
+      },
+      {
+        "executionId": "777e5bfd-6fcc-4548-b528-b812461ae389",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794750610206
+      },
+      {
+        "executionId": "777e5bfd-6fcc-4548-b528-b812461ae389",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794750693598
       }
     ],
     "1.13 Decision gate UD-35 (demonstration data and Published_Results)": [
@@ -358,6 +368,16 @@
         "executionId": "7e0d730d-2e9b-438d-9c26-36c8bb86a4e0",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794747886920
+      },
+      {
+        "executionId": "777e5bfd-6fcc-4548-b528-b812461ae389",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794750610664
+      },
+      {
+        "executionId": "777e5bfd-6fcc-4548-b528-b812461ae389",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794750693666
       }
     ],
     "2.1 Create the Cargo workspace skeleton": [
@@ -2180,6 +2200,11 @@
         "executionId": "7e0d730d-2e9b-438d-9c26-36c8bb86a4e0",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794747877984
+      },
+      {
+        "executionId": "777e5bfd-6fcc-4548-b528-b812461ae389",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794750808920
       }
     ],
     "8.17 Author the provider script and add the `ai` profile with the full Coverage_Statement": [
@@ -2984,6 +3009,18 @@
         "executionId": "7e0d730d-2e9b-438d-9c26-36c8bb86a4e0",
         "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
         "timestamp": 1794747885800
+      },
+      {
+        "executionId": "777e5bfd-6fcc-4548-b528-b812461ae389",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794750361466
+      }
+    ],
+    "1. Decision gates": [
+      {
+        "executionId": "777e5bfd-6fcc-4548-b528-b812461ae389",
+        "chatSessionId": "sess_942eede9-895f-4164-82fe-43be1e21f83d",
+        "timestamp": 1794750693685
       }
     ]
   }
