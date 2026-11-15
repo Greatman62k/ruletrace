@@ -272,7 +272,7 @@ impl Providers for Hosted {
     }
 }
 
-fn run_hosted(
+pub(crate) fn run_hosted(
     fixture: &Fixture,
     credential: &str,
     args: &[OsString],
@@ -594,10 +594,8 @@ fn a_canary_in_the_feedback_reaches_no_output_log_or_store() {
 
 // The feedback is part of the request, so a credential in it is refused
 // by the request check (RT-AI-0308, exit 2) before any response exists.
-// It was RT-AI-0206 (exit 6) when the request was sent and the response
-// echoed the value.
 #[test]
-fn a_credential_in_the_feedback_and_in_the_response_reaches_no_output_or_file() {
+fn a_credential_in_the_feedback_is_refused_before_any_request() {
     for (i, credential) in canaries().into_iter().enumerate() {
         let fixture = revise_fixture(&format!("revise-credential-{i}"));
         std::fs::write(
@@ -605,9 +603,8 @@ fn a_credential_in_the_feedback_and_in_the_response_reaches_no_output_or_file() 
             format!("{FEEDBACK} {credential}"),
         )
         .unwrap();
-        let echoing = revised_payload().replace("raise the age", credential);
         let args = consented_with(&fixture, &revise_opts(&fixture, "elig.basic", "1"));
-        let (ran, seen) = run_hosted(&fixture, credential, &args, echoing);
+        let (ran, seen) = run_hosted(&fixture, credential, &args, revised_payload());
         assert_eq!(ran.code, ExitCode::InvalidInput, "{}", ran.stderr);
         assert_eq!(ran.codes(), ["RT-AI-0308"], "{}", ran.stderr);
         assert!(seen.is_empty(), "{credential}: the provider got a request");

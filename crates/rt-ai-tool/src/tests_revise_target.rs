@@ -6,9 +6,10 @@
 
 use crate::tests_cli_rig::{run_std, Fixture};
 use crate::tests_gate_rig::{findings, work_dir};
+use crate::tests_redact_fragments::leaked;
 use crate::tests_revise::{
-    consented_with, expected_id, revise_fixture, revise_opts, revised_payload, FEEDBACK,
-    NEW_CONTENT,
+    consented_with, expected_id, revise_fixture, revise_opts, revised_payload, run_hosted,
+    FEEDBACK, NEW_CONTENT,
 };
 use crate::tests_rig::evidence;
 use rt_foundation::ExitCode;
@@ -120,4 +121,34 @@ fn a_schema_violation_precedes_the_target_check() {
     let ran = run_std(&revise_args(&fixture));
     assert_eq!(ran.code, ExitCode::Response, "{}", ran.stderr);
     assert_eq!(ran.codes(), ["RT-AI-0202"], "{}", ran.stderr);
+}
+
+// Rule identifiers are lower case, so the credentials here are too. The
+// mismatch is found before the credential scan of the response and the
+// Diagnostic does not copy the identifier, so nothing of it is shown.
+#[test]
+fn a_mismatched_rule_id_that_holds_the_credential_leaks_nowhere() {
+    let credentials = ["sk-canary-zq7x93lmn", "sk.canary.zq7x.93lmn.rt5v"];
+    for (i, credential) in credentials.into_iter().enumerate() {
+        let fixture = revise_fixture(&format!("target-credential-{i}"));
+        let named = NEW_CONTENT.replacen(
+            r#""id":"elig.basic""#,
+            &format!(r#""id":"elig.{credential}""#),
+            1,
+        );
+        let payload = revised_payload().replace(NEW_CONTENT, &named);
+        assert!(payload.contains(&format!("elig.{credential}")));
+        let (ran, seen) = run_hosted(&fixture, credential, &revise_args(&fixture), payload);
+        assert_eq!(seen.len(), 1, "{credential}: the request was not sent");
+        assert_eq!(ran.code, ExitCode::Response, "{}", ran.stderr);
+        assert_eq!(ran.codes(), ["RT-AI-0207"], "{}", ran.stderr);
+        assert_eq!(leaked(&ran.stdout, credential), None, "{}", ran.stdout);
+        assert_eq!(leaked(&ran.stderr, credential), None, "{}", ran.stderr);
+        assert_nothing_stored(&fixture);
+        for name in fixture.files() {
+            let bytes = std::fs::read(fixture.path(&name)).unwrap();
+            let text = String::from_utf8_lossy(&bytes);
+            assert_eq!(leaked(&text, credential), None, "{name}: {text}");
+        }
+    }
 }

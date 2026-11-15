@@ -16,9 +16,10 @@ fn hit(redactor: &Redactor, text: &str) -> bool {
 }
 
 // The member of the request that holds the match, as a path of names that
-// RuleTrace writes and of indexes that it counts. The path never holds
-// text of the request.
-fn member_path(redactor: &Redactor, request: &ProviderRequest, base: &str) -> String {
+// RuleTrace writes and of indexes that it counts, and whether the member
+// is one that carries a clause, the feedback or revised content. The path
+// never holds text of the request.
+fn member_path(redactor: &Redactor, request: &ProviderRequest, base: &str) -> (String, bool) {
     for (name, value) in &request.context {
         if !hit(redactor, &write_compact(value)) {
             continue;
@@ -38,9 +39,13 @@ fn member_path(redactor: &Redactor, request: &ProviderRequest, base: &str) -> St
             }),
             _ => None,
         };
-        return format!("{base}.{}", inner.unwrap_or_else(|| name.clone()));
+        let from_input = inner.as_deref().is_some_and(|p| {
+            p.starts_with("clauses[") || p == "revise.feedback" || p == "revise.content"
+        });
+        let path = format!("{base}.{}", inner.unwrap_or_else(|| name.clone()));
+        return (path, from_input);
     }
-    base.to_owned()
+    (base.to_owned(), false)
 }
 
 fn located(at: &Location, field: Option<String>) -> Location {
@@ -75,13 +80,20 @@ pub(crate) fn refuse_credential(
             continue;
         }
         let base = format!("requests[{index}]");
-        let path = member_path(redactor, planned.request(), &base);
+        let (path, from_input) = member_path(redactor, planned.request(), &base);
         let field = [path, base].into_iter().find(|p| !hit(redactor, p));
+        let advice = if from_input {
+            ""
+        } else {
+            "; the credential or part of it occurs in fixed request text, so it \
+             is likely too short or too common"
+        };
         return Err(Diagnostic::new(
             Code::AiRequestContainsCredential,
             format!(
                 "request {} of {total} contains the credential value or a run of at \
-                 least 8 consecutive characters of it; nothing was sent or written",
+                 least 8 consecutive characters of it{advice}; nothing was sent or \
+                 written",
                 index + 1
             ),
             located(at, field),

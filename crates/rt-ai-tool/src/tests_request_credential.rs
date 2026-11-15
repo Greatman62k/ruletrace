@@ -7,6 +7,7 @@
 use crate::tests::MapEnv;
 use crate::tests_cli_rig::{Fixture, Ran};
 use crate::tests_gate_rig::{findings, run_providers, work_dir, Probe, Steps};
+use crate::tests_memfs::MemFs;
 use crate::tests_provenance::{doc, model};
 use crate::tests_redact_fragments::{canaries, leaked, CANARY};
 use crate::tests_revise::{consented_with, revise_fixture, revise_opts, rulebook_text, FEEDBACK};
@@ -126,6 +127,87 @@ fn a_credential_in_the_revised_rule_content_is_refused_before_anything_is_sent()
         let args = consented_with(&fixture, &revise_opts(&fixture, "elig.basic", "1"));
         let got = run_hosted(&fixture, &credential, &args);
         assert_refused(&fixture, &before, got, WHERE_CONTENT, &credential);
+    }
+}
+
+fn batch_name() -> String {
+    format!("{}.json", "a".repeat(64))
+}
+
+// The credential scan precedes the store check. A store with a malformed
+// batch would give RT-AI-0302 if the order were the other way round, and
+// the check would list, measure and read the batch.
+#[test]
+fn the_credential_scan_precedes_the_store_check() {
+    let fixture = clause_fixture("req-cred-order", &format!("Alpha {CANARY} b."));
+    fixture.write_config(&fixture.real_config(""));
+    let batch = fixture
+        .path(&format!("store/batches/{}", batch_name()))
+        .to_string_lossy()
+        .into_owned();
+    let memory = MemFs::new();
+    memory.plant(&batch, b"{");
+    let (providers, probe) = Steps::new(Vec::new());
+    let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", CANARY)]);
+    let ran = run_providers(&fixture.consented(), &env, &providers, &memory);
+    assert_eq!(ran.code, ExitCode::InvalidInput, "{}", ran.stderr);
+    assert_eq!(
+        ran.shapes(),
+        [("error".to_owned(), "RT-AI-0308".to_owned())],
+        "{}",
+        ran.stderr
+    );
+    assert!(
+        ran.stderr.contains(&format!(" field {WHERE_CLAUSE}\n")),
+        "{}",
+        ran.stderr
+    );
+    assert_eq!(probe.attempts(), 0);
+    let touched: Vec<String> = memory
+        .ops()
+        .into_iter()
+        .filter(|op| op.contains("batches"))
+        .collect();
+    assert_eq!(touched, Vec::<String>::new());
+    assert_eq!(memory.read(&batch), Some(b"{".to_vec()));
+}
+
+// A match outside the clause, the feedback and the revised content has no
+// member of the input to name, so the message points at the credential.
+#[test]
+fn a_credential_in_fixed_request_text_says_it_is_too_short_or_too_common() {
+    let cases = [
+        ("response_bytes", "requests[0]"),
+        ("highest_revision", "requests[0].declarations"),
+    ];
+    for (i, (credential, at)) in cases.into_iter().enumerate() {
+        let fixture = clause_fixture(&format!("req-cred-fixed-{i}"), "Alpha beta.");
+        let before = fixture.files();
+        let (ran, probe) = run_hosted(&fixture, credential, &fixture.consented());
+        assert_eq!(
+            ran.code,
+            ExitCode::InvalidInput,
+            "{credential}: {}",
+            ran.stderr
+        );
+        let found = findings(&ran);
+        assert_eq!(found.len(), 1, "{credential}: {found:?}");
+        assert_eq!(found[0].1, "RT-AI-0308", "{credential}");
+        assert_eq!(
+            found[0].2,
+            "request 1 of 1 contains the credential value or a run of at least 8 \
+             consecutive characters of it; the credential or part of it occurs in \
+             fixed request text, so it is likely too short or too common; nothing \
+             was sent or written",
+            "{credential}"
+        );
+        assert!(
+            ran.stderr.contains(&format!(" field {at}\n")),
+            "{credential}: {}",
+            ran.stderr
+        );
+        assert_eq!(probe.attempts(), 0);
+        assert_eq!(fixture.files(), before, "{credential}: a file changed");
     }
 }
 
