@@ -114,6 +114,33 @@ pub struct ParsedEvidence {
     pub column: u32,
     /// Claimed text of the span.
     pub quote: String,
+    /// Where each field was written in the response.
+    pub site: EvidenceSite,
+}
+
+/// Position of an evidence item and of each of its fields in the response.
+///
+/// Provenance diagnostics use it to point at the offending field.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EvidenceSite {
+    /// Field path of the item, such as `proposals[0].evidence[1]`.
+    pub path: String,
+    /// Start of the item object.
+    pub item: Position,
+    /// Value of `document`.
+    pub document: Position,
+    /// Value of `sha256`.
+    pub sha256: Position,
+    /// Value of `start`.
+    pub start: Position,
+    /// Value of `end`.
+    pub end: Position,
+    /// Value of `line`.
+    pub line: Position,
+    /// Value of `column`.
+    pub column: Position,
+    /// Value of `quote`.
+    pub quote: Position,
 }
 
 /// A rule draft that is in the closed vocabulary, decodes under the Rule_IR
@@ -433,6 +460,13 @@ struct Dec<'a> {
 
 type Members<'v> = &'v [Member<Position>];
 
+fn member_pos(members: Members<'_>, owner: &Value<Position>, key: &str) -> Position {
+    members
+        .iter()
+        .find(|m| m.key == key)
+        .map_or(*owner.pos(), |m| *m.value.pos())
+}
+
 fn child(path: &str, key: &str) -> String {
     if path.is_empty() {
         key.to_owned()
@@ -688,6 +722,17 @@ impl Dec<'_> {
                 "sha256 must be 64 lowercase hexadecimal characters".to_owned(),
             )
         })?;
+        let site = EvidenceSite {
+            path: path.to_owned(),
+            item: *value.pos(),
+            document: member_pos(members, value, "document"),
+            sha256: member_pos(members, value, "sha256"),
+            start: member_pos(members, value, "start"),
+            end: member_pos(members, value, "end"),
+            line: member_pos(members, value, "line"),
+            column: member_pos(members, value, "column"),
+            quote: member_pos(members, value, "quote"),
+        };
         Ok(ParsedEvidence {
             document,
             sha256,
@@ -696,6 +741,7 @@ impl Dec<'_> {
             line: self.uint(members, value, path, "line")?,
             column: self.uint(members, value, path, "column")?,
             quote: self.string(members, value, path, "quote")?.to_owned(),
+            site,
         })
     }
 
@@ -704,8 +750,9 @@ impl Dec<'_> {
     /// checks that the rule spans equal the evidence spans (design 3.7.3).
     ///
     /// A decoder failure is reported at the start of the rule, except an
-    /// unknown field, which is reported at its key. The field path names
-    /// the offending member, which is what Req 23.5 requires.
+    /// unknown field that is the first decoder diagnostic, which is
+    /// reported at its key. The field path names the offending member,
+    /// which is what Req 23.5 requires.
     fn rule(
         &self,
         value: &Value<Position>,

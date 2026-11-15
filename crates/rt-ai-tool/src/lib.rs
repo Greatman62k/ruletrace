@@ -18,6 +18,7 @@ mod locate;
 mod out;
 mod perm;
 mod plan;
+pub mod provenance;
 mod raw;
 mod reader;
 mod redact;
@@ -37,6 +38,10 @@ mod tests_identifier_property;
 mod tests_log;
 #[cfg(test)]
 mod tests_plan;
+#[cfg(test)]
+mod tests_provenance;
+#[cfg(test)]
+mod tests_provenance_property;
 #[cfg(test)]
 mod tests_redaction_property;
 #[cfg(test)]
