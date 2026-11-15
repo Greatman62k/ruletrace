@@ -168,6 +168,7 @@ DECISION 10  question: value of score for p5   outcome: decided 6
   published          equal
 
 DECISION 11  question: rank of standing for (no participant)   outcome: decided standings [1: p2; 2: p4; 3: p1; 4: p3, p5]
+  ranking            Score ranking — all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.
   rules applied      rank.standing @ revision 1; score.weighted @ revision 1
   approval           rank.standing @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash b6be5b3d2abf7855cb0b228c1e0ebfed8d7f008e2a575b1712c892fcec284de9
   approval           score.weighted @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 190408a6dbd4a51d1053cffce2cda86645fc50ba3d3894dccc268894c7159484
