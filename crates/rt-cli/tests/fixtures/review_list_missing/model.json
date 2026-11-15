@@ -1,0 +1,10 @@
+{
+  "format": "ruletrace-source-model",
+  "version": 1,
+  "document": "rules.md",
+  "kind": "markdown",
+  "sha256": "1b1e18e1b685cfc9e3c1271f7d57814479e1b593b2137042a68fb1ed59a60bca",
+  "bytes": 136,
+  "content": "# Spring Open Rules\n\n1. A competitor is eligible if age is at least 16 and holds a licence.\n2. The score is 0.6 times the judges score.\n",
+  "elements": []
+}

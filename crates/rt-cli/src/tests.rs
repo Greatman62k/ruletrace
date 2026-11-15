@@ -18,6 +18,8 @@ mod pipeline_tests;
 mod reader_window_tests;
 #[path = "tests_review_adopt.rs"]
 mod review_adopt_tests;
+#[path = "tests_review_list_missing.rs"]
+mod review_list_missing_tests;
 #[path = "tests_review_oversize.rs"]
 mod review_oversize_tests;
 #[path = "tests_review.rs"]

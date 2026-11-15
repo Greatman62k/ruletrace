@@ -16,7 +16,8 @@
 //!   ([`commit_files`]).
 //! * The adoption of a Pending_Proposal changes the ledger and the Rulebook,
 //!   which the journaled two-file commit ([`commit_pair`]) replaces together.
-//! * `list` takes no lock and writes nothing. Source text comes from the
+//! * `list` takes no lock and writes nothing. A missing ledger counts as the
+//!   empty ledger for it (Req 26.6). Source text comes from the
 //!   Explainer ([`rt_explain::verify_trace`]) over a trace that holds the spans
 //!   of the revision.
 
@@ -372,7 +373,11 @@ fn list(
         Ok(pair) => pair,
         Err(blocked) => return failed_one(*blocked),
     };
-    let loaded = match load(args, false, &pair) {
+    // A missing ledger is the empty ledger here, so that the first listing
+    // can precede the first approval. Nothing is created: only `approve` and
+    // `reject` with `--create-ledger` write a ledger. A ledger that exists is
+    // verified as for every other reader.
+    let loaded = match load(args, true, &pair) {
         Ok(loaded) => loaded,
         Err(problems) => return failed(problems),
     };
