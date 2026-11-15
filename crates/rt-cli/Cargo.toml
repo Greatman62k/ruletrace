@@ -37,3 +37,6 @@ rt-proposals = { path = "../rt-proposals" }
 rt-hash = { path = "../rt-hash" }
 rt-numeric = { path = "../rt-numeric" }
 
+
+[dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }

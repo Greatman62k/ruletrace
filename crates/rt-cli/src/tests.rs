@@ -1,5 +1,9 @@
+#[path = "tests_adoption_property.rs"]
+mod adoption_property_tests;
 #[path = "tests_commit_faults.rs"]
 mod commit_fault_tests;
+#[path = "tests_concurrency.rs"]
+mod concurrency_tests;
 #[path = "tests_commit_recovery.rs"]
 mod commit_recovery_tests;
 #[path = "tests_commit.rs"]
