@@ -166,10 +166,9 @@ fn unavailable_provider(config: &AiConfig) -> Diagnostic {
 pub trait Providers {
     /// Whether this build can build an adapter for `kind`. It is asked
     /// at configuration time, so an unlinked kind is `RT-AI-0006` before
-    /// consent, credential and input checks (Req 16.17, 28.17).
-    fn is_linked(&self, _kind: ProviderKind) -> bool {
-        true
-    }
+    /// consent, credential and input checks (Req 16.17, 28.17). There is no
+    /// default, so no implementation can skip the check by accident.
+    fn is_linked(&self, kind: ProviderKind) -> bool;
 
     /// The adapter for `config`. `credential` is present exactly when the
     /// provider kind needs one.

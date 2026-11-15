@@ -39,6 +39,10 @@ impl AiAdapter for Echo {
 struct Scripted(AttemptReport);
 
 impl Providers for Scripted {
+    fn is_linked(&self, _: crate::ProviderKind) -> bool {
+        true
+    }
+
     fn adapter<'a>(
         &self,
         _: &AiConfig,

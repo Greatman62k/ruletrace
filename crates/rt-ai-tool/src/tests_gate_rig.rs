@@ -75,6 +75,10 @@ impl Steps {
 }
 
 impl Providers for Steps {
+    fn is_linked(&self, _: crate::ProviderKind) -> bool {
+        true
+    }
+
     fn adapter<'a>(
         &self,
         _: &AiConfig,
