@@ -680,7 +680,7 @@ fn rule_start(text: &str) -> Option<u32> {
 }
 
 #[test]
-fn a_rule_that_is_not_valid_rule_ir_is_0202_at_the_rule() {
+fn a_rule_that_is_not_valid_rule_ir_is_0202_at_the_key_or_the_rule() {
     let cases = [
         (r#""revision":2,"#, "proposals[0].rule.revision"),
         (
@@ -697,7 +697,7 @@ fn a_rule_that_is_not_valid_rule_ir_is_0202_at_the_rule() {
                 Code::AiResponseSchemaViolation,
                 Severity::Error,
                 Some(1),
-                rule_start(&text),
+                col(&text, member.trim_end_matches(',')),
                 Some(field.to_owned())
             ),
             "{member}"

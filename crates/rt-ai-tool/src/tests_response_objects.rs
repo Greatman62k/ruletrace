@@ -13,21 +13,11 @@ const NUM: &str = r#"{"node":"num","t":"number","value":"1"}"#;
 const FIELD: &str = r#"{"node":"field","t":"number","name":"age"}"#;
 const CMP: &str = r#"{"node":"cmp","t":"boolean","op":"ge","left":{"node":"field","t":"number","name":"age"},"right":{"node":"num","t":"number","value":"16"}}"#;
 
-/// Where a field outside the schema is reported.
-#[derive(Clone, Copy, Debug)]
-enum Reported {
-    /// At the key, because the closed vocabulary check finds it.
-    AtKey,
-    /// At the start of the rule, because the Rule_IR decoder finds it.
-    AtRule,
-}
-
 struct Case {
     label: &'static str,
     text: String,
     anchor: String,
     path: String,
-    reported: Reported,
 }
 
 /// `text` with `"name":"x",` placed first in the object that `anchor` opens.
@@ -74,13 +64,12 @@ fn unrecognized_kind() -> String {
     )
 }
 
-fn case(label: &'static str, text: String, anchor: &str, path: &str, r: Reported) -> Case {
+fn case(label: &'static str, text: String, anchor: &str, path: &str) -> Case {
     Case {
         label,
         text,
         anchor: anchor.to_owned(),
         path: path.to_owned(),
-        reported: r,
     }
 }
 
@@ -91,7 +80,6 @@ fn node_cases() -> Vec<Case> {
             wrap(&[draft_with_left(node)]),
             anchor,
             "proposals[0].rule.expr.left",
-            Reported::AtKey,
         )
     };
     let whole = |label, expr: &str, anchor: &str| {
@@ -100,7 +88,6 @@ fn node_cases() -> Vec<Case> {
             rule_text(&DRAFT.replace(CMP, expr)),
             anchor,
             "proposals[0].rule.expr",
-            Reported::AtKey,
         )
     };
     let leaf = r#"{"node":"bool","t":"boolean","value":true}"#;
@@ -192,119 +179,102 @@ fn structural_cases() -> Vec<Case> {
             wrap(&[proposal("candidate_test")]),
             r#"{"schema_version""#,
             "",
-            Reported::AtKey,
         ),
         case(
             "rule_suggestion proposal",
             wrap(&[rule_proposal(DRAFT)]),
             r#"{"kind":"rule_suggestion""#,
             "proposals[0]",
-            Reported::AtKey,
         ),
         case(
             "evidence item",
             wrap(&[proposal("candidate_test")]),
             r#"{"document":"rules.md","sha256""#,
             "proposals[0].evidence[0]",
-            Reported::AtKey,
         ),
         case(
             "eligibility rule",
             rule_text(DRAFT),
             r#"{"id":"elig.new""#,
             "proposals[0].rule",
-            Reported::AtRule,
         ),
         case(
             "rule span",
             rule_text(DRAFT),
             r#"{"document":"rules.md","start":9"#,
             "proposals[0].rule.spans[0]",
-            Reported::AtRule,
         ),
         case(
             "derived rule",
             rule_text(&derived()),
             r#"{"id":"elig.new""#,
             "proposals[0].rule",
-            Reported::AtRule,
         ),
         case(
             "weighted_score rule",
             rule_text(&weighted()),
             r#"{"id":"w.one""#,
             "proposals[0].rule",
-            Reported::AtRule,
         ),
         case(
             "weighted term",
             rule_text(&weighted()),
             r#"{"weight":"#,
             "proposals[0].rule.terms[0]",
-            Reported::AtRule,
         ),
         case(
             "rounding",
             rule_text(&weighted()),
             r#"{"mode":"half_even""#,
             "proposals[0].rule.rounding",
-            Reported::AtRule,
         ),
         case(
             "ambiguous marker",
             rule_text(&weighted()),
             r#"{"kind":"ambiguous""#,
             "proposals[0].rule.markers[0]",
-            Reported::AtRule,
         ),
         case(
             "incomplete marker",
             rule_text(&weighted()),
             r#"{"kind":"incomplete""#,
             "proposals[0].rule.markers[1]",
-            Reported::AtRule,
         ),
         case(
             "ranking rule",
             rule_text(&ranking()),
             r#"{"id":"r.one""#,
             "proposals[0].rule",
-            Reported::AtRule,
         ),
         case(
             "tie breaker",
             rule_text(&ranking()),
             r#"{"expr":"#,
             "proposals[0].rule.tie_breakers[0]",
-            Reported::AtRule,
         ),
         case(
             "default rule",
             rule_text(&default_rule()),
             r#"{"id":"d.one""#,
             "proposals[0].rule",
-            Reported::AtRule,
         ),
         case(
             "default value literal",
             rule_text(&default_rule()),
             r#"{"node":"num""#,
             "proposals[0].rule.value",
-            Reported::AtKey,
         ),
         case(
             "unrecognized rule kind",
             rule_text(&unrecognized_kind()),
             r#"{"id":"u.one""#,
             "proposals[0].rule",
-            Reported::AtKey,
         ),
         case(
             "span of an unrecognized rule kind",
             rule_text(&unrecognized_kind()),
             r#"{"document":"rules.md","start":9"#,
             "proposals[0].rule.spans[0]",
-            Reported::AtRule,
         ),
     ];
     for kind in kinds {
@@ -313,7 +283,6 @@ fn structural_cases() -> Vec<Case> {
             wrap(&[proposal(kind)]),
             &format!(r#"{{"kind":"{kind}""#),
             "proposals[0]",
-            Reported::AtKey,
         ));
     }
     out
@@ -323,10 +292,7 @@ fn check_case(c: &Case, name: &str) {
     let text = inject(&c.text, &c.anchor, name);
     let d = fail(&text);
     let key = format!(r#""{name}":"x""#);
-    let want_col = match c.reported {
-        Reported::AtKey => col(&text, &key),
-        Reported::AtRule => col(&text, r#""rule":{"#).map(|c| c + 7),
-    };
+    let want_col = col(&text, &key);
     let field = if c.path.is_empty() {
         name.to_owned()
     } else {
@@ -494,6 +460,98 @@ fn a_node_with_an_unknown_but_well_formed_operator_is_carried() {
     }
 }
 
+fn opaque_agg(collection: &str, field: &str) -> String {
+    let expr = format!(
+        r#"{{"node":"agg","t":"number","fn":"run_shell","collection":{collection},"field":{field}}}"#
+    );
+    wrap(&[rule_proposal(&DRAFT.replace(CMP, &expr))])
+}
+
+#[test]
+fn an_opaque_agg_collection_that_is_not_a_string_is_0202_at_the_value() {
+    for (collection, needle) in [
+        (r#"{"script":"x"}"#, r#"{"script""#),
+        (r#"[{"command":"x"}]"#, r#"[{"command""#),
+        ("7", "7,"),
+        ("true", "true,"),
+        ("null", "null,"),
+    ] {
+        let text = opaque_agg(collection, "null");
+        let d = fail(&text);
+        assert_eq!(
+            shape(&d),
+            (
+                Code::AiResponseSchemaViolation,
+                Severity::Error,
+                Some(1),
+                col(&text, needle),
+                Some("proposals[0].rule.expr.collection".to_owned())
+            ),
+            "{collection}: {}",
+            d.message()
+        );
+    }
+}
+
+#[test]
+fn an_opaque_agg_field_that_is_not_a_string_or_null_is_0202_at_the_value() {
+    for (field, needle) in [
+        (r#"[{"command":"x"}]"#, r#"[{"command""#),
+        (r#"{"script":"x"}"#, r#"{"script""#),
+        ("7", "7}"),
+        ("false", "false}"),
+    ] {
+        let text = opaque_agg(r#""c""#, field);
+        let d = fail(&text);
+        assert_eq!(
+            shape(&d),
+            (
+                Code::AiResponseSchemaViolation,
+                Severity::Error,
+                Some(1),
+                col(&text, needle),
+                Some("proposals[0].rule.expr.field".to_owned())
+            ),
+            "{field}: {}",
+            d.message()
+        );
+    }
+}
+
+#[test]
+fn an_opaque_agg_with_a_string_collection_and_string_or_null_field_is_carried() {
+    for field in [r#""f""#, "null"] {
+        let text = opaque_agg(r#""c""#, field);
+        assert!(parse(&text).is_ok(), "{field}");
+    }
+}
+
+#[test]
+fn an_operator_member_that_is_not_a_string_is_0202_for_every_operator_node() {
+    let nodes = [
+        r#"{"node":"cmp","t":"boolean","op":{"script":"x"},"left":{"node":"field","t":"number","name":"age"},"right":{"node":"num","t":"number","value":"16"}}"#,
+        r#"{"node":"binary","t":"number","op":["x"],"left":{"node":"num","t":"number","value":"1"},"right":{"node":"num","t":"number","value":"1"}}"#,
+        r#"{"node":"agg","t":"number","fn":{"command":"x"},"collection":"c","field":null}"#,
+    ];
+    for expr in nodes {
+        let text = wrap(&[rule_proposal(&DRAFT.replace(CMP, expr))]);
+        let key = if expr.contains(r#""fn""#) { "fn" } else { "op" };
+        let d = fail(&text);
+        assert_eq!(
+            shape(&d),
+            (
+                Code::AiResponseSchemaViolation,
+                Severity::Error,
+                Some(1),
+                col(&text, r#""rule":{"#).map(|c| c + 7),
+                Some(format!("proposals[0].rule.expr.{key}"))
+            ),
+            "{expr}: {}",
+            d.message()
+        );
+    }
+}
+
 #[test]
 fn a_node_whose_operator_is_not_well_formed_is_0202() {
     let expr = CMP.replace(r#""op":"ge""#, r#""op":"Run Shell""#);
@@ -558,4 +616,107 @@ fn typed_source_references_are_the_only_references_and_are_accepted() {
     );
     let d = fail(&with_reference);
     assert_eq!(d.code(), Code::AiResponseSchemaViolation);
+}
+
+fn sample_nodes() -> Vec<(&'static str, String)> {
+    let boolean = r#"{"node":"bool","t":"boolean","value":true}"#;
+    vec![
+        ("num", NUM.to_owned()),
+        ("bool", boolean.to_owned()),
+        (
+            "text",
+            r#"{"node":"text","t":"text","value":"a"}"#.to_owned(),
+        ),
+        (
+            "date",
+            r#"{"node":"date","t":"date","value":"2024-01-31"}"#.to_owned(),
+        ),
+        (
+            "enum",
+            r#"{"node":"enum","t":"enum:level","enum":"level","member":"gold"}"#.to_owned(),
+        ),
+        ("field", FIELD.to_owned()),
+        (
+            "ref",
+            r#"{"node":"ref","t":"number","target":"score.total"}"#.to_owned(),
+        ),
+        (
+            "rank_reference",
+            r#"{"node":"rank_reference","t":"number","target":"rank.main"}"#.to_owned(),
+        ),
+        (
+            "binary",
+            format!(r#"{{"node":"binary","t":"number","op":"add","left":{NUM},"right":{NUM}}}"#),
+        ),
+        ("cmp", CMP.to_owned()),
+        (
+            "and",
+            format!(r#"{{"node":"and","t":"boolean","args":[{boolean}]}}"#),
+        ),
+        (
+            "or",
+            format!(r#"{{"node":"or","t":"boolean","args":[{boolean}]}}"#),
+        ),
+        (
+            "not",
+            format!(r#"{{"node":"not","t":"boolean","arg":{boolean}}}"#),
+        ),
+        (
+            "in",
+            format!(r#"{{"node":"in","t":"boolean","value":{FIELD},"set":"countries"}}"#),
+        ),
+        (
+            "agg",
+            r#"{"node":"agg","t":"number","fn":"sum","collection":"c","field":"f"}"#.to_owned(),
+        ),
+        (
+            "round",
+            format!(r#"{{"node":"round","t":"number","arg":{NUM},"places":2,"mode":"half_even"}}"#),
+        ),
+    ]
+}
+
+#[test]
+fn the_decoder_node_table_and_the_response_check_agree_on_every_node() {
+    let samples = sample_nodes();
+    let names: Vec<&str> = rt_ir::NODE_FIELDS.iter().map(|(n, _)| *n).collect();
+    let sampled: Vec<&str> = samples.iter().map(|(n, _)| *n).collect();
+    assert_eq!(
+        sampled, names,
+        "a node was added to or removed from the table"
+    );
+    let id = rt_foundation::InputId::new("sample").unwrap();
+    for ((name, fields), (_, sample)) in rt_ir::NODE_FIELDS.iter().zip(&samples) {
+        let tree =
+            rt_json::parse(&id, sample.as_bytes(), rt_json::ParseLimits::new(4096, 32)).unwrap();
+        let mut keys: Vec<&str> = tree
+            .as_object()
+            .unwrap()
+            .iter()
+            .map(|m| m.key.as_str())
+            .collect();
+        let mut listed = fields.to_vec();
+        keys.sort_unstable();
+        listed.sort_unstable();
+        assert_eq!(keys, listed, "{name}");
+
+        let accepted = wrap(&[draft_with_left(sample)]);
+        assert!(parse(&accepted).is_ok(), "{name}: {accepted}");
+
+        let extra = sample.replacen('{', r#"{"script":"x","#, 1);
+        let text = wrap(&[draft_with_left(&extra)]);
+        let d = fail(&text);
+        assert_eq!(
+            shape(&d),
+            (
+                Code::AiResponseSchemaViolation,
+                Severity::Error,
+                Some(1),
+                col(&text, r#""script":"x""#),
+                Some("proposals[0].rule.expr.left.script".to_owned())
+            ),
+            "{name}: {}",
+            d.message()
+        );
+    }
 }
