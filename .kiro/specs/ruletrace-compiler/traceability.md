@@ -86,7 +86,7 @@ Points the detailing pass raised that need a decision (not decided by the pass):
 - Req 28.2: RESOLVED (UD-28). Default 20 and range 1 to 100 for maximum Candidate_Clauses per request are confirmed.
 - Req 16.16, 30.3: RESOLVED (UD-26). Exit 0 with RT-AI-0305 for a stored batch with blocking semantic findings; see tools/decisions/UD-26.md.
 - Req 13.17: RESOLVED (UD-31). Confirmed and extended by 13.22 and 13.23.
-- Req 23.35: RESOLVED (UD-29). Earlier batches are kept, the run is marked incomplete (23.36 to 23.38, RT-AI-0306), and the exit code is that of the failing request.
+- Req 23.35: RESOLVED (UD-29). Earlier batches are kept, the run is marked incomplete (23.36 to 23.38, RT-AI-0306), and the exit code is that of the failing request. The one exception to the state before the failing request is a failed directory sync after the link (RT-AI-0303): its whole batch file stays and is listed as stored with durability not confirmed (23.35, 23.36).
 - Req 30: no catalogue code exists for a wrong line or column claim (mapped to RT-PRV-0101). When several elements fail in one batch, only the earliest-stage code decides the exit code. Confirm whether all failures are reported.
 - Req 22.7 and 22.9: whether a supplied flag that agrees with the derived value is accepted and discarded or rejected is not stated (UD-11).
 - Req 19.4 defines nesting depth for JSON-like containers, which assumes the UD-2 format choice.

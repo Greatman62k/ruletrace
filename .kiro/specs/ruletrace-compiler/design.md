@@ -1285,7 +1285,7 @@ Lifecycle and flag keys (`approval_status`, `is_approved`, `is_rejected`, `is_pr
 | `default` | `value: literal` | Declared default for the input field named by Target |
 | (precedence, not a rule kind) | `target`, `order [rule ids]` | Total order over rules of one Target |
 
-`type` is mandatory and equals `boolean` for eligibility, `number` for derived and weighted_score, `ranking` for ranking, and the field's type for default. Any other `kind` string that is well formed (`[a-z][a-z0-9_]*`) is carried as an *unrecognized construct* holding its canonicalized raw subtree and is reported by the Validator under Req 14.6 (`RT-VAL-0003`, Req 4.9). A malformed kind name is a parse error.
+`type` is mandatory and equals `boolean` for eligibility, `number` for derived and weighted_score, `ranking` for ranking, and the field's type for default. Any other `kind` string that is well formed (`[a-z][a-z0-9_]*`) is carried as an *unrecognized construct* holding its canonicalized raw subtree and is reported by the Validator under Req 14.6 (`RT-VAL-0003`, Req 4.9). A malformed kind name is a parse error. A missing rule `type` is reported by the Validator as `RT-VAL-0015` (Req 8.9, Req 13.5) and is not a parse error, although the field is described as mandatory.
 
 #### 4.1.4 Expression language (UD-1 decision)
 
@@ -2901,7 +2901,7 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 
 1. `technical-architecture.md`, section "AI", bullet "Provider failures...": the sentence "A failed `ruletrace-ai` run leaves the rulebook, ledger and proposal store unchanged." conflicts with decision 5. Proposed replacement text:
 
-   > A failed `ruletrace-ai` run leaves the Rulebook and the Approval_Ledger unchanged. It leaves the Proposal_Store as it was before the failing Provider_Request: batches that earlier Provider_Requests of the same run stored are kept. Such a run is incomplete. It writes a Run_Summary listing the processed, stored and unprocessed Candidate_Clauses, emits RT-AI-0306, exits with the code of the failing request, and never states that all clauses were processed. The core keeps working.
+   > A failed `ruletrace-ai` run leaves the Rulebook and the Approval_Ledger unchanged. It leaves the Proposal_Store as it was before the failing Provider_Request: batches that earlier Provider_Requests of the same run stored are kept. A request whose directory sync failed after the link keeps its whole batch file, listed as stored with durability not confirmed (Req 23.35, 23.36). Such a run is incomplete. It writes a Run_Summary listing the processed, stored and unprocessed Candidate_Clauses, emits RT-AI-0306, exits with the code of the failing request, and never states that all clauses were processed. The core keeps working.
 
 2. `technical-architecture.md` and `rust-engineering-and-testing.md`: replace "Only the CLI binary, the AI and review tools, and the AI integration crates do I/O" with "Only the `ruletrace` binary crate (including the review command group), the `ruletrace-ai` crate and the AI integration crates do I/O", because review is part of `ruletrace` (UD-22).
 3. `technical-architecture.md`, "Design rules", numeric bullet: after the user confirms UD-3, replace "The decision is pending user confirmation" with the recorded decision and the crate bound.
