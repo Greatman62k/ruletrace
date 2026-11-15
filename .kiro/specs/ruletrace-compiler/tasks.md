@@ -775,13 +775,13 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: every adoption refusal leaves ledger, Rulebook and store byte-identical.
     - **Validates: Requirements 5.9, 5.10, 5.12, 5.17, 23.14, 23.15, 23.34, 26.16, 26.17, 26.24, 26.25, 26.26**
 
-  - [ ] 7.6 Write property test for all-or-nothing adoption with fault injection
+  - [x] 7.6 Write property test for all-or-nothing adoption with fault injection
     - **Property 16: Adoption is all or nothing**
     - Use `FaultFs` to fail each operation of the commit protocol and assert that either both files carry the new state or both are byte-identical to the earlier state, with revision numbers 1..n and no gap. Required.
     - Observable: no injected fault leaves a mixed state.
     - **Validates: Requirements 25.1, 26.19, 26.30, 26.31, 23.13**
 
-  - [ ] 7.7 Write recovery and concurrency tests
+  - [x] 7.7 Write recovery and concurrency tests
     - Simulate a crash after each step and assert roll-forward or cleanup on the next command. Two concurrent review commands serialize on the lock and the second gets `REVIEW_STALE_HASH` rather than a mixed state. Required because they protect the approval gate.
     - Observable: both tests pass on the three platforms.
     - _Requirements: 26.19, 26.31_
