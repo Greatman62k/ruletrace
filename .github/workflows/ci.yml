@@ -275,14 +275,15 @@ jobs:
             exit 1
           fi
       - name: Output bytes equal the full build (hand profile against goldens)
-        # Both builds run the same hand-profile tests, which compare every output byte with the
-        # golden files, so equal goldens mean equal bytes (Req 20.16).
+        # Both builds run the same hand-profile tests and the Property 41 matrix, which compare
+        # every output byte with the golden files, so equal goldens mean equal bytes (Req 20.16).
         run: |
           set -o pipefail
           cargo build --workspace --bins --target-dir target/full
           for dir in core-only full; do
             RT_BIN_DIR="$PWD/target/$dir/debug" cargo test -p rt-demo --all-features \
-              --test stand_in_hand --test acceptance_hand --target-dir "target/$dir" 2>&1 \
+              --test stand_in_hand --test acceptance_hand --test ai_independence \
+              --test origin_independence --target-dir "target/$dir" 2>&1 \
               | tee -a ci-output/core-only-hand.log
           done
       - name: Keep failed-check output
