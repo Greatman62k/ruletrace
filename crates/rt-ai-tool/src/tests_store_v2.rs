@@ -175,6 +175,66 @@ fn reported_text_with_a_control_character_or_over_256_scalar_values_is_omitted()
 }
 
 #[test]
+fn reported_text_with_a_format_or_bidi_control_character_is_omitted() {
+    let plain = Redactor::no_credential();
+    // Unicode category Cf examples and every explicit bidi control.
+    let mut bad: Vec<char> = vec!['\u{ad}', '\u{61c}', '\u{200b}', '\u{200d}', '\u{2060}'];
+    bad.extend(['\u{feff}', '\u{e0001}', '\u{e0041}', '\u{1d173}']);
+    // The first and last scalar of every other Cf block.
+    for n in [
+        0x600, 0x605, 0x6dd, 0x70f, 0x890, 0x891, 0x8e2, 0x180e, 0x200c, 0x2064, 0x206a, 0x206f,
+        0xfff9, 0xfffb, 0x110bd, 0x110cd, 0x13430, 0x1343f, 0x1bca0, 0x1bca3, 0x1d17a, 0xe0020,
+        0xe007f,
+    ] {
+        bad.push(char::from_u32(n).unwrap());
+    }
+    bad.extend(['\u{200e}', '\u{200f}']);
+    bad.extend('\u{202a}'..='\u{202e}');
+    bad.extend('\u{2066}'..='\u{2069}');
+    for c in bad {
+        let text = format!("gpt{c}x");
+        let found = Reported::from_meta(&text_meta(Some(&text), Some(&text)), &plain);
+        assert_eq!(found.model, None, "U+{:04X}", u32::from(c));
+        assert_eq!(found.response_id, None, "U+{:04X}", u32::from(c));
+    }
+}
+
+#[test]
+fn reported_text_with_visible_non_ascii_characters_is_kept() {
+    let plain = Redactor::no_credential();
+    // None of these is category Cc or Cf: letters, a combining mark, a
+    // no-break space, a line separator, an emoji and a private use scalar.
+    for text in [
+        "modèle-é",
+        "日本語",
+        "a\u{34f}b",
+        "a\u{a0}b",
+        "a\u{2028}b",
+        "\u{1f600}",
+        "\u{e000}",
+        "\u{2065}x",
+    ] {
+        let found = Reported::from_meta(&text_meta(Some(text), Some(text)), &plain);
+        assert_eq!(found.model.as_deref(), Some(text), "{text:?}");
+        assert_eq!(found.response_id.as_deref(), Some(text), "{text:?}");
+    }
+}
+
+#[test]
+fn a_bidi_control_never_reaches_the_stored_file() {
+    let h = Harness::new("");
+    let text = "id\u{202e}evil";
+    let reported = Reported::from_meta(
+        &text_meta(Some(text), Some("ok")),
+        &Redactor::no_credential(),
+    );
+    let stored = stored_text(&h, &meta_with(&h, reported));
+    assert!(!stored.contains("reported_model"), "{stored}");
+    assert!(!stored.contains('\u{202e}'), "{stored}");
+    assert!(stored.contains(r#""response_id":"ok""#), "{stored}");
+}
+
+#[test]
 fn usage_is_kept_as_reported_and_never_derived_or_invented() {
     let plain = Redactor::no_credential();
     let with = |u: Usage| Reported::from_meta(&text_meta(None, None).with_usage(u), &plain).usage;

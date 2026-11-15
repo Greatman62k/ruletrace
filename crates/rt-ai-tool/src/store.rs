@@ -28,7 +28,8 @@ const MAX_REPORTED_CHARS: usize = 256;
 /// What the provider reported about one response, as it is stored.
 ///
 /// Untrusted audit data (Req 35.15). A text of more than 256 scalar values
-/// or with a control character is omitted, and the credential redaction
+/// or with a control or format character (category Cc or Cf, which
+/// includes the bidi controls) is omitted, and the credential redaction
 /// applies to every kept text. A count is kept only as the provider gave
 /// it: nothing is derived, summed or estimated, and no cost is computed.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -66,13 +67,47 @@ impl Reported {
     }
 }
 
+// Unicode general category Cf. The standard library has no predicate for
+// it and a dependency is not justified for one table. This covers the
+// explicit bidi controls U+200E..U+200F, U+202A..U+202E and U+2066..U+2069.
+const FORMAT_RANGES: [(u32, u32); 21] = [
+    (0x00AD, 0x00AD),
+    (0x0600, 0x0605),
+    (0x061C, 0x061C),
+    (0x06DD, 0x06DD),
+    (0x070F, 0x070F),
+    (0x0890, 0x0891),
+    (0x08E2, 0x08E2),
+    (0x180E, 0x180E),
+    (0x200B, 0x200F),
+    (0x202A, 0x202E),
+    (0x2060, 0x2064),
+    (0x2066, 0x206F),
+    (0xFEFF, 0xFEFF),
+    (0xFFF9, 0xFFFB),
+    (0x110BD, 0x110BD),
+    (0x110CD, 0x110CD),
+    (0x13430, 0x1343F),
+    (0x1BCA0, 0x1BCA3),
+    (0x1D173, 0x1D17A),
+    (0xE0001, 0xE0001),
+    (0xE0020, 0xE007F),
+];
+
+fn is_format(c: char) -> bool {
+    let n = u32::from(c);
+    FORMAT_RANGES
+        .iter()
+        .any(|(lo, hi)| (*lo..=*hi).contains(&n))
+}
+
 fn plain(text: &str) -> bool {
     !text.is_empty()
         && text.chars().count() <= MAX_REPORTED_CHARS
-        && !text.chars().any(char::is_control)
+        && !text.chars().any(|c| c.is_control() || is_format(c))
 }
 
-// A text that is too long or has a control character is omitted. The
+// A text that is too long or has a control or format character is omitted. The
 // redacted text is checked again, because the marker can lengthen it.
 fn storable(text: &str, redactor: &Redactor) -> Option<String> {
     if !plain(text) {
