@@ -31,6 +31,8 @@ mod tests;
 #[cfg(test)]
 mod tests_config_order;
 #[cfg(test)]
+mod tests_identifier_property;
+#[cfg(test)]
 mod tests_log;
 #[cfg(test)]
 mod tests_plan;

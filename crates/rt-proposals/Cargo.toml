@@ -15,3 +15,6 @@ rt-foundation = { path = "../rt-foundation" }
 rt-hash = { path = "../rt-hash" }
 rt-json = { path = "../rt-json" }
 rt-ir = { path = "../rt-ir" }
+
+[dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }

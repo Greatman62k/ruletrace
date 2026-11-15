@@ -32,3 +32,5 @@ pub use print::print_batch;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_identifier_property;
