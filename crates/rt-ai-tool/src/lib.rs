@@ -9,6 +9,8 @@
 #![allow(clippy::result_large_err)]
 
 mod accept;
+mod cli;
+mod command;
 mod config;
 mod consent;
 mod credential;
@@ -16,6 +18,7 @@ mod decls;
 mod dryrun;
 mod endpoint;
 mod fs;
+mod inputs;
 mod locate;
 mod out;
 mod perm;
@@ -41,6 +44,12 @@ mod tests_accept;
 mod tests_accept_credential;
 #[cfg(test)]
 mod tests_batch_property;
+#[cfg(test)]
+mod tests_cli_args;
+#[cfg(test)]
+mod tests_cli_order;
+#[cfg(test)]
+mod tests_cli_rig;
 #[cfg(test)]
 mod tests_config_order;
 #[cfg(test)]
@@ -89,8 +98,10 @@ mod tests_store;
 mod tests_summary;
 
 pub use accept::{accept_batch, AcceptInput, AcceptedBatch};
+pub use cli::{parse, ProposeArgs, ReviseArgs};
+pub use command::run;
 pub use config::{
-    disabled_without_configuration, load, AiConfig, Authorized, Endpoint, ProviderKind,
+    disabled_without_configuration, load, load_config, AiConfig, Authorized, Endpoint, ProviderKind,
 };
 pub use consent::Consent;
 pub use credential::{Credential, EnvReader, ProcessEnv};

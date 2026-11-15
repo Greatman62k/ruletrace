@@ -272,25 +272,14 @@ fn check_endpoint(
     }))
 }
 
-/// Loads and authorizes a configuration for one run.
-///
-/// The checks run in the order of Req 28.17 and the result carries only the
-/// Diagnostics of the earliest failing check: TOML syntax, inline secret,
-/// field checks, limits, endpoint, enabled state, provider kind, consent,
-/// credential. The environment is read last, and only for a provider kind
-/// that needs a credential, and only the variable the configuration names.
-///
-/// `run_documents` is the set of documents whose text the run sends.
+/// Loads a configuration without authorizing a send: every check of
+/// [`load`] up to and including the provider kind, and neither the consent
+/// nor the credential. `propose --dry-run` uses it, because nothing is sent
+/// and no credential may be read.
 ///
 /// # Errors
 /// The Diagnostics of the earliest failing check, in canonical order.
-pub fn load(
-    input: &InputId,
-    text: &str,
-    consent: &Consent,
-    run_documents: &BTreeSet<DocumentId>,
-    env: &dyn EnvReader,
-) -> Result<Authorized, Vec<Diagnostic>> {
+pub fn load_config(input: &InputId, text: &str) -> Result<AiConfig, Vec<Diagnostic>> {
     let locator = Locator::new(input, text);
     let document = Document::parse(text).map_err(|e| {
         let at = locator.at(e.span(), None);
@@ -320,7 +309,29 @@ pub fn load(
             at,
         )]);
     }
-    let config = build(&raw, limits, endpoint)?;
+    build(&raw, limits, endpoint)
+}
+
+/// Loads and authorizes a configuration for one run.
+///
+/// The checks run in the order of Req 28.17 and the result carries only the
+/// Diagnostics of the earliest failing check: TOML syntax, inline secret,
+/// field checks, limits, endpoint, enabled state, provider kind, consent,
+/// credential. The environment is read last, and only for a provider kind
+/// that needs a credential, and only the variable the configuration names.
+///
+/// `run_documents` is the set of documents whose text the run sends.
+///
+/// # Errors
+/// The Diagnostics of the earliest failing check, in canonical order.
+pub fn load(
+    input: &InputId,
+    text: &str,
+    consent: &Consent,
+    run_documents: &BTreeSet<DocumentId>,
+    env: &dyn EnvReader,
+) -> Result<Authorized, Vec<Diagnostic>> {
+    let config = load_config(input, text)?;
     if let Some(d) = consent.check(config.allow_document_text, run_documents) {
         return Err(vec![d]);
     }

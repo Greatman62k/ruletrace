@@ -10,6 +10,14 @@ license.workspace = true
 [lints]
 workspace = true
 
+[lib]
+name = "rt_ai_tool"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ruletrace-ai"
+path = "src/main.rs"
+
 [dependencies]
 rt-ai-adapter = { path = "../rt-ai-adapter" }
 rt-ai-mock = { path = "../rt-ai-mock" }

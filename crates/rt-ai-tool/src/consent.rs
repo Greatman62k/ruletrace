@@ -29,6 +29,11 @@ impl Consent {
         }
     }
 
+    /// The documents the consent argument names, empty when it is absent.
+    pub(crate) fn named_documents(&self) -> BTreeSet<DocumentId> {
+        self.documents.clone().unwrap_or_default()
+    }
+
     /// `RT-AI-0008` unless document text is allowed and the consent set
     /// equals `run_documents` exactly.
     pub(crate) fn check(
