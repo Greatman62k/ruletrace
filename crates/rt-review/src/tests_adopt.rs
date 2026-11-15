@@ -308,6 +308,33 @@ fn tampered_draft_hash_is_refused_as_store_invalid() {
 }
 
 #[test]
+fn a_draft_hashed_for_another_document_hash_is_refused_at_adoption() {
+    let rb = base();
+    let b = batch_with(&rb, "req-doc", &[("elig.new", "eligible2")]);
+    let named = prospective_of(&rb, &b, 0).content_hash;
+    let mut other = rb.clone();
+    other.documents[0].sha256 = sha256(b"a different document");
+    assert_ne!(other.documents[0].sha256, rb.documents[0].sha256);
+    let pending = rt_proposals::pending_proposals(std::slice::from_ref(&b), &other);
+    let direct = prospective_adoption(&other, &pending[0]).unwrap_err();
+    assert_eq!(direct.code(), Code::ReviewProposalStoreInvalid);
+    assert_eq!(direct.code().id(), "RT-APR-0213");
+    assert!(
+        direct.message().contains("differs from the recomputed"),
+        "{}",
+        direct.message()
+    );
+    let planned = refusal(plan_review_with_store(
+        &other,
+        &ApprovalLedger::empty(),
+        &adoption("elig.new", 1, named, ReviewAction::Approve),
+        &sources(),
+        std::slice::from_ref(&b),
+    ));
+    assert_eq!(planned.code(), Code::ReviewProposalStoreInvalid);
+}
+
+#[test]
 fn a_draft_that_names_revision_or_origin_does_not_decode() {
     let rb = base();
     let mut b = batch_with(&rb, "req-6", &[("elig.new", "eligible2")]);
