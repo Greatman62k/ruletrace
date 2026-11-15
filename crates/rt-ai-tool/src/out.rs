@@ -1,5 +1,6 @@
 //! The single output type of the tool. Everything written to standard
-//! output or standard error passes through the [`Redactor`].
+//! output or standard error passes through the [`Redactor`], which also
+//! removes cut and truncated copies of the credential.
 
 use crate::redact::Redactor;
 use rt_foundation::{escape_controls, CliLocation, Diagnostic, Location, Severity};
@@ -48,8 +49,10 @@ fn location(location: &Location, r: &Redactor) -> String {
 }
 
 /// Redacts first, then escapes: an escaped credential would no longer match.
+/// Fragments are removed too, because a message can copy untrusted text that
+/// a cut left with only part of the credential.
 fn clean(r: &Redactor, text: &str) -> String {
-    escape_controls(&r.redact(text))
+    escape_controls(&r.redact_fragments(text))
 }
 
 /// One Diagnostic as a line group, every line ending in a line feed. No
@@ -94,12 +97,13 @@ impl<O: Write, E: Write> Out<O, E> {
         self.redactor = redactor;
     }
 
-    /// Writes redacted text to standard output.
+    /// Writes redacted text to standard output. Runs of eight or more
+    /// credential characters are replaced, not only the whole value.
     ///
     /// # Errors
     /// The error of the underlying writer.
     pub fn stdout(&mut self, text: &str) -> io::Result<()> {
-        let text = self.redactor.redact(text);
+        let text = self.redactor.redact_fragments(text);
         self.stdout.write_all(text.as_bytes())
     }
 
@@ -108,7 +112,7 @@ impl<O: Write, E: Write> Out<O, E> {
     /// # Errors
     /// The error of the underlying writer.
     pub fn stderr(&mut self, text: &str) -> io::Result<()> {
-        let text = self.redactor.redact(text);
+        let text = self.redactor.redact_fragments(text);
         self.stderr.write_all(text.as_bytes())
     }
 
