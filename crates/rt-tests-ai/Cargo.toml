@@ -1,0 +1,24 @@
+[package]
+name = "rt-tests-ai"
+description = "Cross-crate tests that drive the AI tool, the mock provider and the review path (class test)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+rt-ai-adapter = { path = "../rt-ai-adapter" }
+rt-ai-tool = { path = "../rt-ai-tool" }
+rt-foundation = { path = "../rt-foundation" }
+rt-hash = { path = "../rt-hash" }
+rt-ir = { path = "../rt-ir" }
+rt-json = { path = "../rt-json" }
+rt-ledger = { path = "../rt-ledger" }
+rt-proposals = { path = "../rt-proposals" }
+rt-srcmodel = { path = "../rt-srcmodel" }
+rt-validate = { path = "../rt-validate" }
+proptest = { version = "1", default-features = false, features = ["std"] }

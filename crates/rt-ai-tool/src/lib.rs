@@ -65,8 +65,6 @@ mod tests_log;
 #[cfg(test)]
 mod tests_memfs;
 #[cfg(test)]
-mod tests_origin_property;
-#[cfg(test)]
 mod tests_out_canary;
 #[cfg(test)]
 mod tests_plan;

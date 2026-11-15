@@ -276,7 +276,6 @@ dependencies = [
  "rt-hash",
  "rt-ir",
  "rt-json",
- "rt-ledger",
  "rt-proposals",
  "rt-srcmodel",
  "rt-validate",
@@ -472,6 +471,23 @@ dependencies = [
  "rt-foundation",
  "rt-hash",
  "rt-json",
+]
+
+[[package]]
+name = "rt-tests-ai"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+ "rt-ai-adapter",
+ "rt-ai-tool",
+ "rt-foundation",
+ "rt-hash",
+ "rt-ir",
+ "rt-json",
+ "rt-ledger",
+ "rt-proposals",
+ "rt-srcmodel",
+ "rt-validate",
 ]
 
 [[package]]
