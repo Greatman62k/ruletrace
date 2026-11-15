@@ -524,3 +524,26 @@ One test fixture of mine was wrong at first (`rtc-Zq7x` is eight bytes, not seve
 - Transcripts reviewed and accepted by the user: `docs/transcripts/demo-slice-0.txt` (`cargo test -p rt-demo --test acceptance_hand -- --nocapture`) and `docs/transcripts/demo-slice-1.txt` (`cargo test -p rt-demo --test acceptance ai -- --nocapture`), both exit 0.
 - Presentation correction: ranking decisions of the Proof_Report carry the line "Score ranking — all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter." Regression test `standings_decision_states_that_ranking_covers_all_submitted_participants` plus demo assertions; review `docs/reviews/2026-11-16-140000-review-58ad25b-af8ffcf.md` (approved).
 - Mock-provider disclosure: the Slice 1 summary states "script entries are authored (not provider output); the document is a stand-in". The Slice 0 summary states that no AI was used.
+
+## UD-37 amendment: Meta Model API over the Responses protocol (spec only, 2026-11)
+
+Decision record: `tools/decisions/UD-37.md` (Confirmed, user). No Rust code, `Cargo.toml`, `deny.toml`, `allowed-edges.v1`, `ci.yml` or catalogue file changed. Nothing is weakened: every earlier check keeps its code, severity and exit code, and Req 29.2 is unchanged.
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| Introduction, Scope, Glossary | - | Changed | Scope line on provider integration; AI_Integration_Crate | Provider_Profile, Capability, Provider_Identity, Reported_Metadata, Model_Catalogue | UD-37 D1 |
+| 7 | Diagnostics Model | Changed | catalogue table (planned rows RT-AI-0011, 0012, 0013, 0109, 0110) | - | UD-37; the JSON rows are added by task 10.10, because adding them regenerates `code_generated.rs` |
+| 16 | Minimum End-to-End Vertical Slice | Changed | 16.15 and 16.17 tables (new codes, `models` command) | - | UD-37 |
+| 23 | AI-Assisted Proposal Pipeline | Changed | 29 | 39 (flat provider-neutral schema) | UD-37 D1, D2 |
+| 27 | Executables and Responsibilities | Changed | 1 (table), 2, 11 (`models`) | - | UD-37 |
+| 28 | AI Configuration, Credentials, and Transmission Consent | Changed | 2, 8, 12, 17 | - | UD-37 D4 (provider id and protocol, check order) |
+| 33, 34 | Demonstration | Changed | 33.8, 33.10, 34.5 (provider identifier, protocol, model; Responses profile) | - | UD-37 |
+| 35 | Provider Profiles, Capability Negotiation, Model Catalogue, and Proposal_Store Format Version 2 | New | - | 1 to 22 | UD-37 D1 to D5 |
+
+Design: §1.3 row 14, §3.2, §3.3 (renamed crate in the allowed-edges, `forbid-external`, `wrappers` and core-only job text), §3.4.5, §3.7.3 (flat schema, Meta profile, 504 interplay), §3.7.5 (store version 2), §3.9.2 (configuration version 2, `models`), §8.11.6 and §8.11.7 (script `id`), §9.1 (R-D1 resolved, R-D16), §9.2 (UD-37), §9.3 item 11, catalogue table.
+
+Tasks (Phase 10): `rt-ai-openai` is `rt-ai-responses` in 10.1 to 10.9. Task 10.4 is required and first. New tasks: 10.10 (catalogue entries), 10.11 (capability model, identity, usage), 10.12 (Provider_Profiles), 10.13 (configuration version 2, host restrictions, model guard), 10.14 (store version 2), 10.15 (Meta stub tests), 10.16 (`models` and `verify_model`), 10.17 (user review gate before the live run). 10.8 is blocked by 10.17. Waves 44 to 60 were renumbered. The Notes line that listed 10.4 as optional is corrected. Task 10.7 is unchanged and still blocks 10.8.
+
+Deferred, with the reason: Modal (UD-37 D6), a Chat Completions adapter (`rt-ai-compatible`, only for a real use case), custom compatible endpoints (need their own trust decision), the OpenAI profile's reasoning effort and usage capabilities (unknown until verified), the catalogue JSON rows (task 10.10).
+
+Open: OD-37-1 (HTTP 504 and Req 29.2, options in UD-37 section 4); the loopback exception for the ids `meta` and `openai` is the existing Req 28.6 behaviour at run time, not a test-only build.

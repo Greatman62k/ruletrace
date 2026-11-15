@@ -8,7 +8,7 @@ The implementation language is Rust (stable, edition 2021 or later, toolchain pi
 | --- | --- | --- |
 | Demo Slice 0 | Phases 0 to 4 (groups 2 to 6) | `ruletrace` ingests a document, a person authors rules with source spans, a human approves them with `ruletrace review`, and `validate`, `compile`, `evaluate` produce Outcomes, Decision_Traces and a replayable Proof_Report with source text. No AI. The `hand` profile of the demonstration harness reproduces the flow on three platforms with byte-identical goldens. The document is a labelled stand-in text until the user confirms real documents (UD-34). |
 | Demo Slice 1 | Phases 5 and 6 (groups 7 and 8) | The same flow with rules proposed by `ruletrace-ai` through the mock provider replaying an authored script, adopted by human approval (two-file journaled commit), every Candidate_Clause classified in the Coverage_Statement, and origin independence (`ai` and `hand` profiles compile to equal bytes). |
-| Demo Slice 2 | Phases 7 to 9 (groups 9 to 11) | `prize-check` and `bracket-check` over the same Compiled_Rulebook with results byte-identical to `ruletrace evaluate`; OpenAI provider and a recorded script from a real provider; real documents and data confirmed by the user; published-result checks; mutation checks; honest-claims scan; required `demo-offline` CI job. |
+| Demo Slice 2 | Phases 7 to 9 (groups 9 to 11) | `prize-check` and `bracket-check` over the same Compiled_Rulebook with results byte-identical to `ruletrace evaluate`; the Responses-protocol provider (Meta Model API first, UD-37) and a recorded script from a real provider; real documents and data confirmed by the user; published-result checks; mutation checks; honest-claims scan; required `demo-offline` CI job. |
 | Hardening | Phase 10 (group 12) | Breadth tests, parser no-panic runs, catalogue baseline and release checks. Required before a release tag, not before a slice exit. |
 
 Conventions:
@@ -1103,69 +1103,140 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Exit criteria: Properties 42, 43, 44, 46, 47 pass (45 if Rank_Reference); the application scan negative fixtures pass; the two-application isolation test and the process test pass; application results are byte-identical to `ruletrace evaluate`.
     - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 10. Phase 8: OpenAI integration and recording (`rt-ai-openai`, `export-script`)
-  - [ ] 10.1 Implement OpenAI request building and response mapping
-    - Confirm that `tools/decisions/UD-15.md` is `Confirmed`. Implement the deterministic request body: `POST {endpoint}/v1/responses` with `text.format = {"type":"json_schema","name":..,"schema":..,"strict":true}`, `"store": false`, no `tools`, `max_output_tokens` a crate constant, and the strict-mode schema (all properties required, `additionalProperties:false`, recursion by `$ref` and `$defs`) that includes the `unrecognized` variants. The model and provider come only from configuration.
-    - Map the envelope: require `status == "completed"` with exactly one output message and one `output_text`; map refusal and incomplete to `Completion::Refused` or `Incomplete`; 401 and 403 to `AuthFailed`, TLS errors to `TlsFailed`, 429 with an integer `Retry-After` of 1 to 9 digits to `RateLimited`, 5xx and connection errors to `Unavailable`, 3xx and other 4xx to `Other`. Read at most `response_bytes + 1` bytes. The credential is read only in this crate, from the named environment variable, and is redacted from every output.
-    - Observable: a canned envelope for each status maps to its `Completion` or `ProviderFailure` in a unit test.
-    - Carried from 8.21 review: the provider body is the scanned request bytes plus constants; any text derived from request content must pass the RT-AI-0308 scan.
+- [ ] 10. Phase 8: Provider integration over the Responses protocol (`rt-ai-responses`, Meta Model API first) and recording (`export-script`)
+  - Decision UD-37 (`tools/decisions/UD-37.md`, Confirmed) governs this phase: no `rt-ai-meta` and no `rt-ai-modal` crate, the planned crate `rt-ai-openai` is `rt-ai-responses`, Meta and OpenAI are Provider_Profiles (data in `rt-ai-tool`), Modal is deferred, and the first real provider is the Meta Model API with `muse-spark-1.3`. The open decision OD-37-1 (HTTP 504 and Req 29.2) does not block any task here, and Req 29.2 is not changed by any task.
+  - Execution order (the ids are stable, the order is not numeric): 10.4, 10.10 and 10.11 first, then 10.12 and 10.14, then 10.1, 10.13 and 10.2, then 10.3, then 10.15 and 10.16, then 10.5, then 10.17 (stop for the user), then 10.8. 10.6 is independent. 10.7 keeps its place and its blocking of 10.8 (see 10.7).
+  - Rust code, `Cargo.toml`, `deny.toml`, `tools/allowed-edges.v1` and `ci.yml` edits belong to the tasks below. None was made when UD-37 was recorded.
+  - Every new task below follows the red/green rule of the testing policy: the named regression or negative test is shown failing against a controlled mutant or the absent behaviour, then passing.
+
+  - [ ] 10.4 Write the flat Proposal schema generator and its limit tests (no longer optional, runs first)
+    - Un-deferred by UD-37. Implement the pure, provider-neutral generator (module `proposal_schema` of `rt-ai-tool`, not in `rt-ai-responses`) that writes the canonical flat node-table schema of design §3.7.3 from the request vocabulary, and the lowering of a Proposal_Schema version "2" document to the same Rule_Content as version "1" in the local strict parser, with the table rules (child index greater than the parent index, in range, each node referenced exactly once or the root, none unreferenced) refused with `RT-AI-0202`. Keep version "1" accepted unchanged. Commit the generated schema as a reviewed golden file.
+    - Limits, measured by a counter that does not reuse the generator: nesting depth at most 10, at most 5,000 properties, at most 120,000 characters of names and enum values, at most 1,000 enum values, no `$ref` and no `$defs`, `additionalProperties:false` on every object, every property in `required`, no `oneOf` or `allOf`, `anyOf` only below the root.
+    - Observable: the limit test passes with the exact bounds; an expression of depth 16 and one of depth 17 lower to Rule_Content equal to the original (fixed cases plus a property test of at least 256 cases); the schema bytes equal the golden file; a table with a cycle, a forward-violating child, a shared node, an unreferenced node or an out-of-range index gives `RT-AI-0202` with its location.
+    - Red/green: each of these mutants of the generator or the lowering is killed by a named test: reintroduced `$ref` recursion, depth 11, a property count above 5,000, a missing `additionalProperties:false`, a property missing from `required`, an accepted child index not greater than its parent, an accepted shared node.
     - Blocked by: 8.19.
-    - _Requirements: 23.27, 23.28, 23.29, 23.30, 23.31, 28.12, 28.13, 28.14_
+    - _Requirements: 23.4, 23.27, 23.39_
+    - Design §3.7.3, §9.1 (R-D1)
+
+  - [ ] 10.10 Add the UD-37 catalogue entries and regenerate the `Code` enum
+    - Add the rows `RT-AI-0011` AI_CAPABILITY_UNSUPPORTED, `RT-AI-0012` AI_MODEL_TRAINING_MODE_REFUSED, `RT-AI-0013` AI_CONFIG_ENDPOINT_HOST_NOT_PERMITTED (Error, exit 2) and `RT-AI-0109` AI_MODEL_DISCOVERY_FAILED, `RT-AI-0110` AI_MODEL_NOT_IN_CATALOGUE (Error, exit 5), all for `ruletrace-ai`, to `catalogue/diagnostics.v1.json` with the meanings of design §3.9.2, run `rt-xtask gen-catalogue`, and update any test that pins the number of codes, with the reason stated. The rows were not added when UD-37 was recorded because the generator rewrites `rt-foundation/src/code_generated.rs`.
+    - Observable: `rt-xtask check-catalogue` passes with 152 codes (147 plus 5); each new code has the severity and exit code above; `Diagnostic::new` for each code gives that severity (a test per code); no existing row changed.
+    - Red/green: a test that looks up each of the five codes by identifier fails before the rows exist and passes after.
+    - Blocked by: 8.19.
+    - _Requirements: 7.15 to 7.20, 35.3, 35.6, 35.8, 35.18, 35.19_
+    - Design §3.9.2, §5 (catalogue table)
+
+  - [ ] 10.11 Add the capability model, provider identity, usage and pure negotiation to `rt-ai-adapter`
+    - Implement `Tri`, `Capabilities`, `StructuredOutput`, `Required`, `Unmet`, pure `negotiate()`, `Identity { provider, protocol, adapter_version }`, `Usage` and `ProviderMeta` (non-exhaustive, built through a constructor) as in design §3.4.5, and the optional reasoning effort in `ProviderRequest` (in the canonical bytes only when set). Update `rt-ai-mock` to build `ProviderMeta` through the constructor and to declare its Capabilities. No network, no environment, no provider-specific type. `rt-ai-tool` maps `negotiate()` failures to `RT-AI-0011` in task 10.13.
+    - Observable: the truth table of `negotiate` (every combination of required and of yes, no, unknown) returns the exact `Unmet` list in ascending capability-name order, and an unknown required capability is unmet; `ProviderMeta` cannot be built with a struct literal outside the crate (compile-fail test); a request without an effort has the same Request_Identifier as before this task (a pinned hash), and a request with an effort has a different one.
+    - Red/green: a mutant that treats unknown as yes is killed by the truth-table test; a mutant that always writes the effort field changes the pinned identifier and fails the test.
+    - Blocked by: 8.19.
+    - _Requirements: 35.1, 35.2, 35.11, 29.7, 18.12_
+    - Design §3.4.5
+
+  - [ ] 10.12 Add the Provider_Profiles (Meta, OpenAI) as documented data in `rt-ai-tool`
+    - Implement the profiles of Req 35.5 as constants and data with no network or credential code: provider id, protocol, official host, default Capabilities, accepted reasoning effort values, the `max_output_tokens` constant (at least 16; provisional, set in 10.1 and revised in 10.8), and the documentation URLs with the date each fact was read, in `docs/provider-profiles.md`. The Meta profile is as in design §3.7.3. The OpenAI profile marks `reasoning_effort` and `usage_reporting` unknown and records that its limits are re-checked here: read the current OpenAI structured-output limits from the vendor documentation and record the result and date in `docs/provider-profiles.md` (UD-37 section 3 lists them as not verified).
+    - Observable: a test reads each profile and asserts the host, protocol, accepted effort list, capability values and that `none` is not accepted for Meta; a source scan test shows no network, environment or credential access in the profile module; `docs/provider-profiles.md` names a URL and a date for every profile fact.
+    - Red/green: mutants that add `none` to the Meta efforts, that set OpenAI `reasoning_effort` to yes, or that change the Meta host are each killed.
+    - Blocked by: 10.10, 10.11.
+    - _Requirements: 35.5, 35.11_
     - Design §3.7.3
 
+  - [ ] 10.14 Implement Proposal_Store format version 2 and the dual-version reader
+    - In `rt-proposals` and the store writer of `rt-ai-tool`: write new batches as `"version":2` with the optional members `protocol`, `reported_model`, `response_id` and `usage` (omitted when absent, never null; a reported value above 256 scalar values or with a control character is omitted; the redactor covers every reported value), read versions 1 and 2, never rewrite an existing batch, count either version for idempotency (Req 29.10), and refuse another version, an unknown member or a wrong type with `RT-AI-0302` (and `RT-APR-0213` in `rt-review`). The reader of `rt-review` adoption and of `export-script` is the same parser. Show and review every demonstration golden whose stored batch changes from version 1 to 2, with old and new output and the affected criteria, as the testing policy requires. No golden is changed automatically.
+    - Observable: a version 1 batch from the existing goldens is read unchanged with the optional members absent; a new batch has `"version":2`; usage with only `total_tokens` stores only that member; a response without usage stores none and no cost; a batch with a canary credential in a reported value is redacted; an unknown version fails with `RT-AI-0302`; a v1 and a v2 batch with the same Request_Identifier give `RT-AI-0301` and no second write.
+    - Red/green: a mutant that writes null for an absent member, one that sums input and output into total, one that lets the reported model replace the configured model, and one that accepts version 3 are each killed.
+    - Blocked by: 10.11.
+    - _Requirements: 35.15, 35.16, 35.17, 29.10, 23.25_
+    - Design §3.7.5
+
+  - [ ] 10.1 Implement Responses-protocol request building and response mapping
+    - Confirm that `tools/decisions/UD-15.md` is `Confirmed` and `tools/decisions/UD-37.md` is `Confirmed`. In the new crate `rt-ai-responses` (renamed from the planned `rt-ai-openai`; it serves the Meta and OpenAI profiles), implement the deterministic request body: `POST {endpoint}/v1/responses` with `model`, `input`, `text.format = {"type":"json_schema","name":..,"schema":..,"strict":true}` taking the schema bytes of 10.4 from the `StructuredOutput`, `"store": false`, no `tools`, `max_output_tokens` from the profile constant, and `reasoning.effort` only when configured. Send no other field. The model, provider and protocol come only from configuration. Set the `max_output_tokens` constant to a documented provisional value of at least 16 that leaves room for reasoning tokens (they count toward it), say in `docs/provider-profiles.md` that it is provisional until the live observation of 10.8, and never estimate a price or a cost.
+    - Map the envelope: require `status == "completed"`, ignore reasoning items, and require exactly one output message with exactly one `output_text` (anything else, including a tool call item, is `RT-AI-0201`); map refusal and incomplete to `Completion::Refused` or `Incomplete`; read `usage` and the reported model and response id into `ProviderMeta`; map 401 and 403 to `AuthFailed`, TLS errors to `TlsFailed`, 429 with an integer `Retry-After` of 1 to 9 digits to `RateLimited`, every 5xx and connection errors to `Unavailable`, and 3xx, 400, 402 and other 4xx to `Other`, by HTTP status and not by the error `type` or `code`. Read at most `response_bytes + 1` bytes. The credential is read only in this crate, from the named environment variable, and is redacted from every output.
+    - Observable: a canned envelope for each status and each error shape of design §3.7.3 maps to its `Completion` or `ProviderFailure` in a unit test; the exact request body bytes are pinned by a test and contain no field outside the list.
+    - Carried from 8.21 review: the provider body is the scanned request bytes plus constants; any text derived from request content must pass the RT-AI-0308 scan.
+    - Blocked by: 8.19, 10.4, 10.11.
+    - _Requirements: 23.27, 23.28, 23.29, 23.30, 23.31, 28.12, 28.13, 28.14, 35.12, 35.13, 35.14_
+    - Design §3.7.3
+
+  - [ ] 10.13 Implement AI_Configuration version 2, the version 1 mapping, host restrictions and the model guard
+    - In `rt-ai-tool`: parse schema version 2 (`[provider]`, `[limits]`, optional `[capabilities]`, with `reasoning_effort`, `verify_model` and `allow_provider_training` under `[provider]`), keep version 1 loading unchanged through an in-memory mapping to provider id `openai` and protocol `openai-responses` (and `mock-replay` to `mock-replay`), and never create, change, rename or delete a user's configuration file or a neighbour. Validate provider id, protocol, model and credential variable independently; the pair must be (meta, openai-responses), (openai, openai-responses) or (mock-replay, mock-replay), else `RT-AI-0006`. For ids `meta` and `openai` require the endpoint host to equal the official host, allowing only the loopback exception of Req 28.6, else `RT-AI-0013`; there is no field to allow another host. Refuse a model identifier that contains `contributor` in any case with `RT-AI-0012` unless `allow_provider_training = true`. Refuse effort `none` and unknown efforts with `RT-AI-0002` (Meta), and map `negotiate()` failures to `RT-AI-0011` with the location of the field that caused the requirement. Keep the check order of Req 28.17 as amended.
+    - Observable: each row of the Req 35.21 host table, pair table, model-guard table (letter cases, the real `muse-spark-1.3-contributor` identifier, `allow_provider_training = true`) and effort table gives its exact code, severity, location and exit code with no network call and no credential read; a version 1 file loads with the same results as before, and the file bytes, its modification time and the directory listing are unchanged after the run; two runs of the same files give byte-identical output.
+    - Red/green: mutants that compare the host by prefix or suffix, ignore a user name in the endpoint, drop the case-insensitive match of `contributor`, treat unknown as yes, write the mapped configuration back to disk, or reorder the checks are each killed.
+    - Blocked by: 10.10, 10.11, 10.12.
+    - _Requirements: 28.2, 28.12, 28.17, 35.3, 35.4, 35.6, 35.7, 35.8, 35.9, 35.10, 35.11, 35.21_
+    - Design §3.9.2
+
   - [ ] 10.2 Implement the HTTPS transport, monotonic clock and dependency bans
-    - Use `ureq` with `rustls` and the embedded root store, redirects disabled, proxy auto-detection disabled, per-attempt timeout, a real `MonotonicClock`, and no option to disable certificate or host verification. Record `ureq`, `rustls` and `webpki-roots` in `tools/dependencies.v1`. Add the `deny.toml` `bans` section listing network and AI crates with `wrappers = ["rt-ai-openai"]`, and update `forbid-external` in `check-graph`.
-    - Observable: `cargo deny check` and `check-tree` pass, and `check-tree` still shows no network crate under `ruletrace`.
+    - In `rt-ai-responses`, use `ureq` with `rustls` and the embedded root store, redirects disabled, proxy auto-detection disabled, per-attempt timeout, a real `MonotonicClock`, and no option to disable certificate or host verification. Record `ureq`, `rustls` and `webpki-roots` in `tools/dependencies.v1`. Rename the crate in `tools/allowed-edges.v1` (the `crate rt-ai-openai` line becomes `crate rt-ai-responses`, the `rt-ai-tool` dependency list, and `forbid-external ... except-under rt-ai-responses`), in the `check-graph` fixture lists of `rt-xtask`, and in the `--exclude` list of the core-only job of `ci.yml`. Add the `deny.toml` `bans` section listing network and AI crates with `wrappers = ["rt-ai-responses"]`. No `rt-ai-meta`, `rt-ai-modal` or `rt-ai-compatible` crate exists, and `check-graph` fails if one is added without an allowed-edges entry.
+    - Observable: `cargo deny check` and `check-tree` pass, `check-graph` passes with the renamed crate, and `check-tree` still shows no network crate under `ruletrace`. A `check-graph` negative fixture with a network crate under `rt-ai-tool` directly still fails.
     - Blocked by: 10.1.
-    - _Requirements: 28.6, 28.19, 21.5, 21.6, 21.7_
-    - Design §3.2, §3.7.3, §9.1 (R-D6)
+    - _Requirements: 28.6, 28.19, 21.5, 21.6, 21.7, 23.29, 23.30_
+    - Design §3.2, §3.3, §3.7.3, §9.1 (R-D6)
 
   - [ ] 10.3 Write loopback stub-server tests with a canary credential
-    - Using a `std::net::TcpListener` on `127.0.0.1:0` and hand-written HTTP/1.1 responses, test success, 503, a slow body, 429 with `Retry-After`, 401, an oversize body, malformed JSON, a 302 redirect (not followed, no credential or text sent) and a refusal. Assert `"store": false`, no credential in the body, the credential only in the authorization header, behaviour with `HTTPS_PROXY` set, and that the canary appears in no output. Required for credential safety, and needs no external network.
+    - Using a `std::net::TcpListener` on `127.0.0.1:0` and hand-written HTTP/1.1 responses, test success, 503, a slow body, 429 with `Retry-After`, 401, an oversize body, malformed JSON, a 302 redirect (not followed, no credential or text sent) and a refusal. Assert `"store": false`, no credential in the body, the credential only in the authorization header, behaviour with `HTTPS_PROXY` set, and that the canary appears in no output. Required for credential safety, and needs no external network. Assert that the request body equals the bytes pinned in 10.1 and that `reasoning.effort` is present only when configured.
     - Observable: all stub tests pass offline on three platforms.
     - Blocked by: 10.2.
-    - _Requirements: 23.27, 23.28, 28.9, 28.13, 28.19, 28.20, 21.8_
+    - _Requirements: 23.27, 23.28, 28.9, 28.13, 28.19, 28.20, 21.8, 35.12_
     - Design §3.7.10
 
-  - [ ] 10.4 Write the strict-schema nesting-depth test
-    - Check that the generated strict-mode schema stays within 10 nesting levels and 5,000 properties, and that expression depth 16 round-trips through the schema. If not, switch to the flat node-table form lowered to the same IR (design risk R-D1).
-    - Observable: the test passes, or the flat form is recorded as the chosen schema.
-    - Blocked by: 10.1.
-    - _Requirements: 23.4, 23.27_
-    - Design §9.1 (R-D1)
+  - [ ] 10.15 Write the Meta Model API profile stub tests
+    - On the loopback stub server, encode the Meta contract of UD-37 (the shapes are the user's record and are first observed in the live run): 401 `invalid_api_key`, 429 with `Retry-After`, 503 `service_overloaded` and `backend_unavailable` with `Retry-After: 60` (assert that the header is treated as absent by Req 29.3 and the scheduled waits apply), 504 `gateway_timeout` (assert the present behaviour under Req 29.2, a transient failure, and name OD-37-1 in the test comment so a later decision changes it deliberately), 400 schema violation, 402 billing, a completed response with a reasoning item before the message, a response with a tool call item, a refusal, an incomplete response, and usage with and without each count. Branch on status: a 401 with a changed `type` still maps to `AuthFailed`. Assert the request path, the Bearer header, and that a host other than the official one is refused before any connection (task 10.13). Also re-read the Meta structured-output limits and record any change in `docs/provider-profiles.md`.
+    - Observable: every shape gives its exact `ProviderFailure` or `Completion`, Diagnostic code, exit code and stored-batch state; the canary credential appears in no output; `usage` fields are stored exactly as reported and absent otherwise.
+    - Red/green: a mutant that branches on `type`, one that retries a 400, one that treats a 503 `Retry-After` as a wait, and one that fabricates `total_tokens` are each killed.
+    - Blocked by: 10.3, 10.12.
+    - _Requirements: 35.13, 35.14, 35.15, 29.2, 29.3, 28.9, 20.14_
+    - Design §3.7.3
+
+  - [ ] 10.16 Implement the `ruletrace-ai models` command and `verify_model`
+    - Add `GET {endpoint}/v1/models` to `rt-ai-responses` and the `models --config <file>` command to `rt-ai-tool` as in design §3.9.2: configuration checks up to the credential (not consent, not capability negotiation), one Transmission_Log entry without documents before the send, credential in the authorization header only, no document text and no Candidate_Clause in the request, model identifiers on standard output one per line in ascending byte order through `escape_controls`, nothing written but the Transmission_Log, no model selected, failure `RT-AI-0109` with exit 5. Implement `verify_model`: one query per `propose` run before the first Provider_Request, `RT-AI-0110` when the model is not listed, no query when it is false, and no Provider_Request sent after a failed query. Update the command set of Req 27.2 and 27.11 and the executable tests (the unknown-command test now expects `models` to be accepted and any other command to exit 2).
+    - Observable: against the stub server, `models` prints the sorted identifiers and exits 0 with no consent argument, the captured request bytes contain no document text, the Transmission_Log entry has no document identifier, a 401 and a malformed body give `RT-AI-0109` exit 5, `propose` with `verify_model = true` and an unlisted model gives `RT-AI-0110` and writes no batch and sends no Provider_Request, and the configuration file is byte-identical after every run.
+    - Red/green: mutants that send a Source_Document, that require consent, that choose a model from the list, that skip the Transmission_Log entry, and that continue after `RT-AI-0110` are each killed.
+    - Blocked by: 10.3, 10.13.
+    - _Requirements: 35.18, 35.19, 35.20, 27.2, 27.11, 28.8, 28.17_
+    - Design §3.9.2
 
   - [ ] 10.5 Wire the provider into `ruletrace-ai` and add the `live-openai` job
-    - Select `rt-ai-openai` when the configuration names `openai-responses`, keeping the mock providers for tests. Add the non-required `live-openai` CI job that runs only with a repository secret and is skipped otherwise. Ask the user with the user_input tool which secret name to document, and record it in the UD-15 record.
-    - Observable: CI passes without credentials, and the live job runs when the secret exists.
-    - Carried from the 8.8 review: until this task links `rt-ai-openai`, `ruletrace-ai` reuses `RT-AI-0006` (AI_PROVIDER_UNKNOWN) for a configured hosted provider that is not linked. Remove that interim arm in this task, so that `openai-responses` selects the provider and `RT-AI-0006` is left for a kind that no provider implements.
-    - Blocked by: 10.3.
-    - _Requirements: 21.14, 23.27, 28.12_
+    - Select `rt-ai-responses` when the configuration names the pair (meta, openai-responses) or (openai, openai-responses), keeping the mock providers for tests. Add the non-required `live-openai` CI job that exercises the OpenAI profile only with a repository secret and is skipped otherwise. The Meta live run is run by the user locally (10.8) and is not a CI job. Ask the user with the user_input tool which secret name to document for the OpenAI job, and record it in the UD-15 record.
+    - Observable: CI passes without credentials, and the live job runs when the secret exists. `ruletrace-ai propose` with a Meta version 2 configuration reaches the stub server on loopback end to end (configuration, capability check, host check, request, response, store version 2).
+    - Carried from the 8.8 review: until this task links `rt-ai-responses`, `ruletrace-ai` reuses `RT-AI-0006` (AI_PROVIDER_UNKNOWN) for a configured hosted provider that is not linked. Remove that interim arm in this task, so that a linked pair selects the provider and `RT-AI-0006` is left for a pair that no provider implements.
+    - Blocked by: 10.3, 10.13, 10.14, 10.16.
+    - _Requirements: 21.14, 23.27, 28.12, 35.9, 35.10_
     - Design §7.4
 
+  - [ ] 10.17 User review gate: Meta stub tests before the live run
+    - Stop here. When 10.3, 10.15, 10.16 and 10.5 pass on all three CI platforms (Linux, macOS, Windows) and the full gate set is green, show the user: the pinned request body, the stub-test results for each Meta error shape, the `models` transcript against the stub, the list of goldens changed by 10.14, `docs/provider-profiles.md`, and the status of OD-37-1. Ask the user with the user_input tool whether to proceed to the live run and how OD-37-1 is decided. Do not run any live step, do not request or read any credential, and do not set `allow_provider_training`. Record the answer in `tools/decisions/UD-37.md`.
+    - Observable: a CI run id with all required jobs green on the three platforms, and the user's recorded answer.
+    - Blocked by: 10.3, 10.5, 10.15, 10.16.
+    - _Requirements: 35.22, 28.21, 29.2_
+    - Design §8.11.6
+
   - [ ] 10.6 Implement `rt-xtask export-script` and the script checks
-    - Implement `rt_proposals::export_script` (pure: batches in, canonical bytes out) and `rt-xtask export-script --store <dir> --provider <kind> --model <id> --captured "<text>" --out <file>`: entries ordered by `request_id`, `origin: "recorded"`, each `response_sha256` recomputed from the payload and compared with the stored hash, and the credential-looking-string scan of Req 28.15 over the payload refusing to write a matching script. Add the script tests: a hash that differs from the recorded hash fails naming file and Request_Identifier, a credential-looking string fails, and a Request_Identifier the script lacks gives `RT-AI-0105` through the mock replay. Equal stores give equal bytes.
+    - Implement `rt_proposals::export_script` (pure: batches in, canonical bytes out) and `rt-xtask export-script --store <dir> --provider <kind> [--provider-id <id>] --model <id> --captured "<text>" --out <file>`: entries ordered by `request_id`, `origin: "recorded"`, each `response_sha256` recomputed from the payload and compared with the stored hash, and the credential-looking-string scan of Req 28.15 over the payload refusing to write a matching script. The script format stays version 1 (`kind` is the protocol label, the optional `id` is the provider identifier). Read batches of format versions 1 and 2. Add the script tests: a hash that differs from the recorded hash fails naming file and Request_Identifier, a credential-looking string fails, and a Request_Identifier the script lacks gives `RT-AI-0105` through the mock replay. Equal stores give equal bytes.
     - Observable: exporting the store of the `ai` profile and replaying the exported script reproduces the same batches.
     - Blocked by: 1.8, 7.1, 8.8.
-    - _Requirements: 33.8, 28.15, 23.25, 16.16_
+    - _Requirements: 33.8, 28.15, 23.25, 16.16, 35.17_
     - Design §8.11.7
 
   - [ ] 10.7 Add the live-flow support to the demonstration harness
-    - Add `ai/openai.example.toml` (credential named by variable only), the optional live commands in the runbook marked as live steps, and the harness rules: the live flow writes its store only to a location outside the golden files, never replaces a golden file or the Recorded_Provider_Script, and the harness refuses to run `ruletrace-ai` for a document whose `transmission_permitted` is not `true`. The consent names each transmitted document.
+    - Add `ai/meta.example.toml` and `ai/openai.example.toml` (credential named by variable only), the optional live commands in the runbook marked as live steps, and the harness rules: the live flow writes its store only to a location outside the golden files, never replaces a golden file or the Recorded_Provider_Script, and the harness refuses to run `ruletrace-ai` for a document whose `transmission_permitted` is not `true`. The consent names each transmitted document.
+    - UD-37 does not change this task or its place. The harness guard is still needed before a live run on demonstration documents (Req 28.21, 33.10), so 10.8 stays blocked by it. If the user earlier deferred 10.7, 10.8 needs either this task or an explicit decision to run the live step by hand with the manifest checked manually. That choice is for the user.
     - Observable: a test shows that the live profile refuses a document without permission and writes only outside `golden/`.
     - Blocked by: 10.5, 6.5.
     - _Requirements: 33.10, 28.21, 28.11, 33.2_
     - Design §8.11.6
 
   - [ ] 10.8 Live recording of provider responses (user-run gate)
-    - Prepare the exact commands for the user: `ruletrace-ai propose --config <local openai config> --consent <documents> --store target/demo-live/store ...` for the documents confirmed in 1.10, with the request vocabulary frozen by 1.11. Stop and ask the user to run them with their own credential and to report the result. After the user confirms, inspect the batches, run `rt-xtask export-script`, and commit the candidate script only in a deliberate commit that states the provider kind, model identifier and capture date text the user supplies, with the new response hashes.
+    - Prepare the exact commands for the user. First `ruletrace-ai models --config <local meta config>` (the user runs it with their own credential, which no agent requests, reads, prints or logs). Then, only after 10.17 is answered, `ruletrace-ai propose --config <local meta config> --consent <documents> --store target/demo-live/store ...` for the documents confirmed in 1.10, with the request vocabulary frozen by 1.11, the model `muse-spark-1.3`, an explicit low reasoning effort, no `allow_provider_training`, public competition documents and synthetic data only, and, until OD-37-1 is decided, `max_retries = 0` and an explicit attempt timeout. Optionally the same small benchmark with `muse-ember-1.0`, by a separate configuration. No fallback model. Stop and ask the user to run the commands and to report the result. After the user confirms, inspect the batches, run `rt-xtask export-script`, and commit the candidate script only in a deliberate commit that states the provider identifier, protocol, model identifier and capture date text the user supplies, with the new response hashes. Record the observed `max_output_tokens` need and the observed error shapes in `docs/provider-profiles.md`.
     - Observable: `demo/<name>/provider/recorded-script.json` exists with `origin: "recorded"` entries and hashes, and no golden file changed automatically.
-    - Blocked by: 1.10, 1.11, 10.6, 10.7.
-    - _Requirements: 33.8, 33.10, 28.21, 23.27_
+    - Blocked by: 1.10, 1.11, 10.6, 10.7, 10.17.
+    - _Requirements: 33.8, 33.10, 28.21, 23.27, 35.22_
     - Design §8.11.6, §8.11.7
 
   - [ ] 10.9 Checkpoint - Phase 8 exit
-    - Run the full gate set and confirm that `check-tree` still passes for `rt-cli` and every core crate.
-    - Exit criteria: stub tests are green with no external network; the canary tests pass; the live job is runnable but not required; the recorded script is committed with its hashes, or the user has deferred the recording.
+    - Run the full gate set and confirm that `check-tree` still passes for `rt-cli` and every core crate, that `check-graph` lists `rt-ai-responses` and no `rt-ai-openai`, `rt-ai-meta` or `rt-ai-modal`, and that `check-catalogue` passes.
+    - Exit criteria: stub tests (including the Meta profile tests) are green with no external network; the canary tests pass; the user review gate 10.17 is answered; the live job is runnable but not required; the recorded script is committed with its hashes, or the user has deferred the recording.
     - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 11. Phase 9: Final demonstration (real documents, data, published checks, mutation checks, honest claims)
@@ -1350,7 +1421,8 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
 
 ## Notes
 
-- Tasks marked with `*` are optional breadth tests (2.8, 4.11, 10.4) and can be skipped for a faster path. Breadth tests that every release needs are not starred and sit in Phase 10 (12.1 to 12.13). Each of the 52 design properties appears in at least one task.
+- Tasks marked with `*` are optional breadth tests (2.8, 4.11) and can be skipped for a faster path. Breadth tests that every release needs are not starred and sit in Phase 10 (12.1 to 12.13). Each of the 52 design properties appears in at least one task.
+- Task 10.4 was one of the optional breadth tests until UD-37 and is now required (the flat Proposal schema is what the provider receives).
 - Required and never optional, because they protect the named invariant: determinism (Properties 2, 13, 24, 48), isolation (Property 40, tasks 5.27, 9.17), provenance (Properties 1, 8, 25, 26, 33, 50), approval gating (Properties 9, 10, 11, 12, 14, 15, 16, 34 and the no-other-channel test 6.4), diagnostic state (Properties 4, 5), no network in core (Property 41, `check-tree`, source scans), exact numeric (Properties 17, 18, 19 and the Req 8.28 tables), application byte identity (Property 42), no duplicated business logic (Property 43 and `check-app-layers`), demonstration reproducibility (Property 48, task 11.6) and the three mutation checks (11.7, smoke in 6.9).
 - Moved to Phase 10 from the gate sets of design §7.5: Properties 6, 21, 22, 27, 28, 29, 35, 36, the full mock failure matrix, the per-code negative tests and the `empty-aggregate` and `thirds` fixtures. Breadth moved out of the slices: RT-JSON differential tests (2.8) and Property 3 (4.11) are optional.
 - Slice gates differ from design §7.5 in two places, both only in placement: UD-23 and UD-27 gate `rt-review`, which now starts in Phase 4 (so they are asked at wave 0), and the contradictory-flag property test (Property 5) is built up over tasks 4.12, 7.8 and 9.12 as new input kinds appear.
@@ -1408,21 +1480,23 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     {"id": 41, "tasks": ["8.15", "8.16"]},
     {"id": 42, "tasks": ["8.17"]},
     {"id": 43, "tasks": ["8.18"]},
-    {"id": 44, "tasks": ["1.12", "1.13", "9.1", "9.2", "9.4", "10.1", "10.6", "11.1"]},
-    {"id": 45, "tasks": ["9.3", "9.5", "9.9", "10.2", "10.4", "11.2"]},
-    {"id": 46, "tasks": ["9.6", "10.3"]},
-    {"id": 47, "tasks": ["9.7", "9.15", "10.5"]},
-    {"id": 48, "tasks": ["9.8", "9.10", "9.11", "9.12", "9.13", "9.14", "9.17", "10.7"]},
-    {"id": 49, "tasks": ["9.16", "9.19", "10.8"]},
-    {"id": 50, "tasks": ["9.18", "11.3"]},
-    {"id": 51, "tasks": ["11.4"]},
-    {"id": 52, "tasks": ["11.5"]},
-    {"id": 53, "tasks": ["11.6", "11.8"]},
-    {"id": 54, "tasks": ["11.7"]},
-    {"id": 55, "tasks": ["11.9", "12.1", "12.2", "12.3", "12.4", "12.5", "12.6", "12.7", "12.8", "12.9", "12.10", "12.11"]},
-    {"id": 56, "tasks": ["11.10", "11.11", "11.12", "12.12"]},
-    {"id": 57, "tasks": ["12.13"]},
-    {"id": 58, "tasks": ["12.14"]}
+    {"id": 44, "tasks": ["1.12", "1.13", "9.1", "9.2", "9.4", "10.4", "10.6", "10.10", "10.11", "11.1"]},
+    {"id": 45, "tasks": ["9.3", "9.5", "9.9", "10.1", "10.12", "10.14", "11.2"]},
+    {"id": 46, "tasks": ["9.6", "10.2", "10.13"]},
+    {"id": 47, "tasks": ["9.7", "9.15", "10.3"]},
+    {"id": 48, "tasks": ["9.8", "9.10", "9.11", "9.12", "9.13", "9.14", "9.17", "10.15", "10.16"]},
+    {"id": 49, "tasks": ["9.16", "9.19", "10.5"]},
+    {"id": 50, "tasks": ["10.7", "10.17"]},
+    {"id": 51, "tasks": ["10.8"]},
+    {"id": 52, "tasks": ["9.18", "11.3"]},
+    {"id": 53, "tasks": ["11.4"]},
+    {"id": 54, "tasks": ["11.5"]},
+    {"id": 55, "tasks": ["11.6", "11.8"]},
+    {"id": 56, "tasks": ["11.7"]},
+    {"id": 57, "tasks": ["11.9", "12.1", "12.2", "12.3", "12.4", "12.5", "12.6", "12.7", "12.8", "12.9", "12.10", "12.11"]},
+    {"id": 58, "tasks": ["11.10", "11.11", "11.12", "12.12"]},
+    {"id": 59, "tasks": ["12.13"]},
+    {"id": 60, "tasks": ["12.14"]}
   ]
 }
 ```
