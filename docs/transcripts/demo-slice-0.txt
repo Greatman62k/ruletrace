@@ -1,0 +1,208 @@
+$ cargo test -p rt-demo --test acceptance_hand -- --nocapture
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+     Running tests/acceptance_hand.rs (target/debug/deps/acceptance_hand-4c5908421cd1e8e8)
+
+running 1 test
+
+SLICE 0 SUMMARY, profile `hand`
+
+THIS IS A STAND-IN. The document below was written for the RuleTrace project. It is not the rules of any real competition.
+NO AI WAS USED. The runbook has no `ruletrace-ai` step, the manifest names no provider script, and every rule of the rulebook has origin `manual`. Each approval below is a human decision recorded by `ruletrace review approve`.
+
+stand-in document (documents/stand-in-rules.md):
+# Stand-in Rules for a Synthetic Demonstration Meet
+
+This text is a stand-in written for the RuleTrace project. It is not the rulebook of any real competition.
+
+1. An entrant is eligible if age is at least 16 and the entrant holds a licence.
+2. The score is 0.6 times the judges score plus 0.4 times the technical score.
+3. Entrants are ranked by score, highest first. Equal scores are separated by the higher technical score.
+
+approvals in the ledger (work/ledger.jsonl):
+  approval of elig.entry @ 1 by "Demo Reviewer" at 2026-01-15T10:00:00Z, content hash 0b86ad7b084217b9ed8f0156f0b5c7a8b4f92269dd9fcdb1e637d77be9c15bd9
+  approval of score.weighted @ 1 by "Demo Reviewer" at 2026-01-15T10:00:00Z, content hash 190408a6dbd4a51d1053cffce2cda86645fc50ba3d3894dccc268894c7159484
+  approval of rank.standing @ 1 by "Demo Reviewer" at 2026-01-15T10:00:00Z, content hash b6be5b3d2abf7855cb0b228c1e0ebfed8d7f008e2a575b1712c892fcec284de9
+
+step  exit  command
+s01   0     ruletrace ingest
+s03a  0     ruletrace review
+s03b  0     ruletrace review
+s03c  0     ruletrace review
+s04   0     ruletrace validate
+s05   0     ruletrace compile
+s06   4     ruletrace evaluate
+s06b  4     ruletrace evaluate
+s06c  0     ruletrace evaluate
+s07   4     ruletrace evaluate
+s07b  0     ruletrace evaluate
+
+evaluate steps (exit 4 = at least one Outcome is Indeterminate, exit 0 = all decided):
+
+evaluate s06: exit 4
+  question                outcome
+  eligible p1             true
+  eligible p2             indeterminate (missing_input: participant p2, field age)
+  eligible p3             false
+  eligible p4             true
+  eligible p5             true
+  score p1                7.6
+  score p2                7.8
+  score p3                6
+  score p4                7.8
+  score p5                6
+  standing                1:p2 2:p4 3:p1 4:p3=p5
+  decided 10 of 11
+  diagnostics: RT-EXE-0001 (error)
+  verification: 11 of 11 traces verified
+
+
+evaluate s06b: exit 4
+  question                outcome
+  eligible p1             true
+  eligible p2             indeterminate (missing_input: participant p2, field age)
+  eligible p3             false
+  eligible p4             true
+  eligible p5             true
+  score p1                7.6
+  score p2                7.8
+  score p3                6
+  score p4                7.8
+  score p5                6
+  standing                1:p2 2:p4 3:p1 4:p3=p5
+  decided 10 of 11
+  diagnostics: RT-EXE-0001 (error), RT-EXE-0011 (warning)
+  verification: 11 of 11 traces verified
+
+
+evaluate s06c: exit 0
+  question                outcome
+  eligible p1             true
+  eligible p2             true
+  eligible p3             false
+  eligible p4             true
+  eligible p5             true
+  score p1                7.6
+  score p2                7.8
+  score p3                6
+  score p4                7.8
+  score p5                6
+  standing                1:p2 2:p4 3:p1 4:p3=p5
+  decided 11 of 11
+  diagnostics: none
+  verification: 11 of 11 traces verified
+
+
+evaluate s07: exit 4
+  question                outcome
+  eligible p1             true
+  eligible p2             indeterminate (missing_input: participant p2, field age)
+  eligible p3             false
+  eligible p4             true
+  eligible p5             true
+  score p1                7.6
+  score p2                7.8
+  score p3                6
+  score p4                7.8
+  score p5                6
+  standing                1:p2 2:p4 3:p1 4:p3=p5
+  decided 10 of 11
+  diagnostics: RT-EXE-0001 (error)
+  verification: 11 of 11 traces verified
+
+
+evaluate s07b: exit 0
+  question                outcome
+  eligible p1             true
+  eligible p2             true
+  eligible p3             false
+  eligible p4             true
+  eligible p5             true
+  score p1                7.6
+  score p2                7.8
+  score p3                6
+  score p4                7.8
+  score p5                6
+  standing                1:p2 2:p4 3:p1 4:p3=p5
+  decided 11 of 11
+  diagnostics: none
+  verification: 11 of 11 traces verified
+
+first Proof_Report section (s07):
+RuleTrace proof report   format ruletrace-proof-report v1
+rulebook a6c497261cc2bbd411d8ea157eb393cf88cecae2730d4f6d54a0fd7ba81705d9
+data: not stated
+provenance: 11 of 11 traces verified
+
+DECISION 1  question: value of eligible for p1   outcome: decided true
+  rules applied      elig.entry @ revision 1
+  approval           elig.entry @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 0b86ad7b084217b9ed8f0156f0b5c7a8b4f92269dd9fcdb1e637d77be9c15bd9
+  source             rule elig.entry @ 1, stand-in-rules.md bytes 161..241, line 5 column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+                     "1. An entrant is eligible if age is at least 16 and the entrant holds a licence."
+  inputs read        1. age (p1) = 17   [rule elig.entry]
+  calculation steps  2. ge(17, 16) -> true   [rule elig.entry]
+  inputs read        3. licence (p1) = true   [rule elig.entry]
+  calculation steps  4. decision and from [2, 3] -> true   [rule elig.entry]
+  calculation steps  5. decision pass from [4] -> true   [rule elig.entry]
+  tie-breaking       none recorded
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          equal
+
+ranking decision of the Proof_Report (s07):
+DECISION 11  question: rank of standing for (no participant)   outcome: decided standings [1: p2; 2: p4; 3: p1; 4: p3, p5]
+  ranking            Score ranking — all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.
+  rules applied      rank.standing @ revision 1; score.weighted @ revision 1
+  approval           rank.standing @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash b6be5b3d2abf7855cb0b228c1e0ebfed8d7f008e2a575b1712c892fcec284de9
+  approval           score.weighted @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 190408a6dbd4a51d1053cffce2cda86645fc50ba3d3894dccc268894c7159484
+  source             rule rank.standing @ 1, stand-in-rules.md bytes 321..426, line 7 column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+                     "3. Entrants are ranked by score, highest first. Equal scores are separated by the higher technical score."
+  source             rule score.weighted @ 1, stand-in-rules.md bytes 242..320, line 6 column 1, sha256 73c3f73ac53e5606acc32e39327e3559934b6877c9fd1fb52835e549aa28be76
+                     "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  inputs read        1. judges (p1) = 8   [rule score.weighted]
+  inputs read        2. technical (p1) = 7   [rule score.weighted]
+  calculation steps  3. mul(0.6, 8) -> 4.8   [rule score.weighted]
+  calculation steps  4. mul(0.4, 7) -> 2.8   [rule score.weighted]
+  calculation steps  5. sum(4.8, 2.8) -> 7.6   [rule score.weighted]
+  inputs read        6. judges (p2) = 7   [rule score.weighted]
+  inputs read        7. technical (p2) = 9   [rule score.weighted]
+  calculation steps  8. mul(0.6, 7) -> 4.2   [rule score.weighted]
+  calculation steps  9. mul(0.4, 9) -> 3.6   [rule score.weighted]
+  calculation steps  10. sum(4.2, 3.6) -> 7.8   [rule score.weighted]
+  inputs read        11. technical (p2) = 9   [rule rank.standing]
+  inputs read        12. judges (p3) = 6   [rule score.weighted]
+  inputs read        13. technical (p3) = 6   [rule score.weighted]
+  calculation steps  14. mul(0.6, 6) -> 3.6   [rule score.weighted]
+  calculation steps  15. mul(0.4, 6) -> 2.4   [rule score.weighted]
+  calculation steps  16. sum(3.6, 2.4) -> 6   [rule score.weighted]
+  inputs read        17. technical (p3) = 6   [rule rank.standing]
+  inputs read        18. judges (p4) = 9   [rule score.weighted]
+  inputs read        19. technical (p4) = 6   [rule score.weighted]
+  calculation steps  20. mul(0.6, 9) -> 5.4   [rule score.weighted]
+  calculation steps  21. mul(0.4, 6) -> 2.4   [rule score.weighted]
+  calculation steps  22. sum(5.4, 2.4) -> 7.8   [rule score.weighted]
+  inputs read        23. technical (p4) = 6   [rule rank.standing]
+  inputs read        24. judges (p5) = 6   [rule score.weighted]
+  inputs read        25. technical (p5) = 6   [rule score.weighted]
+  calculation steps  26. mul(0.6, 6) -> 3.6   [rule score.weighted]
+  calculation steps  27. mul(0.4, 6) -> 2.4   [rule score.weighted]
+  calculation steps  28. sum(3.6, 2.4) -> 6   [rule score.weighted]
+  inputs read        29. technical (p5) = 6   [rule rank.standing]
+  tie-breaking       31. compare p2 ahead of p4: criterion 0 (desc, rule rank.standing): 7.8 vs 7.8 -> equal; criterion 1 (desc, rule rank.standing): 9 vs 6 -> p2 ahead
+  tie-breaking       33. compare p4 ahead of p1: criterion 0 (desc, rule rank.standing): 7.8 vs 7.6 -> p4 ahead
+  tie-breaking       35. compare p1 ahead of p3: criterion 0 (desc, rule rank.standing): 7.6 vs 6 -> p1 ahead
+  tie-breaking       36. compare p3 tied with p5: criterion 0 (desc, rule rank.standing): 6 vs 6 -> equal; criterion 1 (desc, rule rank.standing): 6 vs 6 -> equal
+  tie-breaking       37. tie group at position 4: {p3, p5}; members are listed in ascending identifier order, which has no ranking meaning
+  calculation steps  38. decision recorded from [] -> standings [1: p2; 2: p4; 3: p1; 4: p3, p5]   [rule rank.standing]
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          not compared for this question
+
+
+mutations: M1 source byte, M2 data value, M3 rule literal: all detected
+test hand_profile_acceptance ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.39s
+
+[exit 0]

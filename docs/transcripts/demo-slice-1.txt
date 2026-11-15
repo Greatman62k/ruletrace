@@ -1,0 +1,241 @@
+$ cargo test -p rt-demo --test acceptance ai -- --nocapture
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running tests/acceptance.rs (target/debug/deps/acceptance-2ea8d9fdada23148)
+
+running 9 tests
+test ai_profile_a_credential_looking_string_is_found ... ok
+test ai_profile_a_configuration_with_an_inline_credential_is_refused_without_echo ... ok
+test ai_profile_a_script_entry_whose_hash_differs_is_reported_with_its_request_identifier ... ok
+test ai_profile_a_request_the_script_does_not_hold_is_a_provider_error_and_keeps_earlier_batches ... ok
+test ai_profile_a_rule_that_reads_an_unadopted_target_is_refused_and_nothing_changes ... ok
+test ai_profile_windows_goldens_differ_from_the_others_only_by_the_skipped_directory_sync ... ok
+test ai_profile_coverage_names_the_unclassified_clause_without_the_store_or_the_rejection ... ok
+test ai_profile_a_canary_credential_reaches_no_surface_of_the_runs ... ok
+
+ranking decision of the Proof_Report (s07):
+DECISION 11  question: rank of standing for (no participant)   outcome: decided standings [1: p2; 2: p4; 3: p1; 4: p3, p5]
+  ranking            Score ranking — all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.
+  rules applied      rank.standing @ revision 1; score.weighted @ revision 1
+  approval           rank.standing @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 0bc9dbf21d05814446b9ef0b9466e0f7de03c96b26bdebcb8916a8a328628224
+  approval           score.weighted @ 1: reviewer "Demo Reviewer", time 2026-01-15T10:00:00Z, content hash 9fa6292ebbd6de150b1021e75b47a0ffca25db2da4c24c5ecd17f2c249136dac
+  source             rule rank.standing @ 1, stand-in-rules.md bytes 321..426, line 7 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "3. Entrants are ranked by score, highest first. Equal scores are separated by the higher technical score."
+  source             rule score.weighted @ 1, stand-in-rules.md bytes 242..320, line 6 column 1, sha256 cad9f3cccea2c7470cf25aad74c646ca2412ba48e3eaf66e7ee81aed038b2cce
+                     "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  inputs read        1. judges (p1) = 8   [rule score.weighted]
+  inputs read        2. technical (p1) = 7   [rule score.weighted]
+  calculation steps  3. mul(0.6, 8) -> 4.8   [rule score.weighted]
+  calculation steps  4. mul(0.4, 7) -> 2.8   [rule score.weighted]
+  calculation steps  5. sum(4.8, 2.8) -> 7.6   [rule score.weighted]
+  inputs read        6. judges (p2) = 7   [rule score.weighted]
+  inputs read        7. technical (p2) = 9   [rule score.weighted]
+  calculation steps  8. mul(0.6, 7) -> 4.2   [rule score.weighted]
+  calculation steps  9. mul(0.4, 9) -> 3.6   [rule score.weighted]
+  calculation steps  10. sum(4.2, 3.6) -> 7.8   [rule score.weighted]
+  inputs read        11. technical (p2) = 9   [rule rank.standing]
+  inputs read        12. judges (p3) = 6   [rule score.weighted]
+  inputs read        13. technical (p3) = 6   [rule score.weighted]
+  calculation steps  14. mul(0.6, 6) -> 3.6   [rule score.weighted]
+  calculation steps  15. mul(0.4, 6) -> 2.4   [rule score.weighted]
+  calculation steps  16. sum(3.6, 2.4) -> 6   [rule score.weighted]
+  inputs read        17. technical (p3) = 6   [rule rank.standing]
+  inputs read        18. judges (p4) = 9   [rule score.weighted]
+  inputs read        19. technical (p4) = 6   [rule score.weighted]
+  calculation steps  20. mul(0.6, 9) -> 5.4   [rule score.weighted]
+  calculation steps  21. mul(0.4, 6) -> 2.4   [rule score.weighted]
+  calculation steps  22. sum(5.4, 2.4) -> 7.8   [rule score.weighted]
+  inputs read        23. technical (p4) = 6   [rule rank.standing]
+  inputs read        24. judges (p5) = 6   [rule score.weighted]
+  inputs read        25. technical (p5) = 6   [rule score.weighted]
+  calculation steps  26. mul(0.6, 6) -> 3.6   [rule score.weighted]
+  calculation steps  27. mul(0.4, 6) -> 2.4   [rule score.weighted]
+  calculation steps  28. sum(3.6, 2.4) -> 6   [rule score.weighted]
+  inputs read        29. technical (p5) = 6   [rule rank.standing]
+  tie-breaking       31. compare p2 ahead of p4: criterion 0 (desc, rule rank.standing): 7.8 vs 7.8 -> equal; criterion 1 (desc, rule rank.standing): 9 vs 6 -> p2 ahead
+  tie-breaking       33. compare p4 ahead of p1: criterion 0 (desc, rule rank.standing): 7.8 vs 7.6 -> p4 ahead
+  tie-breaking       35. compare p1 ahead of p3: criterion 0 (desc, rule rank.standing): 7.6 vs 6 -> p1 ahead
+  tie-breaking       36. compare p3 tied with p5: criterion 0 (desc, rule rank.standing): 6 vs 6 -> equal; criterion 1 (desc, rule rank.standing): 6 vs 6 -> equal
+  tie-breaking       37. tie group at position 4: {p3, p5}; members are listed in ascending identifier order, which has no ranking meaning
+  calculation steps  38. decision recorded from [] -> standings [1: p2; 2: p4; 3: p1; 4: p3, p5]   [rule rank.standing]
+  missing inputs     none
+  not applied        none
+  verification       verified
+  published          not compared for this question
+
+
+SLICE 1 SUMMARY, profile `ai`
+
+THIS IS A STAND-IN. The document below was written for the RuleTrace project. It is not the rules of any real competition.
+THE SCRIPT ENTRIES ARE AUTHORED. No AI provider produced them: a person wrote them by hand, and the mock provider replays them offline (no network, no credential).
+
+stand-in document (documents/stand-in-rules.md):
+# Stand-in Rules for a Synthetic Demonstration Meet
+
+This text is a stand-in written for the RuleTrace project. It is not the rulebook of any real competition.
+
+1. An entrant is eligible if age is at least 16 and the entrant holds a licence.
+2. The score is 0.6 times the judges score plus 0.4 times the technical score.
+3. Entrants are ranked by score, highest first. Equal scores are separated by the higher technical score.
+4. The top three entrants share the prize money in the ratio 5 to 3 to 2.
+5. An entrant is a junior if age is under 18.
+
+proposals (read from the stored batches in work/store/batches):
+  Request_Identifier ab5e5c4a688908ce49628b8e0ab189dcd4ef095f97e745f13487e80a9de9f071 (script entry origin: authored, provider mock-replay, model authored-script)
+    proposal a632f94f69a9aead9d82bc476e01e919eb3793d0b748d7911e14b27f566caabd kind rule_suggestion rule elig.entry
+      source span stand-in-rules.md bytes 161..241 (line 5, column 1): "1. An entrant is eligible if age is at least 16 and the entrant holds a licence."
+    proposal 2fe141eef2d209cd621e9a3a302800a96fc770f271f0e475808d2af8e7873b82 kind rule_suggestion rule score.weighted
+      source span stand-in-rules.md bytes 242..320 (line 6, column 1): "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+    proposal 70179c6f64487da3b001682f456a6efad1ea21bcb4c3543243db97813cebfde8 kind rule_suggestion rule rank.standing
+      source span stand-in-rules.md bytes 321..426 (line 7, column 1): "3. Entrants are ranked by score, highest first. Equal scores are separated by the higher technical score."
+  Request_Identifier be41f0e453a0518479e65a8da0bb7035989b86e5aa4727e7c851304c37c2d2b7 (script entry origin: authored, provider mock-replay, model authored-script)
+    proposal 544b9c57c637b21015123e71df48b19db2092887708fb8cf2764c3f9cc735e4a kind rule_suggestion rule prize.split
+      source span stand-in-rules.md bytes 427..500 (line 8, column 1): "4. The top three entrants share the prize money in the ratio 5 to 3 to 2."
+    proposal c20e5fe73a9a016027784f74eca50a64e9b47f7b9db2661d9c8aba078f3dbf16 kind rule_suggestion rule junior.flag
+      source span stand-in-rules.md bytes 501..546 (line 9, column 1): "5. An entrant is a junior if age is under 18."
+
+review steps (each a human decision recorded by `ruletrace review`):
+  s02b: review list
+  s03a: review approve elig.entry @ 1 by "Demo Reviewer" at 2026-01-15T10:00:00Z
+  s03c: review approve score.weighted @ 1 by "Demo Reviewer" at 2026-01-15T10:00:00Z
+  s03d: review approve rank.standing @ 1 by "Demo Reviewer" at 2026-01-15T10:00:00Z
+  s03e: review reject junior.flag @ 1 by "Demo Reviewer" at 2026-01-15T10:00:00Z, reason: The clause says under 18; the proposal tests age at most 18, which makes an entrant aged exactly 18 a junior.
+  s03f: review list
+
+decisions in the ledger (work/ledger.jsonl):
+  approval of elig.entry @ 1 by "Demo Reviewer" at 2026-01-15T10:00:00Z, content hash 9edaa59e63831bf8d71ccba89eb6025bac65019cbd424ed1348981e784dc368c
+  approval of score.weighted @ 1 by "Demo Reviewer" at 2026-01-15T10:00:00Z, content hash 9fa6292ebbd6de150b1021e75b47a0ffca25db2da4c24c5ecd17f2c249136dac
+  approval of rank.standing @ 1 by "Demo Reviewer" at 2026-01-15T10:00:00Z, content hash 0bc9dbf21d05814446b9ef0b9466e0f7de03c96b26bdebcb8916a8a328628224
+  rejection of junior.flag @ 1 by "Demo Reviewer" at 2026-01-15T10:00:00Z, content hash 8c5f984c35ba64a1f5cff1220505cabf1e0f09a074007909d9e8a42d99df8282, reason: The clause says under 18; the proposal tests age at most 18, which makes an entrant aged exactly 18 a junior.
+
+step  exit  command
+s01   0     ruletrace ingest --document
+s02   0     ruletrace-ai propose --config
+s02b  0     ruletrace review list
+s03a  0     ruletrace review approve
+s03c  0     ruletrace review approve
+s03d  0     ruletrace review approve
+s03e  0     ruletrace review reject
+s03f  0     ruletrace review list
+s04   0     ruletrace validate --rulebook
+s05   0     ruletrace compile --validation
+s06   4     ruletrace evaluate --compiled
+s06b  4     ruletrace evaluate --compiled
+s06c  0     ruletrace evaluate --compiled
+s07   4     ruletrace evaluate --compiled
+s07b  0     ruletrace evaluate --compiled
+
+evaluate steps (exit 4 = at least one Outcome is Indeterminate, exit 0 = all decided):
+
+evaluate s06: exit 4
+  question                outcome
+  eligible p1             true
+  eligible p2             indeterminate (missing_input: participant p2, field age)
+  eligible p3             false
+  eligible p4             true
+  eligible p5             true
+  score p1                7.6
+  score p2                7.8
+  score p3                6
+  score p4                7.8
+  score p5                6
+  standing                1:p2 2:p4 3:p1 4:p3=p5
+  decided 10 of 11
+  diagnostics: RT-EXE-0001 (error)
+  verification: 11 of 11 traces verified
+
+
+evaluate s06b: exit 4
+  question                outcome
+  eligible p1             true
+  eligible p2             indeterminate (missing_input: participant p2, field age)
+  eligible p3             false
+  eligible p4             true
+  eligible p5             true
+  score p1                7.6
+  score p2                7.8
+  score p3                6
+  score p4                7.8
+  score p5                6
+  standing                1:p2 2:p4 3:p1 4:p3=p5
+  decided 10 of 11
+  diagnostics: RT-EXE-0001 (error), RT-EXE-0011 (warning)
+  verification: 11 of 11 traces verified
+
+
+evaluate s06c: exit 0
+  question                outcome
+  eligible p1             true
+  eligible p2             true
+  eligible p3             false
+  eligible p4             true
+  eligible p5             true
+  score p1                7.6
+  score p2                7.8
+  score p3                6
+  score p4                7.8
+  score p5                6
+  standing                1:p2 2:p4 3:p1 4:p3=p5
+  decided 11 of 11
+  diagnostics: none
+  verification: 11 of 11 traces verified
+
+
+evaluate s07: exit 4
+  question                outcome
+  eligible p1             true
+  eligible p2             indeterminate (missing_input: participant p2, field age)
+  eligible p3             false
+  eligible p4             true
+  eligible p5             true
+  score p1                7.6
+  score p2                7.8
+  score p3                6
+  score p4                7.8
+  score p5                6
+  standing                1:p2 2:p4 3:p1 4:p3=p5
+  decided 10 of 11
+  diagnostics: RT-EXE-0001 (error)
+  verification: 11 of 11 traces verified
+
+
+evaluate s07b: exit 0
+  question                outcome
+  eligible p1             true
+  eligible p2             true
+  eligible p3             false
+  eligible p4             true
+  eligible p5             true
+  score p1                7.6
+  score p2                7.8
+  score p3                6
+  score p4                7.8
+  score p5                6
+  standing                1:p2 2:p4 3:p1 4:p3=p5
+  decided 11 of 11
+  diagnostics: none
+  verification: 11 of 11 traces verified
+
+Coverage_Statement:
+# Coverage statement
+
+Every Candidate_Clause of the demonstration documents, once, by start offset.
+
+| Document | Start | Line | Label | Class | Detail | Text |
+| --- | --- | --- | --- | --- | --- | --- |
+| stand-in-rules.md | 161 | 5 | 1. | rule_approved | elig.entry r1 | 1. An entrant is eligible if age is at least 16 and the entrant holds a licence. |
+| stand-in-rules.md | 242 | 6 | 2. | rule_approved | score.weighted r1 | 2. The score is 0.6 times the judges score plus 0.4 times the technical score. |
+| stand-in-rules.md | 321 | 7 | 3. | rule_approved | rank.standing r1 | 3. Entrants are ranked by score, highest first. Equal scores are separated by the higher technical score. |
+| stand-in-rules.md | 427 | 8 | 4. | unsupported | RT-VAL-0003, prize_allocation | 4. The top three entrants share the prize money in the ratio 5 to 3 to 2. |
+| stand-in-rules.md | 501 | 9 | 5. | proposal_rejected | junior.flag r1; reason: The clause says under 18; the proposal tests age at most 18, which makes an entrant aged exactly 18 a junior. | 5. An entrant is a junior if age is under 18. |
+
+compiled and evaluated artifacts of the ai flow and of the hand-authored flow:
+  compiled.json: 2062 bytes, sha256 9238c76bd52b0f135f19234989e70f20386cbf2d60d4fcc6b86249d3f49f860a, identical from the AI-origin flow and from the hand-authored flow
+  results.json: 24009 bytes, sha256 8fd25baaf6f16d1b405d8a7460ab019e50afba1c0f63edf50d628503bae7c117, identical from the AI-origin flow and from the hand-authored flow
+
+script entries are authored (not provider output); the document is a stand-in
+
+test ai_profile_acceptance ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.87s
+
+[exit 0]
