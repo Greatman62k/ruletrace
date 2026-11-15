@@ -1,0 +1,18 @@
+[package]
+name = "rt-ai-responses"
+description = "OpenAI Responses protocol integration: request body, response mapping, HTTPS transport (class aux)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rt-ai-adapter = { path = "../rt-ai-adapter" }
+rt-foundation = { path = "../rt-foundation" }
+rt-json = { path = "../rt-json" }
+rustls = { version = "0.23", default-features = false, features = ["std"] }
+ureq = { version = "3", default-features = false, features = ["rustls"] }

@@ -12,9 +12,11 @@ pub const RESPONSES_PATH: &str = "/v1/responses";
 /// Request path of the model catalogue, appended to the endpoint.
 pub const MODELS_PATH: &str = "/v1/models";
 
-/// The provisional `max_output_tokens` of a Responses request. Reasoning
-/// tokens count toward it. Task 10.1 sets the final value and task 10.8
-/// revises it after the live run. The documented minimum is 16.
+/// The provisional `max_output_tokens` of a Responses request, passed to
+/// `rt-ai-responses` through its settings. Reasoning tokens count toward it.
+/// The value is not measured: task 10.8 revises it after the live run. A
+/// truncated answer is reported as incomplete, never as a result. The
+/// documented minimum is 16.
 pub const PROVISIONAL_MAX_OUTPUT_TOKENS: u32 = 8192;
 
 /// The structured-output mode that a provider supports.

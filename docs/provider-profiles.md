@@ -17,7 +17,7 @@ from `yes` to `no`. It cannot raise one.
 | Protocol | `openai-responses` |
 | Request path | `/v1/responses`, appended to the endpoint |
 | Model catalogue path | `/v1/models`, appended to the endpoint |
-| `max_output_tokens` | Provisional 8192. Reasoning tokens count toward it. Task 10.1 sets the final value and task 10.8 revises it after the live run. The minimum is 16. |
+| `max_output_tokens` | Provisional 8192, kept by task 10.1 and not measured. Reasoning tokens count toward it, so a long reasoning phase can leave no room for the answer, which then ends as `incomplete` (RT-AI-0205). Task 10.8 revises it after the live run. The minimum is 16. The value lives in the profile and reaches `rt-ai-responses` through `Settings`, because the crate must not depend on `rt-ai-tool`. No price or cost is estimated. |
 | Context window, output token limit | Unknown. No source read for this version states them. |
 
 ## `meta`
@@ -64,3 +64,23 @@ copied into the profile.
 No host, no documentation. The offline replay of a recorded script sends
 nothing. Its capabilities equal those of `ReplayProvider`: structured output
 `yes`, reasoning effort `no`, usage reporting `no`.
+
+## Request and transport (`rt-ai-responses`, tasks 10.1 and 10.2)
+
+`POST {endpoint}/v1/responses` with exactly these members, in this order:
+`model`, `input`, `text.format` (`json_schema`, `name`, `schema`, `strict:
+true`), `store: false`, `max_output_tokens`, and `reasoning.effort` only when
+configured. There is no `tools` member. `input` is a constant sentence
+(`INPUT_PREAMBLE`, provisional wording) followed by the canonical request
+bytes that passed the credential scan. The credential travels only in the
+`Authorization: Bearer` header to the configured host. Redirects are not
+followed, proxy variables are ignored, and the embedded `webpki-roots` store
+verifies the server. Error response bodies are never read.
+
+An envelope that is not valid JSON or has another shape (a tool call, a
+second message, a second `output_text`, no message) yields an empty payload
+with `Completion::Complete` and a fixed reason in the attempt detail. The
+caller then reports RT-AI-0201 because an empty payload is not JSON. A body
+larger than the response limit is returned as its first `limit + 1` bytes, so
+the caller reports RT-AI-0203. HTTP 504 maps to `Unavailable` (transient)
+under Req 29.2 as written. This is open decision OD-37-1.
