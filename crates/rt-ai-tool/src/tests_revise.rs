@@ -32,7 +32,7 @@ use std::rc::Rc;
 use std::time::Duration;
 
 const CREDENTIAL: &str = "credential-value-0123456789";
-const FEEDBACK: &str = "Raise the age to 21.\nCite \"clause 1\".";
+pub(crate) const FEEDBACK: &str = "Raise the age to 21.\nCite \"clause 1\".";
 const NEW_CONTENT: &str = r#"{"id":"elig.basic","kind":"eligibility","target":"eligible","type":"boolean","expr":{"node":"cmp","t":"boolean","op":"ge","left":{"node":"field","t":"number","name":"age"},"right":{"node":"num","t":"number","value":"21"}},"markers":[],"spans":[{"document":"rules.md","start":0,"end":11,"line":1,"column":1}]}"#;
 
 // sha256sum of the bytes of `expected_bytes(1, FEEDBACK)`, escaped by an
@@ -45,7 +45,7 @@ fn rule_json(revision: u32, value: &str) -> String {
     )
 }
 
-fn rulebook_text() -> String {
+pub(crate) fn rulebook_text() -> String {
     format!(
         r#"{{"format":"ruletrace-rulebook","ir_version":"1","name":"n","version":"1","documents":[{{"id":"rules.md","sha256":"{RULES_HASH}"}}],"types":{{"inputs":[{{"name":"age","type":"number"}}],"enums":[],"sets":[],"collections":[]}},"rules":[{},{}],"precedence":[]}}"#,
         rule_json(1, "16"),
@@ -118,7 +118,7 @@ fn revised_payload() -> String {
     )
 }
 
-fn revise_fixture(name: &str) -> Fixture {
+pub(crate) fn revise_fixture(name: &str) -> Fixture {
     let fixture = Fixture::new(name);
     std::fs::write(fixture.path("rulebook.json"), rulebook_text()).unwrap();
     std::fs::write(fixture.path("feedback.txt"), FEEDBACK).unwrap();
@@ -126,7 +126,7 @@ fn revise_fixture(name: &str) -> Fixture {
     fixture
 }
 
-fn revise_opts(fixture: &Fixture, rule: &str, revision: &str) -> Vec<String> {
+pub(crate) fn revise_opts(fixture: &Fixture, rule: &str, revision: &str) -> Vec<String> {
     vec![
         "--revise-rule".to_owned(),
         rule.to_owned(),
@@ -142,7 +142,7 @@ fn args_with(fixture: &Fixture, extra: &[String]) -> Vec<OsString> {
     fixture.args(&refs)
 }
 
-fn consented_with(fixture: &Fixture, extra: &[String]) -> Vec<OsString> {
+pub(crate) fn consented_with(fixture: &Fixture, extra: &[String]) -> Vec<OsString> {
     let mut all = extra.to_vec();
     all.push("--consent".to_owned());
     all.push("rules.md".to_owned());
@@ -592,6 +592,10 @@ fn a_canary_in_the_feedback_reaches_no_output_log_or_store() {
     }
 }
 
+// The feedback is part of the request, so a credential in it is refused
+// by the request check (RT-AI-0308, exit 2) before any response exists.
+// It was RT-AI-0206 (exit 6) when the request was sent and the response
+// echoed the value.
 #[test]
 fn a_credential_in_the_feedback_and_in_the_response_reaches_no_output_or_file() {
     for (i, credential) in canaries().into_iter().enumerate() {
@@ -603,15 +607,39 @@ fn a_credential_in_the_feedback_and_in_the_response_reaches_no_output_or_file() 
         .unwrap();
         let echoing = revised_payload().replace("raise the age", credential);
         let args = consented_with(&fixture, &revise_opts(&fixture, "elig.basic", "1"));
-        let (ran, _) = run_hosted(&fixture, credential, &args, echoing);
-        assert_eq!(ran.code, ExitCode::Response, "{}", ran.stderr);
-        assert_eq!(ran.codes(), ["RT-AI-0206"], "{}", ran.stderr);
+        let (ran, seen) = run_hosted(&fixture, credential, &args, echoing);
+        assert_eq!(ran.code, ExitCode::InvalidInput, "{}", ran.stderr);
+        assert_eq!(ran.codes(), ["RT-AI-0308"], "{}", ran.stderr);
+        assert!(seen.is_empty(), "{credential}: the provider got a request");
         assert_eq!(leaked(&ran.stdout, credential), None, "{}", ran.stdout);
         assert_eq!(leaked(&ran.stderr, credential), None, "{}", ran.stderr);
         for name in fixture.files() {
             if name == "feedback.txt" {
                 continue;
             }
+            let bytes = std::fs::read(fixture.path(&name)).unwrap();
+            let text = String::from_utf8_lossy(&bytes);
+            assert_eq!(leaked(&text, credential), None, "{name}: {text}");
+        }
+    }
+}
+
+// The response-echo case of RT-AI-0206 with a request that holds no
+// credential: the feedback is clean and only the response carries it.
+#[test]
+fn a_credential_only_in_the_response_is_refused_as_rt_ai_0206() {
+    for (i, credential) in canaries().into_iter().enumerate() {
+        let fixture = revise_fixture(&format!("revise-echo-{i}"));
+        let echoing = revised_payload().replace("raise the age", credential);
+        let args = consented_with(&fixture, &revise_opts(&fixture, "elig.basic", "1"));
+        let (ran, seen) = run_hosted(&fixture, credential, &args, echoing);
+        assert_eq!(seen.len(), 1, "{credential}: the request was not sent");
+        assert_eq!(ran.code, ExitCode::Response, "{}", ran.stderr);
+        assert_eq!(ran.codes(), ["RT-AI-0206"], "{}", ran.stderr);
+        assert_eq!(leaked(&ran.stdout, credential), None, "{}", ran.stdout);
+        assert_eq!(leaked(&ran.stderr, credential), None, "{}", ran.stderr);
+        assert!(fixture.files().iter().all(|f| !f.starts_with("store/")));
+        for name in fixture.files() {
             let bytes = std::fs::read(fixture.path(&name)).unwrap();
             let text = String::from_utf8_lossy(&bytes);
             assert_eq!(leaked(&text, credential), None, "{name}: {text}");

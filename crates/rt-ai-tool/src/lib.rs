@@ -27,6 +27,7 @@ pub mod provenance;
 mod raw;
 mod reader;
 mod redact;
+mod request_scan;
 pub mod response;
 mod revise;
 mod run;
@@ -88,6 +89,8 @@ mod tests_redact;
 mod tests_redact_fragments;
 #[cfg(test)]
 mod tests_redaction_property;
+#[cfg(test)]
+mod tests_request_credential;
 #[cfg(test)]
 mod tests_response;
 #[cfg(test)]

@@ -20,6 +20,7 @@ use crate::out::Out;
 use crate::perm::{file_mode, permission_warning};
 use crate::plan::{build_plan, PlanInput, RunPlan};
 use crate::redact::Redactor;
+use crate::request_scan::refuse_credential;
 use crate::run::{run_requests, RunInput};
 use crate::store::StoreMeta;
 use crate::store_check::check_store;
@@ -302,6 +303,9 @@ fn propose<O: Write, E: Write>(
         Ok(plan) => plan,
         Err(found) => return report.fail(&found),
     };
+    if let Err(found) = refuse_credential(&plan, &redactor, &input_location(&args.candidates)) {
+        return report.fail(&[found]);
+    }
     if let Err(found) = check_store(fs, &args.store) {
         return report.fail(&found);
     }

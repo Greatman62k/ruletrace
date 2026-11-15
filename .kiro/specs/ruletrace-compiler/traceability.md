@@ -316,3 +316,12 @@ User decisions and corrections of the 8.15 review.
 | --- | --- | --- | --- | --- | --- |
 | 7 | Diagnostics Model | Changed | 7.17 | - | User decision: the meaning of `RT-AI-0304` names an unknown revision target (Rule identifier or Revision_Number) and invalid feedback (empty or not UTF-8). Same code, severity, exit code and executable. The catalogue, the generated enum, the Req 7.17 table and the design table carry the new text. An oversize feedback file is `RT-LIM-0001` and is not part of this meaning |
 | 23 | AI-Assisted Proposal Pipeline | Changed | 23.33 | - | Row 1 of the table (step 4) carries the same wording |
+
+## Task 8.21 follow-up: credential inside a Provider_Request
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 7 | Diagnostics Model | Changed | 7.17 | - | User decision (blocking): new code `RT-AI-0308` `AI_REQUEST_CONTAINS_CREDENTIAL`, Error, exit 2, `ruletrace-ai`. It is in the catalogue, the generated enum, the Req 7.17 table and the design table |
+| 16 | Executable Exit Codes | Changed | 16.17 | - | Row 4 of the order table lists `AI_REQUEST_CONTAINS_CREDENTIAL`. The check runs on the built requests, after the input load and before the Proposal_Store check. Exit 2 |
+| 23 | AI-Assisted Proposal Pipeline | Changed | 23.33 | - | A new row at step 4: no provider call, no Transmission_Log entry, no store write. The note after the table puts the credential check after the input load and before the store check, and says that a dry run does not apply it |
+| 28 | AI Configuration, Credentials, and Transmission Consent | Changed | 28.14 | - | 28.14 says that a Provider_Request carries no credential. Until now a credential in a clause text, the feedback or the revised rule content was sent. The AI_Tool now refuses such a request before the log entry and any send. A dry run reads no credential and is not subject to the check. Design 3.9.2. Existing test `a_credential_in_the_feedback_and_in_the_response_reaches_no_output_or_file`: exit 6 and `RT-AI-0206` become exit 2 and `RT-AI-0308`, because its feedback now holds the credential and the request check precedes any response. It gains the assertion that the provider got no request. The response-echo case keeps its own test, `a_credential_only_in_the_response_is_refused_as_rt_ai_0206`, with a clean feedback. Trade-off: a short or low-entropy credential that occurs in the fixed request text refuses every run |

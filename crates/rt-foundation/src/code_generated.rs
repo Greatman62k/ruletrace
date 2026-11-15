@@ -283,6 +283,8 @@ pub enum Code {
     AiRunIncomplete,
     /// `RT-AI-0307`: A temporary file of the Proposal_Store writer could not be removed; it is never read and can be deleted
     AiStoreTempNotRemoved,
+    /// `RT-AI-0308`: A Provider_Request holds the credential value or a run of at least 8 consecutive characters of it, in a clause text, the feedback or the revised rule content; nothing is sent, logged or stored
+    AiRequestContainsCredential,
     /// `RT-APP-0001`: Application input not well formed: CSV syntax, unknown column, wrong cell count (Req 31.9)
     AppInputMalformed,
     /// `RT-APP-0002`: Required column or declared input absent
@@ -299,7 +301,7 @@ pub enum Code {
 
 impl Code {
     /// Every code, in catalogue order.
-    pub const ALL: [Code; 144] = [
+    pub const ALL: [Code; 145] = [
         Code::DiagnosticStateContradiction,
         Code::DiagnosticStateBothFlags,
         Code::LifecycleFlagContradiction,
@@ -438,6 +440,7 @@ impl Code {
         Code::AiBatchHasBlockingProposals,
         Code::AiRunIncomplete,
         Code::AiStoreTempNotRemoved,
+        Code::AiRequestContainsCredential,
         Code::AppInputMalformed,
         Code::AppInputFieldMissing,
         Code::AppInputDuplicateParticipant,
@@ -588,6 +591,7 @@ impl Code {
             Self::AiBatchHasBlockingProposals => "RT-AI-0305",
             Self::AiRunIncomplete => "RT-AI-0306",
             Self::AiStoreTempNotRemoved => "RT-AI-0307",
+            Self::AiRequestContainsCredential => "RT-AI-0308",
             Self::AppInputMalformed => "RT-APP-0001",
             Self::AppInputFieldMissing => "RT-APP-0002",
             Self::AppInputDuplicateParticipant => "RT-APP-0003",
@@ -739,6 +743,7 @@ impl Code {
             Self::AiBatchHasBlockingProposals => "AI_BATCH_HAS_BLOCKING_PROPOSALS",
             Self::AiRunIncomplete => "AI_RUN_INCOMPLETE",
             Self::AiStoreTempNotRemoved => "AI_STORE_TEMP_NOT_REMOVED",
+            Self::AiRequestContainsCredential => "AI_REQUEST_CONTAINS_CREDENTIAL",
             Self::AppInputMalformed => "APP_INPUT_MALFORMED",
             Self::AppInputFieldMissing => "APP_INPUT_FIELD_MISSING",
             Self::AppInputDuplicateParticipant => "APP_INPUT_DUPLICATE_PARTICIPANT",
@@ -890,6 +895,7 @@ impl Code {
             Self::AiBatchHasBlockingProposals => Severity::Warning,
             Self::AiRunIncomplete => Severity::Warning,
             Self::AiStoreTempNotRemoved => Severity::Warning,
+            Self::AiRequestContainsCredential => Severity::Error,
             Self::AppInputMalformed => Severity::Error,
             Self::AppInputFieldMissing => Severity::Error,
             Self::AppInputDuplicateParticipant => Severity::Error,
@@ -1041,6 +1047,7 @@ impl Code {
             Self::AiBatchHasBlockingProposals => ExitCode::Success,
             Self::AiRunIncomplete => ExitCode::Success,
             Self::AiStoreTempNotRemoved => ExitCode::Success,
+            Self::AiRequestContainsCredential => ExitCode::InvalidInput,
             Self::AppInputMalformed => ExitCode::InvalidInput,
             Self::AppInputFieldMissing => ExitCode::InvalidInput,
             Self::AppInputDuplicateParticipant => ExitCode::InvalidInput,
@@ -1192,6 +1199,7 @@ impl Code {
             "RT-AI-0305" => Some(Self::AiBatchHasBlockingProposals),
             "RT-AI-0306" => Some(Self::AiRunIncomplete),
             "RT-AI-0307" => Some(Self::AiStoreTempNotRemoved),
+            "RT-AI-0308" => Some(Self::AiRequestContainsCredential),
             "RT-APP-0001" => Some(Self::AppInputMalformed),
             "RT-APP-0002" => Some(Self::AppInputFieldMissing),
             "RT-APP-0003" => Some(Self::AppInputDuplicateParticipant),
@@ -1344,6 +1352,7 @@ impl Code {
             "AI_BATCH_HAS_BLOCKING_PROPOSALS" => Some(Self::AiBatchHasBlockingProposals),
             "AI_RUN_INCOMPLETE" => Some(Self::AiRunIncomplete),
             "AI_STORE_TEMP_NOT_REMOVED" => Some(Self::AiStoreTempNotRemoved),
+            "AI_REQUEST_CONTAINS_CREDENTIAL" => Some(Self::AiRequestContainsCredential),
             "APP_INPUT_MALFORMED" => Some(Self::AppInputMalformed),
             "APP_INPUT_FIELD_MISSING" => Some(Self::AppInputFieldMissing),
             "APP_INPUT_DUPLICATE_PARTICIPANT" => Some(Self::AppInputDuplicateParticipant),
