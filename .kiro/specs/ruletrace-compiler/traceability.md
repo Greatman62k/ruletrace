@@ -517,3 +517,10 @@ One test fixture of mine was wrong at first (`rtc-Zq7x` is eight bytes, not seve
 - User decisions confirmed: `review list` before the first approval (Req 26.6 amended), Property 41 as an exhaustive 8-cell matrix, origin independence against a hand-authored rulebook over identical source bytes.
 - Still open: 6.12 and 8.20, which need the user's review of the transcripts.
 - Known limits: `.windows` goldens are hand-derived; `rank.standing` is not gated by eligibility; a refused `approve` leaves an empty `.lock` file; the macOS golden flake mitigation is unproven (no recurrence in six runs).
+
+## Closure of 6.12 and 8.20 (run 43754895503, commit df167a5, 2026-11-16)
+
+- CI: all 22 jobs succeeded on ubuntu-24.04, windows-2022 and macos-15.
+- Transcripts reviewed and accepted by the user: `docs/transcripts/demo-slice-0.txt` (`cargo test -p rt-demo --test acceptance_hand -- --nocapture`) and `docs/transcripts/demo-slice-1.txt` (`cargo test -p rt-demo --test acceptance ai -- --nocapture`), both exit 0.
+- Presentation correction: ranking decisions of the Proof_Report carry the line "Score ranking — all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter." Regression test `standings_decision_states_that_ranking_covers_all_submitted_participants` plus demo assertions; review `docs/reviews/2026-11-16-140000-review-58ad25b-af8ffcf.md` (approved).
+- Mock-provider disclosure: the Slice 1 summary states "script entries are authored (not provider output); the document is a stand-in". The Slice 0 summary states that no AI was used.

@@ -734,7 +734,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Exit criteria: the `hand` profile acceptance test passes on three platforms with identical goldens; every Decision_Trace of the demonstration is Verified; the Proof_Report replays; the three mutations pass as a smoke check; `check-tree` shows no network or AI crate in the `ruletrace` tree; Properties 15 (single-file), 51 and 52 pass.
     - Ensure all tests pass, ask the user if questions arise.
 
-  - [ ] 6.12 Demonstration checkpoint - Demo Slice 0
+  - [x] 6.12 Demonstration checkpoint - Demo Slice 0
     - Run `cargo build --workspace --bins` and `cargo test -p rt-demo --test acceptance_hand -- --nocapture` (the `hand` profile test is in the target `acceptance_hand`; the target `acceptance` holds the `ai` profile tests, so a filter `hand` there runs 0 tests) and show the user the printed summary: a plain statement that the document is a stand-in and that no AI was used, the stand-in document text, the human approvals recorded by `ruletrace review` (reviewer, time, content hash), the Outcomes of every `evaluate` step (including the Indeterminate one with its reason, the Tie_Group, the diagnostic codes and the verification status), the complete-data happy path (s06c, s07b, exit 0) and the first Proof_Report section with the source text and the replayed calculation.
     - Observable: the user sees one hand-authored rulebook go from source text to a proved decision. Then stop for the user's review before the Slice 1 gates 1.8 to 1.10.
     - Ensure all tests pass, ask the user if questions arise.
@@ -941,7 +941,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Exit criteria: Properties 31, 32, 33, 34, 37, 38 and 41 pass; the `slice-ai` fixture and the `ai` profile are green on three platforms; a script entry is keyed by the identifier that `--dry-run` prints and the accepted response bytes sit in the stored batch; every clause is classified or named; steering items 1 to 4 are merged or declined.
     - Ensure all tests pass, ask the user if questions arise.
 
-  - [ ] 8.20 Demonstration checkpoint - Demo Slice 1
+  - [x] 8.20 Demonstration checkpoint - Demo Slice 1
     - Run `cargo test -p rt-demo --test acceptance ai -- --nocapture` and show the user: the proposals (each with its source span and Request_Identifier), the human `review approve` and `review reject` steps with the rejection reason, the Coverage_Statement (every clause classified, including the unsupported one), and the equality of the `ai` and `hand` compiled artifacts. State that the script entries are authored and that the document is still the stand-in.
     - Observable: the user sees AI-shaped proposals pass through human approval to a proved decision with nothing hidden. Then stop for the user's review before gates 1.12 and 1.13.
     - Ensure all tests pass, ask the user if questions arise.
