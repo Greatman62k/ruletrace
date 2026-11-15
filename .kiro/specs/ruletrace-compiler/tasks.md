@@ -799,7 +799,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 8. Phase 6: AI pipeline with the mock provider (`rt-ai-adapter`, `rt-ai-mock`, `rt-ai-tool`, `propose`; ends Demo Slice 1)
-  - [ ] 8.1 Implement `rt-ai-adapter`
+  - [x] 8.1 Implement `rt-ai-adapter`
     - Implement the `AiAdapter` trait (`attempt`, `clock`), `MonotonicClock`, `ProviderRequest`, `ProviderResponse`, `Completion`, `ProviderFailure`, `AttemptReport`, and the pure retry decision `next_step(policy, history, elapsed)` with the 60 s deadline, 20 s attempt timeout, two retries at 2 s and 8 s, `Retry-After` as integer seconds, no jitter, and retry only when `remaining >= wait + attempt_timeout`. The crate depends only on `rt-foundation`, `rt-hash` and `rt-json`, as its line in `tools/allowed-edges.v1` says.
     - Observable: a table of attempt histories gives the specified next step with no clock read.
     - Blocked by: 7.9.
