@@ -92,6 +92,10 @@ impl StoreFs for GateFs {
         StdFs.list_dir(path)
     }
 
+    fn len(&self, path: &Path) -> io::Result<u64> {
+        StdFs.len(path)
+    }
+
     fn read(&self, path: &Path, limit: u64) -> io::Result<Vec<u8>> {
         StdFs.read(path, limit)
     }

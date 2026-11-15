@@ -42,6 +42,19 @@ fn unreadable(path: &Path, what: &str, error: &io::Error) -> Diagnostic {
     )
 }
 
+// Req 19.3, applied to a Proposal_Store file by Req 19.8: the file is
+// rejected before its content is read, naming the limit and the true size.
+fn oversize(input: &InputId, path: &Path, size: u64) -> Diagnostic {
+    Diagnostic::new(
+        Code::LimitFileTooLarge,
+        format!(
+            "input file '{input}' is {size} bytes, larger than the effective limit of \
+             {MAX_PROPOSAL_BATCH_BYTES} bytes"
+        ),
+        at_file(path),
+    )
+}
+
 /// Parses every batch file of the Proposal_Store under `root`.
 ///
 /// A missing `batches/` directory is an empty store. Files are checked in
@@ -49,7 +62,8 @@ fn unreadable(path: &Path, what: &str, error: &io::Error) -> Diagnostic {
 ///
 /// # Errors
 /// The Diagnostics of the first batch file that cannot be read or parsed:
-/// `RT-AI-0302`, or the lifecycle flag code that the parser reports.
+/// `RT-LIM-0001` for a file above `MAX_PROPOSAL_BATCH_BYTES`, `RT-AI-0302`,
+/// or the lifecycle flag code that the parser reports.
 pub fn check_store(fs: &dyn StoreFs, root: &Path) -> Result<(), Vec<Diagnostic>> {
     let dir = root.join("batches");
     let entries = match fs.list_dir(&dir) {
@@ -63,9 +77,6 @@ pub fn check_store(fs: &dyn StoreFs, root: &Path) -> Result<(), Vec<Diagnostic>>
         .collect();
     batches.sort();
     for path in batches {
-        let bytes = fs
-            .read(&path, MAX_PROPOSAL_BATCH_BYTES.saturating_add(1))
-            .map_err(|e| vec![unreadable(&path, "batch file", &e)])?;
         let Some(input) = input_for(&path) else {
             return Err(vec![Diagnostic::new(
                 Code::AiStoreInvalid,
@@ -73,6 +84,15 @@ pub fn check_store(fs: &dyn StoreFs, root: &Path) -> Result<(), Vec<Diagnostic>>
                 Location::None(Code::AiStoreInvalid),
             )]);
         };
+        let size = fs
+            .len(&path)
+            .map_err(|e| vec![unreadable(&path, "batch file", &e)])?;
+        if size > MAX_PROPOSAL_BATCH_BYTES {
+            return Err(vec![oversize(&input, &path, size)]);
+        }
+        let bytes = fs
+            .read(&path, MAX_PROPOSAL_BATCH_BYTES.saturating_add(1))
+            .map_err(|e| vec![unreadable(&path, "batch file", &e)])?;
         let batch = parse_batch(&input, &bytes)?;
         // A batch is found by `batches/<request_id>.json`, so a file under
         // another name would be missed by the idempotence check.

@@ -192,6 +192,16 @@ impl StoreFs for MemFs {
         Ok(found)
     }
 
+    fn len(&self, path: &Path) -> io::Result<u64> {
+        self.begin(format!("len {}", show(path)))?;
+        let state = self.0.borrow();
+        let Some(inode) = state.names.get(path).copied() else {
+            return Err(io_error(ErrorKind::NotFound));
+        };
+        let size = state.inodes.get(inode).map_or(0, Vec::len);
+        Ok(u64::try_from(size).unwrap_or(u64::MAX))
+    }
+
     fn read(&self, path: &Path, limit: u64) -> io::Result<Vec<u8>> {
         self.begin(format!("read {}", show(path)))?;
         let state = self.0.borrow();

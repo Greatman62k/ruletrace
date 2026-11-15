@@ -291,3 +291,9 @@ User decisions and corrections of the 8.15 review.
 | --- | --- | --- | --- | --- | --- |
 | 23 | AI-Assisted Proposal Pipeline | Unchanged | - | - | 23.16: the three options give the `revise` member of design 3.7.2 item 4. Adoption already assigns the next Revision_Number of the rule that the draft names (rt-review `prospective_adoption`), so no review change was needed. Nothing checks that the provider's draft names the revised rule, because 23.16 does not ask for it. Reported to the user |
 | 28 | AI Configuration, Credentials, and Transmission Consent | Unchanged | - | - | 28.7 and 28.14: the feedback is not a Source_Document, so `--consent` names no extra identifier for it, and 28.14 lists only the Clause_Context and the task as request content. 23.16 adds the revision content and the feedback to that context. 28.14 should say so. Task 8.21 now lists 28.7, 28.8 and 28.14 |
+
+## Task 8.21 follow-up: oversize batch file in the Proposal_Store
+
+| Req | Title | Status | Changed criteria | New criteria | Cause |
+| --- | --- | --- | --- | --- | --- |
+| 19 | Safety of Document Content | Unchanged | - | - | User decision (8.15 review): 19.8 applies 19.3 to Proposal_Store files, so an oversize batch file is `RT-LIM-0001` with the true size from file metadata, exit 2. This reverses the 8.15 reading that listed `RT-AI-0302` for it. Design 3.7.5. `parse_batch` is unchanged and still reports a size fault of the bytes it is given as `RT-AI-0302`, because the review path hands it bytes cut at the limit plus one. That path is a follow-up |

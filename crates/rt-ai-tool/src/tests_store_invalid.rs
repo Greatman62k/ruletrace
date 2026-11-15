@@ -249,27 +249,65 @@ fn a_batch_whose_file_stem_is_its_request_id_is_accepted() {
     assert_eq!(probe.attempts(), 0);
 }
 
-// Req 23.33 row 4 lists RT-AI-0302 for a malformed store, and Req 16.17
-// step 4 puts it at exit 2, so an oversize batch is not RT-LIM-0001.
+// Req 19.8 applies Req 19.3 to a Proposal_Store file: a file above the
+// limit is RT-LIM-0001, exit 2, and the message states the true size from
+// the file system. A file at the limit is read, and a file of spaces is
+// then a syntax fault, RT-AI-0302.
+const BATCH_LIMIT: u64 = 16_777_216;
+
 #[test]
-fn an_oversize_batch_file_is_rt_ai_0302_and_a_file_at_the_limit_is_not_oversize() {
-    let limit = usize::try_from(rt_foundation::MAX_PROPOSAL_BATCH_BYTES).unwrap();
-    for (size, oversize) in [(limit + 1, true), (limit, false)] {
+fn an_oversize_batch_file_is_rt_lim_0001_with_its_true_size() {
+    for extra in [1_u64, 1_000_003] {
+        let size = BATCH_LIMIT + extra;
         let fixture = hosted("store-oversize");
         let path = fixture.path(&format!("store/batches/{}", name("a")));
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-        std::fs::write(&path, vec![b' '; size]).unwrap();
-        assert_eq!(std::fs::metadata(&path).unwrap().len(), size as u64);
+        std::fs::write(&path, vec![b' '; usize::try_from(size).unwrap()]).unwrap();
+        assert_eq!(std::fs::metadata(&path).unwrap().len(), size);
         let (providers, probe) = Steps::new(vec![ok(0)]);
         let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", CREDENTIAL)]);
         let ran = run_providers(&fixture.consented(), &env, &providers, &StdFs);
         assert_eq!(ran.code, ExitCode::InvalidInput, "{size}: {}", ran.stderr);
-        assert_eq!(ran.codes(), ["RT-AI-0302"], "{size}: {}", ran.stderr);
+        let message = format!(
+            "input file '{}' is {size} bytes, larger than the effective limit of {BATCH_LIMIT} bytes",
+            path.display()
+        );
+        assert_eq!(
+            crate::tests_gate_rig::findings(&ran),
+            [("error".to_owned(), "RT-LIM-0001".to_owned(), message)],
+            "{size}"
+        );
         assert_eq!(probe.attempts(), 0);
-        let said_size = ran.stderr.contains("larger than the effective limit");
-        assert_eq!(said_size, oversize, "{size}: {}", ran.stderr);
-        assert!(ran.stderr.contains(&name("a")), "{size}");
+        assert!(!fixture.path("work/tx.jsonl").exists());
+        assert_eq!(ran.stdout, "");
     }
+}
+
+#[test]
+fn a_batch_file_at_the_limit_is_read_and_is_not_oversize() {
+    let fixture = hosted("store-at-limit");
+    let path = fixture.path(&format!("store/batches/{}", name("a")));
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    std::fs::write(&path, vec![b' '; usize::try_from(BATCH_LIMIT).unwrap()]).unwrap();
+    let (providers, probe) = Steps::new(vec![ok(0)]);
+    let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", CREDENTIAL)]);
+    let ran = run_providers(&fixture.consented(), &env, &providers, &StdFs);
+    assert_eq!(ran.code, ExitCode::InvalidInput, "{}", ran.stderr);
+    assert_eq!(ran.codes(), ["RT-AI-0302"], "{}", ran.stderr);
+    assert!(!ran.stderr.contains("larger than"), "{}", ran.stderr);
+    assert_eq!(probe.attempts(), 0);
+}
+
+#[test]
+fn the_first_batch_in_name_order_decides_when_it_is_oversize() {
+    let fixture = hosted("store-oversize-order");
+    garbage(&fixture, &name("b"), "{");
+    let path = fixture.path(&format!("store/batches/{}", name("a")));
+    std::fs::write(&path, vec![b' '; usize::try_from(BATCH_LIMIT).unwrap() + 7]).unwrap();
+    let (providers, _) = Steps::new(vec![ok(0)]);
+    let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", CREDENTIAL)]);
+    let ran = run_providers(&fixture.consented(), &env, &providers, &StdFs);
+    assert_eq!(ran.codes(), ["RT-LIM-0001"], "{}", ran.stderr);
 }
 
 // Req 16.17 step 4 is "Input load and idempotency check" and design 3.7.1

@@ -39,6 +39,12 @@ pub trait StoreFs {
     /// `NotFound` when the directory is missing, or any other failure.
     fn list_dir(&self, path: &Path) -> io::Result<Vec<PathBuf>>;
 
+    /// The size in bytes that the file system reports for `path`.
+    ///
+    /// # Errors
+    /// Any metadata failure, `NotFound` when the file is missing.
+    fn len(&self, path: &Path) -> io::Result<u64>;
+
     /// Reads at most `limit` bytes of the file `path`.
     ///
     /// # Errors
@@ -107,6 +113,10 @@ impl StoreFs for StdFs {
         }
         found.sort();
         Ok(found)
+    }
+
+    fn len(&self, path: &Path) -> io::Result<u64> {
+        std::fs::metadata(path).map(|m| m.len())
     }
 
     fn read(&self, path: &Path, limit: u64) -> io::Result<Vec<u8>> {
