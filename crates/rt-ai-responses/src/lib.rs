@@ -12,6 +12,7 @@
 
 mod adapter;
 mod body;
+mod catalog;
 mod clock;
 mod credential;
 mod endpoint;
@@ -21,6 +22,8 @@ mod transport;
 
 #[cfg(test)]
 mod tests_body;
+#[cfg(test)]
+mod tests_catalog;
 #[cfg(test)]
 mod tests_credential;
 #[cfg(test)]

@@ -57,6 +57,25 @@ pub(crate) fn post(call: &Call<'_>) -> Result<Reply, ProviderFailure> {
         .header("Accept", "application/json")
         .send(call.body)
         .map_err(|e| classify(&e))?;
+    read(response, call.read_limit)
+}
+
+/// Sends a GET with the credential and no body, under the same rules as
+/// [`post`]. `call.body` is not sent.
+pub(crate) fn get(call: &Call<'_>) -> Result<Reply, ProviderFailure> {
+    let response = agent(call)
+        .get(call.url)
+        .header("Authorization", call.authorization)
+        .header("Accept", "application/json")
+        .call()
+        .map_err(|e| classify(&e))?;
+    read(response, call.read_limit)
+}
+
+fn read(
+    response: ureq::http::Response<ureq::Body>,
+    read_limit: u64,
+) -> Result<Reply, ProviderFailure> {
     let code = response.status().as_u16();
     if !(200..300).contains(&code) {
         let values: Vec<String> = response
@@ -73,7 +92,7 @@ pub(crate) fn post(call: &Call<'_>) -> Result<Reply, ProviderFailure> {
         .into_with_config()
         .limit(u64::MAX)
         .reader()
-        .take(call.read_limit);
+        .take(read_limit);
     let mut body = Vec::new();
     reader.read_to_end(&mut body).map_err(|e| classify_io(&e))?;
     Ok(Reply { body })

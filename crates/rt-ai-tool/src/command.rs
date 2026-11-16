@@ -8,8 +8,8 @@
 //! the Rulebook nor any file but the Proposal_Store and the
 //! Transmission_Log. It reads no clock: the time is an argument.
 
-use crate::cli::{parse, ProposeArgs};
-use crate::config::{load, load_config, AiConfig, ProviderKind};
+use crate::cli::{parse, parse_models, ProposeArgs};
+use crate::config::{authorize_for_catalogue, load, load_config, AiConfig, ProviderKind};
 use crate::credential::{Credential, EnvReader};
 use crate::dryrun::{announcement, dry_run};
 use crate::fs::StoreFs;
@@ -17,6 +17,7 @@ use crate::hosted::responses_adapter;
 use crate::inputs::{
     input_id, input_location, load_inputs, load_script, read_bounded, Inputs, MAX_CONFIG_BYTES,
 };
+use crate::models::{no_catalogue, query_catalogue};
 use crate::out::Out;
 use crate::perm::{file_mode, permission_warning};
 use crate::plan::{build_plan, PlanInput, RunPlan};
@@ -26,11 +27,13 @@ use crate::revise::ReviseContext;
 use crate::run::{run_requests, RunInput};
 use crate::store::{Reported, StoreMeta};
 use crate::store_check::check_store;
-use crate::txlog::{FileLog, TransmissionLog};
+use crate::txlog::{CatalogContext, FileLog, TransmissionLog};
 use crate::vocab::Ud32Option;
-use rt_ai_adapter::{AdapterInfo, AiAdapter, AttemptReport, MonotonicClock, ProviderRequest};
+use rt_ai_adapter::{
+    AdapterInfo, AiAdapter, AttemptReport, ModelCatalog, MonotonicClock, ProviderRequest,
+};
 use rt_ai_mock::ReplayProvider;
-use rt_foundation::{Code, Diagnostic, DocumentId, ExitCode, Severity};
+use rt_foundation::{escape_controls, Code, Diagnostic, DocumentId, ExitCode, Severity};
 use rt_ir::Identity;
 use std::collections::BTreeSet;
 use std::ffi::OsString;
@@ -180,6 +183,19 @@ pub trait Providers {
         config: &AiConfig,
         credential: Option<&Credential>,
     ) -> Result<(Box<dyn AiAdapter + 'a>, String), Diagnostic>;
+
+    /// The model catalogue of the provider for `config`. A provider with no
+    /// catalogue fails closed with `RT-AI-0109`, so the default is safe.
+    ///
+    /// # Errors
+    /// A Diagnostic when the provider has no catalogue.
+    fn catalog<'a>(
+        &self,
+        config: &AiConfig,
+        _credential: Option<&Credential>,
+    ) -> Result<Box<dyn ModelCatalog + 'a>, Diagnostic> {
+        Err(no_catalogue(config))
+    }
 }
 
 /// The providers this build links: the offline replay of a recorded script
@@ -215,6 +231,19 @@ impl Providers for BuiltInProviders {
             _ => Err(unavailable_provider(config)),
         }
     }
+
+    fn catalog<'a>(
+        &self,
+        config: &AiConfig,
+        credential: Option<&Credential>,
+    ) -> Result<Box<dyn ModelCatalog + 'a>, Diagnostic> {
+        match (config.provider, credential) {
+            (ProviderKind::OpenAiResponses, Some(credential)) => {
+                Ok(Box::new(responses_adapter(config, credential)?))
+            }
+            _ => Err(no_catalogue(config)),
+        }
+    }
 }
 
 /// Runs `ruletrace-ai` with `args`, which exclude the program name, and
@@ -241,7 +270,12 @@ pub fn run_with<O: Write, E: Write>(
         out,
         write_failed: false,
     };
-    let code = propose(args, env, providers, fs, &mut report);
+    let is_models = args.first().and_then(|a| a.to_str()) == Some("models");
+    let code = if is_models {
+        models(args, env, providers, &mut report)
+    } else {
+        propose(args, env, providers, fs, &mut report)
+    };
     match (code, report.write_failed) {
         (ExitCode::Success, true) => ExitCode::Internal,
         (code, _) => code,
@@ -325,6 +359,16 @@ fn propose<O: Write, E: Write>(
             Ok(found) => found,
             Err(d) => return report.fail(&[d]),
         };
+    let mut log = TransmissionLog::new(
+        FileLog::new(Path::new(&config.transmission_log).to_path_buf()),
+        redactor.clone(),
+        config.transmission_log_at.clone(),
+    );
+    if config.verify_model {
+        if let Err(found) = verify_model(&config, providers, &authorized.credential, &mut log) {
+            return report.fail(&found);
+        }
+    }
     let meta = StoreMeta {
         provider: config.profile.id.to_owned(),
         protocol: config.provider.protocol().to_owned(),
@@ -334,11 +378,6 @@ fn propose<O: Write, E: Write>(
         created_at: args.created_at.clone(),
         reported: Reported::default(),
     };
-    let mut log = TransmissionLog::new(
-        FileLog::new(Path::new(&config.transmission_log).to_path_buf()),
-        redactor.clone(),
-        config.transmission_log_at.clone(),
-    );
     let mut announcing = Announcing {
         inner: adapter,
         plan: &plan,
@@ -408,5 +447,116 @@ fn dry<O: Write, E: Write>(
     match dry_run(&config, &plan, report.out) {
         Ok(()) => ExitCode::Success,
         Err(_) => ExitCode::Internal,
+    }
+}
+
+fn catalog_context(config: &AiConfig) -> CatalogContext {
+    CatalogContext {
+        provider: config.profile.id.to_owned(),
+        protocol: config.provider.protocol().to_owned(),
+        model: config.model.clone(),
+        endpoint_host: config
+            .endpoint
+            .as_ref()
+            .map(|e| e.host.clone())
+            .unwrap_or_default(),
+    }
+}
+
+// `verify_model = true` (Req 35.19): one query before the first
+// Provider_Request. A failed query and an absent model both stop the run
+// before anything is sent or stored.
+fn verify_model(
+    config: &AiConfig,
+    providers: &dyn Providers,
+    credential: &Option<Credential>,
+    log: &mut TransmissionLog<FileLog>,
+) -> Result<(), Vec<Diagnostic>> {
+    let mut catalog = providers
+        .catalog(config, credential.as_ref())
+        .map_err(|d| vec![d])?;
+    let found = query_catalogue(config, catalog.as_mut(), log, &catalog_context(config))?;
+    if found.models.contains(&config.model) {
+        return Ok(());
+    }
+    let mut all = found.warnings;
+    all.push(Diagnostic::new(
+        Code::AiModelNotInCatalogue,
+        "the configured model is not in the provider's model catalogue".to_owned(),
+        config.model_at.clone(),
+    ));
+    Err(all)
+}
+
+// `ruletrace-ai models --config <file>` (Req 35.18): lists the identifiers
+// that the provider reports, sorted by byte order. It needs no consent,
+// sends no document text, selects no model and writes only the
+// Transmission_Log.
+fn models<O: Write, E: Write>(
+    args: &[OsString],
+    env: &dyn EnvReader,
+    providers: &dyn Providers,
+    report: &mut Reporter<'_, O, E>,
+) -> ExitCode {
+    let args = match parse_models(args) {
+        Ok(args) => args,
+        Err(problems) => return report.fail(&problems),
+    };
+    let text = match read_config(&args.config) {
+        Ok(text) => text,
+        Err(d) => return report.fail(&[d]),
+    };
+    let config_input = match input_id(&args.config) {
+        Ok(input) => input,
+        Err(d) => return report.fail(&[d]),
+    };
+    let config = match load_config(&config_input, &text) {
+        Ok(config) if !providers.is_linked(config.provider) => {
+            return report.fail(&[unavailable_provider(&config)]);
+        }
+        Ok(config) => config,
+        Err(found) => return report.fail(&found),
+    };
+    let authorized = match authorize_for_catalogue(config, env) {
+        Ok(authorized) => authorized,
+        Err(found) => return report.fail(&found),
+    };
+    let config = authorized.config;
+    let redactor = authorized
+        .credential
+        .as_ref()
+        .map_or_else(Redactor::no_credential, Redactor::new);
+    report.out.set_redactor(redactor.clone());
+    if let Some(w) = permission_warning(&config_input, file_mode(&args.config)) {
+        report.diagnostics(&[w]);
+    }
+    let mut catalog = match providers.catalog(&config, authorized.credential.as_ref()) {
+        Ok(catalog) => catalog,
+        Err(d) => return report.fail(&[d]),
+    };
+    let mut log = TransmissionLog::new(
+        FileLog::new(Path::new(&config.transmission_log).to_path_buf()),
+        redactor,
+        config.transmission_log_at.clone(),
+    );
+    match query_catalogue(
+        &config,
+        catalog.as_mut(),
+        &mut log,
+        &catalog_context(&config),
+    ) {
+        Ok(found) => {
+            report.diagnostics(&found.warnings);
+            let mut ids = found.models;
+            ids.sort();
+            for id in &ids {
+                report.write_failed |= report
+                    .out
+                    .stdout(&format!("{}\n", escape_controls(id)))
+                    .is_err();
+            }
+            ExitCode::Success
+        }
+        Err(found) => report.fail(&found),
     }
 }

@@ -120,6 +120,8 @@ pub struct AiConfig {
     pub transmission_log_at: Location,
     /// Location of the provider identifier field.
     pub provider_at: Location,
+    /// Location of the model field.
+    pub model_at: Location,
     credential_at: Option<Location>,
     effort_at: Option<Location>,
 }
@@ -401,6 +403,25 @@ pub fn load(
     Ok(Authorized { config, credential })
 }
 
+/// Reads the credential for `ruletrace-ai models` after the configuration
+/// checks of Req 28.17 and the provider link check.
+///
+/// Capability negotiation and consent are skipped because they concern a
+/// Provider_Request (Req 35.18). The environment is read only here.
+///
+/// # Errors
+/// `RT-AI-0007` when a hosted provider's credential is unset or empty.
+pub(crate) fn authorize_for_catalogue(
+    config: AiConfig,
+    env: &dyn EnvReader,
+) -> Result<Authorized, Vec<Diagnostic>> {
+    let credential = match config.provider {
+        ProviderKind::MockReplay => None,
+        ProviderKind::OpenAiResponses => Some(read_credential(&config, env).map_err(|d| vec![d])?),
+    };
+    Ok(Authorized { config, credential })
+}
+
 fn unknown_provider(at: Location, what: &str) -> Vec<Diagnostic> {
     vec![Diagnostic::new(
         Code::AiProviderUnknown,
@@ -512,6 +533,7 @@ fn build(
         policy: limits.policy,
         transmission_log_at: log.at.clone(),
         provider_at,
+        model_at: model.at.clone(),
         credential_at: raw.credential_env_var.as_ref().map(|f| f.at.clone()),
         effort_at: raw.reasoning_effort.as_ref().map(|f| f.at.clone()),
     })

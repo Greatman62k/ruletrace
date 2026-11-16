@@ -108,12 +108,16 @@ fn time_shape_ok(text: &str) -> bool {
 type Given<'a> = BTreeMap<&'static str, (usize, &'a str)>;
 type Repeated<'a> = Vec<(usize, &'static str, &'a str)>;
 
-fn scan<'a>(text: &'a [String], problems: &mut Vec<Diagnostic>) -> (Given<'a>, Repeated<'a>) {
+fn scan<'a>(
+    text: &'a [String],
+    options: &[&'static str],
+    problems: &mut Vec<Diagnostic>,
+) -> (Given<'a>, Repeated<'a>) {
     let mut given: Given<'a> = BTreeMap::new();
     let mut repeated: Repeated<'a> = Vec::new();
     let mut index = 1;
     while let Some(arg) = text.get(index) {
-        let Some(name) = OPTIONS.iter().find(|k| **k == arg.as_str()) else {
+        let Some(name) = options.iter().find(|k| **k == arg.as_str()) else {
             let message = if arg == "--" {
                 "'--' is not supported".to_owned()
             } else if arg.starts_with("--") {
@@ -266,7 +270,7 @@ pub fn parse(args: &[OsString]) -> Result<ProposeArgs, Vec<Diagnostic>> {
         None => {
             return Err(vec![Diagnostic::new(
                 Code::CliMissingArgument,
-                "no command given; the command is: propose".to_owned(),
+                "no command given; the commands are: propose, models".to_owned(),
                 at_argument(0, None),
             )])
         }
@@ -275,7 +279,7 @@ pub fn parse(args: &[OsString]) -> Result<ProposeArgs, Vec<Diagnostic>> {
             return Err(vec![Diagnostic::new(
                 Code::CliUnknownCommand,
                 format!(
-                    "unknown command '{}'; the command is: propose",
+                    "unknown command '{}'; the commands are: propose, models",
                     escape_controls(other)
                 ),
                 Location::Cli(CliLocation::Command(escape_controls(other))),
@@ -283,7 +287,7 @@ pub fn parse(args: &[OsString]) -> Result<ProposeArgs, Vec<Diagnostic>> {
         }
     }
     let mut problems = Vec::new();
-    let (given, repeated) = scan(&text, &mut problems);
+    let (given, repeated) = scan(&text, &OPTIONS, &mut problems);
     let path =
         |name: &'static str| -> Option<PathBuf> { given.get(name).map(|(_, v)| PathBuf::from(*v)) };
     let config = path("--config");
@@ -348,5 +352,46 @@ pub fn parse(args: &[OsString]) -> Result<ProposeArgs, Vec<Diagnostic>> {
             "a required argument is missing after the argument checks".to_owned(),
             command_at(),
         )]),
+    }
+}
+
+/// The parsed arguments of `ruletrace-ai models`.
+#[derive(Debug)]
+pub struct ModelsArgs {
+    /// The AI_Configuration file.
+    pub config: PathBuf,
+}
+
+/// Parses `models --config <file>`. The command name is at position 0.
+///
+/// # Errors
+/// All Diagnostics of the command line. A missing `--config` is
+/// `RT-AI-0001`; an unknown option, a stray argument, a repeated option or
+/// a missing value is `RT-CLI-0004`. All have exit code 2.
+pub fn parse_models(args: &[OsString]) -> Result<ModelsArgs, Vec<Diagnostic>> {
+    let mut text = Vec::with_capacity(args.len());
+    for (index, arg) in args.iter().enumerate() {
+        match arg.to_str() {
+            Some(s) => text.push(s.to_owned()),
+            None => {
+                return Err(vec![invalid(
+                    index,
+                    None,
+                    format!("argument {index} is not valid UTF-8"),
+                )])
+            }
+        }
+    }
+    let mut problems = Vec::new();
+    let (given, _) = scan(&text, &["--config"], &mut problems);
+    let config = given.get("--config").map(|(_, v)| PathBuf::from(*v));
+    if config.is_none() {
+        problems.push(disabled_without_configuration(Location::Cli(
+            CliLocation::Command("models".to_owned()),
+        )));
+    }
+    match (config, problems.is_empty()) {
+        (Some(config), true) => Ok(ModelsArgs { config }),
+        _ => Err(problems),
     }
 }

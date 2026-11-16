@@ -26,6 +26,19 @@ pub struct LogContext {
     pub clauses: u32,
 }
 
+/// What a catalogue query shares with the log entries of its attempts.
+#[derive(Clone, Debug)]
+pub struct CatalogContext {
+    /// Provider identifier.
+    pub provider: String,
+    /// Protocol of the provider.
+    pub protocol: String,
+    /// The configured model identifier.
+    pub model: String,
+    /// Host of the endpoint.
+    pub endpoint_host: String,
+}
+
 /// Destination of log lines. Each call appends one complete line.
 pub trait LogSink {
     /// Appends `line` (which ends in a line feed) durably.
@@ -147,6 +160,44 @@ impl<S: LogSink> TransmissionLog<S> {
             return Err(self.failure("the entry could not be built"));
         };
         let line = self.redactor.redact_fragments(&line);
+        let mut bytes = line.into_bytes();
+        bytes.push(b'\n');
+        self.sink
+            .append(&bytes)
+            .map_err(|e| self.failure(&format!("{:?}", e.kind())))
+    }
+
+    /// Appends the entry of one catalogue attempt: the provider identifier,
+    /// the protocol, the configured model, the endpoint host, the request
+    /// kind `models`, the attempt number and no document (Req 35.18).
+    ///
+    /// # Errors
+    /// `RT-AI-0010` when the line cannot be built or appended.
+    pub fn record_catalogue(
+        &mut self,
+        context: &CatalogContext,
+        attempt: u32,
+    ) -> Result<(), Diagnostic> {
+        let object = Value::object(vec![
+            (
+                "provider".to_owned(),
+                Value::string(context.provider.as_str()),
+            ),
+            (
+                "protocol".to_owned(),
+                Value::string(context.protocol.as_str()),
+            ),
+            ("model".to_owned(), Value::string(context.model.as_str())),
+            (
+                "endpoint_host".to_owned(),
+                Value::string(context.endpoint_host.as_str()),
+            ),
+            ("kind".to_owned(), Value::string("models")),
+            ("documents".to_owned(), Value::array(Vec::new())),
+            ("attempt".to_owned(), Value::integer(attempt)),
+        ])
+        .map_err(|_| self.failure("the entry could not be built"))?;
+        let line = self.redactor.redact_fragments(&write_compact(&object));
         let mut bytes = line.into_bytes();
         bytes.push(b'\n');
         self.sink

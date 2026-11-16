@@ -339,7 +339,7 @@ impl Loop<'_, '_> {
     }
 }
 
-fn transient_code(failure: ProviderFailure) -> Code {
+pub(crate) fn transient_code(failure: ProviderFailure) -> Code {
     match failure {
         ProviderFailure::Timeout => Code::AiProviderTimeout,
         ProviderFailure::RateLimited { .. } => Code::AiProviderRateLimited,

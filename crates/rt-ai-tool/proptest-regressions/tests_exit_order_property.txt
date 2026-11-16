@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 9ca2f94c4556bb5cadd4daa8da3296b6f5126dbeeff02d5bd65b1e37709ccc51 # shrinks to case = Case { arguments: false, configuration: false, hosting: Mock, consent: false, credential_missing: false, input: false, store_invalid: false, log: false, provider: false, response: Good, store: false, warning: false }

@@ -1,15 +1,16 @@
 //! The Responses adapter: request, attempt and response mapping.
 
 use crate::body::{self, BodyParts, MIN_MAX_OUTPUT_TOKENS};
+use crate::catalog::parse_catalogue;
 use crate::clock::SystemClock;
 use crate::credential::Credential;
 use crate::endpoint::{Endpoint, EndpointError};
 use crate::envelope::{self, Verdict};
 use crate::transport::{self, Call};
 use rt_ai_adapter::{
-    AdapterInfo, AiAdapter, AttemptOutcome, AttemptReport, Capabilities, Completion, Identity,
-    MonotonicClock, Protocol, ProviderFailure, ProviderId, ProviderMeta, ProviderRequest,
-    ProviderResponse, StructuredOutput, Tri, Usage,
+    AdapterInfo, AiAdapter, AttemptOutcome, AttemptReport, Capabilities, CatalogFailure,
+    Completion, Identity, ModelCatalog, MonotonicClock, Protocol, ProviderFailure, ProviderId,
+    ProviderMeta, ProviderRequest, ProviderResponse, StructuredOutput, Tri, Usage,
 };
 use rt_foundation::InputId;
 use rt_json::{parse, write_compact, ParseLimits};
@@ -17,6 +18,9 @@ use std::time::{Duration, Instant};
 
 /// Request path of the Responses protocol, appended to the endpoint.
 const RESPONSES_PATH: &str = "/v1/responses";
+
+/// Request path of the model catalogue, appended to the endpoint.
+const MODELS_PATH: &str = "/v1/models";
 
 /// Largest schema that the adapter accepts, in bytes.
 const MAX_SCHEMA_BYTES: u64 = 1 << 20;
@@ -244,6 +248,35 @@ impl AiAdapter for ResponsesAdapter {
             elapsed: started.elapsed(),
             detail,
         }
+    }
+
+    fn clock(&self) -> &dyn MonotonicClock {
+        self.clock.as_ref()
+    }
+}
+
+impl ModelCatalog for ResponsesAdapter {
+    fn list_models(
+        &mut self,
+        timeout: Duration,
+        response_limit: u32,
+    ) -> Result<Vec<String>, CatalogFailure> {
+        let limit = u64::from(response_limit);
+        let authorization = format!("Bearer {}", self.credential.expose());
+        let url = self.endpoint.url(MODELS_PATH);
+        let reply = transport::get(&Call {
+            url: &url,
+            clear_text: self.endpoint.is_clear_text(),
+            authorization: &authorization,
+            body: &[],
+            timeout,
+            read_limit: limit.saturating_add(1),
+        })
+        .map_err(CatalogFailure::Provider)?;
+        if u64::try_from(reply.body.len()).unwrap_or(u64::MAX) > limit {
+            return Err(CatalogFailure::TooLarge);
+        }
+        parse_catalogue(&reply.body).map_err(CatalogFailure::Malformed)
     }
 
     fn clock(&self) -> &dyn MonotonicClock {

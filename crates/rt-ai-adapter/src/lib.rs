@@ -7,6 +7,7 @@
 
 mod adapter;
 mod capability;
+mod catalog;
 mod identity;
 mod request;
 pub mod retry;
@@ -25,6 +26,7 @@ pub use adapter::{
     ProviderFailure, ProviderMeta, ProviderResponse,
 };
 pub use capability::{negotiate, Capabilities, Required, StructuredOutput, Tri, Unmet};
+pub use catalog::{CatalogFailure, ModelCatalog};
 pub use identity::{Identity, Protocol, ProviderId, ProviderIdError, Usage, MAX_PROVIDER_ID_LEN};
 pub use request::{ProviderRequest, RequestId, RequestLimits};
 pub use retry::{next_step, AttemptRecord, RetryPolicy, RetryPolicyError, RetryStep, RetryStop};

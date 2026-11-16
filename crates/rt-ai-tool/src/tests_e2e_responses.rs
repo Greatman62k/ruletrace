@@ -6,7 +6,7 @@
 //! sleeps. The stub is the one of the integration crate's own tests.
 
 #[path = "../../rt-ai-responses/tests/support/mod.rs"]
-mod stub;
+pub(crate) mod stub;
 
 use crate::tests::MapEnv;
 use crate::tests_cli_rig::Fixture;
@@ -15,7 +15,7 @@ use crate::tests_gate_rig::{run_providers, COMPLETE_ONE};
 use crate::tests_redact_fragments::leaked;
 use crate::tests_rig::payload;
 use crate::{responses_adapter, AiConfig, Credential, ProviderKind, Providers, StdFs};
-use rt_ai_adapter::{AdapterInfo, AiAdapter, MonotonicClock};
+use rt_ai_adapter::{AdapterInfo, AiAdapter, ModelCatalog, MonotonicClock};
 use rt_foundation::{Diagnostic, ExitCode};
 use rt_hash::sha256;
 use std::cell::{Cell, RefCell};
@@ -24,15 +24,15 @@ use std::time::Duration;
 use stub::{http, json_ok, message_envelope, Reply, Stub};
 
 // No run of eight characters of it may occur in a field name or a message.
-const CANARY: &str = "zq81xk4mp2-Qw7Lb3Rt9";
+pub(crate) const CANARY: &str = "zq81xk4mp2-Qw7Lb3Rt9";
 
 const USAGE: &str = r#","usage":{"input_tokens":11,"output_tokens":22,"total_tokens":33}"#;
 
 // A clock that advances only through `wait` and remembers every wait.
 #[derive(Clone, Default)]
-struct Waits {
-    now: Rc<Cell<Duration>>,
-    waits: Rc<RefCell<Vec<Duration>>>,
+pub(crate) struct Waits {
+    pub(crate) now: Rc<Cell<Duration>>,
+    pub(crate) waits: Rc<RefCell<Vec<Duration>>>,
 }
 
 struct Recording(Waits);
@@ -49,7 +49,7 @@ impl MonotonicClock for Recording {
 }
 
 // The built-in hosted provider with the clock replaced.
-struct Stubbed(Waits);
+pub(crate) struct Stubbed(pub(crate) Waits);
 
 impl Providers for Stubbed {
     fn is_linked(&self, kind: ProviderKind) -> bool {
@@ -67,24 +67,35 @@ impl Providers for Stubbed {
         let version = adapter.identity().adapter_version;
         Ok((Box::new(adapter), version))
     }
+
+    fn catalog<'a>(
+        &self,
+        config: &AiConfig,
+        credential: Option<&Credential>,
+    ) -> Result<Box<dyn ModelCatalog + 'a>, Diagnostic> {
+        let credential = credential.expect("a hosted run reads a credential");
+        let adapter =
+            responses_adapter(config, credential)?.with_clock(Box::new(Recording(self.0.clone())));
+        Ok(Box::new(adapter))
+    }
 }
 
-struct Rig {
-    fixture: Fixture,
-    waits: Waits,
+pub(crate) struct Rig {
+    pub(crate) fixture: Fixture,
+    pub(crate) waits: Waits,
 }
 
-struct Limits {
-    retries: u8,
-    response_bytes: u32,
+pub(crate) struct Limits {
+    pub(crate) retries: u8,
+    pub(crate) response_bytes: u32,
 }
 
-const DEFAULT: Limits = Limits {
+pub(crate) const DEFAULT: Limits = Limits {
     retries: 2,
     response_bytes: 1_048_576,
 };
 
-fn config_text(fixture: &Fixture, endpoint: &str, limits: &Limits) -> String {
+pub(crate) fn config_text(fixture: &Fixture, endpoint: &str, limits: &Limits) -> String {
     let log = crate::tests_cli_rig::toml_path(&fixture.path("work/tx.jsonl"));
     V2.replace(
         "transmission_log = \"tx.jsonl\"",
@@ -102,7 +113,7 @@ fn config_text(fixture: &Fixture, endpoint: &str, limits: &Limits) -> String {
 }
 
 impl Rig {
-    fn new(name: &str, endpoint: &str, limits: &Limits) -> Self {
+    pub(crate) fn new(name: &str, endpoint: &str, limits: &Limits) -> Self {
         let fixture = Fixture::new(name);
         fixture.write_config(&config_text(&fixture, endpoint, limits));
         std::fs::create_dir_all(fixture.path("work")).unwrap();
@@ -112,7 +123,7 @@ impl Rig {
         }
     }
 
-    fn run(&self) -> crate::tests_cli_rig::Ran {
+    pub(crate) fn run(&self) -> crate::tests_cli_rig::Ran {
         let env = MapEnv::new(&[("MODEL_API_KEY", CANARY)]);
         let ran = run_providers(
             &self.fixture.consented(),
@@ -124,16 +135,16 @@ impl Rig {
         ran
     }
 
-    fn batch_path(&self) -> std::path::PathBuf {
+    pub(crate) fn batch_path(&self) -> std::path::PathBuf {
         let id = self.fixture.request_id();
         self.fixture.store_file(&format!("batches/{id}.json"))
     }
 
-    fn waits(&self) -> Vec<Duration> {
+    pub(crate) fn waits(&self) -> Vec<Duration> {
         self.waits.waits.borrow().clone()
     }
 
-    fn log_lines(&self) -> Vec<String> {
+    pub(crate) fn log_lines(&self) -> Vec<String> {
         std::fs::read_to_string(self.fixture.path("work/tx.jsonl"))
             .unwrap_or_default()
             .lines()
@@ -143,7 +154,7 @@ impl Rig {
 
     // The canary appears in no output, file, log or summary, whole or as a
     // run of eight characters.
-    fn assert_no_canary(&self, ran: &crate::tests_cli_rig::Ran) {
+    pub(crate) fn assert_no_canary(&self, ran: &crate::tests_cli_rig::Ran) {
         for text in [&ran.stdout, &ran.stderr] {
             assert_eq!(leaked(text, CANARY), None, "{text}");
         }
@@ -155,11 +166,11 @@ impl Rig {
     }
 }
 
-fn success(extra: &str) -> Reply {
+pub(crate) fn success(extra: &str) -> Reply {
     json_ok(&message_envelope(&payload(0), extra))
 }
 
-fn errors(ran: &crate::tests_cli_rig::Ran) -> Vec<String> {
+pub(crate) fn errors(ran: &crate::tests_cli_rig::Ran) -> Vec<String> {
     ran.shapes()
         .into_iter()
         .filter(|(severity, _)| severity == "error")
@@ -167,7 +178,7 @@ fn errors(ran: &crate::tests_cli_rig::Ran) -> Vec<String> {
         .collect()
 }
 
-fn warnings(ran: &crate::tests_cli_rig::Ran) -> Vec<String> {
+pub(crate) fn warnings(ran: &crate::tests_cli_rig::Ran) -> Vec<String> {
     ran.shapes()
         .into_iter()
         .filter(|(severity, _)| severity == "warning")
@@ -175,14 +186,14 @@ fn warnings(ran: &crate::tests_cli_rig::Ran) -> Vec<String> {
         .collect()
 }
 
-fn store_is_empty(fixture: &Fixture) -> bool {
+pub(crate) fn store_is_empty(fixture: &Fixture) -> bool {
     fixture
         .files()
         .iter()
         .all(|f| !f.starts_with("store/batches/"))
 }
 
-fn exit(code: ExitCode) -> u8 {
+pub(crate) fn exit(code: ExitCode) -> u8 {
     code.value()
 }
 

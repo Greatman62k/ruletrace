@@ -21,6 +21,7 @@ mod fs;
 mod hosted;
 mod inputs;
 mod locate;
+mod models;
 mod out;
 mod perm;
 mod plan;
@@ -72,6 +73,8 @@ mod tests_config_v2_disk;
 mod tests_config_v2_property;
 #[cfg(test)]
 mod tests_dir_sync_skip;
+#[cfg(test)]
+mod tests_e2e_models;
 #[cfg(test)]
 mod tests_e2e_responses;
 #[cfg(test)]
@@ -150,7 +153,7 @@ mod tests_store_v2;
 mod tests_summary;
 
 pub use accept::{accept_batch, AcceptInput, AcceptedBatch};
-pub use cli::{parse, ProposeArgs, ReviseArgs};
+pub use cli::{parse, parse_models, ModelsArgs, ProposeArgs, ReviseArgs};
 pub use command::{run, run_with, BuiltInProviders, Providers};
 pub use config::{
     disabled_without_configuration, load, load_config, AiConfig, Authorized, Endpoint, ProviderKind,
@@ -176,5 +179,5 @@ pub use store::{
 };
 pub use store_check::check_store;
 pub use summary::RunSummary;
-pub use txlog::{FileLog, LogContext, LogSink, TransmissionLog};
+pub use txlog::{CatalogContext, FileLog, LogContext, LogSink, TransmissionLog};
 pub use vocab::Ud32Option;
