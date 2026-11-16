@@ -34,11 +34,11 @@ const MAX_SCHEMA_DEPTH: u32 = 64;
 /// wording produced it. The tool pins the profile together with the hashes
 /// of the preamble and the schema, so a change of either text fails a test
 /// until the number moves.
-pub const PROMPT_PROFILE: u32 = 2;
+pub const PROMPT_PROFILE: u32 = 3;
 
 /// The adapter version that this crate reports (Req 35.23): the protocol
 /// integration and the prompt profile.
-pub const ADAPTER_VERSION: &str = "responses-1/prompt-2";
+pub const ADAPTER_VERSION: &str = "responses-1/prompt-3";
 
 /// Everything the adapter needs besides the credential.
 #[derive(Clone, Debug)]

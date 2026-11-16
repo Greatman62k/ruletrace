@@ -43,6 +43,15 @@ const QUOTE_TEXT: &str = "The document bytes from start to end, copied exactly."
 const SPANS_TEXT: &str = "Must repeat the evidence one for one in the same order.";
 const NODES_TEXT: &str = "Expression nodes. A member that holds an expression holds an index into this array. Every index must exist, a node's children have greater indexes than the node, and every node is named exactly once by the rule or by one other node.";
 const UNRECOGNIZED_NODE_TEXT: &str = "Use only when no other node expresses the operation. A rule that holds it is stored with a blocking Unsupported finding.";
+const ELIGIBILITY_TYPE_TEXT: &str =
+    "Must be boolean: an eligibility rule is true or false for each participant.";
+const DERIVED_TYPE_TEXT: &str = "Must be number, because a derived rule computes a number; use an eligibility rule for a condition that is true or false.";
+const WEIGHTED_TYPE_TEXT: &str = "Must be number, because a weighted_score rule computes a number.";
+const RANKING_TYPE_TEXT: &str = "Must be ranking, not number, even though the key is a number.";
+const DEFAULT_TYPE_TEXT: &str = "Must be the declared type of the target input.";
+const UNRECOGNIZED_TYPE_TEXT: &str = "Must still be exactly one of number, boolean, text, date, ranking or enum:<Name>; any other spelling refuses the whole response.";
+const NODE_TYPE_TEXT: &str =
+    "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>.";
 const UNRECOGNIZED_RULE_TEXT: &str = "Use only when no rule kind expresses the clause. The rule is stored with a blocking Unsupported finding.";
 
 // The schema object with a `description` member right after its first
@@ -111,7 +120,10 @@ fn closed(props: Vec<Prop>) -> Option<Value<()>> {
 }
 
 fn node(name: &str, extra: Vec<Prop>) -> Option<Value<()>> {
-    let mut props = vec![("node", single(name)?), ("t", text()?)];
+    let mut props = vec![
+        ("node", single(name)?),
+        ("t", described(text(), NODE_TYPE_TEXT)?),
+    ];
     props.extend(extra);
     closed(props)
 }
@@ -250,12 +262,24 @@ fn kind_members(kind: &str) -> Option<Vec<Prop>> {
     })
 }
 
+// The sentence that sits on the `type` member of a rule of this kind.
+fn rule_type_text(kind: &str) -> &'static str {
+    match kind {
+        "eligibility" => ELIGIBILITY_TYPE_TEXT,
+        "derived" => DERIVED_TYPE_TEXT,
+        "weighted_score" => WEIGHTED_TYPE_TEXT,
+        "ranking" => RANKING_TYPE_TEXT,
+        "default" => DEFAULT_TYPE_TEXT,
+        _ => UNRECOGNIZED_TYPE_TEXT,
+    }
+}
+
 fn rule_draft(kind: &str, option: Ud32Option) -> Option<Value<()>> {
     let mut props = vec![
         ("id", text()?),
         ("kind", single(kind)?),
         ("target", text()?),
-        ("type", text()?),
+        ("type", described(text(), rule_type_text(kind))?),
     ];
     if kind == "unrecognized" {
         props.push(("name", text()?));

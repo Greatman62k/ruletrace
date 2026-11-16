@@ -392,7 +392,8 @@
                     "type": "string"
                   },
                   "type": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Must be boolean: an eligibility rule is true or false for each participant."
                   },
                   "expr": {
                     "type": "integer"
@@ -418,7 +419,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -441,7 +443,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "boolean"
@@ -464,7 +467,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -487,7 +491,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -511,7 +516,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "enum": {
                               "type": "string"
@@ -537,7 +543,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "name": {
                               "type": "string"
@@ -560,7 +567,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "target": {
                               "type": "string"
@@ -583,7 +591,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "target": {
                               "type": "string"
@@ -608,7 +617,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "op": {
                               "type": "string",
@@ -645,7 +655,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "op": {
                               "type": "string",
@@ -682,7 +693,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "args": {
                               "type": "array",
@@ -708,7 +720,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "args": {
                               "type": "array",
@@ -734,7 +747,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "arg": {
                               "type": "integer"
@@ -758,7 +772,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "integer"
@@ -786,7 +801,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "fn": {
                               "type": "string",
@@ -830,7 +846,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "arg": {
                               "type": "integer"
@@ -1058,7 +1075,8 @@
                     "type": "string"
                   },
                   "type": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Must be number, because a derived rule computes a number; use an eligibility rule for a condition that is true or false."
                   },
                   "expr": {
                     "type": "integer"
@@ -1084,7 +1102,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -1107,7 +1126,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "boolean"
@@ -1130,7 +1150,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -1153,7 +1174,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -1177,7 +1199,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "enum": {
                               "type": "string"
@@ -1203,7 +1226,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "name": {
                               "type": "string"
@@ -1226,7 +1250,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "target": {
                               "type": "string"
@@ -1249,7 +1274,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "target": {
                               "type": "string"
@@ -1274,7 +1300,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "op": {
                               "type": "string",
@@ -1311,7 +1338,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "op": {
                               "type": "string",
@@ -1348,7 +1376,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "args": {
                               "type": "array",
@@ -1374,7 +1403,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "args": {
                               "type": "array",
@@ -1400,7 +1430,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "arg": {
                               "type": "integer"
@@ -1424,7 +1455,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "integer"
@@ -1452,7 +1484,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "fn": {
                               "type": "string",
@@ -1496,7 +1529,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "arg": {
                               "type": "integer"
@@ -1725,7 +1759,8 @@
                     "type": "string"
                   },
                   "type": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Must be number, because a weighted_score rule computes a number."
                   },
                   "terms": {
                     "type": "array",
@@ -1795,7 +1830,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -1818,7 +1854,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "boolean"
@@ -1841,7 +1878,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -1864,7 +1902,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -1888,7 +1927,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "enum": {
                               "type": "string"
@@ -1914,7 +1954,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "name": {
                               "type": "string"
@@ -1937,7 +1978,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "target": {
                               "type": "string"
@@ -1960,7 +2002,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "target": {
                               "type": "string"
@@ -1985,7 +2028,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "op": {
                               "type": "string",
@@ -2022,7 +2066,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "op": {
                               "type": "string",
@@ -2059,7 +2104,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "args": {
                               "type": "array",
@@ -2085,7 +2131,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "args": {
                               "type": "array",
@@ -2111,7 +2158,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "arg": {
                               "type": "integer"
@@ -2135,7 +2183,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "integer"
@@ -2163,7 +2212,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "fn": {
                               "type": "string",
@@ -2207,7 +2257,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "arg": {
                               "type": "integer"
@@ -2438,7 +2489,8 @@
                     "type": "string"
                   },
                   "type": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Must be ranking, not number, even though the key is a number."
                   },
                   "key": {
                     "type": "integer"
@@ -2500,7 +2552,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -2523,7 +2576,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "boolean"
@@ -2546,7 +2600,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -2569,7 +2624,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -2593,7 +2649,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "enum": {
                               "type": "string"
@@ -2619,7 +2676,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "name": {
                               "type": "string"
@@ -2642,7 +2700,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "target": {
                               "type": "string"
@@ -2665,7 +2724,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "target": {
                               "type": "string"
@@ -2690,7 +2750,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "op": {
                               "type": "string",
@@ -2727,7 +2788,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "op": {
                               "type": "string",
@@ -2764,7 +2826,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "args": {
                               "type": "array",
@@ -2790,7 +2853,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "args": {
                               "type": "array",
@@ -2816,7 +2880,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "arg": {
                               "type": "integer"
@@ -2840,7 +2905,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "integer"
@@ -2868,7 +2934,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "fn": {
                               "type": "string",
@@ -2912,7 +2979,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "arg": {
                               "type": "integer"
@@ -3140,7 +3208,8 @@
                     "type": "string"
                   },
                   "type": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Must be the declared type of the target input."
                   },
                   "value": {
                     "type": "integer"
@@ -3166,7 +3235,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -3189,7 +3259,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "boolean"
@@ -3212,7 +3283,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -3235,7 +3307,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "string"
@@ -3259,7 +3332,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "enum": {
                               "type": "string"
@@ -3285,7 +3359,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "name": {
                               "type": "string"
@@ -3308,7 +3383,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "target": {
                               "type": "string"
@@ -3331,7 +3407,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "target": {
                               "type": "string"
@@ -3356,7 +3433,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "op": {
                               "type": "string",
@@ -3393,7 +3471,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "op": {
                               "type": "string",
@@ -3430,7 +3509,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "args": {
                               "type": "array",
@@ -3456,7 +3536,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "args": {
                               "type": "array",
@@ -3482,7 +3563,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "arg": {
                               "type": "integer"
@@ -3506,7 +3588,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "value": {
                               "type": "integer"
@@ -3534,7 +3617,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "fn": {
                               "type": "string",
@@ -3578,7 +3662,8 @@
                               ]
                             },
                             "t": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "The type that this node computes, spelled exactly as number, boolean, text, date or enum:<Name>."
                             },
                             "arg": {
                               "type": "integer"
@@ -3807,7 +3892,8 @@
                     "type": "string"
                   },
                   "type": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Must still be exactly one of number, boolean, text, date, ranking or enum:<Name>; any other spelling refuses the whole response."
                   },
                   "name": {
                     "type": "string"

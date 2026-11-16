@@ -12,4 +12,12 @@
 - The only change is `description` members: 87 occurrences of 11 distinct sentences, 6,064 characters in total. Stripping every `description` from the new file gives a document equal to the old one (checked with a separate Python script, not Rust).
 - Re-measured outside Rust: nesting depth 10 (a description is a string member and adds no level), 535 properties, 3,567 characters of names and enum values, 9,631 characters with descriptions, no `$ref`, `$defs`, `oneOf` or `allOf`. Limits: depth 10, 5,000 properties, 120,000 characters.
 - Each sentence states a rule that the parser or the provenance check enforces and is backed by a test in `crates/rt-ai-tool/src/tests_prompt_contract.rs`.
-- The prompt profile is `prompt-2` (`responses-1/prompt-2`, Req 35.23). The compact schema hash `d2df2f075a6e857b7d0311254bf99cfe91224fec9db16f483e60cbf57d055d78` is pinned there.
+- The prompt profile is `prompt-2` (`responses-1/prompt-2`, Req 35.23). The compact schema hash `d2df2f075a6e857b7d0311254bf99cfe91224fec9db16f483e60cbf57d055d78` is pinned there. Superseded by `prompt-3` below.
+
+## Change of 2026-11-16: type descriptions (prompt-3)
+
+- Cause: the first live call (Meta `muse-spark-1.3`, prompt-2) declared a ranking rule with type `number` and a condition as kind `derived` (see `crates/rt-ai-tool/tests/fixtures/live-run1-prompt-2/PROVENANCE.md`).
+- Old file sha256 `cb46520d67b22069d9e01d4918db60de1bce9d7bea4b716d72d458d15cefbe5d` (142,819 bytes), new `0961f1dadb03c9b2d5a215a09a6f5cd29d5e41f7e3e2539a9717b5e5bef074f5` (155,147 bytes). The compact bytes that a provider receives grow from 39,249 to 48,885 bytes; the compact hash moves from `d2df2f07...` to `533e6ebd904709af81ba5269b656e60320000c92196235aabf80517640c2c1f2`.
+- The only change is `description` members: from 87 occurrences (6,064 characters) to 173 occurrences (14,238 characters). Seven new sentences: one on the `type` member of each rule kind (six) and one on the `t` member of every node variant (80 occurrences). Stripping every `description` from the old and the new file gives equal documents, key order included (checked with a separate Python script, not Rust, which also reproduces the old compact hash of prompt-2).
+- Re-measured outside Rust: nesting depth 10, 535 properties, 3,567 characters of names and enum values, 14,238 characters of descriptions, no `$ref`, `$defs`, `oneOf` or `allOf`. Limits: depth 10, 5,000 properties, 120,000 characters.
+- The prompt profile is `prompt-3` (`responses-1/prompt-3`, Req 35.23). The Request_Identifier is unchanged: neither text is part of the canonical request bytes.

@@ -29,6 +29,13 @@ pub const INPUT_PREAMBLE: &str = concat!(
     "In a nodes table every index must exist, an index that a node names must be greater than the index of that node, and every node must be named exactly once by the rule or by one other node.\n",
     "The spans of a rule must repeat its evidence one for one in the same order, with the same document, start, end, line and column.\n",
     "If the vocabulary has no node or rule kind for a clause, use the variant whose node or kind is \"unrecognized\" and describe it in name and detail; the rule is then stored with a blocking Unsupported finding.\n",
+    "Write every type, the type of a rule and the t of a node alike, as exactly one of number, boolean, text, date, ranking or enum:<Name>; any other spelling, such as numeric or bool, refuses the whole response, and so does a kind or node name that the schema does not list.\n",
+    "The type of a rule must equal the type that its kind yields, which is boolean for eligibility, number for derived and weighted_score, ranking for ranking, and the declared type of the target input for default, and the t of a node must equal the type that the node computes; a rule that fails either is stored with a blocking type mismatch finding.\n",
+    "A ranking rule has the type ranking even though its key is a number; the type number on a ranking rule is a type mismatch.\n",
+    "A condition that is true or false for each participant is an eligibility rule of type boolean with a boolean expression; a derived rule yields a number, so a boolean expression in a derived rule is a type mismatch.\n",
+    "A value that is computed as a number, such as a score, is a derived or weighted_score rule of type number with number expressions.\n",
+    "Choose the type of a rule from its kind and never from what its expression contains: a comparison inside a derived rule does not make it boolean, and a number inside an eligibility rule does not make it a number.\n",
+    "If the clause does not tell which kind and type apply, or the schema has no kind for it, use the kind \"unrecognized\" with one of the type names above and describe it in name and detail instead of guessing; it is stored with a blocking Unsupported finding and is not converted into another rule.\n",
 );
 
 /// What the body is built from.

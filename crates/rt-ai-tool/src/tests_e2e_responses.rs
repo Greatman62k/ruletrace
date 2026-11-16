@@ -222,7 +222,7 @@ fn success_with_usage_stores_a_version_2_batch_with_the_reported_metadata() {
         r#""reported_model":"muse-reported""#,
         r#""response_id":"resp_1""#,
         r#""usage":{"input_tokens":11,"output_tokens":22,"total_tokens":33}"#,
-        r#""adapter_version":"responses-1/prompt-2""#,
+        r#""adapter_version":"responses-1/prompt-3""#,
     ] {
         assert!(batch.contains(member), "{member} missing in {batch}");
     }

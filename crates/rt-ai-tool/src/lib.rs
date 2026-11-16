@@ -94,6 +94,8 @@ mod tests_gate_rig;
 #[cfg(test)]
 mod tests_identifier_property;
 #[cfg(test)]
+mod tests_live_run1;
+#[cfg(test)]
 mod tests_log;
 #[cfg(test)]
 mod tests_memfs;
@@ -109,6 +111,8 @@ mod tests_plan;
 mod tests_profile;
 #[cfg(test)]
 mod tests_prompt_contract;
+#[cfg(test)]
+mod tests_prompt_types;
 #[cfg(test)]
 mod tests_proposal_schema;
 #[cfg(test)]
