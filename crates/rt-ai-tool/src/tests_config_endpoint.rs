@@ -132,3 +132,47 @@ fn a_loopback_endpoint_may_carry_a_port_and_a_path() {
         assert!(run(&openai_text(url), &meta_env()).is_ok(), "{url}");
     }
 }
+
+// Wave 5 issue 1: the adapter keeps no fragment, so validation refuses
+// one on a loopback endpoint too. Req 35.6 lets a loopback host carry a
+// port and a path only.
+#[test]
+fn a_fragment_on_a_loopback_endpoint_is_refused_for_hosted_providers() {
+    for url in [
+        "http://127.0.0.1:9#f",
+        "http://LOCALHOST##",
+        "https://[::1]#",
+    ] {
+        for text in [meta_text(url), openai_text(url)] {
+            let d = one(
+                run(&text, &meta_env()),
+                Code::AiConfigEndpointHostNotPermitted,
+            );
+            assert_eq!(at(&d), loc(12, "provider.endpoint"), "{url}");
+        }
+    }
+}
+
+// No configurable profile lacks an official host and takes an endpoint,
+// so the contract of `check` is tested directly.
+#[test]
+fn a_fragment_without_an_official_host_is_an_invalid_endpoint() {
+    use crate::endpoint::{check, Refusal};
+    for url in ["http://127.0.0.1:9#f", "https://example.org/v1#x"] {
+        assert_eq!(check(url, None).unwrap_err(), Refusal::Invalid, "{url}");
+    }
+}
+
+#[test]
+fn a_zero_padded_six_character_port_is_an_invalid_endpoint() {
+    use crate::tests::{env_ok, with};
+    let env = env_ok();
+    let d = one(
+        run(
+            &with(("https://api.openai.com", "https://127.0.0.1:001271")),
+            &env,
+        ),
+        Code::AiConfigInvalid,
+    );
+    assert_eq!(at(&d), (Some(5), Some(1), Some("endpoint".to_owned())));
+}

@@ -80,6 +80,8 @@ mod tests_e2e_responses;
 #[cfg(test)]
 mod tests_endpoint_agreement;
 #[cfg(test)]
+mod tests_endpoint_property;
+#[cfg(test)]
 mod tests_exit_order_property;
 #[cfg(test)]
 mod tests_flat;

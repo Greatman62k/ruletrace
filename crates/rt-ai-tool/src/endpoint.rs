@@ -9,6 +9,9 @@ pub(crate) struct ParsedEndpoint {
     /// True when the URL is the bare origin: no port, no path other than
     /// a single `/`, no query and no fragment.
     pub(crate) bare_origin: bool,
+    /// True when the URL has a fragment. The adapter refuses one, so
+    /// validation does too.
+    pub(crate) has_fragment: bool,
 }
 
 fn authority(raw: &str) -> Option<&str> {
@@ -41,8 +44,11 @@ fn split_host_port(authority: &str) -> Option<(&str, bool)> {
     }
 }
 
+// At most five digits, like the adapter, so `001271` is refused by both.
 fn valid_port(port: &str) -> bool {
-    port.parse::<u16>().is_ok_and(|p| p > 0) && port.bytes().all(|b| b.is_ascii_digit())
+    port.len() <= 5
+        && port.parse::<u16>().is_ok_and(|p| p > 0)
+        && port.bytes().all(|b| b.is_ascii_digit())
 }
 
 /// Parses an endpoint. `None` when it is not a well-formed absolute URL
@@ -69,6 +75,7 @@ pub(crate) fn parse(raw: &str) -> Option<ParsedEndpoint> {
         scheme: scheme.to_ascii_lowercase(),
         host: host.to_ascii_lowercase(),
         bare_origin: !has_port && matches!(tail, "" | "/"),
+        has_fragment: tail.contains('#'),
     })
 }
 
@@ -88,8 +95,37 @@ pub(crate) fn transport_permitted(endpoint: &ParsedEndpoint) -> bool {
 /// stub server of the tests, which may carry a port and a path (Req 35.6).
 /// Everything else is refused, including a suffix, a prefix, a trailing
 /// dot, an IP literal, a port, a path, a query and a fragment of the
-/// official host. The default port 443 is refused too, because this
+/// official host, and a fragment on a loopback endpoint (Req 35.6: a
+/// loopback host may carry a port and a path only). The default port 443 is refused too, because this
 /// parser does not normalize it.
 pub(crate) fn host_permitted(endpoint: &ParsedEndpoint, official: &str) -> bool {
-    (endpoint.host == official && endpoint.bare_origin) || is_loopback(&endpoint.host)
+    !endpoint.has_fragment
+        && ((endpoint.host == official && endpoint.bare_origin) || is_loopback(&endpoint.host))
+}
+
+/// Why endpoint validation refuses a URL, in the order of the checks.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Refusal {
+    /// Not a well-formed absolute URL (RT-AI-0002).
+    Invalid,
+    /// `http` to a host that is not loopback, or another scheme (RT-AI-0004).
+    Insecure,
+    /// Not the official host of the provider or loopback (RT-AI-0013).
+    HostNotPermitted,
+}
+
+/// The endpoint checks that follow the userinfo and query check, in one
+/// place so that the configuration loader and the tests run the same
+/// code. `official` is the official host of a hosted provider.
+pub(crate) fn check(raw: &str, official: Option<&str>) -> Result<ParsedEndpoint, Refusal> {
+    let parsed = parse(raw).ok_or(Refusal::Invalid)?;
+    if !transport_permitted(&parsed) {
+        return Err(Refusal::Insecure);
+    }
+    match official {
+        Some(host) if !host_permitted(&parsed, host) => Err(Refusal::HostNotPermitted),
+        // The adapter keeps no fragment, so no endpoint may carry one.
+        _ if parsed.has_fragment => Err(Refusal::Invalid),
+        _ => Ok(parsed),
+    }
 }

@@ -293,26 +293,28 @@ fn check_endpoint(
     let Some(found) = &raw.endpoint else {
         return Ok(None);
     };
-    let Some(parsed) = endpoint::parse(&found.value) else {
-        let d = reader.invalid(
-            found.at.clone(),
-            format!("field `{}` is not an absolute URL", field_path(&found.at)),
-        );
-        return Err(vec![d]);
-    };
-    if !endpoint::transport_permitted(&parsed) {
-        let d = Diagnostic::new(
-            Code::AiConfigEndpointInsecure,
-            format!(
-                "field `{}` must use https unless the host is a loopback address",
-                field_path(&found.at)
-            ),
-            found.at.clone(),
-        );
-        return Err(vec![d]);
-    }
-    if let Some(official) = raw.profile().and_then(|p| p.official_host) {
-        if !endpoint::host_permitted(&parsed, official) {
+    let official = raw.profile().and_then(|p| p.official_host);
+    let parsed = match endpoint::check(&found.value, official) {
+        Ok(parsed) => parsed,
+        Err(endpoint::Refusal::Invalid) => {
+            let d = reader.invalid(
+                found.at.clone(),
+                format!("field `{}` is not an absolute URL", field_path(&found.at)),
+            );
+            return Err(vec![d]);
+        }
+        Err(endpoint::Refusal::Insecure) => {
+            let d = Diagnostic::new(
+                Code::AiConfigEndpointInsecure,
+                format!(
+                    "field `{}` must use https unless the host is a loopback address",
+                    field_path(&found.at)
+                ),
+                found.at.clone(),
+            );
+            return Err(vec![d]);
+        }
+        Err(endpoint::Refusal::HostNotPermitted) => {
             let d = Diagnostic::new(
                 Code::AiConfigEndpointHostNotPermitted,
                 format!(
@@ -323,7 +325,7 @@ fn check_endpoint(
             );
             return Err(vec![d]);
         }
-    }
+    };
     Ok(Some(Endpoint {
         url: found.value.clone(),
         host: parsed.host,

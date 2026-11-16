@@ -130,7 +130,7 @@ pub fn has_unusable_character(text: &str) -> bool {
         .any(|c| c.is_control() || c.is_whitespace() || c == '\\' || is_format(c))
 }
 
-// The characters of general category Cf in Unicode 15, by range.
+// Cf ranges of Unicode 15.0 (DerivedGeneralCategory), same in 16.0.
 fn is_format(c: char) -> bool {
     matches!(u32::from(c),
         0xAD | 0x600..=0x605 | 0x61C | 0x6DD | 0x70F | 0x890..=0x891 | 0x8E2

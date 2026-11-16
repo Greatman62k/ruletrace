@@ -59,12 +59,12 @@ fn every_refused_spelling_is_rt_ai_0004_with_exit_2() {
     }
 }
 
-// Validation and the adapter must agree on 30+ spellings. The expected
+// Validation and the adapter must agree on 43 spellings. The expected
 // verdicts are hand-written, so the test does not derive them from either
 // implementation.
 #[test]
 fn validation_and_the_adapter_endpoint_agree_on_every_spelling() {
-    let table: [(&str, bool); 40] = [
+    let table: [(&str, bool); 43] = [
         ("http://localhost", true),
         ("http://LOCALHOST", true),
         ("http://localhost:9", true),
@@ -105,10 +105,12 @@ fn validation_and_the_adapter_endpoint_agree_on_every_spelling() {
         ("http://127.0.0.1/a b", false),
         ("http://127.0.0.1\\x", false),
         ("http://127.0.0.1//", true),
+        ("http://127.0.0.1:9#f", false),
+        ("http://LOCALHOST##", false),
+        ("https://127.0.0.1:001271", false),
     ];
     for (url, loopback) in table {
-        let tool = crate::endpoint::parse(url)
-            .is_some_and(|parsed| crate::endpoint::transport_permitted(&parsed));
+        let tool = crate::endpoint::check(url, None).is_ok();
         let adapter = rt_ai_responses::Endpoint::parse(url).is_ok();
         assert_eq!(tool, loopback, "tool validation of {url}");
         assert_eq!(adapter, loopback, "adapter endpoint of {url}");
