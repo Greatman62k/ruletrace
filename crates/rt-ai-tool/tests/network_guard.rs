@@ -22,7 +22,7 @@ struct Allowed {
     reason: &'static str,
 }
 
-const ALLOWED: [Allowed; 6] = [
+const ALLOWED: [Allowed; 10] = [
     Allowed {
         file: "crates/rt-ai-tool/src/tests_e2e_responses.rs",
         host: "api.meta.ai",
@@ -32,6 +32,26 @@ const ALLOWED: [Allowed; 6] = [
         file: "crates/rt-ai-tool/src/tests_e2e_responses.rs",
         host: "evil.example",
         reason: "refused by RT-AI-0013 before an adapter exists; asserts zero connections",
+    },
+    Allowed {
+        file: "crates/rt-ai-tool/src/tests_host_before_connection.rs",
+        host: "api.meta.ai",
+        reason: "official origin of the control test and a refused scheme; the counting provider builds no adapter",
+    },
+    Allowed {
+        file: "crates/rt-ai-tool/src/tests_host_before_connection.rs",
+        host: "api.openai.com",
+        reason: "a host that is foreign to the meta profile, refused before a counting provider is asked",
+    },
+    Allowed {
+        file: "crates/rt-ai-tool/src/tests_host_before_connection.rs",
+        host: "api.meta.ai.evil.example",
+        reason: "look-alike host refused by RT-AI-0013 before a counting provider is asked",
+    },
+    Allowed {
+        file: "crates/rt-ai-tool/src/tests_host_before_connection.rs",
+        host: "evil.example",
+        reason: "refused by RT-AI-0013 before a counting provider is asked",
     },
     Allowed {
         file: "crates/rt-ai-tool/src/tests_cli_rig.rs",

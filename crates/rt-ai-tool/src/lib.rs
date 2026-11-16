@@ -92,6 +92,8 @@ mod tests_gate_failures;
 #[cfg(test)]
 mod tests_gate_rig;
 #[cfg(test)]
+mod tests_host_before_connection;
+#[cfg(test)]
 mod tests_identifier_property;
 #[cfg(test)]
 mod tests_live_run1;
