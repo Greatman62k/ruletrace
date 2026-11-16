@@ -393,7 +393,7 @@ The smallest meaningful end-to-end slice takes a Source_Document, a structured R
 | RT-AI-0004 | AI_CONFIG_ENDPOINT_INSECURE | Error | Endpoint scheme is not https and the host is not loopback | 2 | ruletrace-ai |
 | RT-AI-0005 | AI_CONFIG_LIMIT_INVALID | Error | A limit is outside its permitted range | 2 | ruletrace-ai |
 | RT-AI-0006 | AI_PROVIDER_UNKNOWN | Error | No AI_Provider implements the named provider | 2 | ruletrace-ai |
-| RT-AI-0007 | AI_CREDENTIAL_MISSING | Error | The named environment variable is unset or empty | 2 | ruletrace-ai |
+| RT-AI-0007 | AI_CREDENTIAL_MISSING | Error | The named environment variable is unset, empty or not usable as an HTTP header value | 2 | ruletrace-ai |
 | RT-AI-0008 | AI_CONSENT_MISSING | Error | Transmission_Consent is absent or does not name exactly the documents to send | 2 | ruletrace-ai |
 | RT-AI-0009 | AI_CONFIG_PERMISSIONS | Warning | AI_Configuration file is readable by group or others where the platform reports this | 0 | ruletrace-ai |
 | RT-AI-0010 | AI_TRANSMISSION_LOG_FAILED | Error | The Transmission_Log entry could not be written, so nothing was sent | 70 | ruletrace-ai |

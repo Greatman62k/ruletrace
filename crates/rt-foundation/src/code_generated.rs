@@ -233,7 +233,7 @@ pub enum Code {
     AiConfigLimitInvalid,
     /// `RT-AI-0006`: No provider implements the kind
     AiProviderUnknown,
-    /// `RT-AI-0007`: Environment variable unset or empty
+    /// `RT-AI-0007`: Environment variable unset, empty or not usable as an HTTP header value
     AiCredentialMissing,
     /// `RT-AI-0008`: Consent absent or not equal to the documents sent
     AiConsentMissing,

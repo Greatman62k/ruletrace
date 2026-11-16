@@ -112,7 +112,7 @@
   {"code": "RT-AI-0004", "mnemonic": "AI_CONFIG_ENDPOINT_INSECURE", "severity": "Error", "meaning": "Endpoint not https and not loopback", "exit": 2, "executable": "ai"},
   {"code": "RT-AI-0005", "mnemonic": "AI_CONFIG_LIMIT_INVALID", "severity": "Error", "meaning": "Limit outside its range", "exit": 2, "executable": "ai"},
   {"code": "RT-AI-0006", "mnemonic": "AI_PROVIDER_UNKNOWN", "severity": "Error", "meaning": "No provider implements the kind", "exit": 2, "executable": "ai"},
-  {"code": "RT-AI-0007", "mnemonic": "AI_CREDENTIAL_MISSING", "severity": "Error", "meaning": "Environment variable unset or empty", "exit": 2, "executable": "ai"},
+  {"code": "RT-AI-0007", "mnemonic": "AI_CREDENTIAL_MISSING", "severity": "Error", "meaning": "Environment variable unset, empty or not usable as an HTTP header value", "exit": 2, "executable": "ai"},
   {"code": "RT-AI-0008", "mnemonic": "AI_CONSENT_MISSING", "severity": "Error", "meaning": "Consent absent or not equal to the documents sent", "exit": 2, "executable": "ai"},
   {"code": "RT-AI-0009", "mnemonic": "AI_CONFIG_PERMISSIONS", "severity": "Warning", "meaning": "Config readable by group or others", "exit": 0, "executable": "ai"},
   {"code": "RT-AI-0010", "mnemonic": "AI_TRANSMISSION_LOG_FAILED", "severity": "Error", "meaning": "Log entry not written, nothing sent", "exit": 70, "executable": "ai"},

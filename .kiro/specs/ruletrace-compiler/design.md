@@ -1001,7 +1001,7 @@ stateDiagram-v2
 | Insecure endpoint | RT-AI-0004 | Error | 2 | none | |
 | Limit out of range | RT-AI-0005 | Error | 2 | none | |
 | Unknown provider | RT-AI-0006 | Error | 2 | none | |
-| Credential missing | RT-AI-0007 | Error | 2 | none | |
+| Credential missing or not usable as an HTTP header value | RT-AI-0007 | Error | 2 | none | |
 | Consent missing or not equal | RT-AI-0008 | Error | 2 | none | |
 | Inputs invalid, clause too long | RT-AI-0304 | Error | 2 | none | |
 | Credential in a built request | RT-AI-0308 | Error | 2 | none | nothing sent, no log line |
@@ -1792,7 +1792,7 @@ The catalogue is one file, `catalogue/diagnostics.v1.json` (RT-JSON array of `{c
 | RT-AI-0004 (R) | AI_CONFIG_ENDPOINT_INSECURE | Error | Endpoint not https and not loopback | 2 | ai |
 | RT-AI-0005 (R) | AI_CONFIG_LIMIT_INVALID | Error | Limit outside its range | 2 | ai |
 | RT-AI-0006 (R) | AI_PROVIDER_UNKNOWN | Error | No provider implements the kind | 2 | ai |
-| RT-AI-0007 (R) | AI_CREDENTIAL_MISSING | Error | Environment variable unset or empty | 2 | ai |
+| RT-AI-0007 (R) | AI_CREDENTIAL_MISSING | Error | Environment variable unset, empty or not usable as an HTTP header value | 2 | ai |
 | RT-AI-0008 (R) | AI_CONSENT_MISSING | Error | Consent absent or not equal to the documents sent | 2 | ai |
 | RT-AI-0009 (R) | AI_CONFIG_PERMISSIONS | Warning | Config readable by group or others | 0 | ai |
 | RT-AI-0010 (R) | AI_TRANSMISSION_LOG_FAILED | Error | Log entry not written, nothing sent | 70 | ai |
