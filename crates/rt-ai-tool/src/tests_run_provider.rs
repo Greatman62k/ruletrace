@@ -193,6 +193,32 @@ fn rt_ai_0105_other_provider_errors_are_final_and_never_retried() {
     }
 }
 
+// Req 29.2 and 35.14: a 504 ends the run after one attempt with RT-AI-0105
+// and a message that names the status. Both ways a provider can report it
+// are covered; the simulated clock does not move, so no wait happened.
+#[test]
+fn rt_ai_0105_a_504_is_final_and_its_message_names_the_status() {
+    let reported = [
+        ProviderFailure::Other {
+            http_status: Some(504),
+        },
+        ProviderFailure::GatewayTimeout,
+    ];
+    for failure in reported {
+        let (r, fs, p, _) = run_one(vec![fail(failure, 0), ok(0)]);
+        assert_eq!(shapes(&r.diagnostics), vec![("RT-AI-0105", "error")]);
+        assert_eq!(
+            r.diagnostics[0].message(),
+            "1 attempt failed; the last was AI_PROVIDER_ERROR (HTTP status 504)",
+            "{failure:?}"
+        );
+        assert_eq!(r.exit.value(), 5);
+        assert_eq!(p.steps_consumed(), 1);
+        assert_eq!(clock_ms(&p), 0);
+        assert!(fs.files().is_empty());
+    }
+}
+
 #[test]
 fn rt_ai_0105_carries_the_adapter_detail() {
     let (r, _, _, _) = run_one(vec![]);
