@@ -96,3 +96,14 @@ of the live batch. Its `provider` and `protocol` are `mock-replay`, and it
 has no reported model, response identifier or usage, because the replay
 invents none. The test `crates/rt-tests-ai/tests/replay_live_recording.rs`
 checks this.
+
+## The proposer is a model claim
+
+The `proposer` of a stored proposal is text that the model wrote. It is not
+an identity that RuleTrace verified, and it varies between runs: the
+prompt-2 recording (run1) has `"model"` for all five proposals, the prompt-3
+recording (run2) has `"muse-spark-1.3"`. Provider and model, by contrast, come
+from the configuration. `ruletrace review list` renders the line as
+`origin: AI proposal '<id>' (proposer claimed by the model: '<p>', provider
+'<prov>', model '<m>')`. The stored batches and recordings are unchanged, and
+the self-approval refusal still includes the claimed text.
