@@ -36,7 +36,8 @@ pub enum Reply {
         head_and_part: Vec<u8>,
         pause: Duration,
     },
-    /// Write these bytes at once without reading the request, then close.
+    /// Write these bytes at once, then read until the client closes (so no
+    /// reset can race the client), then close.
     Eager(Vec<u8>),
     /// Close without writing.
     Close,
@@ -135,8 +136,21 @@ fn serve(mut stream: TcpStream, reply: Reply, out: &Mutex<Vec<Captured>>) {
     if let Reply::Eager(bytes) = &reply {
         let _ = stream.write_all(bytes);
         let _ = stream.flush();
-        std::thread::sleep(Duration::from_millis(200));
-        out.lock().unwrap().push(Captured { raw: Vec::new() });
+        // Read until the client closes, so that closing never resets the
+        // connection while client data is unread. A reset could otherwise
+        // reach the client before it parses the bytes written above.
+        stream
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        let mut raw = Vec::new();
+        let mut buf = [0u8; 4096];
+        while let Ok(n) = stream.read(&mut buf) {
+            if n == 0 {
+                break;
+            }
+            raw.extend_from_slice(&buf[..n]);
+        }
+        out.lock().unwrap().push(Captured { raw });
         return;
     }
     stream
