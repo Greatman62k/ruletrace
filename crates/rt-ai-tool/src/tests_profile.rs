@@ -34,6 +34,16 @@ fn the_meta_profile_states_the_documented_constants() {
 }
 
 #[test]
+fn only_the_meta_profile_limits_max_to_the_three_documented_models() {
+    assert_eq!(
+        META.max_effort_models,
+        Some(["muse-spark-1.3", "muse-ember-1.0", "muse-wonder-1.0"].as_slice())
+    );
+    assert_eq!(OPENAI.max_effort_models, None);
+    assert_eq!(MOCK_REPLAY.max_effort_models, None);
+}
+
+#[test]
 fn the_meta_profile_does_not_accept_none() {
     assert!(!META.reasoning_efforts.contains(&"none"));
     assert!(!META.reasoning_efforts.is_empty());

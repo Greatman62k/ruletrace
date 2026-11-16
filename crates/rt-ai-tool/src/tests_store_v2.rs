@@ -199,6 +199,38 @@ fn reported_text_with_a_format_or_bidi_control_character_is_omitted() {
     }
 }
 
+// Review wave 2, issue 1: the byte order mark and the tag range are the two
+// Cf entries that a boundary shift would leave undetected. Each is tested
+// alone, with its unassigned neighbours on both sides kept.
+#[test]
+fn the_byte_order_mark_and_the_tag_range_are_omitted_and_their_neighbours_kept() {
+    let plain = Redactor::no_credential();
+    let stored = |c: char| {
+        let text = format!("m{c}m");
+        Reported::from_meta(&text_meta(Some(&text), None), &plain).model
+    };
+    for omitted in [
+        '\u{feff}',
+        '\u{e0001}',
+        '\u{e0020}',
+        '\u{e0041}',
+        '\u{e007f}',
+    ] {
+        assert_eq!(stored(omitted), None, "U+{:04X}", u32::from(omitted));
+    }
+    for kept in [
+        '\u{fefe}',
+        '\u{ff00}',
+        '\u{e0000}',
+        '\u{e0002}',
+        '\u{e001f}',
+        '\u{e0080}',
+    ] {
+        let want = format!("m{kept}m");
+        assert_eq!(stored(kept), Some(want), "U+{:04X}", u32::from(kept));
+    }
+}
+
 #[test]
 fn reported_text_with_visible_non_ascii_characters_is_kept() {
     let plain = Redactor::no_credential();

@@ -205,6 +205,13 @@ fn success_with_usage_stores_a_version_2_batch_with_the_reported_metadata() {
     assert_eq!(exit(ran.code), 0, "{}", ran.stderr);
     assert_eq!(ran.stdout, COMPLETE_ONE);
     assert!(errors(&ran).is_empty(), "{}", ran.stderr);
+    assert!(
+        ran.stderr.contains(
+            ": provider meta, endpoint host 127.0.0.1, documents ['rules.md'], clauses 1,"
+        ),
+        "{}",
+        ran.stderr
+    );
     assert_eq!(stub.connections(), 1);
     let batch = std::fs::read_to_string(rig.batch_path()).unwrap();
     for member in [
@@ -736,5 +743,40 @@ fn a_missing_credential_is_rt_ai_0007_before_any_connection() {
     assert_eq!(exit(ran.code), 2, "{}", ran.stderr);
     assert_eq!(errors(&ran), ["RT-AI-0007"], "{}", ran.stderr);
     assert_eq!(stub.connections(), 0);
+    drop(stub.finish());
+}
+
+// Review wave 2, issue 5: a configuration that the real run refuses at the
+// capability check fails the dry run the same way, with no connection, no
+// credential read and no file written.
+#[test]
+fn a_dry_run_fails_the_capability_check_like_the_real_run() {
+    let stub = Stub::start(Vec::new());
+    let rig = Rig::new("e2e-dry-capability", &stub.endpoint(), &DEFAULT);
+    let text = config_text(&rig.fixture, &stub.endpoint(), &DEFAULT)
+        .replace("id = \"meta\"", "id = \"openai\"")
+        .replace("\"meta\", \"muse", "\"openai\", \"muse");
+    rig.fixture.write_config(&text);
+    let before = rig.fixture.files();
+    let env = MapEnv::new(&[("MODEL_API_KEY", CANARY)]);
+    let dry = run_providers(
+        &rig.fixture.args(&["--dry-run"]),
+        &env,
+        &Stubbed(rig.waits.clone()),
+        &StdFs,
+    );
+    let real = run_providers(
+        &rig.fixture.consented(),
+        &env,
+        &Stubbed(rig.waits.clone()),
+        &StdFs,
+    );
+    assert_eq!(exit(dry.code), 2, "{}", dry.stderr);
+    assert_eq!(errors(&dry), ["RT-AI-0011"], "{}", dry.stderr);
+    assert_eq!(dry.stderr, real.stderr);
+    assert_eq!(dry.stdout, "");
+    assert!(env.reads().is_empty());
+    assert_eq!(stub.connections(), 0);
+    assert_eq!(rig.fixture.files(), before);
     drop(stub.finish());
 }

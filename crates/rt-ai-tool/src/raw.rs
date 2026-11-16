@@ -382,11 +382,17 @@ impl RawConfig {
         if effort.value.is_empty() || profile.reasoning_efforts.is_empty() {
             return;
         }
-        if !profile.reasoning_efforts.contains(&effort.value.as_str()) {
+        // A missing model is reported as a missing field, not twice.
+        let max_elsewhere = effort.value == "max"
+            && matches!(
+                (profile.max_effort_models, &self.model),
+                (Some(listed), Some(m)) if !listed.contains(&m.value.as_str())
+            );
+        if !profile.reasoning_efforts.contains(&effort.value.as_str()) || max_elsewhere {
             out.push(
                 r.invalid(
                     effort.at.clone(),
-                    "field `provider.reasoning_effort` is not an accepted value for the provider"
+                    "field `provider.reasoning_effort` is not an accepted value for the provider and model"
                         .to_owned(),
                 ),
             );

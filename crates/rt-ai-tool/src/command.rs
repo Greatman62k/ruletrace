@@ -424,6 +424,11 @@ fn dry<O: Write, E: Write>(
         Ok(config) => config,
         Err(found) => return report.fail(&found),
     };
+    // The check order of Req 28.17 up to capability negotiation applies, so
+    // a configuration that the real run refuses fails the dry run alike.
+    if let Err(found) = config.check_capabilities() {
+        return report.fail(&found);
+    }
     if let Some(w) = permission_warning(config_input, file_mode(&args.config)) {
         report.diagnostics(&[w]);
     }

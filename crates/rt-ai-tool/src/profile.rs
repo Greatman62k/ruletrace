@@ -79,6 +79,10 @@ pub struct Profile {
     /// The reasoning effort values the provider documents. Empty when the
     /// capability is not established, so no value is accepted.
     pub reasoning_efforts: &'static [&'static str],
+    /// The models for which the effort `max` is documented. `None` puts no
+    /// per-model limit on any effort; a list refuses `max` for every model
+    /// that it does not name.
+    pub max_effort_models: Option<&'static [&'static str]>,
     /// The `max_output_tokens` constant (at least 16).
     pub max_output_tokens: u32,
     /// The sources of the facts above.
@@ -98,6 +102,11 @@ const META_DOCS: &[DocFact] = &[
         read_on: "2026-11-16",
     },
     DocFact {
+        fact: "Responses: usage has input_tokens, output_tokens, total_tokens; store defaults to true and store false keeps no server copy; max effort on three models; a non-streaming request that runs too long returns HTTP 504",
+        url: "https://dev.meta.ai/docs/protocols/responses",
+        read_on: "2026-11-16",
+    },
+    DocFact {
         fact:
             "OpenAI-compatible clients use base https://api.meta.ai/v1 with the Responses protocol",
         url: "https://dev.meta.ai/docs/authentication",
@@ -112,6 +121,10 @@ const OPENAI_DOCS: &[DocFact] = &[DocFact {
 }];
 
 const META_EFFORTS: &[&str] = &["minimal", "low", "medium", "high", "xhigh", "max"];
+
+// The reasoning page and the Responses page name these three models for
+// `max`. It is not available with `muse-spark-1.3-contributor`.
+const META_MAX_EFFORT_MODELS: &[&str] = &["muse-spark-1.3", "muse-ember-1.0", "muse-wonder-1.0"];
 
 /// The Meta Model API over the Responses protocol.
 pub const META: Profile = Profile {
@@ -132,6 +145,7 @@ pub const META: Profile = Profile {
     context_window: Limit::Unknown,
     output_limit: Limit::Unknown,
     reasoning_efforts: META_EFFORTS,
+    max_effort_models: Some(META_MAX_EFFORT_MODELS),
     max_output_tokens: PROVISIONAL_MAX_OUTPUT_TOKENS,
     documentation: META_DOCS,
 };
@@ -156,6 +170,7 @@ pub const OPENAI: Profile = Profile {
     context_window: Limit::Unknown,
     output_limit: Limit::Unknown,
     reasoning_efforts: &[],
+    max_effort_models: None,
     max_output_tokens: PROVISIONAL_MAX_OUTPUT_TOKENS,
     documentation: OPENAI_DOCS,
 };
@@ -180,6 +195,7 @@ pub const MOCK_REPLAY: Profile = Profile {
     context_window: Limit::Unknown,
     output_limit: Limit::Unknown,
     reasoning_efforts: &[],
+    max_effort_models: None,
     max_output_tokens: PROVISIONAL_MAX_OUTPUT_TOKENS,
     documentation: &[],
 };

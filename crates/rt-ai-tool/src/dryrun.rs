@@ -25,7 +25,7 @@ pub fn announcement(config: &AiConfig, request: &PlannedRequest) -> String {
     format!(
         "request {}: provider {}, endpoint host {}, documents [{}], clauses {}, bytes {}\n",
         request.id().as_str(),
-        config.provider.name(),
+        config.profile.id,
         escape_controls(host),
         documents,
         request.clauses().len(),

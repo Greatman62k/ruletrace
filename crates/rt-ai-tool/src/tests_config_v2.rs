@@ -664,6 +664,73 @@ fn the_documented_meta_efforts_are_accepted() {
     }
 }
 
+// Review wave 2, issue 2: the reasoning page documents `max` for three
+// models only. A model that the page does not list, a future model and the
+// Contributor mode are refused at the effort field. Other efforts are not
+// restricted by model.
+#[test]
+fn max_is_accepted_only_for_the_three_models_that_the_reasoning_page_lists() {
+    let with_model = |model: &str| {
+        v2(
+            "model = \"muse-spark-1.3\"",
+            &format!("model = \"{model}\""),
+        )
+        .replace("\"low\"", "\"max\"")
+    };
+    for model in ["muse-spark-1.3", "muse-ember-1.0", "muse-wonder-1.0"] {
+        let ok = run(&with_model(model), &meta_env()).unwrap();
+        assert_eq!(
+            ok.config.reasoning_effort.as_deref(),
+            Some("max"),
+            "{model}"
+        );
+    }
+    for model in [
+        "muse-spark-1.2",
+        "muse-spark-1.1",
+        "muse-spark-1.30",
+        "Muse-Spark-1.3",
+        "muse-spark-1.3-contributor",
+        "model-x",
+    ] {
+        let env = meta_env();
+        let text = with_model(model).replace(
+            "reasoning_effort = \"max\"",
+            "reasoning_effort = \"max\"\nallow_provider_training = true",
+        );
+        let d = one(run(&text, &env), Code::AiConfigInvalid);
+        assert_eq!(at(&d), loc(14, "provider.reasoning_effort"), "{model}");
+        no_env_read(&env);
+    }
+}
+
+#[test]
+fn a_missing_model_with_max_is_reported_once_as_a_missing_field() {
+    let text = v2("model = \"muse-spark-1.3\"\n", "").replace("\"low\"", "\"max\"");
+    let found = run(&text, &meta_env()).unwrap_err();
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(found[0].code(), Code::AiConfigInvalid);
+    assert!(
+        found[0].message().contains("model"),
+        "{}",
+        found[0].message()
+    );
+}
+
+#[test]
+fn the_other_efforts_are_not_restricted_by_model() {
+    for model in ["muse-spark-1.1", "muse-spark-1.2", "model-x"] {
+        for effort in ["minimal", "low", "medium", "high", "xhigh"] {
+            let text = v2(
+                "model = \"muse-spark-1.3\"",
+                &format!("model = \"{model}\""),
+            )
+            .replace("\"low\"", &format!("\"{effort}\""));
+            assert!(run(&text, &meta_env()).is_ok(), "{model} {effort}");
+        }
+    }
+}
+
 #[test]
 fn none_and_unknown_efforts_are_refused_for_meta() {
     for effort in ["none", "None", "LOW", "extreme", "low ", "", "default", "1"] {

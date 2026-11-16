@@ -32,11 +32,13 @@ loopback address (for the stub tests) receives the credential.
 | Maximum nesting depth | 10 | https://dev.meta.ai/docs/structured-output | 2026-11-16 |
 | Maximum properties | 5,000 | https://dev.meta.ai/docs/structured-output | 2026-11-16 |
 | Reasoning effort control (`reasoning.effort` on the Responses API) | `yes` | https://dev.meta.ai/docs/reasoning | 2026-11-16 |
-| Accepted effort values | `minimal`, `low`, `medium`, `high`, `xhigh`, `max`. `none` is refused by Muse Wonder, Spark and Ember with HTTP 400. `max` is not available with `muse-spark-1.3-contributor`, which the model guard refuses anyway. | https://dev.meta.ai/docs/reasoning | 2026-11-16 |
-| Store control (`store: false`) | `yes`: the parameter exists. Whether Meta honours it is not verified (UD-37 section 3). | UD-37 D5, Req 28.13 | 2026-11 |
+| Accepted effort values | `minimal`, `low`, `medium`, `high`, `xhigh`, `max`. `none` is refused by Muse Wonder, Spark and Ember with HTTP 400. | https://dev.meta.ai/docs/reasoning | 2026-11-16 |
+| `max` per model | Accepted only with `muse-spark-1.3`, `muse-ember-1.0` and `muse-wonder-1.0`, the three models that both pages name. Any other model identifier, including `muse-spark-1.1`, `muse-spark-1.2` and `muse-spark-1.3-contributor`, is refused with RT-AI-0002 at the effort field, so a model that a page does not list fails closed. The other values are not limited by model. | https://dev.meta.ai/docs/reasoning, https://dev.meta.ai/docs/protocols/responses | 2026-11-16 |
+| Store control (`store: false`) | `yes`. The Responses page documents `store` (default `true`) and says that `store: false` with stateless replay keeps no server copy. The request always sends `store: false`. No run has observed the behaviour yet. | https://dev.meta.ai/docs/protocols/responses | 2026-11-16 |
 | Model discovery (`GET /v1/models`) | `yes`. An unauthenticated request answers HTTP 401, so the path exists. | UD-37 section 2 | 2026-11 |
 | Base URL for OpenAI-compatible clients | `https://api.meta.ai/v1` | https://dev.meta.ai/docs/authentication | 2026-11 (UD-37, search snippet) |
-| Usage reporting | Unknown. The usage field names come from the user's record and are first observed in the live run. | UD-37 section 3 | not verified |
+| Usage reporting | The capability stays `Unknown` until a live run observes it. The Responses page documents `usage` with `input_tokens`, `output_tokens` and `total_tokens`, and the adapter reads exactly those three members, each only when it is a non-negative integer. A retrieved response also carries `output_tokens_details.reasoning_tokens`, which is not read. | https://dev.meta.ai/docs/protocols/responses | 2026-11-16 |
+| Gateway timeout | A non-streaming request that runs longer than a server-side time limit returns HTTP 504 (`gateway_timeout`). Streaming requests are exempt. RuleTrace does not stream, so a long reasoning generation can end in 504. This bears on the open decision OD-37-1. | https://dev.meta.ai/docs/protocols/responses | 2026-11-16 |
 
 ## `openai`
 
