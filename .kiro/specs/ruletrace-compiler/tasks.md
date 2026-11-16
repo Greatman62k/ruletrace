@@ -1010,12 +1010,13 @@ Milestones: M3 is Prize Check and Bracket Check (group 9), M4 is the demonstrati
     - _Requirements: 31.8, 31.9, 22.22, 7.23, 8.27, 11.5_
     - Design §8.3, §8.4, §3.1
 
-  - [ ] 9.2 Implement published-rank annotation and the two extra difference kinds in the engine
+  - [-] 9.2 Implement published-rank annotation and the two extra difference kinds in the engine
     - Make the engine report, for a Published_Result with positions and ties, each difference of the kinds in design §3.6.3: a value that differs, a published tie that the computed result does not have, and a computed Tie_Group that the published file splits. Each difference carries the published value, the computed value and the reference to the Decision_Trace entry. No tolerance and no rounding of its own. If the user has not amended Req 13.12 (RN-26), record the amendment text in `docs/requirements-amendments.md` for the user and implement the design behaviour.
     - Observable: a published ordering that gives different positions to participants of one computed Tie_Group yields a difference for each such participant, and the equal case yields none.
     - Blocked by: 5.10.
     - _Requirements: 13.12, 13.20, 31.7, 32.6_
     - Design §3.6.3 (Published comparison), §9.4 (RN-26)
+    - Status note (2026-11-17, `[-]`: independent review and CI pending): implemented in `rt-engine` (`compare.rs`, new `DifferenceKind` and `Difference::{kind, group}`, tests in `tests_published_ranks.rs`). The Published_Result type already carries a Rank_Position as a number, so no data type or file format changed; no existing golden changed. Computed rank positions only: no `rank_reference`, no external ranking data (UD-32 ComputedRankReference stays separate from ExternalRankReference; 9.3 stays deferred). RN-26 amendment text is in `docs/requirements-amendments.md`, awaiting user approval, with three open points (members that match but sit in a separated published tie, kind name `value_differs`, no new catalogue code). The CLI results file and warnings are unchanged (the `RT-EXE-0011` message gains a kind sentence only for the two new kinds); the application reports of 9.4 onward must surface `kind` and `group`.
 
   - [ ] 9.3 Implement the UD-32 qualification option
     - If the record of 1.11 is Rank_Reference: add the one `rank_reference` expression operation to `rt-ir`, the Validator (type Exact_Number, `RANK_REFERENCE_CYCLE` with Severity Error and the primary location of the first Source_Span of the rule that closes the cycle), the Compiler and the Engine, with the rules of Req 14.12 (a to d) and the Tie_Group behaviour (every member gets the same Outcome). If the record is Threshold_Only: make the Validator return one `Unsupported` Diagnostic naming the capability `rank reference` for every occurrence (Req 14.13), and add no operation.

@@ -697,3 +697,8 @@ Records user-approved deferrals only. No new deferral is introduced, no requirem
 | 12.15 | Reduced | User decision 2: one final green CI run, no skipped required jobs | M4 | 20.26, 14.8, 34.8 | Release checklist, baseline, boundary documents |
 
 Kept, not deferred: 9.10 and all essential compiler, provenance, approval, AI trust-boundary and credential-safety tests; 10.6 (offline replay, `[-]`, pending CI).
+
+## Task 9.2 evidence (2026-11-17, still `[-]`)
+
+- Requirements 13.12, 13.20, 31.7 and 32.6 (engine part): the engine classifies each ranking difference as `value_differs`, `tie_broken_without_declared_criterion` or `tie_not_in_computed_result`, with published value, computed value, Decision_Trace entry and group members. Tests: `crates/rt-engine/src/tests_published_ranks.rs` (hand-computed cases, a 256-case property against an independent model, a 256-case equal-means-no-difference property). Eight mutants were killed.
+- RN-26 amendment text proposed in `docs/requirements-amendments.md`; the user has not approved it. Req 31.7 and 32.6 are met by the engine only; the application reports (9.4 onward) and Property 46 (9.13, deferred) remain open. Independent review and CI: `PENDING`.
