@@ -79,10 +79,9 @@ fn the_examples_name_the_credential_by_variable_only() {
         assert!(assigned[0].starts_with("credential_env_var = \""), "{name}");
         let with_inline = format!("{text}\napi_key = \"sk-not-a-real-key\"\n");
         let refused = load_config(&InputId::new(name).unwrap(), &with_inline).unwrap_err();
-        assert!(
-            !refused.is_empty(),
-            "{name}: an inline secret must be refused"
-        );
+        let codes: Vec<String> = refused.iter().map(|d| d.code().to_string()).collect();
+        // RT-AI-0003 AI_CONFIG_INLINE_SECRET in the diagnostic catalogue.
+        assert_eq!(codes, ["RT-AI-0003"], "{name}");
     }
 }
 
