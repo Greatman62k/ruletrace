@@ -659,3 +659,41 @@ Both changes were approved by the orchestrator under the user's standing instruc
 | Live job runnable but not required | `ci.yml` job `live-openai`, not in `ci-gate` needs; `live_openai_job.rs`. Run 43864502388 job 133289465599: success, steps skipped. Skip, NOT an authenticated request. Credentialed execution DEFERRED and UNVERIFIED by user decision. Final run: `PENDING` | Skip evidence only |
 | Recorded script committed with hashes, or recording deferred | Stand-in: the two recordings above (commits d4f1ca4, 31b3fb3), amended by user decision 2026-11-16. Real-document recordings deferred | Met for stand-in by user decision; real documents deferred |
 | Independent reviews of 10.5, 10.6, 10.7, 10.15 | `PENDING` | PENDING |
+
+## Approved deferrals (recorded 2026-11-16)
+
+Records user-approved deferrals only. No new deferral is introduced, no requirement text is changed, and no deferred task is marked complete. The decisions are quoted in `tasks.md`, section "Approved deferrals (recorded 2026-11-16)". Decision dates: "session handoff before 2026-11-15" for user decisions 1 and 2, 2026-11-16 for the later 10.5 and 10.8 decisions. No criterion in this file or in `tasks.md` marks any requirement below as satisfied through a deferred task. Where an earlier section states what an implemented task covers (for example Req 29.19 under task 8.7), that statement concerns the implemented task and not the deferred one.
+
+| Task | Status | Reason | Milestone | Affected requirements | Remains unsatisfied |
+| --- | --- | --- | --- | --- | --- |
+| 9.3 | Deferred | User decision 1: RN-30 and 9.3 deferred; UD-32 keeps separate ComputedRankReference and ExternalRankReference; computed references only; no external ranking dataset support claimed | post-submission hardening | 14.11 to 14.14, 14.15 to 14.25, 32.3, 32.4, 7.23 | The 9.3 criterion; External_Ranking_Value carrying form (RN-30, Req 14.25 applies); blocks 9.6, 9.15, part of 9.16 and 9.20 |
+| 9.9 | Deferred | User decision 2 (no per-task reason recorded) | post-submission hardening | 31.8, 31.9, 31.15, 11.5 | Property 44 |
+| 9.12 | Deferred | User decision 2 | post-submission hardening | 22.22, 22.12, 22.13, 22.9, 20.25 | Property 5 for application, published, script and manifest inputs |
+| 9.13 | Deferred | User decision 2 | post-submission hardening | 31.7, 32.6, 13.12, 13.20 | Property 46 |
+| 9.14 | Deferred | User decision 2 | post-submission hardening | 31.13, 31.14, 32.5, 22.1 | Property 47 |
+| 9.15 | Deferred | User decision 2 (also follows from 9.3) | post-submission hardening | 14.12, 14.13, 32.3, 32.4 | Property 45 and the cycle negative test |
+| 9.17 | Deferred | User decision 2 | post-submission hardening | 31.11, 31.15, 20.6, 27.15 | Two-application isolation and process-independence tests |
+| 9.19 | Deferred | User decision 2 | post-submission hardening | 27.1, 27.15, 24.12, 31.10 | Steering updates of design §9.3 items 6 to 8 |
+| 10.4 | Superseded | UD-37 made it required; complete `[x]` | not applicable | 23.39, 23.27, 23.4 | Nothing; the deferral no longer applies |
+| 10.7 | Superseded | User required it on 2026-11-16; implemented, review and CI pending, stays `[ ]` | not applicable | 33.10, 28.21, 28.11, 33.2 | Not complete until the review and CI runs; the deferral no longer applies |
+| 10.5 | Deferred (part) | 2026-11-16: credentialed live execution of the OpenAI job deferred and unverified; the skip-safe job is implemented. Task stays `[-]` | post-submission hardening | 21.14, 35.9 | Any authenticated request from `live-openai` |
+| 10.8 | Deferred (part) | 2026-11-16: real-document (Kiroween, ICC) recordings deferred; stand-in recordings accepted for the recorded-script criterion | M4 | 33.8, 33.10, 28.21, 23.27, 35.22 | Recordings over the UD-34 documents (need 11.1) |
+| 11.7 | Reduced | User decision 2: one smoke run | M4 (full checks post-submission) | 33.17, 13.18, 25.6, 26.12, 9.13 | Full M1 to M3 acceptance checks, Properties 49 and 50 |
+| 11.8 | Deferred | User decision 2 | post-submission hardening | 34.1, 34.7 | Claims lists, `gen-claims`, `scan-claims` |
+| 11.12 | Deferred | User decision 2 | post-submission hardening | 34.7, 33.8 | Remaining steering updates (design §9.3 item 10, item 7 sentence) |
+| 12.1 | Deferred | User decision 2 | post-submission hardening | 19.1 to 19.4, 19.6, 19.9, 19.11 | No-panic parser properties |
+| 12.2 | Deferred | User decision 2 | post-submission hardening | 3.8, 3.15, 3.17, 4.2, 4.3, 4.4, 4.7, 4.8 | Single-fault parse diagnostics property |
+| 12.3 | Deferred | User decision 2 | post-submission hardening | 11.4, 8.5, 8.6 | Property 21 |
+| 12.4 | Deferred | User decision 2 | post-submission hardening | 8.15, 8.29, 8.30, 8.31 | Empty-aggregation property, numeric fixtures |
+| 12.5 | Deferred | User decision 2 | post-submission hardening | 6.7, 6.8, 6.16 to 6.21, 6.23, 12.10, 14.10 | Conflict and precedence property |
+| 12.6 | Deferred | User decision 2 | post-submission hardening | 12.5, 12.11, 12.12, 16.23 | Execution-time conflict property |
+| 12.7 | Deferred | User decision 2 | post-submission hardening | 6.4, 6.5, 6.6, 14.6, 14.7, 10.9 | Unsupported and incomplete constructs property |
+| 12.8 | Deferred | User decision 2 | post-submission hardening | 29.10, 29.11, 29.17, 29.19, 23.20 | Idempotent and concurrent storage property |
+| 12.9 | Deferred | User decision 2 | post-submission hardening | 23.35 to 23.38, 16.24, 27.8 | Run_Summary partition property |
+| 12.10 | Deferred | User decision 2 | post-submission hardening | 20.7, 20.8, 20.9, 23.17, 23.33, 23.38, 29.14 | Full failure matrix, simulated-timer tests |
+| 12.11 | Deferred | User decision 2 | post-submission hardening | 6.1, 6.2, 6.3, 20.3, 20.12, 20.13 | Negative test for every provokable code; 12.12 is blocked by it |
+| 12.13 | Deferred | User decision 2 | post-submission hardening | 14.8, 14.9, 6.22, 26.22, 20.1 | Support-boundary consistency test, `docs/security-limits.md` |
+| 12.14 | Reduced | User decision 2: one final green CI run, no skipped required jobs | M4 | 21.3, 21.4, 21.9, 21.10, 21.12, 24.9, 20.26 | Job list, allowed-edges coverage, decision status listing |
+| 12.15 | Reduced | User decision 2: one final green CI run, no skipped required jobs | M4 | 20.26, 14.8, 34.8 | Release checklist, baseline, boundary documents |
+
+Kept, not deferred: 9.10 and all essential compiler, provenance, approval, AI trust-boundary and credential-safety tests; 10.6 (offline replay, `[-]`, pending CI).

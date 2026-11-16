@@ -80,6 +80,37 @@ Gates 1.2 to 1.7 are answered at wave 0 in parallel with 1.1 and join this path 
 
 Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend on Phases 5 and 6 (design §7.5), so the user may ask to run it before the AI slice. The graph below runs the AI slice first, so that Slice 1 is a demonstration of its own.
 
+## Approved deferrals (recorded 2026-11-16)
+
+This section records deferrals that the user approved earlier. It introduces no new deferral. A deferred or reduced task keeps its `[ ]` checkbox (or `[-]` where it already had that state), keeps its original acceptance criteria unchanged, and carries a `Deferred (approved by the user, ...)` or `Reduced scope (approved by the user, ...)` sub-bullet. Requirements are not weakened. A deferred task is never marked complete. The same list is in `traceability.md` (section "Approved deferrals (recorded 2026-11-16)").
+
+Decisions, quoted from the session handoff (dated "session handoff before 2026-11-15" where no date is known):
+
+- User decision 1: "defer RN-30 / task 9.3 for this submission; preserve UD-32's separate ComputedRankReference and ExternalRankReference concepts; implement and demonstrate computed references only; do not claim external ranking dataset support."
+- User decision 2: "approved deferrals, to be recorded explicitly as deferred/unsatisfied (never marked complete, requirements not weakened): 9.3; 9.9, 9.12, 9.13, 9.14, 9.15; 9.17; 9.19; 10.4 (fold into 10.1 if cheap); 10.7 (if the existing harness suffices); 11.7 reduced to one smoke run; 11.8; 11.12; 12.1-12.11 and 12.13; 12.14/12.15 reduced to one final green CI run with no skipped required jobs. KEEP (not deferred): 9.10 and all essential compiler, provenance, approval, AI trust-boundary and credential-safety tests; 10.6 (offline replay)."
+- Later decision (2026-11-16): 10.5 credentialed live execution of the OpenAI job is deferred and unverified (the skip-safe job itself is implemented).
+- Later decision (2026-11-16): 10.8 real-document (Kiroween/ICC) live recordings are deferred to M4 (stand-in recordings are accepted for the recorded-script criterion).
+
+Superseded parts of decision 2:
+
+- 10.4: superseded by UD-37 (un-deferred, required, complete `[x]`). The deferral no longer applies.
+- 10.7: superseded by the user's later requirement (2026-11-16) that it be implemented. It is implemented and pending the independent review and CI, so it stays `[ ]`. The deferral no longer applies.
+
+Milestones: M3 is Prize Check and Bracket Check (group 9), M4 is the demonstration corpus, documents and submission (group 11 and the reduced final checks), "post-submission hardening" is everything deferred beyond the submission.
+
+| Task | Marker | Milestone |
+| --- | --- | --- |
+| 9.3 | Deferred | post-submission hardening (with the RN-30 decision) |
+| 9.9, 9.12, 9.13, 9.14, 9.15, 9.17, 9.19 | Deferred | post-submission hardening |
+| 10.5 | Deferred (credentialed live execution only) | post-submission hardening |
+| 10.8 | Deferred (real-document recordings only) | M4 |
+| 11.7 | Reduced scope (one smoke run) | M4 (full checks post-submission) |
+| 11.8, 11.12 | Deferred | post-submission hardening |
+| 12.1 to 12.11, 12.13 | Deferred | post-submission hardening |
+| 12.14, 12.15 | Reduced scope (one final green CI run) | M4 |
+| 10.4, 10.7 | Deferral superseded | not applicable |
+
+
 ## Tasks
 
 - [x] 1. Decision gates
@@ -992,6 +1023,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Blocked by: 1.11, 5.10, 5.2.
     - _Requirements: 14.11, 14.12, 14.13, 14.14, 32.3, 32.4, 7.23_
     - Design §8.9
+    - Deferred (approved by the user, session handoff before 2026-11-15): user decision 1: RN-30 and this task are deferred for this submission; UD-32's separate ComputedRankReference and ExternalRankReference concepts are preserved, computed references only are implemented and demonstrated, and no external ranking dataset support is claimed (the carrying form of an External_Ranking_Value needs its own user decision, RN-30); intended milestone: post-submission hardening (together with the RN-30 decision); dependencies: blocks 9.6 and 9.15 (Blocked by 9.3), the Tie_Group-at-threshold fixture of 9.16 and the exit criteria of 9.20. Unsatisfied: Requirements 14.11 to 14.14, 32.3, 32.4 and 7.23 as this task states them, and Requirements 14.15 to 14.25 (External_Ranking_Value; Req 14.25 applies until RN-30 is decided). The task stays [ ] and is not claimed complete
 
   - [ ] 9.4 Implement the report model and writers in `rt-explain::report`
     - Implement the report document model, the human writer and the machine writer (field and element order fixed, no timestamp, no random value, no absolute path), and the field set of each report kind (design §8.5 to §8.7): entries in the order of the Outcomes the engine returned, Tie_Group members in ascending participant id for serialization only and marked as carrying no ranking meaning, Prize_Check fields (eligibility, exact weighted score, Rank_Position or Tie_Group, each Indeterminate with the missing input, published-result differences) and Bracket_Check fields (Standings, tie-breaking criteria with compared values, Qualification_Predicate Outcomes with rule id, revision, span and inputs read). No pairing, round, bracket position, seed, slot, advancement, elimination, prize, award or amount field. A report with no Source_Model states `provenance not verified` and carries `PROV_NOT_VERIFIED_NO_SOURCES`.
@@ -1033,6 +1065,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Required: a missing value must never become zero, false or empty.
     - Observable: for generated tables each empty cell, absent member and null maps to a Missing_Value, and each violation gives one Diagnostic with exact code and Location.
     - **Validates: Requirements 31.8, 31.9, 31.15, 11.5**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: property 44 (mapping preserves missing values) has no generated-input proof. Unsatisfied: Requirements 31.8, 31.9, 31.15, 11.5 as this test states them. The unit tests of 9.1 (when implemented) are not a substitute
 
   - [ ] 9.10 Write property test for application byte identity
     - **Property 42: Application layers are byte-identical to `ruletrace evaluate`**
@@ -1051,18 +1084,21 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Extend the generator to Application_Input_Format files, Published_Result files, the Recorded_Provider_Script and the Demo_Corpus manifest (`has_errors`, `no_errors`, a validation status or a lifecycle flag, agreeing or not), each exit code 2 with the code of Req 22.22. Required.
     - Observable: each input kind rejects each key with the specified code and no later stage runs.
     - **Validates: Requirements 22.22, 22.12, 22.13, 22.9, 20.25**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: Property 5 is not extended to Application_Input_Format files, Published_Result files, the Recorded_Provider_Script or the Demo_Corpus manifest (4.12 and 7.8 cover the earlier input kinds only). Unsatisfied: Requirements 22.22, 22.12, 22.13, 22.9, 20.25 for those input kinds
 
   - [ ] 9.13 Write property test for published differences
     - **Property 46: Published differences are exactly the engine's differences**
     - Required: the applications must apply no comparison of their own.
     - Observable: the differences rendered by each application equal the differences the engine returned, with published value, computed value and trace reference, and an equal Published_Result gives none.
     - **Validates: Requirements 31.7, 32.6, 13.12, 13.20**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: property 46 (published differences equal the engine's differences) is not proven for the applications. Unsatisfied: Requirements 31.7, 32.6, 13.12, 13.20 as this test states them; the engine side is task 9.2
 
   - [ ] 9.14 Write property test for report determinism and closed field set
     - **Property 47: Reports are deterministic, closed and carry no independent validity field**
     - Required for the honest-claims and no-hidden-logic checks.
     - Observable: repeated runs give identical bytes; the machine-readable field set equals the documented set and fails on any additional field; no report has a stored validity flag.
     - **Validates: Requirements 31.13, 31.14, 32.5, 22.1**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: property 47 (report determinism, closed field set, no stored validity flag) is not proven. Unsatisfied: Requirements 31.13, 31.14, 32.5, 22.1 as this test states them; the task text calls it required for the honest-claims and no-hidden-logic checks, so 11.8 and 11.9 rest on a missing test
 
   - [ ] 9.15 Write property test for rank reference and Tie_Group outcomes
     - **Property 45: Rank reference gives every Tie_Group member one Outcome and never truncates the group**
@@ -1070,6 +1106,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: for generated rankings with ties at the threshold every member has the same Outcome, and a rank reference cycle gives `RANK_REFERENCE_CYCLE`.
     - Blocked by: 9.3, 9.6.
     - **Validates: Requirements 14.12, 14.13, 32.3, 32.4**
+    - Deferred (approved by the user, session handoff before 2026-11-15): user decision 2 (and consequent on the deferral of 9.3 under user decision 1); intended milestone: post-submission hardening (after 9.3); dependencies: blocked by 9.3 and 9.6. Property 45 (every Tie_Group member gets one Outcome) and the RANK_REFERENCE_CYCLE negative test are not delivered. Unsatisfied: Requirements 14.12, 14.13, 32.3, 32.4 as this test states them
 
   - [ ] 9.16 Add application fixtures with golden reports
     - Create Fixtures with golden machine-readable and human reports for each application: eligibility, a weighted score, a ranking with a Tie_Group, an Indeterminate Outcome from a Missing_Value, a published result that equals the computed result, a published result that differs (this includes the `published-differs` fixture), Standings with a Tie_Group, Standings with an Indeterminate position, a Qualification_Predicate over a weighted score, a Tie_Group at the threshold (under Rank_Reference over the Rank_Position), a published standings file that equals the computed Standings, and one that breaks a computed tie. Add the unit tests for each mapping error of Req 31.9 with exact code and Location. Compare bytes in the `golden` job on all three platforms.
@@ -1083,6 +1120,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: both tests pass on the three platforms.
     - Blocked by: 9.7.
     - _Requirements: 31.11, 31.15, 20.6, 27.15_
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: the two-application isolation test and the process-independence test (two clocks, working directories and locales, with and without the other executables, a configuration and a credential variable present) are not delivered. Unsatisfied: Requirements 31.11, 31.15, 20.6, 27.15 as this task states them. The Notes list isolation as required, so this is an open gap
 
   - [ ] 9.18 Add step s08 to the stand-in demonstration
     - Extend the runbook of the stand-in demonstration with s08 (`prize-check` and `bracket-check` on the CSV files with the `--emit-*` and `--report-*` options) and the extra step for `standings-missing.csv`. Assert in the acceptance test that the emitted canonical data, questions, published result and results equal the committed canonical files and the output of s06 (byte identity with `ruletrace evaluate`), and that the application reports equal their goldens. Bless the new goldens.
@@ -1097,6 +1135,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Blocked by: 9.8.
     - _Requirements: 27.1, 27.15, 24.12, 31.10_
     - Design §9.3
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: blocked by 9.8; the steering files keep their current wording and design §9.3 items 6 to 8 are not applied (the task requires the user's confirmation of the patch first). Unsatisfied: Requirements 27.1, 27.15, 24.12, 31.10 as this task states them; 11.12 is related (see its deferral)
 
   - [ ] 9.20 Checkpoint - Phase 7 exit
     - Run the full gate set, `check-app-layers` and `check-executables`, and the `demo-offline` job with the extended runbook.
@@ -1118,6 +1157,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Status note: implemented and run locally (limit counter, golden, depth 16 and 17 round trips with 256-case property tests, table refusals, the seven named mutants). The task stays in progress until a CI run on the three platforms and the independent review. The `root` member of design §3.7.3 is replaced by one index per expression field (see the implementation notes there). Not claimed complete.
     - _Requirements: 23.4, 23.27, 23.39_
     - Design §3.7.3, §9.1 (R-D1)
+    - Deferral superseded (UD-37, 2026-11): 10.4 appeared in the user's deferral list of the session handoff, but UD-37 made it required and it is complete (`[x]`). The deferral no longer applies, and nothing is deferred for this task.
 
   - [x] 10.10 Add the UD-37 catalogue entries and regenerate the `Code` enum
     - Add the rows `RT-AI-0011` AI_CAPABILITY_UNSUPPORTED, `RT-AI-0012` AI_MODEL_TRAINING_MODE_REFUSED, `RT-AI-0013` AI_CONFIG_ENDPOINT_HOST_NOT_PERMITTED (Error, exit 2) and `RT-AI-0109` AI_MODEL_DISCOVERY_FAILED, `RT-AI-0110` AI_MODEL_NOT_IN_CATALOGUE (Error, exit 5), all for `ruletrace-ai`, to `catalogue/diagnostics.v1.json` with the meanings of design §3.9.2, run `rt-xtask gen-catalogue`, and update any test that pins the number of codes, with the reason stated. The rows were not added when UD-37 was recorded because the generator rewrites `rt-foundation/src/code_generated.rs`.
@@ -1221,6 +1261,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Live job (2026-11-16, user-approved secret name `RULETRACE_OPENAI_API_KEY`, UD-15 section 6): job `live-openai` in `.github/workflows/ci.yml`, ubuntu-24.04, not in the `needs` of `ci-gate`, contents read only. A first `gate` step sets `configured=true` only when the secret and the optional repository variable `RULETRACE_OPENAI_MODEL` are both non-empty and prints which one is missing otherwise; every later step has `if: steps.gate.outputs.configured == 'true'`, so forks and unconfigured repositories skip with a success conclusion. When configured it validates the model text against `^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$` (a bash regex, after a red test showed that a `grep` check let a value with an embedded line feed through), writes mode-600 configurations under `$RUNNER_TEMP`, and runs only `ruletrace-ai models` (authenticated catalogue request, no document text). A manual `workflow_dispatch` with `propose = true` also runs one propose over the synthetic stand-in document and treats exit codes 0, 2, 3, 5 and 6 as informational. Nothing is uploaded. Tests: `crates/rt-xtask/tests/live_openai_job.rs` (structure rules with mutants, the gate script run under five environment combinations with a canary, the configuration step with hostile and non-ASCII model texts; the secret is step-level `env` on the gate, `models` and propose steps only) and `crates/rt-tests-ai/tests/live_ci_config.rs` (a real `propose --dry-run` over the generated configuration). The bash-based tests are `cfg(unix)` and are not run on Windows: of the 21 original structural-and-script tests only 12 run there (review wave 8, finding 6); the later additions follow the same split. A failing `models` step makes the non-required job red by design (UD-15 section 6). Verified locally without network and without a credential; NOT verified: a real Actions run, and the live run itself. Remaining for 10.5: the push and a CI run that shows `live-openai` skipped with success, the three-platform CI run of the whole task, the independent review, and the `live job runs when the secret exists` part of the observable, which stays unverified until the user creates the secret and the variable. Not claimed complete.
     - Status note (2026-11-16, user decision): the optional OpenAI workflow stays skip-safe and non-blocking, and keeps `RULETRACE_OPENAI_API_KEY` and `RULETRACE_OPENAI_MODEL`. Credentialed live execution of `live-openai` is DEFERRED and UNVERIFIED by user decision. The skipped-job evidence is a skip, NOT an authenticated request: in the latest green run 43864502388 (commit a52d67b), job `live-openai (linux, optional)` (job id 133289465599) concluded `success` with the `Gate` step successful and every later step (checkout, toolchain, build, configuration, `models`, propose) `skipped`, so no request was made and no credential was used. Run 43861689491 (commit bc21924, overall failure from a `test (macos-15)` job) shows the same skip for its `live-openai` job (133279834712). Nothing in this task verifies the secret, the variable, the model, or any request to OpenAI. The task stays `[-]`.
     - Follow-up from the wave 4 review (2026-11-16): the tool's endpoint validation and the adapter now share one loopback definition (`rt_ai_responses::is_loopback_host`) and one unusable-character check, with a table test of 40 spellings. `models` escapes every control character and U+2028/U+2029 before it appends the line feed (Req 35.18). Limit of the network guard: the runtime guard covers the unit tests of `rt-ai-tool` and of `rt-ai-responses`. The integration tests of `rt-ai-responses` link the library without `cfg(test)` and the spawned binary has no hook, so they rely on the source scan in `crates/rt-ai-tool/tests/network_guard.rs`, which does not see a host that a test builds from a variable.
+    - Deferred (approved by the user, 2026-11-16): credentialed live execution of the `live-openai` job is DEFERRED and UNVERIFIED by user decision. The skip-safe job itself is implemented, and its evidence is a skip (run 43864502388, job 133289465599), not an authenticated request; intended milestone: post-submission hardening; dependencies: Requirements 21.14 and 35.9 are not verified by any credentialed run. The task stays [-], which is the existing state in this file, and is not claimed complete. 10.9 and 10.17 refer to it
 
   - [x] 10.17 User review gate: Meta stub tests before the live run
     - Stop here. When 10.3, 10.15, 10.16 and 10.5 pass on all three CI platforms (Linux, macOS, Windows) and the full gate set is green, show the user: the pinned request body, the stub-test results for each Meta error shape, the `models` transcript against the stub, the list of goldens changed by 10.14, `docs/provider-profiles.md`, and the status of OD-37-1 (resolved 2026-11-16, option B). Ask the user with the user_input tool whether to proceed to the live run. Do not run any live step, do not request or read any credential, and do not set `allow_provider_training`. Record the answer in `tools/decisions/UD-37.md`.
@@ -1247,6 +1288,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - _Requirements: 33.10, 28.21, 28.11, 33.2_
     - Design §8.11.6
     - Status note (2026-11-16): implemented and run locally; the independent review and the CI runs on three platforms are pending, so the task stays open. `rt-demo` gets `guard.rs` and the runner calls it before any process starts. **Scope.** A `ruletrace-ai` step is offline only when it is `propose` with exactly one readable `--config` whose provider is `mock-replay` (v2 `[provider] protocol`, or the v1 `provider` key) and that has no `endpoint` and no `credential_env_var`. Every other `ruletrace-ai` step is live: `models`, a step with no `--config`, an unreadable or unknown configuration, a configuration outside the small TOML subset the guard reads, and arguments the guard cannot read the way the tool reads them. Steps of other executables are offline. `run_step` (and so `run_runbook_recorded`) refuses a live step with `DemoError::LiveRefused`. `run_live_step`, the explicit opt-in, needs a `LiveContext` with the checked manifest. It requires at least one `--consent`, and every named document must have `transmission_permitted` exactly `true` in the manifest (a missing entry or a non-boolean value is refused; the error names the document and the field). It then refuses a `--store`, `--out` or configured `transmission_log` that resolves (through `..` and symbolic links) under `golden/` or `provider/` of the demonstration or its work copy, or under any `golden` directory. It passes only the credential variable that the configuration names, and the harness itself reads no environment variable. A runbook step may carry `"live": true` (only for `ruletrace-ai`, no golden outputs): `steps_for` leaves it out, so the default runs are unchanged, and no such step is committed. Added `ai/meta.example.toml` (`muse-spark-1.3`, effort `low`, `MODEL_API_KEY`) and `ai/openai.example.toml` (placeholder model `REPLACE_WITH_YOUR_MODEL_ID`, `OPENAI_API_KEY`, no effort because the OpenAI profile does not verify it), loaded by the real `load_config` in `rt-tests-ai/tests/live_examples.rs`. `RUNBOOK.md` has the section "Live steps and document transmission" with `live` blocks. Tests: `rt-demo/tests/live_guard.rs` (refusal before spawn proved with a fake `ruletrace-ai` that leaves a marker and connects to a loopback listener, plus a positive control that runs the same fake for a permitted offline step). Mutants of the guard killed: permission loop removed, guard after spawn, provider root removed, mock-replay classified live, everything offline, boolean accepting the string "true", `may_transmit` ignoring the flag, golden-component rule removed, symlinks not followed, offline runner not classifying, consent check removed, environment check removed, any protocol offline, network fields ignored, absent entry permitted. One survivor, the `golden` root check, is redundant with the golden-component rule (disclosed). Disclosed: three `Allowed` entries in `rt-ai-tool/tests/network_guard.rs` for the host literals of the new example test. Not done: no live call, no real Kiroween or ICC document, no manifest entry for them (task 11.1), no harness command-line program (the harness is a test library). **Follow-up (wave 10 review, 2026-11-16):** the guard now also treats any `argv[0]` whose file name (directories and a trailing `.exe` removed, ASCII case folded) is `ruletrace-ai` as that tool; refuses a `--store`, `--out` or `transmission_log` path with a component that exists but cannot be resolved (dangling or looping link) with `Refusal::UnresolvablePath`; requires every manifest entry of a duplicated document id to permit transmission; matches `golden/` and `provider/` with ASCII case folded; and refuses the literal placeholder model `REPLACE_WITH_YOUR_MODEL_ID` with `Refusal::PlaceholderModel` naming the field (guard only: no existing catalogue code fits a tool-side refusal). The consent is bound by document id only; it does not bind the manifest entry hash. The by-hand shell blocks of the demonstration `RUNBOOK.md` do not consult `manifest.json`, so the user checks `transmission_permitted` manually.
+    - Deferral superseded (user decision, 2026-11-16): 10.7 appeared in the user's deferral list ("if the existing harness suffices"). The user later required it to be implemented. It is implemented and awaits the independent review and the CI runs, so it stays `[ ]`. The deferral no longer applies.
 
   - [ ] 10.8 Live recording of provider responses (user-run gate)
     - Prepare the exact commands for the user. First `ruletrace-ai models --config <local meta config>` (the user runs it with their own credential, which no agent requests, reads, prints or logs). Then, only after 10.17 is answered, `ruletrace-ai propose --config <local meta config> --consent <documents> --store target/demo-live/store ...` for the documents confirmed in 1.10, with the request vocabulary frozen by 1.11, the model `muse-spark-1.3`, an explicit low reasoning effort, no `allow_provider_training`, public competition documents and synthetic data only, and an explicit attempt timeout (OD-37-1 is resolved: a 504 is final, so `max_retries = 0` is no longer needed for it). Optionally the same small benchmark with `muse-ember-1.0`, by a separate configuration. No fallback model. Stop and ask the user to run the commands and to report the result. After the user confirms, inspect the batches, run `rt-xtask export-script`, and commit the candidate script only in a deliberate commit that states the provider identifier, protocol, model identifier and capture date text the user supplies, with the new response hashes. Record the observed `max_output_tokens` need and the observed error shapes in `docs/provider-profiles.md`.
@@ -1255,6 +1297,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Status note (2026-11-16, amended by user decision 2026-11-16; stays `[ ]`, not claimed complete): the user ran the live Meta `muse-spark-1.3` calls themselves (run 1 `responses-1/prompt-2`, run 2 `responses-1/prompt-3`, UD-37 section 8.2) over the synthetic stand-in document. The user decided that the two resulting recordings satisfy the recorded-script criterion of the observable, referenced by their actual filenames. Evidence: both files hold one `origin: "recorded"` entry with the response hash recomputed from the payload (`9585ce1d...` and `7f3371ca...`), they replay offline through `rt-tests-ai/tests/replay_live_recording.rs` (13 tests green), and no golden file was changed by the recording (`provider/RECORDINGS.md`). What the decision covers: the recorded-script criterion for the stand-in document only. What remains deferred and is NOT satisfied: 10.8 as written concerns the documents confirmed in 1.10 (UD-34: Kiroween 2026 Official Rules and ICC Men's T20 World Cup 2026 Playing Conditions, clauses 16.10.1 to 16.10.7), whose snapshots do not exist yet (task 11.1), so no live recording over them has been made. Also open: the request vocabulary of 1.11 for those documents, the optional `muse-ember-1.0` benchmark, the harness guard of 10.7 (open) and the recording of the observed `max_output_tokens` need in `docs/provider-profiles.md` (line 20 still says provisional 8192, not measured). The real-document recordings are deferred by this record, not waived.
     - _Requirements: 33.8, 33.10, 28.21, 23.27, 35.22_
     - Design §8.11.6, §8.11.7
+    - Deferred (approved by the user, 2026-11-16): live recordings over the real documents (Kiroween 2026 Official Rules; ICC Men's T20 World Cup 2026 Playing Conditions 16.10.1 to 16.10.7) are deferred; stand-in recordings are accepted for the recorded-script criterion only (see the amended observable); intended milestone: M4 (needs the snapshots of 11.1); dependencies: blocked by 1.10, 1.11, 10.6, 10.7, 10.17. Unsatisfied: 10.8 as written for the documents confirmed in 1.10, Requirements 33.8, 33.10, 28.21, 23.27, 35.22 for those documents; also open: the 10.7 guard review, the `muse-ember-1.0` benchmark and the measured `max_output_tokens` need in `docs/provider-profiles.md`. 11.1 and 11.4 depend on real-document material
 
   - [ ] 10.9 Checkpoint - Phase 8 exit
     - Run the full gate set and confirm that `check-tree` still passes for `rt-cli` and every core crate, that `check-graph` lists `rt-ai-responses` and no `rt-ai-openai`, `rt-ai-meta` or `rt-ai-modal`, and that `check-catalogue` passes.
@@ -1312,6 +1355,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Observable: all three mutations pass, and a harness bug that skips a mutation fails the test.
     - Blocked by: 11.6.
     - **Validates: Requirements 33.17, 13.18, 25.6, 26.12, 9.13**
+    - Reduced scope (approved by the user, session handoff before 2026-11-15): the three mutation checks (M1, M2, M3 of design §8.11.11) are reduced to one smoke run. Full criterion unsatisfied: all three mutations as required acceptance assertions, the harness-skip detection in the Observable, and Properties 49 and 50 as generated-input proofs. Milestone: M4 for the smoke run; the full checks are post-submission. Affected requirements: 33.17, 13.18, 25.6, 26.12, 9.13. The task stays [ ]
 
   - [ ] 11.8 Implement the claims lists and `gen-claims` and `scan-claims`
     - Commit `claims/required-statements.v1.json` (an identifier for each statement of Req 34 criteria 2 to 6), `claims/prohibited-phrases.v1.json` and `claims/scan-targets.v1` (the demonstration's own documents: README, runbook, reports, goldens and the boundary document; the committed Source_Documents are excluded, RN-28). Implement `rt-xtask gen-claims` and `scan-claims`, which fail with file, line and statement identifier or phrase when a required statement is missing or a prohibited phrase appears. Add negative fixtures for each. Required.
@@ -1319,6 +1363,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Blocked by: 11.5.
     - _Requirements: 34.1, 34.7_
     - Design §8.12
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: `claims/*`, `rt-xtask gen-claims` and `scan-claims` and their negative fixtures are not delivered. Unsatisfied: Requirements 34.1, 34.7 as this task states them; the checkpoint 11.13 lists these commands, so it cannot be claimed in full. 11.9 and 11.10 must not claim a scan that does not exist
 
   - [ ] 11.9 Add the honest-claims statements to the reports and the runbook
     - Add to the header of the Proof_Report and of each application report, and to the Demo_Runbook, the statements of Req 34: only capabilities inside the First_Version_Support_Boundary, human approval of the exact revision through `ruletrace review`, a Proposal is untrusted until approval, the offline demonstration replays recorded Reviewer decisions, validation checks internal consistency and not fidelity to the regulation (with the undetected Conflict classes), what verified means, that a live provider can return different proposals, the number and identifiers of Unsupported and Ambiguity clauses (zero stated when none), and that synthetic data is synthetic. Re-bless the goldens and run `scan-claims`.
@@ -1347,6 +1392,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Blocked by: 11.9.
     - _Requirements: 34.7, 33.8_
     - Design §9.3
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: blocked by 11.9; the remaining steering text (design §9.3 item 10 and the replay sentence of item 7) is not applied. Unsatisfied: Requirements 34.7, 33.8 as this task states them
 
   - [ ] 11.13 Checkpoint - Phase 9 and Demo Slice 2 exit
     - Run the full gate set including `demo-offline` on all three platforms and the `rt-xtask` checks (`check-graph`, `check-tree`, `scan-sources`, `check-app-layers`, `check-executables`, `check-catalogue`, `check-justification`, `check-decisions`, `gen-claims`, `scan-claims`).
@@ -1364,58 +1410,69 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - For `rt-json`, the Rulebook, ledger, Source_Model, compiled artifact, data, proposal store, provider response, AI configuration, Application_Input_Format, manifest and script parsers, arbitrary bytes and mutated valid inputs return a typed result or Diagnostics and never panic, overflow or hang, including size-limit and nesting-depth boundary cases. Required.
     - Observable: no panic, overflow or hang on the generated corpus.
     - **Validates: Requirements 19.1, 19.2, 19.3, 19.4, 19.6, 19.9, 19.11**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: no-panic parser property tests are not delivered. Required before a release tag (Phase 10), so no release tag may rely on it. Unsatisfied: Requirements 19.1, 19.2, 19.3, 19.4, 19.6, 19.9, 19.11 as this task states them
 
   - [ ] 12.2 Write property test for single-fault parse diagnostics
     - **Property 6: Single-fault parse diagnostics**
     - Observable: one injected fault gives exactly one Diagnostic with its specified code and position.
     - **Validates: Requirements 3.8, 3.15, 3.17, 4.2, 4.3, 4.4, 4.7, 4.8**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: the single-fault parse diagnostics property is not delivered. Required before a release tag (Phase 10), so no release tag may rely on it. Unsatisfied: Requirements 3.8, 3.15, 3.17, 4.2, 4.3, 4.4, 4.7, 4.8 as this task states them
 
   - [ ] 12.3 Write property test for three-valued logic
     - **Property 21: Three-valued logic**
     - Observable: AND, OR and NOT agree with the Kleene tables for all operand combinations, including a Fault operand.
     - **Validates: Requirements 11.4, 8.5, 8.6**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: the three-valued logic property (Property 21) is not delivered. Required before a release tag (Phase 10), so no release tag may rely on it. Unsatisfied: Requirements 11.4, 8.5, 8.6 as this task states them
 
   - [ ] 12.4 Write property test for empty aggregation and add the remaining numeric fixtures
     - **Property 22: Empty aggregation**
     - Add the `empty-aggregate` fixture (min and max of an empty collection give Indeterminate with `RT-DGN-0005`, count and sum give 0) and the `thirds` fixture (1/3 weights, fraction output from the confirmed representation) with goldens on three platforms.
     - Observable: the property passes and both fixtures are green.
     - **Validates: Requirements 8.15, 8.29, 8.30, 8.31**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: the empty-aggregation property and the remaining numeric fixtures are not delivered. Required before a release tag (Phase 10), so no release tag may rely on it. Unsatisfied: Requirements 8.15, 8.29, 8.30, 8.31 as this task states them
 
   - [ ] 12.5 Write property test for conflict detection and precedence
     - **Property 27: Conflict detection and precedence**
     - Observable: every injected conflict class is reported with all rules named, and a valid precedence resolves only the three classes of Req 6.20.
     - **Validates: Requirements 6.7, 6.8, 6.16, 6.17, 6.18, 6.19, 6.20, 6.21, 6.23, 12.10, 14.10**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: the conflict detection and precedence property is not delivered. Required before a release tag (Phase 10), so no release tag may rely on it. Unsatisfied: Requirements 6.7, 6.8, 6.16 to 6.21, 6.23, 12.10, 14.10 as this task states them
 
   - [ ] 12.6 Write property test for execution-time conflict handling
     - **Property 28: Execution-time conflict handling**
     - Uses a test-only Compiled_Rulebook built in test code.
     - Observable: incompatible results without precedence give Indeterminate with one `RT-DGN-0004` and exit code 4.
     - **Validates: Requirements 12.5, 12.11, 12.12, 16.23**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: the execution-time conflict handling property is not delivered. Required before a release tag (Phase 10), so no release tag may rely on it. Unsatisfied: Requirements 12.5, 12.11, 12.12, 16.23 as this task states them
 
   - [ ] 12.7 Write property test for unsupported and incomplete constructs
     - **Property 29: Unsupported and incomplete constructs are explicit**
     - Observable: every construct outside the boundary gives one Unsupported Diagnostic naming its capability, and nothing compiles.
     - **Validates: Requirements 6.4, 6.5, 6.6, 14.6, 14.7, 10.9**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: the unsupported and incomplete constructs property is not delivered. Required before a release tag (Phase 10), so no release tag may rely on it. Unsatisfied: Requirements 6.4, 6.5, 6.6, 14.6, 14.7, 10.9 as this task states them
 
   - [ ] 12.8 Write property test for idempotent and concurrent batch storage
     - **Property 35: Idempotent and concurrent batch storage**
     - Observable: repeated and concurrent runs with one Request_Identifier leave exactly one batch.
     - **Validates: Requirements 29.10, 29.11, 29.17, 29.19, 23.20**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: the idempotent and concurrent batch storage property is not delivered. Required before a release tag (Phase 10), so no release tag may rely on it. Unsatisfied: Requirements 29.10, 29.11, 29.17, 29.19, 23.20 as this task states them
 
   - [ ] 12.9 Write property test for Run_Summary partitioning
     - **Property 36: Run_Summary partitions the requested clauses**
     - Observable: processed, stored and unprocessed lists partition the requested clauses for every failing position.
     - **Validates: Requirements 23.35, 23.36, 23.37, 23.38, 16.24, 27.8**
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: the Run_Summary partitioning property is not delivered. Required before a release tag (Phase 10), so no release tag may rely on it. Unsatisfied: Requirements 23.35, 23.36, 23.37, 23.38, 16.24, 27.8 as this task states them
 
   - [ ] 12.10 Write the full mock-provider failure matrix and simulated-timer tests
     - Cover each Provider_Failure kind, each failure of Req 23.5 to 23.8 and 23.33, forbidden-field and instruction responses, Semantic_Outcomes with Ambiguity, Unsupported and Error stored as non-executable, and three-request runs failing the second request with `RT-PRV-0101`, `RT-AI-0106`, `RT-AI-0202` and `RT-AI-0303`. Simulated-timer tests: `Retry-After` that fits and does not fit, exhaustion, deadline, a late response never stored, success after one and two retries with one stored batch, and repeated and concurrent runs.
     - Observable: every cell of the matrix gives its specified code, store state, Run_Summary and exit code.
     - _Requirements: 20.7, 20.8, 20.9, 23.17, 23.33, 23.38, 29.14_
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: the full mock-provider failure matrix and the simulated-timer tests are not delivered (the narrower gate-level tests of 8.15 and the e2e tests of Phase 8 remain). Required before a release tag (Phase 10), so no release tag may rely on it. Unsatisfied: Requirements 20.7, 20.8, 20.9, 23.17, 23.33, 23.38, 29.14 as this task states them
 
   - [ ] 12.11 Write a negative test for every provokable catalogue code
     - One test per `RT-VAL` and other catalogue code that can be provoked, asserting code, Severity, primary Location and exit code, with every Location variant and the four conflict classes. A test fails if a provokable code has no negative test.
     - Observable: the coverage check lists no untested provokable code.
     - _Requirements: 6.1, 6.2, 6.3, 20.3, 20.12, 20.13_
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: 12.12 is blocked by this task, so the baseline check depends on a deferred task (see the report of this record); the per-code negative-test coverage check is not delivered. Required before a release tag (Phase 10), so no release tag may rely on it. Unsatisfied: Requirements 6.1, 6.2, 6.3, 20.3, 20.12, 20.13 as this task states them
 
   - [ ] 12.12 Commit the catalogue baseline and enable the baseline check
     - Write the first-release `catalogue/baseline.v1.json` and enable `check-catalogue` to fail on a removed, renumbered or severity-changed code.
@@ -1430,6 +1487,7 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Blocked by: 11.10.
     - _Requirements: 14.8, 14.9, 6.22, 26.22, 20.1_
     - Design §8, §9.1
+    - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: blocked by 11.10; 12.14 is blocked by this task; `docs/security-limits.md` and the support-boundary consistency test are not delivered. Required before a release tag (Phase 10), so no release tag may rely on it. Unsatisfied: Requirements 14.8, 14.9, 6.22, 26.22, 20.1 as this task states them
 
   - [ ] 12.14 Final full-matrix gate verification
     - Verify the required jobs in `ci.yml`: `fmt`, `clippy`, `test`, `golden`, `toolchain`, `demo-offline` on three platforms and `graph`, `deny`, `core-only` on Linux. Verify `tools/allowed-edges.v1` covers every crate of design §3.1 and that every `tools/decisions/*.md` referenced by `tools/decision-gates.v1` is `Confirmed`. List any decision that is still `Pending` or `Deferred` in the final output.
@@ -1437,10 +1495,12 @@ Phase 5 and 6 work (groups 7 and 8) is not on this path. Phase 7 does not depend
     - Blocked by: 12.12, 12.13, 11.11.
     - _Requirements: 21.3, 21.4, 21.9, 21.10, 21.12, 24.9, 20.26_
     - Design §7.4
+    - Reduced scope (approved by the user, session handoff before 2026-11-15): the acceptance used for this submission is one final green CI run with no skipped required jobs. Full criterion unsatisfied: the printed list of required jobs, the check that `tools/allowed-edges.v1` covers every crate of design §3.1, the check that every referenced decision record is `Confirmed`, and the listing of still Pending or Deferred decisions. Milestone: M4. Affected requirements: 21.3, 21.4, 21.9, 21.10, 21.12, 24.9, 20.26. The task stays [ ]
 
   - [ ] 12.15 Final checkpoint - all required jobs green
     - Run the full gate set locally. Exit criteria: all required jobs green; baseline committed; boundary documents present; the release checklist of Req 20.26, 14.8 and 34.8 satisfied. Tagging a release is not a coding task and is left to the user.
     - Ensure all tests pass, ask the user if questions arise.
+    - Reduced scope (approved by the user, session handoff before 2026-11-15): the acceptance used for this submission is one final green CI run with no skipped required jobs. Full criterion unsatisfied: the local full gate run recorded as such, the committed baseline (12.12), the boundary documents (11.10, 12.13) and the release checklist of Req 20.26, 14.8 and 34.8. Milestone: M4. No release tag is claimed. The task stays [ ]
 
 ## Notes
 
