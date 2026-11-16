@@ -11,3 +11,7 @@ cc 83848def0dbf684726d97ee276cff5812d24ded5eb193e349931f24e643944b3 # shrinks to
 cc fcd4c2d4bc7ef58b1fd4919e0b98665b2d76a62b06453d0dbd420e0893a653e8 # shrinks to deadline = 216, attempt_raw = 1, retries = 1, prefix = [], last = Some(Unavailable), elapsed_ms = 213001, jitter_ns = 0
 cc 8dfb611ab67aabb76fe11d6c2defcbcf30fe2a248c803a898416975e657aa33d # shrinks to deadline = 79, attempt_raw = 1, retries = 1, prefix = [], last = Some(Unavailable), elapsed_ms = 0, jitter_ns = 0
 cc d076c1e5e28523ad44e6fce2ba5686667aefdc60534d501b229e3980395ee6d8 # shrinks to deadline = 1, attempt_raw = 1, retries = 0, prefix = [], last = None, elapsed_ms = 0, jitter_ns = 0
+cc 7154ce4eeede86ebaa770ace8ef3ca00f31fdb58c3c5da4ebeb0b53f98a293e2 # shrinks to deadline = 1, attempt_raw = 1, retries = 0, prefix = [], last = Some(Other { http_status: Some(504) }), elapsed_ms = 0, jitter_ns = 0
+cc b893b2b4890f303087791f33d323f4fb62dfd7dd6f60404ac38a44470e612c72 # shrinks to (d, a, r) = (1, 1, 0), prefix = [], last = Other { http_status: Some(504) }, elapsed = 0ns
+cc 98666b8c798bd63bb44e58f28a56be5ab87ff887b0b9c4b06c1e93d840bcbf8d # shrinks to deadline = 1, attempt_raw = 1, retries = 0, prefix = [], last = Some(Other { http_status: Some(505) }), elapsed_ms = 0, jitter_ns = 0
+cc ad8dc69b4aeb8561c2af58246b587d9c131ec4e85926c30d99da8e70bbd3cc08 # shrinks to (d, a, r) = (49, 49, 0), script = [(Some(Other { http_status: Some(505) }), 0), (None, 0), (None, 0)]

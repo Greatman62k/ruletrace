@@ -144,7 +144,8 @@ pub enum Completion {
 }
 
 /// A failed attempt. Transient failures are timeout, unavailability, HTTP
-/// 429 and HTTP 5xx (Req 29.2); everything else is final.
+/// 429 and HTTP 5xx other than 504 (Req 29.2); everything else is final,
+/// HTTP 504 included.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProviderFailure {
     /// Connection refused or reset, or another outage.
@@ -157,6 +158,9 @@ pub enum ProviderFailure {
         /// Whole seconds from `Retry-After`.
         retry_after_secs: Option<u32>,
     },
+    /// HTTP 504. Final: a retry would re-send the same bytes while the
+    /// provider may still be answering the first request (Req 29.2).
+    GatewayTimeout,
     /// Authentication failed.
     AuthFailed,
     /// TLS negotiation or verification failed.
@@ -170,13 +174,16 @@ pub enum ProviderFailure {
 
 impl ProviderFailure {
     /// Whether Req 29.2 permits a retry after this failure. A 5xx status in
-    /// `Other` counts as transient so an adapter cannot mask it.
+    /// `Other` counts as transient so an adapter cannot mask it, except 504,
+    /// which is final however an adapter reports it.
     #[must_use]
     pub fn is_transient(&self) -> bool {
         match self {
             Self::Unavailable | Self::Timeout | Self::RateLimited { .. } => true,
-            Self::Other { http_status } => matches!(http_status, Some(500..=599)),
-            Self::AuthFailed | Self::TlsFailed => false,
+            Self::Other { http_status } => {
+                matches!(http_status, Some(500..=503 | 505..=599))
+            }
+            Self::GatewayTimeout | Self::AuthFailed | Self::TlsFailed => false,
         }
     }
 }

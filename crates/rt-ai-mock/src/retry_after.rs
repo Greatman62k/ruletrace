@@ -26,14 +26,18 @@ pub fn parse_retry_after(value: &str) -> Option<u32> {
 /// Classifies an HTTP status with an optional `Retry-After` header value.
 ///
 /// The header is read only for status 429; on any other status it is
-/// ignored. Statuses other than 429 become [`ProviderFailure::Other`]
-/// carrying the status, so a 5xx stays transient and a 4xx stays final.
+/// ignored. 504 becomes [`ProviderFailure::GatewayTimeout`], which is final.
+/// Other statuses become [`ProviderFailure::Other`] carrying the status, so
+/// a 5xx stays transient and a 4xx stays final.
 #[must_use]
 pub fn failure_from_http(status: u16, retry_after: Option<&str>) -> ProviderFailure {
     if status == 429 {
         return ProviderFailure::RateLimited {
             retry_after_secs: retry_after.and_then(parse_retry_after),
         };
+    }
+    if status == 504 {
+        return ProviderFailure::GatewayTimeout;
     }
     ProviderFailure::Other {
         http_status: Some(status),

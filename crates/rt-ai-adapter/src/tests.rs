@@ -119,6 +119,15 @@ fn transient_classification() {
             http_status: Some(500),
         },
         F::Other {
+            http_status: Some(502),
+        },
+        F::Other {
+            http_status: Some(503),
+        },
+        F::Other {
+            http_status: Some(505),
+        },
+        F::Other {
             http_status: Some(599),
         },
     ];
@@ -134,6 +143,11 @@ fn transient_classification() {
         },
         F::Other {
             http_status: Some(302),
+        },
+        // UD-37 OD-37-1, option B: a gateway timeout is never retried.
+        F::GatewayTimeout,
+        F::Other {
+            http_status: Some(504),
         },
     ];
     assert!(transient.iter().all(F::is_transient));

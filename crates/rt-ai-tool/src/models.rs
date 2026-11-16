@@ -43,6 +43,7 @@ fn failure_kind(failure: ProviderFailure) -> String {
         ProviderFailure::TlsFailed => "TLS failure".to_owned(),
         ProviderFailure::Timeout => "timeout".to_owned(),
         ProviderFailure::Unavailable => "provider unavailable".to_owned(),
+        ProviderFailure::GatewayTimeout => "HTTP status 504".to_owned(),
         ProviderFailure::RateLimited { .. } => "rate limited".to_owned(),
         ProviderFailure::Other {
             http_status: Some(status),

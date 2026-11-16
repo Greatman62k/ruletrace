@@ -11,9 +11,9 @@ use rt_ai_adapter::ProviderFailure;
 ///
 /// - 401 and 403: authentication failure.
 /// - 429: rate limited, with the header read by [`retry_after_secs`].
-/// - every 5xx, including 504: unavailable. A `Retry-After` of a 503 is
-///   not read (Req 29.3). Whether 504 should stay transient is the open
-///   decision OD-37-1.
+/// - 504: gateway timeout, a final failure (Req 29.2, decision OD-37-1).
+/// - every other 5xx: unavailable. A `Retry-After` of a 503 is not read
+///   (Req 29.3).
 /// - 3xx, 400, 402 and every other status: another provider error.
 pub(crate) fn failure_for(status: u16, retry_after: &[&str]) -> ProviderFailure {
     match status {
@@ -21,6 +21,7 @@ pub(crate) fn failure_for(status: u16, retry_after: &[&str]) -> ProviderFailure 
         429 => ProviderFailure::RateLimited {
             retry_after_secs: retry_after_secs(retry_after),
         },
+        504 => ProviderFailure::GatewayTimeout,
         500..=599 => ProviderFailure::Unavailable,
         other => ProviderFailure::Other {
             http_status: Some(other),

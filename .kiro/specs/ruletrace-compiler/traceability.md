@@ -546,7 +546,7 @@ Tasks (Phase 10): `rt-ai-openai` is `rt-ai-responses` in 10.1 to 10.9. Task 10.4
 
 Deferred, with the reason: Modal (UD-37 D6), a Chat Completions adapter (`rt-ai-compatible`, only for a real use case), custom compatible endpoints (need their own trust decision), the OpenAI profile's reasoning effort and usage capabilities (unknown until verified), the catalogue JSON rows (task 10.10).
 
-Open: OD-37-1 (HTTP 504 and Req 29.2, options in UD-37 section 4); the loopback exception for the ids `meta` and `openai` is the existing Req 28.6 behaviour at run time, not a test-only build.
+Resolved: OD-37-1 (HTTP 504 and Req 29.2) by the user's decision of 2026-11-16, option B (see the HTTP 504 note below); the loopback exception for the ids `meta` and `openai` is the existing Req 28.6 behaviour at run time, not a test-only build.
 
 ## Phase 10 progress: tasks 10.4, 10.10, 10.11 and 10.14 (local evidence, 2026-11)
 
@@ -587,3 +587,11 @@ Both changes were approved by the orchestrator under the user's standing instruc
 - Still open: 10.5 (the `live-openai` job needs the user's secret name), 10.15 (a few mutants and the live re-read of Meta limits), 10.17 (user review gate), 10.6, 10.7, 10.8 (user-run), 10.9.
 - Incident: during wiring, one test run made a single real HTTPS request to api.openai.com with a fake test credential and the synthetic clause "Alpha beta." (no real secret or document text). Tests were fixed and a runtime guard plus a source scan now prevent any test from reaching a non-loopback host.
 - Golden changes (approved by the orchestrator under the user's standing instruction, user confirmation pending): the stored batches of the `ai` demo (version 2), the Transmission_Log `protocol` member, and the schema golden (descriptions only).
+
+## HTTP 504 final failure (OD-37-1, user decision 2026-11-16, option B)
+
+- Requirements 29.2 and 35.14 amended: HTTP 504 is not a Transient_Failure for any adapter and ends the request after one attempt with RT-AI-0105 (exit 5); the message names the HTTP status and no provider text. Other 5xx stay transient.
+- Tests: `rt-ai-adapter` `tests_retry` (hand table rows, oracle without 504, property tests of 1,024 cases with 504 listed in the failure strategies) and `tests::transient_classification`; `rt-ai-responses` `tests_status`, `tests/stub_http.rs` (real transport and real decision, 500/502/503 retried, 504 final); `rt-ai-tool` `tests_e2e_responses` (one attempt, no wait, simulated clock at zero, nothing stored, one log entry, no provider text) and `tests_e2e_models`; `rt-ai-mock` `tests_retry_after` and the script table.
+- Changed expectations (disclosed): the rows and tests that asserted the former behaviour (504 transient, three attempts, `RT-AI-0106`) now assert the decision; the `models` exhaustion test uses a 503 so that it still covers exhaustion.
+- Evidence: the new tests failed against the unchanged implementation before the change (adapter: four tests; status: one; e2e: two; stub: one) and passed after it. Mutants B1 to B6 (504 transient as `GatewayTimeout`, as `Other`, mapped to `Unavailable`, mock mapping removed, status missing from the message, 505 made final) are each killed.
+

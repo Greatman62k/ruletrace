@@ -144,6 +144,51 @@ fn hand_derived_default_table() {
             go(2),
         ),
         (
+            "504 in Other is final, with retries left",
+            vec![R::Failure(F::Other {
+                http_status: Some(504),
+            })],
+            s(0),
+            stop(RetryStop::NonTransient(F::Other {
+                http_status: Some(504),
+            })),
+        ),
+        (
+            "gateway timeout is final, with retries left",
+            vec![R::Failure(F::GatewayTimeout)],
+            s(0),
+            stop(RetryStop::NonTransient(F::GatewayTimeout)),
+        ),
+        (
+            "502 in Other is transient",
+            vec![R::Failure(F::Other {
+                http_status: Some(502),
+            })],
+            s(0),
+            go(2),
+        ),
+        (
+            "500 in Other is transient",
+            vec![R::Failure(F::Other {
+                http_status: Some(500),
+            })],
+            s(0),
+            go(2),
+        ),
+        (
+            "504 after a transient failure stops without a wait",
+            vec![
+                T,
+                R::Failure(F::Other {
+                    http_status: Some(504),
+                }),
+            ],
+            s(22),
+            stop(RetryStop::NonTransient(F::Other {
+                http_status: Some(504),
+            })),
+        ),
+        (
             "auth",
             vec![R::Failure(F::AuthFailed)],
             s(0),
@@ -243,9 +288,11 @@ fn policy_ranges() {
 fn transient(f: &F) -> bool {
     match f {
         F::Unavailable | F::Timeout | F::RateLimited { .. } => true,
+        // Req 29.2 as decided on 2026-11-16 (UD-37 OD-37-1, option B):
+        // HTTP 504 is final; every other 5xx stays transient.
         F::Other {
             http_status: Some(h),
-        } => (500..600).contains(h),
+        } => (500..600).contains(h) && *h != 504,
         _ => false,
     }
 }
@@ -316,6 +363,11 @@ fn any_failure() -> impl Strategy<Value = F> {
         Just(F::AuthFailed),
         Just(F::TlsFailed),
         proptest::option::of(400u16..600).prop_map(|h| F::Other { http_status: h }),
+        // Listed on purpose: 504 must occur often, not by chance.
+        Just(F::Other {
+            http_status: Some(504)
+        }),
+        Just(F::GatewayTimeout),
     ]
 }
 
@@ -326,9 +378,11 @@ fn transient_failure() -> impl Strategy<Value = F> {
         prop_oneof![Just(None), (0u32..120).prop_map(Some)].prop_map(|r| F::RateLimited {
             retry_after_secs: r
         }),
-        (500u16..600).prop_map(|h| F::Other {
-            http_status: Some(h)
-        }),
+        (500u16..600)
+            .prop_filter("504 is final", |h| *h != 504)
+            .prop_map(|h| F::Other {
+                http_status: Some(h)
+            }),
     ]
 }
 
@@ -340,6 +394,10 @@ fn non_transient_failure() -> impl Strategy<Value = F> {
         (400u16..500).prop_map(|h| F::Other {
             http_status: Some(h)
         }),
+        Just(F::Other {
+            http_status: Some(504)
+        }),
+        Just(F::GatewayTimeout),
     ]
 }
 

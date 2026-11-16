@@ -192,7 +192,7 @@ fn identical_script_and_requests_give_identical_reports() {
 
 #[test]
 fn every_failure_form_maps_to_its_provider_failure() {
-    let cases: [(&str, ProviderFailure); 11] = [
+    let cases: [(&str, ProviderFailure); 12] = [
         (r#"{"failure":"timeout"}"#, ProviderFailure::Timeout),
         (r#"{"failure":"unavailable"}"#, ProviderFailure::Unavailable),
         (r#"{"failure":"auth_failed"}"#, ProviderFailure::AuthFailed),
@@ -212,6 +212,10 @@ fn every_failure_form_maps_to_its_provider_failure() {
             ProviderFailure::Other {
                 http_status: Some(503),
             },
+        ),
+        (
+            r#"{"failure":"other","http_status":504}"#,
+            ProviderFailure::GatewayTimeout,
         ),
         (
             r#"{"failure":"other","http_status":429,"retry_after_header":"9"}"#,

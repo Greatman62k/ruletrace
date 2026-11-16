@@ -240,13 +240,30 @@ fn a_503_is_retried_on_the_simulated_clock_then_the_list_is_printed() {
 
 #[test]
 fn exhausted_retries_are_rt_ai_0109_after_three_attempts() {
-    let gateway = || http("504 Gateway Timeout", &[], b"");
-    let stub = Stub::start(vec![gateway(), gateway(), gateway()]);
+    // 503, not 504: a 504 is final (Req 29.2, OD-37-1 decided 2026-11-16).
+    let overloaded = || http("503 Service Unavailable", &[], b"");
+    let stub = Stub::start(vec![overloaded(), overloaded(), overloaded()]);
     let rig = Rig::new("models-exhausted", &stub.endpoint(), &DEFAULT);
     let ran = run_models(&rig, &[]);
     assert_eq!(exit(ran.code), 5, "{}", ran.stderr);
     assert_eq!(errors(&ran), ["RT-AI-0109"], "{}", ran.stderr);
     assert_eq!(stub.connections(), 3);
+    drop(stub.finish());
+}
+
+#[test]
+fn a_504_ends_models_after_one_attempt_with_rt_ai_0109() {
+    let gateway = || http("504 Gateway Timeout", &[], b"provider-sentinel-text");
+    let stub = Stub::start(vec![gateway(), gateway(), gateway()]);
+    let rig = Rig::new("models-504", &stub.endpoint(), &DEFAULT);
+    let ran = run_models(&rig, &[]);
+    assert_eq!(exit(ran.code), 5, "{}", ran.stderr);
+    assert_eq!(errors(&ran), ["RT-AI-0109"], "{}", ran.stderr);
+    assert!(warnings(&ran).is_empty(), "{}", ran.stderr);
+    assert!(ran.stderr.contains("HTTP status 504"), "{}", ran.stderr);
+    assert!(!ran.stderr.contains("provider-sentinel-text"));
+    assert_eq!(stub.connections(), 1);
+    assert!(rig.waits().is_empty());
     drop(stub.finish());
 }
 

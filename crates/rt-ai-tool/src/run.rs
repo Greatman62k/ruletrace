@@ -217,6 +217,9 @@ impl Loop<'_, '_> {
                         attempt_noun(attempts),
                         code.mnemonic()
                     );
+                    if is_gateway_timeout(f) {
+                        message.push_str(" (HTTP status 504)");
+                    }
                     if let Some(detail) = &last_detail {
                         message.push_str(&format!(" ({detail})"));
                     }
@@ -345,6 +348,18 @@ pub(crate) fn transient_code(failure: ProviderFailure) -> Code {
         ProviderFailure::RateLimited { .. } => Code::AiProviderRateLimited,
         _ => Code::AiProviderUnavailable,
     }
+}
+
+// A 504 is final (Req 29.2); the message names the status and never the
+// provider's own text.
+fn is_gateway_timeout(failure: ProviderFailure) -> bool {
+    matches!(
+        failure,
+        ProviderFailure::GatewayTimeout
+            | ProviderFailure::Other {
+                http_status: Some(504)
+            }
+    )
 }
 
 fn final_code(failure: ProviderFailure) -> Code {

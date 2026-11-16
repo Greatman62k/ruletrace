@@ -23,13 +23,28 @@ fn status_table() {
         (500, F::Unavailable),
         (502, F::Unavailable),
         (503, F::Unavailable),
-        (504, F::Unavailable),
+        (504, F::GatewayTimeout),
         (599, F::Unavailable),
         (600, other(600)),
         (199, other(199)),
     ];
     for (status, want) in rows {
         assert_eq!(failure_for(status, &[]), want, "status {status}");
+    }
+}
+
+// Req 29.2 as decided on 2026-11-16 (UD-37 OD-37-1, option B): a 504 is a
+// final failure, every other 5xx is transient. The classification is read
+// through `is_transient`, the function that the retry decision uses.
+#[test]
+fn only_a_504_is_final_among_the_5xx_statuses() {
+    for status in 500..=599u16 {
+        let failure = failure_for(status, &[]);
+        assert_eq!(
+            failure.is_transient(),
+            status != 504,
+            "status {status}: {failure:?}"
+        );
     }
 }
 

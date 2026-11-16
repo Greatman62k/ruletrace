@@ -72,6 +72,28 @@ fn header_is_read_only_for_status_429() {
     }
 }
 
+#[test]
+fn a_504_is_final_and_the_neighbouring_5xx_are_transient() {
+    let gateway = failure_from_http(504, Some("30"));
+    assert_eq!(gateway, ProviderFailure::GatewayTimeout);
+    assert!(!gateway.is_transient());
+    for status in [500_u16, 501, 502, 503, 505, 599] {
+        assert!(failure_from_http(status, None).is_transient(), "{status}");
+    }
+}
+
+#[test]
+fn a_scripted_other_504_cannot_be_retried() {
+    let scripted = ProviderFailure::Other {
+        http_status: Some(504),
+    };
+    assert!(!scripted.is_transient());
+    assert_eq!(
+        after(scripted, 0),
+        RetryStep::Stop(rt_ai_adapter::RetryStop::NonTransient(scripted))
+    );
+}
+
 fn after(failure: ProviderFailure, elapsed_s: u64) -> RetryStep {
     next_step(
         &RetryPolicy::default(),

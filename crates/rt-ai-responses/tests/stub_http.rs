@@ -263,13 +263,12 @@ fn meta_error_shapes_map_by_status() {
         &err("backend_unavailable"),
         F::Unavailable,
     );
-    // OD-37-1: 504 stays Unavailable (transient) under Req 29.2 as written.
-    // A later decision to stop retrying it must change this row on purpose.
+    // OD-37-1, decided on 2026-11-16 (option B): a 504 is final.
     assert_failure(
         "504 Gateway Timeout",
         &[],
         &err("gateway_timeout"),
-        F::Unavailable,
+        F::GatewayTimeout,
     );
     assert_failure(
         "400 Bad Request",
@@ -480,4 +479,43 @@ fn debug_of_every_public_value_hides_the_canary() {
     let shown = format!("{a:?} {rep:?} {:?}", support::identity_of(&a));
     assert!(!shown.contains(CANARY), "{shown}");
     stub.finish();
+}
+
+// Req 29.2 as decided on 2026-11-16 (UD-37 OD-37-1, option B): the real
+// transport and the real retry decision. A 504 ends the sequence after one
+// attempt with no wait, even with two retries left; 500, 502 and 503 are
+// retried on the 2 s schedule.
+#[test]
+fn a_504_ends_the_retry_sequence_after_one_attempt_and_other_5xx_do_not() {
+    for (status, retried) in [
+        ("500 Internal Server Error", true),
+        ("502 Bad Gateway", true),
+        ("503 Service Unavailable", true),
+        ("504 Gateway Timeout", false),
+    ] {
+        let (report, got) = run(
+            vec![http(status, &[], br#"{"error":{"type":"x"}}"#)],
+            None,
+            1 << 20,
+        );
+        assert_eq!(got.len(), 1, "{status}: one request on the wire");
+        let failure = failure_of(&report);
+        let policy = RetryPolicy::default();
+        let step = next_step(&policy, &[AttemptRecord::Failure(failure)], report.elapsed);
+        if retried {
+            assert_eq!(
+                step,
+                RetryStep::Attempt {
+                    wait_before: Duration::from_secs(2)
+                },
+                "{status}"
+            );
+        } else {
+            assert_eq!(
+                step,
+                RetryStep::Stop(rt_ai_adapter::RetryStop::NonTransient(failure)),
+                "{status}"
+            );
+        }
+    }
 }

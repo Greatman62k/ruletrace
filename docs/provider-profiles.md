@@ -38,7 +38,7 @@ loopback address (for the stub tests) receives the credential.
 | Model discovery (`GET /v1/models`) | `yes`. An unauthenticated request answers HTTP 401, so the path exists. | UD-37 section 2 | 2026-11 |
 | Base URL for OpenAI-compatible clients | `https://api.meta.ai/v1` | https://dev.meta.ai/docs/authentication | 2026-11 (UD-37, search snippet) |
 | Usage reporting | The capability stays `Unknown` until a live run observes it. The Responses page documents `usage` with `input_tokens`, `output_tokens` and `total_tokens`, and the adapter reads exactly those three members, each only when it is a non-negative integer. A retrieved response also carries `output_tokens_details.reasoning_tokens`, which is not read. | https://dev.meta.ai/docs/protocols/responses | 2026-11-16 |
-| Gateway timeout | A non-streaming request that runs longer than a server-side time limit returns HTTP 504 (`gateway_timeout`). Streaming requests are exempt. RuleTrace does not stream, so a long reasoning generation can end in 504. This bears on the open decision OD-37-1. | https://dev.meta.ai/docs/protocols/responses | 2026-11-16 |
+| Gateway timeout | A non-streaming request that runs longer than a server-side time limit returns HTTP 504 (`gateway_timeout`). Streaming requests are exempt. RuleTrace does not stream, so a long reasoning generation can end in 504. A 504 is a final failure, never retried (Req 29.2; OD-37-1 resolved by the user on 2026-11-16). | https://dev.meta.ai/docs/protocols/responses | 2026-11-16 |
 
 ## `openai`
 
@@ -88,5 +88,6 @@ second message, a second `output_text`, no message) yields an empty payload
 with `Completion::Complete` and a fixed reason in the attempt detail. The
 caller then reports RT-AI-0201 because an empty payload is not JSON. A body
 larger than the response limit is returned as its first `limit + 1` bytes, so
-the caller reports RT-AI-0203. HTTP 504 maps to `Unavailable` (transient)
-under Req 29.2 as written. This is open decision OD-37-1.
+the caller reports RT-AI-0203. HTTP 504 maps to `GatewayTimeout`, a final
+failure under Req 29.2 (OD-37-1, resolved by the user on 2026-11-16). Every
+other 5xx maps to `Unavailable` (transient).

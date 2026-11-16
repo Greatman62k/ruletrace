@@ -457,51 +457,84 @@ fn a_much_larger_body_is_also_rt_ai_0203() {
     drop(stub.finish());
 }
 
-// Req 29.2 as written: every 5xx, 504 included, is a Transient_Failure, so
-// a run with two retries makes three attempts on the 2 s and 8 s schedule
-// (open decision OD-37-1 of UD-37).
-#[test]
-fn a_504_is_retried_per_req_29_2_and_ends_with_rt_ai_0106_after_three_attempts() {
-    let gateway = || {
-        http(
-            "504 Gateway Timeout",
-            &[],
-            br#"{"error":{"type":"gateway_timeout"}}"#,
-        )
-    };
+// Req 29.2 as decided on 2026-11-16 (UD-37 OD-37-1, option B): a 504 is a
+// final failure for every adapter. With two retries configured the run
+// still makes one attempt, waits never, ends with RT-AI-0105 and exit 5,
+// stores nothing, and writes one Transmission_Log entry.
+const PROVIDER_TEXT: &str = "provider-sentinel-gateway-text";
+
+fn gateway() -> Reply {
+    http(
+        "504 Gateway Timeout",
+        &[],
+        format!(r#"{{"error":{{"type":"gateway_timeout","message":"{PROVIDER_TEXT}"}}}}"#)
+            .as_bytes(),
+    )
+}
+
+fn assert_final_504(name: &str, limits: &Limits) {
     let stub = Stub::start(vec![gateway(), gateway(), gateway()]);
-    let rig = Rig::new("e2e-504", &stub.endpoint(), &DEFAULT);
+    let rig = Rig::new(name, &stub.endpoint(), limits);
     let ran = rig.run();
     assert_eq!(exit(ran.code), 5, "{}", ran.stderr);
-    assert_eq!(errors(&ran), ["RT-AI-0106"], "{}", ran.stderr);
-    assert_eq!(warnings(&ran), ["RT-AI-0101", "RT-AI-0101", "RT-AI-0101"]);
-    assert_eq!(stub.connections(), 3);
-    assert_eq!(
-        rig.waits(),
-        [Duration::from_secs(2), Duration::from_secs(8)]
-    );
+    assert_eq!(errors(&ran), ["RT-AI-0105"], "{}", ran.stderr);
+    assert!(warnings(&ran).is_empty(), "{}", ran.stderr);
+    assert_eq!(stub.connections(), 1, "attempts");
+    assert!(rig.waits().is_empty());
+    assert_eq!(rig.waits.now.get(), Duration::ZERO, "simulated clock");
     assert!(store_is_empty(&rig.fixture));
-    let captured = stub.finish();
-    assert!(captured.iter().all(|c| c.body() == captured[0].body()));
+    let log = rig.log_lines();
+    assert_eq!(log.len(), 1, "{log:?}");
+    assert!(log[0].contains(&rig.fixture.request_id()), "{log:?}");
+    assert!(ran.stderr.contains("HTTP status 504"), "{}", ran.stderr);
+    assert!(!ran.stderr.contains(PROVIDER_TEXT), "{}", ran.stderr);
+    drop(stub.finish());
 }
 
 #[test]
-fn with_max_retries_zero_a_504_ends_after_one_attempt_with_rt_ai_0106() {
-    let stub = Stub::start(vec![http("504 Gateway Timeout", &[], b"")]);
-    let rig = Rig::new(
+fn a_504_is_final_after_one_attempt_with_two_retries_configured() {
+    assert_final_504("e2e-504", &DEFAULT);
+}
+
+#[test]
+fn a_504_is_final_after_one_attempt_with_max_retries_zero() {
+    assert_final_504(
         "e2e-504-zero",
-        &stub.endpoint(),
         &Limits {
             retries: 0,
             response_bytes: 1_048_576,
         },
     );
-    let ran = rig.run();
-    assert_eq!(exit(ran.code), 5, "{}", ran.stderr);
-    assert_eq!(errors(&ran), ["RT-AI-0106"], "{}", ran.stderr);
-    assert_eq!(stub.connections(), 1);
-    assert!(rig.waits().is_empty());
-    drop(stub.finish());
+}
+
+#[test]
+fn a_500_a_502_and_a_503_are_still_retried_on_the_schedule() {
+    for (status, name) in [
+        ("500 Internal Server Error", "e2e-5xx-500"),
+        ("502 Bad Gateway", "e2e-5xx-502"),
+        ("503 Service Unavailable", "e2e-5xx-503"),
+    ] {
+        let reply = || http(status, &[], b"{}");
+        let stub = Stub::start(vec![reply(), reply(), reply()]);
+        let rig = Rig::new(name, &stub.endpoint(), &DEFAULT);
+        let ran = rig.run();
+        assert_eq!(exit(ran.code), 5, "{status}: {}", ran.stderr);
+        assert_eq!(errors(&ran), ["RT-AI-0106"], "{status}: {}", ran.stderr);
+        assert_eq!(
+            warnings(&ran),
+            ["RT-AI-0101", "RT-AI-0101", "RT-AI-0101"],
+            "{status}"
+        );
+        assert_eq!(stub.connections(), 3, "{status}");
+        assert_eq!(
+            rig.waits(),
+            [Duration::from_secs(2), Duration::from_secs(8)],
+            "{status}"
+        );
+        assert!(store_is_empty(&rig.fixture));
+        let captured = stub.finish();
+        assert!(captured.iter().all(|c| c.body() == captured[0].body()));
+    }
 }
 
 #[test]
