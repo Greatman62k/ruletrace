@@ -175,7 +175,7 @@ fn test_sources_name_only_loopback_hosts_apart_from_the_listed_literals() {
             .strip_prefix(&root)
             .unwrap()
             .to_string_lossy()
-            .into_owned();
+            .replace('\\', "/");
         // The scan itself holds the literal "https://" only as a delimiter.
         if relative.ends_with("network_guard.rs") {
             continue;
@@ -220,7 +220,7 @@ fn the_scan_covers_the_files_that_reach_a_provider() {
             f.strip_prefix(&root)
                 .unwrap()
                 .to_string_lossy()
-                .into_owned()
+                .replace('\\', "/")
         })
         .collect();
     for expected in [
