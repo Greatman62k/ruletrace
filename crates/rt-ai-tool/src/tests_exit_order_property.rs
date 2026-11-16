@@ -12,7 +12,7 @@
 
 use crate::tests::MapEnv;
 use crate::tests_cli_rig::{Fixture, Ran};
-use crate::tests_gate_rig::{run_providers, Steps};
+use crate::tests_gate_rig::{run_providers, Steps, Unlinked};
 use crate::tests_memfs::{Faults, MemFs};
 use crate::tests_provenance::RULES_HASH;
 use crate::tests_rig::{evidence, payload};
@@ -40,8 +40,9 @@ enum Response {
 }
 
 // The provider kind of the configuration. A hosted provider needs a
-// credential. This build links no hosted integration, so `Unlinked` is
-// the real `BuiltInProviders` and `Linked` stands for a build that has one.
+// credential. `Unlinked` is a build that links no hosted integration, and
+// `Linked` stands for one that has it. The real `BuiltInProviders` is not
+// used for a hosted kind, since it would open a connection.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Hosting {
     Mock,
@@ -246,7 +247,7 @@ fn run_case(case: &Case) -> Ran {
     let fs: &dyn StoreFs = if case.store { &memory } else { &StdFs };
     let linked;
     let providers: &dyn Providers = if case.hosting == Hosting::Unlinked {
-        &BuiltInProviders
+        &Unlinked
     } else if case.hosting == Hosting::Linked || case.response == Response::Incomplete {
         linked = Steps::new(steps_for(case)).0;
         &linked

@@ -91,6 +91,29 @@ impl Providers for Steps {
     }
 }
 
+/// A build that links no provider at all: the configuration-time link check
+/// of Req 28.17 fails for every kind and no adapter is ever built, so no
+/// test through it can reach a network.
+pub(crate) struct Unlinked;
+
+impl Providers for Unlinked {
+    fn is_linked(&self, _: crate::ProviderKind) -> bool {
+        false
+    }
+
+    fn adapter<'a>(
+        &self,
+        config: &AiConfig,
+        _: Option<&Credential>,
+    ) -> Result<(Box<dyn AiAdapter + 'a>, String), Diagnostic> {
+        Err(Diagnostic::new(
+            rt_foundation::Code::InternalError,
+            "an unlinked build must not build an adapter".to_owned(),
+            config.provider_at.clone(),
+        ))
+    }
+}
+
 pub(crate) fn run_providers(
     args: &[OsString],
     env: &MapEnv,

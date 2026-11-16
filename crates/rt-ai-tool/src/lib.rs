@@ -18,6 +18,7 @@ mod decls;
 mod dryrun;
 mod endpoint;
 mod fs;
+mod hosted;
 mod inputs;
 mod locate;
 mod out;
@@ -71,6 +72,8 @@ mod tests_config_v2_disk;
 mod tests_config_v2_property;
 #[cfg(test)]
 mod tests_dir_sync_skip;
+#[cfg(test)]
+mod tests_e2e_responses;
 #[cfg(test)]
 mod tests_exit_order_property;
 #[cfg(test)]
@@ -156,6 +159,7 @@ pub use consent::Consent;
 pub use credential::{Credential, EnvReader, ProcessEnv};
 pub use dryrun::{announcement, dry_run};
 pub use fs::{DirSync, StdFs, StoreFile, StoreFs};
+pub use hosted::responses_adapter;
 pub use out::{render_diagnostic, Out};
 pub use perm::{file_mode, permission_warning};
 pub use plan::{

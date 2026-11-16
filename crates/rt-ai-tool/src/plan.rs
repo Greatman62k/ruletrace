@@ -224,7 +224,7 @@ impl Shared {
             task: TASK.to_owned(),
             model: self.config.model.clone(),
             limits: self.config.limits,
-            reasoning_effort: None,
+            reasoning_effort: self.config.reasoning_effort.clone(),
             context: vec![
                 ("clauses".to_owned(), Value::array(clauses)),
                 ("declarations".to_owned(), self.declarations.clone()),
@@ -254,7 +254,7 @@ impl Shared {
             documents.insert(c.clause.span().doc().clone(), c.sha256.clone());
         }
         let log = LogContext {
-            provider: self.config.provider.name().to_owned(),
+            provider: self.config.profile.id.to_owned(),
             model: self.config.model.clone(),
             endpoint_host: self
                 .config

@@ -13,6 +13,7 @@ use crate::config::{load, load_config, AiConfig, ProviderKind};
 use crate::credential::{Credential, EnvReader};
 use crate::dryrun::{announcement, dry_run};
 use crate::fs::StoreFs;
+use crate::hosted::responses_adapter;
 use crate::inputs::{
     input_id, input_location, load_inputs, load_script, read_bounded, Inputs, MAX_CONFIG_BYTES,
 };
@@ -27,7 +28,7 @@ use crate::store::{Reported, StoreMeta};
 use crate::store_check::check_store;
 use crate::txlog::{FileLog, TransmissionLog};
 use crate::vocab::Ud32Option;
-use rt_ai_adapter::{AiAdapter, AttemptReport, MonotonicClock, ProviderRequest};
+use rt_ai_adapter::{AdapterInfo, AiAdapter, AttemptReport, MonotonicClock, ProviderRequest};
 use rt_ai_mock::ReplayProvider;
 use rt_foundation::{Code, Diagnostic, DocumentId, ExitCode, Severity};
 use rt_ir::Identity;
@@ -181,22 +182,31 @@ pub trait Providers {
     ) -> Result<(Box<dyn AiAdapter + 'a>, String), Diagnostic>;
 }
 
-/// The providers this build links: the offline replay of a recorded script.
-/// No integration crate for a hosted provider is linked yet.
+/// The providers this build links: the offline replay of a recorded script
+/// and the Responses integration for the Meta and OpenAI profiles.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct BuiltInProviders;
 
 impl Providers for BuiltInProviders {
     fn is_linked(&self, kind: ProviderKind) -> bool {
-        kind == ProviderKind::MockReplay
+        matches!(
+            kind,
+            ProviderKind::MockReplay | ProviderKind::OpenAiResponses
+        )
     }
 
     fn adapter<'a>(
         &self,
         config: &AiConfig,
-        _credential: Option<&Credential>,
+        credential: Option<&Credential>,
     ) -> Result<(Box<dyn AiAdapter + 'a>, String), Diagnostic> {
         match (config.provider, config.script.as_deref()) {
+            (ProviderKind::OpenAiResponses, _) => {
+                let credential = credential.ok_or_else(|| unavailable_provider(config))?;
+                let adapter = responses_adapter(config, credential)?;
+                let version = adapter.identity().adapter_version;
+                Ok((Box::new(adapter), version))
+            }
             (ProviderKind::MockReplay, Some(script_path)) => {
                 let script = load_script(Path::new(script_path))?;
                 let version = script.adapter_version.clone();
@@ -316,7 +326,7 @@ fn propose<O: Write, E: Write>(
             Err(d) => return report.fail(&[d]),
         };
     let meta = StoreMeta {
-        provider: config.provider.provider_id().to_owned(),
+        provider: config.profile.id.to_owned(),
         protocol: config.provider.protocol().to_owned(),
         model: config.model.clone(),
         adapter_version,

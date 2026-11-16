@@ -103,18 +103,18 @@ fn runs(fixture: &Fixture) -> Vec<Run> {
             &[],
         ),
         run_case(
-            "v1 openai, provider not linked",
+            "v1 openai, credential unset",
             openai.clone(),
             &CONSENT,
             bad,
-            &["RT-AI-0006"],
+            &["RT-AI-0007"],
         ),
         run_case(
-            "v2 meta, provider not linked",
+            "v2 meta, credential unset",
             v2_meta_text(fixture, "https://api.meta.ai"),
             &CONSENT,
             bad,
-            &["RT-AI-0006"],
+            &["RT-AI-0007"],
         ),
         run_case(
             "v2 meta, host not permitted",

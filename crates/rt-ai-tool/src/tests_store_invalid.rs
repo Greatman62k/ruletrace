@@ -5,7 +5,7 @@
 
 use crate::tests::MapEnv;
 use crate::tests_cli_rig::{run_std, Fixture};
-use crate::tests_gate_rig::{run_providers, skip_shapes, Steps};
+use crate::tests_gate_rig::{run_providers, skip_shapes, Steps, Unlinked};
 use crate::tests_memfs::{Faults, MemFs};
 use crate::tests_provenance::{doc, model, RULES};
 use crate::tests_rig::payload;
@@ -357,7 +357,8 @@ fn dry_run_neither_checks_the_store_nor_the_provider_link() {
     assert_eq!(ran.code, ExitCode::Success, "{}", ran.stderr);
     assert!(ran.codes().is_empty(), "{}", ran.stderr);
     assert_eq!(ran.stdout.lines().count(), 1, "{}", ran.stdout);
-    let real = run_std(&fixture.consented());
+    let env = MapEnv::new(&[]);
+    let real = run_providers(&fixture.consented(), &env, &Unlinked, &StdFs);
     assert_eq!(real.code, ExitCode::InvalidInput, "{}", real.stderr);
     assert_eq!(real.codes(), ["RT-AI-0006"], "{}", real.stderr);
 }

@@ -56,7 +56,6 @@ pub enum SettingsError {
 }
 
 /// One provider that speaks the Responses protocol.
-#[derive(Debug)]
 pub struct ResponsesAdapter {
     identity: Identity,
     endpoint: Endpoint,
@@ -64,7 +63,7 @@ pub struct ResponsesAdapter {
     schema_compact: String,
     max_output_tokens: u32,
     credential: Credential,
-    clock: SystemClock,
+    clock: Box<dyn MonotonicClock>,
 }
 
 impl ResponsesAdapter {
@@ -97,8 +96,16 @@ impl ResponsesAdapter {
             schema_compact,
             max_output_tokens: settings.max_output_tokens,
             credential,
-            clock: SystemClock::new(),
+            clock: Box::new(SystemClock::new()),
         })
+    }
+
+    /// Replaces the monotonic clock, so that a test drives the retry
+    /// schedule with simulated time and sleeps for no real duration.
+    #[must_use]
+    pub fn with_clock(mut self, clock: Box<dyn MonotonicClock>) -> Self {
+        self.clock = clock;
+        self
     }
 
     fn meta(&self, request: &ProviderRequest) -> ProviderMeta {
@@ -194,6 +201,15 @@ impl ResponsesAdapter {
     }
 }
 
+impl std::fmt::Debug for ResponsesAdapter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ResponsesAdapter")
+            .field("identity", &self.identity)
+            .field("endpoint", &self.endpoint)
+            .finish_non_exhaustive()
+    }
+}
+
 fn compact_schema(bytes: &[u8]) -> Result<String, SettingsError> {
     let id = InputId::new("schema").map_err(|_| SettingsError::Schema)?;
     let limits = ParseLimits::new(MAX_SCHEMA_BYTES, MAX_SCHEMA_DEPTH);
@@ -231,6 +247,6 @@ impl AiAdapter for ResponsesAdapter {
     }
 
     fn clock(&self) -> &dyn MonotonicClock {
-        &self.clock
+        self.clock.as_ref()
     }
 }

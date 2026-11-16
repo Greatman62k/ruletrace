@@ -203,13 +203,18 @@ fn a_clean_hosted_run_writes_no_credential_character_run_anywhere() {
 }
 
 #[test]
-fn the_built_in_providers_link_no_hosted_provider_and_make_no_request() {
+fn an_unlinked_hosted_provider_makes_no_request_and_leaks_nothing() {
     let fixture = Fixture::new("hosted-unavailable");
     fixture.write_config(&fixture.real_config(""));
     std::fs::create_dir_all(fixture.path("work")).unwrap();
     let before = fixture.files();
     let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", canaries()[1])]);
-    let ran = crate::tests_cli_rig::run_with(&fixture.consented(), &env, &StdFs);
+    let ran = crate::tests_gate_rig::run_providers(
+        &fixture.consented(),
+        &env,
+        &crate::tests_gate_rig::Unlinked,
+        &StdFs,
+    );
     assert_eq!(ran.code, ExitCode::InvalidInput);
     assert_eq!(ran.codes(), ["RT-AI-0006"]);
     assert_eq!(fixture.files(), before);

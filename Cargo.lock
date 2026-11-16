@@ -370,6 +370,7 @@ dependencies = [
  "proptest",
  "rt-ai-adapter",
  "rt-ai-mock",
+ "rt-ai-responses",
  "rt-foundation",
  "rt-hash",
  "rt-ir",

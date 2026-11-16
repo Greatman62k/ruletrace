@@ -21,6 +21,7 @@ path = "src/main.rs"
 [dependencies]
 rt-ai-adapter = { path = "../rt-ai-adapter" }
 rt-ai-mock = { path = "../rt-ai-mock" }
+rt-ai-responses = { path = "../rt-ai-responses" }
 rt-foundation = { path = "../rt-foundation" }
 rt-hash = { path = "../rt-hash" }
 rt-ir = { path = "../rt-ir" }
