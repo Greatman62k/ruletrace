@@ -74,6 +74,53 @@ fn has_condition(step: &[&str]) -> bool {
     })
 }
 
+// A step needs the secret when it is the gate or when it runs one of the
+// two `ruletrace-ai` commands that call the provider.
+fn needs_secret(step: &[&str]) -> bool {
+    step.iter().any(|l| {
+        let t = l.trim();
+        t == "id: gate"
+            || t.contains("ruletrace-ai models --config")
+            || t.contains("\"$bin/ruletrace-ai\" propose")
+    })
+}
+
+// Text of every `needs` value in the file, for the inline, multi-line flow
+// and block list styles of YAML. One entry per key, with its line number.
+fn needs_values(text: &str) -> Vec<(usize, String)> {
+    let lines: Vec<&str> = text.lines().collect();
+    let mut out = Vec::new();
+    for (n, line) in lines.iter().enumerate() {
+        let Some(rest) = line.trim_start().strip_prefix("needs:") else {
+            continue;
+        };
+        let mut value = rest.to_owned();
+        if rest.contains('[') && !rest.contains(']') {
+            for next in &lines[n + 1..] {
+                value.push(' ');
+                value.push_str(next);
+                if next.contains(']') {
+                    break;
+                }
+            }
+        } else if rest.trim().is_empty() {
+            for next in &lines[n + 1..] {
+                let t = next.trim();
+                if t.is_empty() || t.starts_with('#') {
+                    continue;
+                }
+                if !t.starts_with('-') {
+                    break;
+                }
+                value.push(' ');
+                value.push_str(t);
+            }
+        }
+        out.push((n + 1, value));
+    }
+    out
+}
+
 // Every structural rule of the job. Returns one message per violation.
 fn violations(text: &str) -> Vec<String> {
     let mut found = Vec::new();
@@ -82,29 +129,52 @@ fn violations(text: &str) -> Vec<String> {
         return vec![format!("job {JOB} is missing")];
     }
 
-    for (n, line) in text.lines().enumerate() {
-        if line.trim_start().starts_with("needs:") && line.contains(JOB) {
-            found.push(format!("line {}: {JOB} is in a needs list", n + 1));
+    for (n, value) in needs_values(text) {
+        if value.contains(JOB) {
+            found.push(format!("line {n}: {JOB} is in a needs list"));
         }
     }
 
-    let secret_uses: Vec<usize> = text
-        .lines()
-        .enumerate()
-        .filter(|(_, l)| l.contains("secrets."))
-        .map(|(n, _)| n)
-        .collect();
-    let env_line = format!("      {SECRET}: ${{{{ secrets.{SECRET} }}}}");
-    let env_ok = secret_uses.len() == 1
-        && text.lines().nth(secret_uses[0]) == Some(env_line.as_str())
-        && job.contains(&env_line.as_str());
-    if !env_ok {
-        found.push("the secret is referenced outside the job env".to_owned());
+    for (n, line) in text.lines().enumerate() {
+        if !line.trim_start().starts_with('#') && line.contains("pull_request_target") {
+            found.push(format!("line {}: pull_request_target is used", n + 1));
+        }
     }
-    let before_steps = job.iter().position(|l| *l == "    steps:");
-    let env_pos = job.iter().position(|l| *l == env_line);
-    if !matches!((env_pos, before_steps), (Some(e), Some(s)) if e < s) {
-        found.push("the secret env line is not in the job-level env".to_owned());
+
+    // The secret may be referenced only as an exact step-level env entry.
+    let env_line = format!("          {SECRET}: ${{{{ secrets.{SECRET} }}}}");
+    let steps_at = job.iter().position(|l| *l == "    steps:");
+    for line in &job[..steps_at.unwrap_or(job.len())] {
+        if line.contains("secrets.") {
+            found.push("the secret is in the job-level env".to_owned());
+        }
+    }
+    let all_lines: Vec<&str> = text.lines().collect();
+    let total = all_lines.iter().filter(|l| l.contains("secrets.")).count();
+    let exact = all_lines.iter().filter(|l| **l == env_line).count();
+    let wanted = steps(&job).iter().filter(|s| needs_secret(s)).count();
+    if total != exact || exact != wanted {
+        found.push(format!(
+            "the secret is referenced {total} times ({exact} exact step env entries), expected {wanted}"
+        ));
+    }
+    for step in steps(&job) {
+        let env_pos = step.iter().position(|l| *l == env_line);
+        let key_pos = step.iter().position(|l| *l == "        env:");
+        let run_pos = step.iter().position(|l| l.trim_start().starts_with("run:"));
+        let name = step[0].trim();
+        match (needs_secret(&step), env_pos) {
+            (true, None) => found.push(format!("a step that needs the secret lacks it: {name}")),
+            (false, Some(_)) => found.push(format!("a step must not see the secret: {name}")),
+            (true, Some(e)) => {
+                let after_key = matches!(key_pos, Some(k) if k < e);
+                let before_run = run_pos.is_none_or(|r| e < r);
+                if !after_key || !before_run {
+                    found.push(format!("the secret is not in the step env: {name}"));
+                }
+            }
+            (false, None) => {}
+        }
     }
 
     // The secret may be expanded only by the emptiness test of the gate.
@@ -300,6 +370,136 @@ fn mutant_a_conditional_gate_step_is_reported() {
         .any(|v| v.contains("gate step must not")));
 }
 
+#[test]
+fn mutant_the_secret_at_job_level_is_reported() {
+    let text = mutate(
+        "      RULETRACE_OPENAI_MODEL: ${{ vars.RULETRACE_OPENAI_MODEL }}\n",
+        "      RULETRACE_OPENAI_API_KEY: ${{ secrets.RULETRACE_OPENAI_API_KEY }}\n      RULETRACE_OPENAI_MODEL: ${{ vars.RULETRACE_OPENAI_MODEL }}\n",
+    );
+    let found = violations(&text);
+    assert!(
+        found.iter().any(|v| v.contains("job-level env")),
+        "{found:?}"
+    );
+}
+
+#[test]
+fn mutant_the_secret_in_the_build_step_env_is_reported() {
+    let text = mutate(
+        "        run: cargo build --locked --bins -p rt-ai-tool -p rt-cli",
+        "        env:\n          RULETRACE_OPENAI_API_KEY: ${{ secrets.RULETRACE_OPENAI_API_KEY }}\n        run: cargo build --locked --bins -p rt-ai-tool -p rt-cli",
+    );
+    let found = violations(&text);
+    assert!(
+        found
+            .iter()
+            .any(|v| v == "a step must not see the secret: - name: Build the executables"),
+        "{found:?}"
+    );
+}
+
+#[test]
+fn mutant_the_secret_missing_from_the_models_step_is_reported() {
+    let text = ci_text();
+    let at = text.find("      - name: Model catalogue").unwrap();
+    let tail = text[at..].replacen(
+        "        env:\n          RULETRACE_OPENAI_API_KEY: ${{ secrets.RULETRACE_OPENAI_API_KEY }}\n",
+        "",
+        1,
+    );
+    let mutated = format!("{}{}", &text[..at], tail);
+    assert_ne!(mutated, text);
+    let found = violations(&mutated);
+    assert!(
+        found
+            .iter()
+            .any(|v| v.starts_with("a step that needs the secret lacks it")),
+        "{found:?}"
+    );
+}
+
+#[test]
+fn mutant_the_secret_in_run_text_is_reported() {
+    let text = mutate(
+        "        run: cargo build --locked --bins -p rt-ai-tool -p rt-cli",
+        "        run: |\n          RULETRACE_OPENAI_API_KEY: ${{ secrets.RULETRACE_OPENAI_API_KEY }}",
+    );
+    assert!(!violations(&text).is_empty());
+}
+
+#[test]
+fn mutant_pull_request_target_as_a_key_is_reported() {
+    let text = mutate(
+        "  pull_request:\n",
+        "  pull_request:\n  pull_request_target:\n",
+    );
+    let found = violations(&text);
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(found[0].contains("pull_request_target"));
+}
+
+#[test]
+fn mutant_pull_request_target_in_flow_style_is_reported() {
+    let text = mutate(
+        "name: ci\n\non:\n",
+        "name: ci\n\non: [pull_request_target]\nxon:\n",
+    );
+    let found = violations(&text);
+    assert_eq!(found.len(), 1, "{found:?}");
+}
+
+#[test]
+fn a_comment_that_names_pull_request_target_is_not_a_violation() {
+    let text = mutate(
+        "name: ci\n",
+        "name: ci\n# never use pull_request_target here\n",
+    );
+    assert_eq!(violations(&text), Vec::<String>::new());
+}
+
+const GATE_NEEDS: &str =
+    "    needs: [fmt, clippy, test, golden, toolchain, graph, deny, core-only, demo-offline]\n";
+
+#[test]
+fn mutant_the_job_in_a_block_style_needs_list_is_reported() {
+    let mut block = String::from("    needs:\n");
+    for name in [
+        "fmt",
+        "clippy",
+        "test",
+        "golden",
+        "toolchain",
+        "graph",
+        "deny",
+        "core-only",
+        "demo-offline",
+        "live-openai",
+    ] {
+        block.push_str(&format!("      - {name}\n"));
+    }
+    let text = mutate(GATE_NEEDS, &block);
+    let found = violations(&text);
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(found[0].contains("needs list"));
+}
+
+#[test]
+fn mutant_the_job_in_a_multi_line_flow_needs_list_is_reported() {
+    let text = mutate(
+        GATE_NEEDS,
+        "    needs: [fmt, clippy, test, golden,\n      toolchain, graph, deny, core-only,\n      demo-offline, live-openai]\n",
+    );
+    let found = violations(&text);
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(found[0].contains("needs list"));
+}
+
+#[test]
+fn a_block_style_needs_list_without_the_job_is_accepted() {
+    let text = mutate(GATE_NEEDS, "    needs:\n      - fmt\n      - clippy\n");
+    assert_eq!(violations(&text), Vec::<String>::new());
+}
+
 #[cfg(unix)]
 mod gate_script {
     use super::*;
@@ -440,33 +640,33 @@ mod gate_script {
         assert_eq!(o.output_file, "configured=true\n");
     }
 
-    // Runs the configuration step in a scratch RUNNER_TEMP. Returns the exit
-    // success flag, the stderr text and the files written.
-    fn write_config(model: &str) -> (bool, String, Vec<(String, u32, String)>) {
+    type Written = (bool, String, Vec<(String, u32, String)>);
+
+    // Runs the configuration step of `text` in a scratch RUNNER_TEMP, with
+    // an optional `LC_ALL`. Returns the success flag, the stderr text and
+    // the files written.
+    fn write_config_in(text: &str, model: &str, lc_all: Option<&str>) -> Written {
         use std::os::unix::fs::PermissionsExt;
         static NEXT: AtomicUsize = AtomicUsize::new(1000);
         let id = NEXT.fetch_add(1, Ordering::Relaxed);
         let temp = std::env::temp_dir().join(format!("rt-live-cfg-{}-{id}", std::process::id()));
         std::fs::create_dir_all(&temp).unwrap();
-        let text = ci_text();
-        let job = job_lines(&text, JOB);
+        let job = job_lines(text, JOB);
         let all = steps(&job);
         let index = all
             .iter()
             .position(|s| s[0].contains("Write the configuration"))
             .unwrap();
-        let script = script_of_step(&text, index);
-        let o = Command::new("bash")
-            .arg("-e")
-            .arg("-c")
-            .arg(&script)
-            .env_clear()
-            .env("PATH", "/usr/bin:/bin")
-            .env("RUNNER_TEMP", &temp)
-            .env("RULETRACE_OPENAI_MODEL", model)
-            .env(SECRET, CANARY)
-            .output()
-            .unwrap();
+        let script = script_of_step(text, index);
+        let mut cmd = Command::new("bash");
+        cmd.arg("-e").arg("-c").arg(&script);
+        cmd.env_clear().env("PATH", "/usr/bin:/bin");
+        cmd.env("RUNNER_TEMP", &temp);
+        cmd.env("RULETRACE_OPENAI_MODEL", model);
+        if let Some(lc) = lc_all {
+            cmd.env("LC_ALL", lc);
+        }
+        let o = cmd.output().unwrap();
         let mut files = Vec::new();
         let live = temp.join("live-openai");
         if let Ok(read) = std::fs::read_dir(&live) {
@@ -483,6 +683,34 @@ mod gate_script {
         assert!(!stdout.contains(CANARY) && !stderr.contains(CANARY));
         let _ = std::fs::remove_dir_all(&temp);
         (o.status.success(), stderr, files)
+    }
+
+    fn write_config(model: &str) -> Written {
+        write_config_in(&ci_text(), model, None)
+    }
+
+    // An installed UTF-8 locale whose collation makes bracket ranges accept
+    // letters outside ASCII, if the machine has one.
+    fn utf8_locale() -> Option<String> {
+        let o = Command::new("locale").arg("-a").output().ok()?;
+        let list = String::from_utf8(o.stdout).ok()?;
+        list.lines()
+            .find(|l| l.eq_ignore_ascii_case("en_US.utf8") || l.eq_ignore_ascii_case("en_US.utf-8"))
+            .map(str::to_owned)
+    }
+
+    // The configuration script exports `LC_ALL=C` before its first regex
+    // match, so the charset class is ASCII whatever the runner locale is.
+    fn pin_present(text: &str) -> bool {
+        let job = job_lines(text, JOB);
+        let all = steps(&job);
+        let step = all
+            .iter()
+            .find(|s| s[0].contains("Write the configuration"))
+            .unwrap();
+        let pin = step.iter().position(|l| l.trim() == "export LC_ALL=C");
+        let matched = step.iter().position(|l| l.contains("=~"));
+        matches!((pin, matched), (Some(p), Some(m)) if p < m)
     }
 
     #[test]
@@ -526,5 +754,134 @@ mod gate_script {
             );
         }
         assert!(!Path::new("/tmp/rt-live-pwn").exists());
+    }
+
+    const ENDPOINT_LINE: &str = "endpoint = \"https://api.openai.com\"";
+
+    // The generated files name exactly one endpoint, and it is the pinned one.
+    fn endpoint_pinned(files: &[(String, u32, String)]) -> bool {
+        !files.is_empty()
+            && files.iter().all(|(_, _, body)| {
+                let found: Vec<&str> = body
+                    .lines()
+                    .filter(|l| l.trim_start().starts_with("endpoint"))
+                    .collect();
+                found == [ENDPOINT_LINE]
+            })
+    }
+
+    #[test]
+    fn the_generated_configurations_pin_the_exact_endpoint() {
+        let (ok, _, files) = write_config("gpt-test-1");
+        assert!(ok);
+        assert_eq!(files.len(), 2);
+        assert!(endpoint_pinned(&files));
+    }
+
+    #[test]
+    fn mutant_a_look_alike_or_http_endpoint_is_detected() {
+        for bad in [
+            "http://api.openai.com",
+            "https://api.openai.com.evil.example",
+            "https://api.openai.com@evil.example",
+            "http://api.openai.com.evil.example",
+        ] {
+            let text = ci_text().replacen(
+                "endpoint = \"https://api.openai.com\"",
+                &format!("endpoint = \"{bad}\""),
+                1,
+            );
+            assert_ne!(text, ci_text());
+            let (ok, _, files) = write_config_in(&text, "gpt-test-1", None);
+            assert!(ok, "{bad}");
+            assert!(!endpoint_pinned(&files), "{bad}");
+        }
+    }
+
+    #[test]
+    fn mutant_a_second_endpoint_line_is_detected() {
+        let text = ci_text().replacen(
+            "          endpoint = \"https://api.openai.com\"\n",
+            "          endpoint = \"https://api.openai.com\"\n          endpoint = \"http://x\"\n",
+            1,
+        );
+        let (_, _, files) = write_config_in(&text, "gpt-test-1", None);
+        assert!(!endpoint_pinned(&files));
+    }
+
+    const NON_ASCII: [&str; 3] = ["\u{e9}", "a\u{663}", "\u{ff21}bc"];
+    const VALID: [&str; 5] = [
+        "gpt-5",
+        "o3-mini",
+        "A1",
+        "gpt-4.1-2025-04-14",
+        "ft:gpt:org:x_y",
+    ];
+
+    #[test]
+    fn non_ascii_model_texts_are_refused_in_every_available_locale() {
+        let mut locales: Vec<Option<String>> = vec![None];
+        locales.push(utf8_locale());
+        for lc in locales {
+            for model in NON_ASCII {
+                let (ok, stderr, files) = write_config_in(&ci_text(), model, lc.as_deref());
+                assert!(!ok, "accepted {model:?} under {lc:?}");
+                assert!(files.is_empty(), "{model:?} {lc:?}");
+                assert!(stderr.contains("is not a plain model identifier"));
+            }
+        }
+    }
+
+    #[test]
+    fn valid_model_identifiers_are_accepted_in_every_available_locale() {
+        let longest = "m".repeat(100);
+        let mut locales: Vec<Option<String>> = vec![None];
+        locales.push(utf8_locale());
+        for lc in locales {
+            for model in VALID.iter().copied().chain([longest.as_str()]) {
+                let (ok, stderr, files) = write_config_in(&ci_text(), model, lc.as_deref());
+                assert!(ok, "refused {model:?} under {lc:?}: {stderr}");
+                assert_eq!(files.len(), 2);
+            }
+        }
+    }
+
+    #[test]
+    fn the_committed_step_pins_the_locale_before_the_match() {
+        assert!(pin_present(&ci_text()));
+    }
+
+    #[test]
+    fn mutant_removing_the_locale_pin_is_detected() {
+        let text = mutate_text("          export LC_ALL=C\n", "");
+        assert!(!pin_present(&text));
+        // Where the machine has a UTF-8 locale, show that the defect is
+        // real: the unpinned step accepts letters outside ASCII.
+        match utf8_locale() {
+            Some(lc) => {
+                let accepted = NON_ASCII
+                    .iter()
+                    .filter(|m| write_config_in(&text, m, Some(&lc)).0)
+                    .count();
+                assert!(accepted > 0, "no non-ASCII text accepted under {lc}");
+            }
+            None => eprintln!("en_US.UTF-8 is not installed: only the structural check ran"),
+        }
+    }
+
+    #[test]
+    fn mutant_a_pin_placed_after_the_match_is_detected() {
+        let text = mutate_text("          export LC_ALL=C\n", "").replacen(
+            "          dir=\"$RUNNER_TEMP/live-openai\"\n",
+            "          export LC_ALL=C\n          dir=\"$RUNNER_TEMP/live-openai\"\n",
+            1,
+        );
+        assert!(!pin_present(&text));
+    }
+
+    fn mutate_text(from: &str, to: &str) -> String {
+        let text = ci_text();
+        assert!(text.contains(from), "mutation anchor missing: {from}");
+        text.replacen(from, to, 1)
     }
 }

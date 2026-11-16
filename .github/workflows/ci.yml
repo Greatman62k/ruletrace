@@ -374,11 +374,12 @@ jobs:
       run:
         shell: bash
     env:
-      RULETRACE_OPENAI_API_KEY: ${{ secrets.RULETRACE_OPENAI_API_KEY }}
       RULETRACE_OPENAI_MODEL: ${{ vars.RULETRACE_OPENAI_MODEL }}
     steps:
       - name: Gate (is the live job configured?)
         id: gate
+        env:
+          RULETRACE_OPENAI_API_KEY: ${{ secrets.RULETRACE_OPENAI_API_KEY }}
         run: |
           configured=false
           if [ -z "${RULETRACE_OPENAI_API_KEY:-}" ]; then
@@ -404,6 +405,8 @@ jobs:
       - name: Write the configuration (mode 600, credential by name only)
         if: steps.gate.outputs.configured == 'true'
         run: |
+          # Bracket ranges follow the locale collation, so pin the ASCII order.
+          export LC_ALL=C
           # The model text comes from a variable. Refuse anything outside a conservative charset.
           # A bash regex matches the whole value, so an embedded line feed is refused too.
           pattern='^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$'
@@ -442,9 +445,13 @@ jobs:
           done
       - name: Model catalogue (authenticated GET, no document text)
         if: steps.gate.outputs.configured == 'true'
+        env:
+          RULETRACE_OPENAI_API_KEY: ${{ secrets.RULETRACE_OPENAI_API_KEY }}
         run: target/debug/ruletrace-ai models --config "$RUNNER_TEMP/live-openai/models.toml"
       - name: Live propose over the synthetic stand-in document (manual run only)
         if: steps.gate.outputs.configured == 'true' && github.event_name == 'workflow_dispatch' && inputs.propose == true
+        env:
+          RULETRACE_OPENAI_API_KEY: ${{ secrets.RULETRACE_OPENAI_API_KEY }}
         run: |
           dir="$RUNNER_TEMP/live-openai"
           bin="$PWD/target/debug"
