@@ -578,3 +578,12 @@ Deviations and limits:
 Two authoritative goldens changed in the UD-37 work: the `protocol` member of the Transmission_Log lines in `demo/stand-in-ai/golden/artifacts/transmission.log.jsonl` (Req 28.8), and the `description` members of `tests/fixtures/proposal-schema/proposal-schema-v2.json` (see `PROVENANCE.md` there).
 
 Both changes were approved by the orchestrator under the user's standing instruction to take decisions during the user's break. The user has not confirmed them yet. User confirmation is pending. The commit texts that say "user pre-approved" for the transmission log golden overstate this: the user gave a standing instruction, not a decision on this diff. Until the user confirms, both goldens count as provisionally approved.
+
+## UD-37 implementation evidence (run 43799230103, commit a2ce236, 2026-11-16)
+
+- CI: all 22 jobs succeeded on ubuntu-24.04, windows-2022 and macos-15, including the Meta stub tests of `rt-ai-responses` and `rt-ai-tool` on loopback. The first run of this series (43797922991) failed on Windows only, in the `network_guard` scan (backslash paths); fixed in a2ce236.
+- Independent reviews: waves 1 to 5 under `docs/reviews/*ud37*`. Wave 3, 4 and 5 returned NEEDS_CHANGES; each finding was fixed or recorded as deferred (tasks 10.1, 10.5). The last fix (loopback endpoint with fragment or padded port, commit 8dcd733) had no further independent review beyond a property test of 512 cases.
+- Marked complete: 10.1, 10.2, 10.3, 10.4, 10.10, 10.11, 10.12, 10.13, 10.14, 10.16.
+- Still open: 10.5 (the `live-openai` job needs the user's secret name), 10.15 (a few mutants and the live re-read of Meta limits), 10.17 (user review gate), 10.6, 10.7, 10.8 (user-run), 10.9.
+- Incident: during wiring, one test run made a single real HTTPS request to api.openai.com with a fake test credential and the synthetic clause "Alpha beta." (no real secret or document text). Tests were fixed and a runtime guard plus a source scan now prevent any test from reaching a non-loopback host.
+- Golden changes (approved by the orchestrator under the user's standing instruction, user confirmation pending): the stored batches of the `ai` demo (version 2), the Transmission_Log `protocol` member, and the schema golden (descriptions only).
