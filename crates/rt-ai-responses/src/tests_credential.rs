@@ -31,6 +31,23 @@ fn unset_and_empty_are_missing() {
 }
 
 #[test]
+fn values_a_header_cannot_carry_are_invalid_and_visible_ascii_is_kept() {
+    for bad in [
+        "ab\n", "a\r\nb", "a b", "a\tb", "ab\u{7f}", "ab\u{e9}", " ab",
+    ] {
+        let env = Map(BTreeMap::from([("K", bad)]));
+        assert_eq!(
+            Credential::from_env("K", &env).unwrap_err(),
+            CredentialError::Invalid,
+            "{bad:?}"
+        );
+    }
+    let edge = "!~Az09-_.=+/";
+    let env = Map(BTreeMap::from([("K", edge)]));
+    assert_eq!(Credential::from_env("K", &env).unwrap().expose(), edge);
+}
+
+#[test]
 fn debug_prints_no_value() {
     let c = Credential::new("canary-value-123".to_owned()).unwrap();
     let shown = format!("{c:?} {:#?}", Some(&c));

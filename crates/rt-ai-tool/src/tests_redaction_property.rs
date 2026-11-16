@@ -282,9 +282,29 @@ fn check_debug(value: &str) -> Result<(), TestCaseError> {
     prop_assert_eq!(format!("{credential:#?}"), "Credential([REDACTED])");
     prop_assert_eq!(format!("{redactor:?}"), "Redactor([REDACTED])");
     let env = MapEnv::new(&[("PROVIDER_CREDENTIAL", value)]);
-    let authorized = run(BASE, &env).unwrap();
     let debug_forms = format!("{value:?}");
-    for shown in [format!("{authorized:?}"), format!("{authorized:#?}")] {
+    let header_safe = value.bytes().all(|b| b.is_ascii_graphic());
+    // A value that no HTTP header can carry is refused (review wave 3,
+    // issue 3), and the refusal must not show it either. The marker is only
+    // expected from a credential that was accepted.
+    let (shown_forms, marker) = match run(BASE, &env) {
+        Ok(authorized) if header_safe => (
+            [format!("{authorized:?}"), format!("{authorized:#?}")],
+            true,
+        ),
+        Err(found) if !header_safe => {
+            prop_assert_eq!(found.len(), 1);
+            prop_assert_eq!(found[0].code(), Code::AiCredentialMissing);
+            ([format!("{found:?}"), format!("{found:#?}")], false)
+        }
+        other => {
+            return Err(TestCaseError::fail(format!(
+                "header_safe {header_safe} but the run gave ok = {}",
+                other.is_ok()
+            )))
+        }
+    };
+    for shown in shown_forms {
         for needle in [
             value,
             &json_form(value),
@@ -293,7 +313,9 @@ fn check_debug(value: &str) -> Result<(), TestCaseError> {
         ] {
             prop_assert!(!shown.contains(needle), "{shown}");
         }
-        prop_assert!(shown.contains("[REDACTED]"));
+        if marker {
+            prop_assert!(shown.contains("[REDACTED]"));
+        }
     }
     Ok(())
 }

@@ -24,6 +24,9 @@ impl EnvReader for ProcessEnv {
 pub enum CredentialError {
     /// The variable is unset, not valid UTF-8, or empty.
     Missing,
+    /// The value holds a character that cannot be sent in an HTTP header
+    /// value: anything but visible ASCII.
+    Invalid,
 }
 
 /// A non-empty credential value. `Debug` prints `[REDACTED]` and there is no
@@ -41,10 +44,18 @@ impl Credential {
     ///
     /// # Errors
     /// [`CredentialError::Missing`] when it is unset or empty.
+    /// [`CredentialError::Invalid`] when it holds anything but visible ASCII,
+    /// which includes a trailing newline.
     pub fn from_env(name: &str, env: &dyn EnvReader) -> Result<Self, CredentialError> {
-        env.get(name)
+        let credential = env
+            .get(name)
             .and_then(Self::new)
-            .ok_or(CredentialError::Missing)
+            .ok_or(CredentialError::Missing)?;
+        if credential.0.bytes().all(|b| b.is_ascii_graphic()) {
+            Ok(credential)
+        } else {
+            Err(CredentialError::Invalid)
+        }
     }
 
     /// The value, for the authorization header and for building a redactor

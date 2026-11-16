@@ -5,13 +5,15 @@ use rt_foundation::{Code, Diagnostic, Location};
 
 // The credential type and the environment read live in the integration
 // crate (Req 28.5). The tool only maps a missing value to a Diagnostic.
+use rt_ai_responses::CredentialError;
 pub use rt_ai_responses::{Credential, EnvReader, ProcessEnv};
 
 /// Reads the one variable that the configuration names.
 ///
 /// # Errors
 /// `RT-AI-0007` at the `credential_env_var` field when the variable is unset
-/// or empty. The Diagnostic holds no value.
+/// or empty, and also when the value cannot be sent in an HTTP header. The
+/// Diagnostic never holds the value.
 pub(crate) fn read_credential(
     config: &AiConfig,
     env: &dyn EnvReader,
@@ -30,5 +32,12 @@ pub(crate) fn read_credential(
     let Some(name) = config.credential_env_var.as_deref() else {
         return Err(missing("not named"));
     };
-    Credential::from_env(name, env).map_err(|_| missing("unset or empty"))
+    Credential::from_env(name, env).map_err(|e| match e {
+        CredentialError::Missing => missing("unset or empty"),
+        CredentialError::Invalid => Diagnostic::new(
+            Code::AiCredentialMissing,
+            "the credential environment variable holds a value that cannot be sent in an HTTP header (visible ASCII only, no spaces or line breaks)".to_string(),
+            at.clone(),
+        ),
+    })
 }

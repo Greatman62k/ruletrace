@@ -616,7 +616,7 @@ fn missing_consent_stops_before_any_connection() {
 fn a_credential_inside_the_clause_text_is_rt_ai_0308_and_nothing_is_sent() {
     let stub = Stub::start(vec![success("")]);
     let rig = Rig::new("e2e-scan", &stub.endpoint(), &DEFAULT);
-    let env = MapEnv::new(&[("MODEL_API_KEY", "Alpha beta.")]);
+    let env = MapEnv::new(&[("MODEL_API_KEY", "Alpha")]);
     let ran = run_providers(
         &rig.fixture.consented(),
         &env,
@@ -743,6 +743,66 @@ fn a_missing_credential_is_rt_ai_0007_before_any_connection() {
     assert_eq!(exit(ran.code), 2, "{}", ran.stderr);
     assert_eq!(errors(&ran), ["RT-AI-0007"], "{}", ran.stderr);
     assert_eq!(stub.connections(), 0);
+    drop(stub.finish());
+}
+
+// Review wave 3, issue 3: a value that an HTTP header cannot carry is refused
+// at the credential stage, before the consent log and any connection, and the
+// message never echoes it.
+#[test]
+fn a_header_unsafe_credential_is_rt_ai_0007_before_any_connection() {
+    let cases = [
+        ("trailing newline", format!("{CANARY}\n")),
+        (
+            "carriage return and line feed",
+            format!("{CANARY}\r\nX-Evil: 1"),
+        ),
+        ("inner space", format!("{CANARY} tail")),
+        ("tab", format!("{CANARY}\tx")),
+        ("delete character", format!("{CANARY}\u{7f}")),
+        ("non-ascii", format!("{CANARY}\u{e9}")),
+        ("zero width space", format!("{CANARY}\u{200b}")),
+    ];
+    for (name, value) in cases {
+        let stub = Stub::start(vec![success("")]);
+        let rig = Rig::new("e2e-bad-credential", &stub.endpoint(), &DEFAULT);
+        let env = MapEnv::new(&[("MODEL_API_KEY", value.as_str())]);
+        let before = rig.fixture.files();
+        let ran = run_providers(
+            &rig.fixture.consented(),
+            &env,
+            &Stubbed(rig.waits.clone()),
+            &StdFs,
+        );
+        assert_eq!(exit(ran.code), 2, "{name}: {}", ran.stderr);
+        assert_eq!(errors(&ran), ["RT-AI-0007"], "{name}: {}", ran.stderr);
+        assert!(
+            ran.stderr.contains("cannot be sent in an HTTP header"),
+            "{name}: {}",
+            ran.stderr
+        );
+        rig.assert_no_canary(&ran);
+        assert_eq!(rig.fixture.files(), before, "{name}: no file written");
+        assert!(
+            !rig.fixture.path("work/tx.jsonl").exists(),
+            "{name}: no consent log entry"
+        );
+        assert_eq!(stub.connections(), 0, "{name}");
+        drop(stub.finish());
+    }
+}
+
+// A visible ASCII value is still accepted (the canary itself).
+#[test]
+fn a_visible_ascii_credential_is_not_refused_by_the_header_check() {
+    let stub = Stub::start(vec![success("")]);
+    let rig = Rig::new("e2e-ok-credential", &stub.endpoint(), &DEFAULT);
+    let ran = rig.run();
+    assert!(
+        !errors(&ran).contains(&"RT-AI-0007".to_string()),
+        "{}",
+        ran.stderr
+    );
     drop(stub.finish());
 }
 
