@@ -346,7 +346,11 @@ pub(crate) fn transient_code(failure: ProviderFailure) -> Code {
     match failure {
         ProviderFailure::Timeout => Code::AiProviderTimeout,
         ProviderFailure::RateLimited { .. } => Code::AiProviderRateLimited,
-        _ => Code::AiProviderUnavailable,
+        ProviderFailure::Unavailable
+        | ProviderFailure::GatewayTimeout
+        | ProviderFailure::AuthFailed
+        | ProviderFailure::TlsFailed
+        | ProviderFailure::Other { .. } => Code::AiProviderUnavailable,
     }
 }
 
@@ -366,7 +370,11 @@ fn final_code(failure: ProviderFailure) -> Code {
     match failure {
         ProviderFailure::AuthFailed => Code::AiProviderAuthFailed,
         ProviderFailure::TlsFailed => Code::AiProviderTlsFailed,
-        _ => Code::AiProviderError,
+        ProviderFailure::Unavailable
+        | ProviderFailure::Timeout
+        | ProviderFailure::RateLimited { .. }
+        | ProviderFailure::GatewayTimeout
+        | ProviderFailure::Other { .. } => Code::AiProviderError,
     }
 }
 
