@@ -1,8 +1,6 @@
 //! Endpoint URL checks (Req 28.6, 28.18). A small strict parser: only the
 //! scheme and the host matter here, and anything unusual is rejected.
 
-use std::net::{Ipv4Addr, Ipv6Addr};
-
 /// The parts of an endpoint that the checks and the log need.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct ParsedEndpoint {
@@ -74,11 +72,10 @@ pub(crate) fn parse(raw: &str) -> Option<ParsedEndpoint> {
     })
 }
 
-/// True for `localhost`, 127.0.0.0/8 and `::1`.
+/// True for the loopback hosts of Req 28.6. The definition is the
+/// adapter's, so a host that validation accepts also builds an adapter.
 pub(crate) fn is_loopback(host: &str) -> bool {
-    host == "localhost"
-        || host.parse::<Ipv4Addr>().is_ok_and(|a| a.is_loopback())
-        || host.parse::<Ipv6Addr>().is_ok_and(|a| a.is_loopback())
+    rt_ai_responses::is_loopback_host(host)
 }
 
 /// https anywhere, or http to a loopback host.

@@ -76,6 +76,8 @@ mod tests_dir_sync_skip;
 #[cfg(test)]
 mod tests_e2e_models;
 #[cfg(test)]
+mod tests_endpoint_agreement;
+#[cfg(test)]
 mod tests_e2e_responses;
 #[cfg(test)]
 mod tests_exit_order_property;

@@ -32,7 +32,7 @@ fn models_args(fixture: &Fixture, extra: &[&str]) -> Vec<OsString> {
     args
 }
 
-fn run_models(rig: &Rig, extra: &[&str]) -> Ran {
+pub(crate) fn run_models(rig: &Rig, extra: &[&str]) -> Ran {
     let env = MapEnv::new(&[("MODEL_API_KEY", CANARY)]);
     let ran = run_providers(
         &models_args(&rig.fixture, extra),

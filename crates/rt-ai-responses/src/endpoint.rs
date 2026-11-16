@@ -4,6 +4,8 @@
 //! caller can hand it an endpoint that would send the credential over a
 //! clear-text connection to a remote host.
 
+use std::net::{Ipv4Addr, Ipv6Addr};
+
 /// Why a text is not an acceptable endpoint.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EndpointError {
@@ -51,7 +53,7 @@ impl Endpoint {
             return Err(EndpointError::UserInfo);
         }
         let host = host_of(authority).ok_or(EndpointError::Authority)?;
-        if clear_text && !is_loopback(host) {
+        if clear_text && !is_loopback_host(host) {
             return Err(EndpointError::InsecureHost);
         }
         let scheme = if clear_text { "http" } else { "https" };
@@ -121,18 +123,14 @@ fn host_of(authority: &str) -> Option<&str> {
     Some(host)
 }
 
-fn is_loopback(host: &str) -> bool {
-    if host.eq_ignore_ascii_case("localhost") || host == "::1" {
-        return true;
-    }
-    let parts: Vec<&str> = host.split('.').collect();
-    let [first, rest @ ..] = parts.as_slice() else {
-        return false;
-    };
-    let octet = |s: &str| {
-        !s.is_empty() && s.len() <= 3 && s.bytes().all(|b| b.is_ascii_digit()) && {
-            s.parse::<u16>().is_ok_and(|n| n <= 255)
-        }
-    };
-    parts.len() == 4 && *first == "127" && rest.iter().all(|p| octet(p))
+/// The one loopback definition of the tool and the adapter (Req 28.6):
+/// `localhost` in any ASCII case, an address of 127.0.0.0/8 and the IPv6
+/// address `::1`, written in any form that `std` parses to those addresses.
+/// `host` has no brackets. A mapped address such as `::ffff:127.0.0.1`,
+/// `127.1` and a name with a trailing dot are not loopback.
+#[must_use]
+pub fn is_loopback_host(host: &str) -> bool {
+    host.eq_ignore_ascii_case("localhost")
+        || host.parse::<Ipv4Addr>().is_ok_and(|a| a.is_loopback())
+        || host.parse::<Ipv6Addr>().is_ok_and(|a| a.is_loopback())
 }
