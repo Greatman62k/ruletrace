@@ -385,9 +385,8 @@ fn the_recordings_and_their_configurations_hold_no_credential_looking_string() {
     }
 }
 
-// The prompt-3 recording, the live batch and the configuration of prompt-3
-// agree on every identifying member; the configuration names no other
-// script than its own.
+// Each configuration names its own recording script and its own log, and
+// no other script.
 #[test]
 fn each_configuration_names_only_its_own_recording() {
     for (own, other) in [(P2, P3), (P3, P2)] {
