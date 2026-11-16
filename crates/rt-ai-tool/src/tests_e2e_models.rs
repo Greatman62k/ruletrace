@@ -127,6 +127,41 @@ fn control_characters_in_an_identifier_are_escaped_on_one_line() {
     drop(stub.finish());
 }
 
+// Req 35.18: one identifier per line. Expected text is written by hand.
+#[test]
+fn every_line_break_in_an_identifier_is_escaped_before_the_terminator() {
+    let cases: [(&str, &str); 7] = [
+        (r"good\n", "good\\u{a}\n"),
+        (r"good\r", "good\\u{d}\n"),
+        (r"a\r\nb", "a\\u{d}\\u{a}b\n"),
+        (r"a\u2028b", "a\\u{2028}b\n"),
+        (r"a\u2029b", "a\\u{2029}b\n"),
+        (r"a\u0085b", "a\\u{85}b\n"),
+        (r"\n", "\\u{a}\n"),
+    ];
+    for (id, expected) in cases {
+        let body = format!(r#"{{"data":[{{"id":"{id}"}}]}}"#);
+        let stub = Stub::start(vec![json_ok(&body)]);
+        let rig = Rig::new("models-breaks", &stub.endpoint(), &DEFAULT);
+        let ran = run_models(&rig, &[]);
+        assert_eq!(exit(ran.code), 0, "{id}: {}", ran.stderr);
+        assert_eq!(ran.stdout, expected, "{id}");
+        drop(stub.finish());
+    }
+}
+
+#[test]
+fn two_identifiers_one_ending_in_a_line_feed_print_two_lines() {
+    let body = r#"{"data":[{"id":"good\n"},{"id":"good"}]}"#;
+    let stub = Stub::start(vec![json_ok(body)]);
+    let rig = Rig::new("models-pair", &stub.endpoint(), &DEFAULT);
+    let ran = run_models(&rig, &[]);
+    assert_eq!(exit(ran.code), 0, "{}", ran.stderr);
+    // Byte order: "good" sorts before "good\n".
+    assert_eq!(ran.stdout, "good\ngood\\u{a}\n");
+    drop(stub.finish());
+}
+
 #[test]
 fn a_model_that_the_catalogue_lacks_is_not_an_error_and_nothing_is_selected() {
     let stub = Stub::start(vec![json_ok(&catalogue(&["other"]))]);

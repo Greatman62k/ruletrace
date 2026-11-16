@@ -22,6 +22,21 @@ pub(crate) struct Queried {
     pub warnings: Vec<Diagnostic>,
 }
 
+/// Escapes every control character and every Unicode line or paragraph
+/// separator, so that one identifier occupies exactly one output line
+/// (Req 35.18). The caller appends the terminating line feed.
+pub(crate) fn escape_line(id: &str) -> String {
+    let mut out = String::with_capacity(id.len());
+    for c in id.chars() {
+        if c.is_control() || matches!(c, '\u{2028}' | '\u{2029}') {
+            out.push_str(&format!("\\u{{{:x}}}", u32::from(c)));
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
 fn failure_kind(failure: ProviderFailure) -> String {
     match failure {
         ProviderFailure::AuthFailed => "authentication failed".to_owned(),

@@ -17,7 +17,7 @@ use crate::hosted::responses_adapter;
 use crate::inputs::{
     input_id, input_location, load_inputs, load_script, read_bounded, Inputs, MAX_CONFIG_BYTES,
 };
-use crate::models::{no_catalogue, query_catalogue};
+use crate::models::{escape_line, no_catalogue, query_catalogue};
 use crate::out::Out;
 use crate::perm::{file_mode, permission_warning};
 use crate::plan::{build_plan, PlanInput, RunPlan};
@@ -33,7 +33,7 @@ use rt_ai_adapter::{
     AdapterInfo, AiAdapter, AttemptReport, ModelCatalog, MonotonicClock, ProviderRequest,
 };
 use rt_ai_mock::ReplayProvider;
-use rt_foundation::{escape_controls, Code, Diagnostic, DocumentId, ExitCode, Severity};
+use rt_foundation::{Code, Diagnostic, DocumentId, ExitCode, Severity};
 use rt_ir::Identity;
 use std::collections::BTreeSet;
 use std::ffi::OsString;
@@ -557,7 +557,7 @@ fn models<O: Write, E: Write>(
             for id in &ids {
                 report.write_failed |= report
                     .out
-                    .stdout(&format!("{}\n", escape_controls(id)))
+                    .stdout(&format!("{}\n", escape_line(id)))
                     .is_err();
             }
             ExitCode::Success
