@@ -22,7 +22,7 @@ pub struct ExportArgs {
 }
 
 /// The usage line of the command.
-pub const USAGE: &str = "usage: rt-xtask export-script --store <dir> --provider <kind> [--provider-id <id>] --model <id> --captured \"<text>\" --out <file>";
+pub const USAGE: &str = "usage: rt-xtask [--root <dir>] export-script [--root <dir>] --store <dir> --provider <kind> [--provider-id <id>] --model <id> --captured \"<text>\" --out <file>";
 
 /// Parses the arguments that follow `export-script`.
 ///
@@ -30,6 +30,7 @@ pub const USAGE: &str = "usage: rt-xtask export-script --store <dir> --provider 
 /// A message for an unknown, repeated or missing option or a missing value.
 pub fn parse_args(args: &[String]) -> Result<ExportArgs, String> {
     let names = [
+        "--root",
         "--store",
         "--provider",
         "--provider-id",
@@ -46,6 +47,8 @@ pub fn parse_args(args: &[String]) -> Result<ExportArgs, String> {
         let value = iter
             .next()
             .ok_or_else(|| format!("{name} needs a value\n{USAGE}"))?;
+        // `--root` is part of the common usage line. Every path of this
+        // command is explicit, so the value is not used.
         if given.insert(name, value.clone()).is_some() {
             return Err(format!("{name} is given twice\n{USAGE}"));
         }

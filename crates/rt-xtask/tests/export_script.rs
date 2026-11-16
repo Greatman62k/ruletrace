@@ -246,3 +246,72 @@ fn every_required_option_is_checked_and_an_unknown_one_is_refused() {
     twice.extend(["--model".to_owned(), "x".to_owned()]);
     assert!(parse_args(&twice).unwrap_err().contains("given twice"));
 }
+
+// The usage line lists `[--root <dir>]` before the subcommand, and the
+// export command takes every path explicitly, so `--root` is accepted on
+// either side of `export-script` and changes nothing.
+fn run_binary(dir: &Dir, order: &[&str]) -> std::process::Output {
+    let out = dir.0.join("script.json");
+    let store = dir.0.join("store");
+    let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_rt-xtask"));
+    for part in order {
+        match *part {
+            "ROOT" => command.args(["--root", repo().to_str().unwrap()]),
+            "CMD" => command.arg("export-script"),
+            "ARGS" => command.args([
+                "--store",
+                store.to_str().unwrap(),
+                "--provider",
+                "openai-responses",
+                "--provider-id",
+                "meta",
+                "--model",
+                "muse-spark-1.3",
+                "--captured",
+                CAPTURED,
+                "--out",
+                out.to_str().unwrap(),
+            ]),
+            other => panic!("{other}"),
+        };
+    }
+    command.output().unwrap()
+}
+
+#[test]
+fn root_is_accepted_before_or_after_the_export_subcommand() {
+    let committed = std::fs::read(
+        repo().join("demo/stand-in-ai/provider/recorded-meta-muse-spark-1.3-prompt-2.json"),
+    )
+    .unwrap();
+    let orders: [&[&str]; 3] = [
+        &["CMD", "ARGS"],
+        &["ROOT", "CMD", "ARGS"],
+        &["CMD", "ROOT", "ARGS"],
+    ];
+    for order in orders {
+        let dir = Dir::new("root-order");
+        dir.batch(&format!("{LIVE_ID}.json"), &live_batch());
+        let ran = run_binary(&dir, order);
+        let stderr = String::from_utf8_lossy(&ran.stderr);
+        assert_eq!(ran.status.code(), Some(0), "{order:?}: {stderr}");
+        assert_eq!(
+            std::fs::read(dir.0.join("script.json")).unwrap(),
+            committed,
+            "{order:?}"
+        );
+    }
+}
+
+#[test]
+fn root_without_a_value_after_export_script_is_refused() {
+    let dir = Dir::new("root-missing");
+    dir.batch(&format!("{LIVE_ID}.json"), &live_batch());
+    let ran = std::process::Command::new(env!("CARGO_BIN_EXE_rt-xtask"))
+        .args(["export-script", "--root"])
+        .output()
+        .unwrap();
+    assert_eq!(ran.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&ran.stderr);
+    assert!(stderr.contains("--root needs a value"), "{stderr}");
+}
