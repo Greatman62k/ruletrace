@@ -519,3 +519,163 @@ fn a_504_ends_the_retry_sequence_after_one_attempt_and_other_5xx_do_not() {
         }
     }
 }
+
+// Req 35.14, task 10.15: an error response is classified from its status
+// alone. The body and its headers (content type, length) never change the
+// mapping, so no shape of 401 or 403 body can make the adapter retry, read,
+// or branch on it. Expected values are written by hand.
+type Headers = Vec<(&'static str, &'static str)>;
+
+fn error_shapes() -> Vec<(&'static str, Headers, Vec<u8>)> {
+    let json = ("Content-Type", "application/json");
+    vec![
+        (
+            "invalid_api_key",
+            vec![json],
+            br#"{"error":{"message":"m","type":"invalid_api_key","param":null,"code":null}}"#
+                .to_vec(),
+        ),
+        (
+            "documented 401 shape (error-handling page, read 2026-11-16)",
+            vec![json],
+            br#"{"error":{"message":"Unauthorized","type":"authentication_error","param":null,"code":"invalid_api_key"}}"#
+                .to_vec(),
+        ),
+        (
+            "documented 402 shape sent with a 401 status",
+            vec![json],
+            br#"{"error":{"message":"Billing account issue.","type":"billing_error","param":null,"code":"billing_not_configured"}}"#
+                .to_vec(),
+        ),
+        (
+            "changed type",
+            vec![json],
+            br#"{"error":{"message":"m","type":"zz_new_type","param":null,"code":"x"}}"#.to_vec(),
+        ),
+        (
+            "type that names a rate limit",
+            vec![json],
+            br#"{"error":{"message":"m","type":"rate_limit","code":"service_overloaded"}}"#
+                .to_vec(),
+        ),
+        ("empty body", vec![json], Vec::new()),
+        ("empty body, no content type", vec![], Vec::new()),
+        (
+            "non-JSON text",
+            vec![("Content-Type", "text/plain")],
+            b"unauthorized".to_vec(),
+        ),
+        (
+            "invalid UTF-8 bytes",
+            vec![json],
+            vec![0xff, 0xfe, 0x00, 0x80, b'{'],
+        ),
+        (
+            "truncated JSON",
+            vec![json],
+            br#"{"error":{"type":"invalid_api"#.to_vec(),
+        ),
+        (
+            "HTML with a different content type",
+            vec![("Content-Type", "text/html; charset=utf-8")],
+            b"<html><body>401</body></html>".to_vec(),
+        ),
+        (
+            "JSON under a different content type",
+            vec![("Content-Type", "application/xml")],
+            br#"{"error":{"type":"invalid_api_key"}}"#.to_vec(),
+        ),
+        (
+            "no content type",
+            vec![],
+            br#"{"error":{"type":"invalid_api_key"}}"#.to_vec(),
+        ),
+        (
+            "the credential echoed in the body",
+            vec![json],
+            format!(r#"{{"error":{{"message":"bad key {CANARY}"}}}}"#).into_bytes(),
+        ),
+    ]
+}
+
+#[test]
+fn a_401_or_403_is_auth_failed_with_one_attempt_for_every_body_shape() {
+    for status in ["401 Unauthorized", "403 Forbidden"] {
+        for (label, headers, body) in error_shapes() {
+            let case = format!("{status}, {label}");
+            let (report, got) = run(vec![http(status, &headers, &body)], None, 1 << 20);
+            let failure = failure_of(&report);
+            assert_eq!(failure, F::AuthFailed, "{case}");
+            assert_eq!(got.len(), 1, "{case}: exactly one request on the wire");
+            let step = next_step(
+                &RetryPolicy::default(),
+                &[AttemptRecord::Failure(failure)],
+                report.elapsed,
+            );
+            assert_eq!(
+                step,
+                RetryStep::Stop(rt_ai_adapter::RetryStop::NonTransient(F::AuthFailed)),
+                "{case}: no retry"
+            );
+            assert_eq!(report.detail, None, "{case}");
+            assert!(!format!("{report:?}").contains(CANARY), "{case}");
+        }
+    }
+}
+
+// No second connection is made even though the stub would answer a retry
+// with a success: a retried 401 would be visible as a completed response.
+#[test]
+fn a_401_is_not_retried_even_when_a_success_is_waiting() {
+    let stub = Stub::start(vec![
+        http("401 Unauthorized", &[], b""),
+        json_ok(&message_envelope("{}", "")),
+    ]);
+    let mut a = adapter(&stub.endpoint());
+    let report = attempt(&mut a, &request(None, 1 << 20), T);
+    assert_eq!(failure_of(&report), F::AuthFailed);
+    assert_eq!(stub.connections(), 1);
+    stub.finish();
+}
+
+// The body of an error is not consumed. The head declares a body of 1 MiB,
+// the server sends a few bytes of it and then stalls for 3 s. A transport that
+// read the body would block until the stall ends (the attempt timeout is
+// 5 s), so a result well inside the stall shows the body was not awaited.
+#[test]
+fn a_stalled_error_body_is_not_waited_for() {
+    for status in ["401 Unauthorized", "403 Forbidden"] {
+        let head = format!(
+            "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: 1048576\r\nConnection: close\r\n\r\n{{\"error\":{{\"ty"
+        );
+        let stall = Duration::from_secs(3);
+        let (report, got) = run(
+            vec![Reply::Slow {
+                head_and_part: head.into_bytes(),
+                pause: stall,
+            }],
+            None,
+            1 << 20,
+        );
+        assert_eq!(failure_of(&report), F::AuthFailed, "{status}");
+        assert_eq!(got.len(), 1, "{status}");
+        assert!(
+            report.elapsed < Duration::from_millis(1500),
+            "{status}: took {:?}, the stalled body was awaited",
+            report.elapsed
+        );
+    }
+}
+
+// An error body far larger than the success limit gives the same result,
+// whatever the limit: the body is neither read nor measured.
+#[test]
+fn an_oversize_error_body_gives_the_same_failure_as_an_empty_one() {
+    let body = vec![b'x'; 4 << 20];
+    for limit in [1u32 << 20, 16] {
+        let (report, got) = run(vec![http("401 Unauthorized", &[], &body)], None, limit);
+        assert_eq!(failure_of(&report), F::AuthFailed, "limit {limit}");
+        assert_eq!(got.len(), 1, "limit {limit}");
+        assert_eq!(report.detail, None, "limit {limit}");
+    }
+}
