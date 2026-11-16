@@ -78,6 +78,8 @@ mod tests_e2e_models;
 #[cfg(test)]
 mod tests_e2e_responses;
 #[cfg(test)]
+mod tests_network_guard;
+#[cfg(test)]
 mod tests_exit_order_property;
 #[cfg(test)]
 mod tests_flat;

@@ -21,6 +21,18 @@ fn internal(config: &AiConfig, what: &str) -> Diagnostic {
     )
 }
 
+// Test builds of this crate must never open a connection to a real host.
+// Every hosted test adapter is built here, so this is the one choke point.
+#[cfg(test)]
+fn assert_loopback_in_tests(url: &str) {
+    let loopback = crate::endpoint::parse(url)
+        .is_some_and(|parsed| crate::endpoint::is_loopback(&parsed.host));
+    assert!(
+        loopback,
+        "a test built a provider adapter for a non-loopback endpoint; tests may use loopback stubs only"
+    );
+}
+
 /// Builds the Responses adapter for a validated hosted configuration.
 ///
 /// # Errors
@@ -34,6 +46,8 @@ pub fn responses_adapter(
         .endpoint
         .as_ref()
         .ok_or_else(|| internal(config, "no endpoint"))?;
+    #[cfg(test)]
+    assert_loopback_in_tests(&endpoint.url);
     let provider =
         ProviderId::new(config.profile.id).map_err(|_| internal(config, "provider identifier"))?;
     let schema = proposal_schema_bytes(Ud32Option::CONFIRMED)
