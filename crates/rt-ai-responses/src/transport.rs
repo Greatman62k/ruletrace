@@ -32,7 +32,22 @@ pub(crate) struct Reply {
     pub body: Vec<u8>,
 }
 
+// Unit tests of this crate must never open a connection to a real host.
+// Integration tests link the library without `cfg(test)`, so they rely on
+// the source scan in `rt-ai-tool/tests/network_guard.rs`.
+#[cfg(test)]
+pub(crate) fn assert_loopback_in_tests(url: &str) {
+    let loopback = crate::endpoint::Endpoint::parse(url)
+        .is_ok_and(|endpoint| crate::endpoint::is_loopback_host(endpoint.host()));
+    assert!(
+        loopback,
+        "a test sent to a non-loopback endpoint; tests may use loopback stubs only"
+    );
+}
+
 fn agent(call: &Call<'_>) -> Agent {
+    #[cfg(test)]
+    assert_loopback_in_tests(call.url);
     let config = Config::builder()
         .timeout_global(Some(call.timeout))
         .http_status_as_error(false)
@@ -124,4 +139,41 @@ fn classify_io(error: &std::io::Error) -> ProviderFailure {
         }
     }
     ProviderFailure::Unavailable
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{assert_loopback_in_tests, get, Call};
+    use std::time::Duration;
+
+    #[test]
+    fn loopback_urls_pass_the_guard() {
+        for url in [
+            "http://127.0.0.1:9/v1",
+            "http://[::1]:9",
+            "https://localhost/x",
+        ] {
+            assert_loopback_in_tests(url);
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "non-loopback endpoint")]
+    fn a_real_host_panics_before_any_connection() {
+        let call = Call {
+            url: "https://api.openai.com/v1/models",
+            clear_text: false,
+            authorization: "Bearer x",
+            body: b"",
+            timeout: Duration::from_millis(1),
+            read_limit: 1,
+        };
+        let _ = get(&call);
+    }
+
+    #[test]
+    #[should_panic(expected = "non-loopback endpoint")]
+    fn an_ip_literal_that_is_not_loopback_panics() {
+        assert_loopback_in_tests("https://[2001:db8::1]/v1");
+    }
 }

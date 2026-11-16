@@ -51,7 +51,7 @@ const ALLOWED: [Allowed; 5] = [
 ];
 
 /// Names that give a test source a way to reach a provider.
-const REACHING: [&str; 7] = [
+const REACHING: [&str; 10] = [
     "BuiltInProviders",
     "responses_adapter",
     "ResponsesAdapter",
@@ -59,6 +59,9 @@ const REACHING: [&str; 7] = [
     "CARGO_BIN_EXE",
     "Command::new",
     "list_models(",
+    "rt_ai_tool::run",
+    "crate::run(",
+    "run_with(",
 ];
 
 /// Integration test files build real adapters by construction; unit test
@@ -89,26 +92,51 @@ fn rust_files(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-/// Hosts of every `https://` literal in `text`, without port, path or
-/// format placeholders.
-fn https_hosts(text: &str) -> Vec<String> {
+/// Hosts of every `https://` and `http://` literal in `text`, without port,
+/// path, brackets or format placeholders. A bracketed host is an IPv6
+/// literal and is read up to the closing bracket.
+fn url_hosts(text: &str) -> Vec<String> {
     let mut hosts = Vec::new();
-    for part in text.split("https://").skip(1) {
-        let end = part
-            .find(|c: char| !(c.is_ascii_alphanumeric() || matches!(c, '.' | '-')))
-            .unwrap_or(part.len());
-        if end > 0 {
-            hosts.push(part[..end].to_ascii_lowercase());
+    for scheme in ["https://", "http://"] {
+        for part in text.split(scheme).skip(1) {
+            let host = match part.strip_prefix('[') {
+                Some(inner) => inner.split_once(']').map_or("", |(host, _)| host),
+                None => {
+                    let end = part
+                        .find(|c: char| !(c.is_ascii_alphanumeric() || matches!(c, '.' | '-')))
+                        .unwrap_or(part.len());
+                    &part[..end]
+                }
+            };
+            if !host.is_empty() {
+                hosts.push(host.to_ascii_lowercase());
+            }
         }
     }
     hosts
 }
 
+/// `localhost`, 127.0.0.0/8 and `::1`. Every other literal, including a
+/// documentation or private IP address, counts as a real host.
 fn is_loopback(host: &str) -> bool {
     host == "localhost"
         || host
             .parse::<std::net::Ipv4Addr>()
             .is_ok_and(|a| a.is_loopback())
+        || host
+            .parse::<std::net::Ipv6Addr>()
+            .is_ok_and(|a| a.is_loopback())
+}
+
+/// The unlisted non-loopback hosts that `text` of the file `relative`
+/// names.
+fn findings_in(relative: &str, text: &str) -> Vec<String> {
+    url_hosts(text)
+        .into_iter()
+        .filter(|host| !is_loopback(host))
+        .filter(|host| !ALLOWED.iter().any(|a| a.file == relative && a.host == host))
+        .map(|host| format!("{relative}: {host}"))
+        .collect()
 }
 
 fn scanned_files(root: &Path) -> Vec<PathBuf> {
@@ -156,12 +184,7 @@ fn test_sources_name_only_loopback_hosts_apart_from_the_listed_literals() {
         if !reaches_a_provider(file, &text) {
             continue;
         }
-        for host in https_hosts(&text) {
-            let listed = ALLOWED.iter().any(|a| a.file == relative && a.host == host);
-            if !is_loopback(&host) && !listed {
-                findings.push(format!("{relative}: https://{host}"));
-            }
-        }
+        findings.extend(findings_in(&relative, &text));
     }
     findings.sort();
     findings.dedup();
@@ -179,7 +202,7 @@ fn every_listed_literal_still_occurs_and_has_a_reason() {
         assert!(!allowed.reason.is_empty());
         let text = std::fs::read_to_string(root.join(allowed.file)).unwrap();
         assert!(
-            https_hosts(&text).iter().any(|h| h == allowed.host),
+            url_hosts(&text).iter().any(|h| h == allowed.host),
             "stale allowance {} {}",
             allowed.file,
             allowed.host
@@ -218,11 +241,48 @@ fn the_scan_covers_the_files_that_reach_a_provider() {
 fn the_scan_detects_a_real_host_and_ignores_loopback() {
     let text = r#"a "https://api.openai.com/v1" b "https://127.0.0.1:{}" c "https://LOCALHOST""#;
     assert_eq!(
-        https_hosts(text),
+        url_hosts(text),
         ["api.openai.com", "127.0.0.1", "localhost"]
     );
     assert!(!is_loopback("api.openai.com"));
     assert!(is_loopback("127.0.0.1") && is_loopback("localhost"));
     assert!(!is_loopback("127.0.0.1.evil.example"));
     assert!(!is_loopback("localhost.evil.example"));
+}
+
+// Negative fixture: the probes of the wave 4 review must be found, and the
+// loopback spellings next to them must not be.
+#[test]
+fn the_scan_finds_ip_literals_that_are_not_loopback() {
+    let probes = [
+        ("https://[2001:db8::1]", "2001:db8::1"),
+        ("https://[2001:db8::1]:8443/v1", "2001:db8::1"),
+        ("http://192.0.2.1", "192.0.2.1"),
+        ("https://203.0.113.9:443", "203.0.113.9"),
+        ("http://10.0.0.1/x", "10.0.0.1"),
+        ("http://[::ffff:127.0.0.1]", "::ffff:127.0.0.1"),
+        ("http://[::]", "::"),
+        ("http://0.0.0.0", "0.0.0.0"),
+    ];
+    for (literal, host) in probes {
+        let text = format!(r#"let url = "{literal}";"#);
+        assert_eq!(
+            findings_in("probe.rs", &text),
+            [format!("probe.rs: {host}")],
+            "{literal}"
+        );
+    }
+    for literal in [
+        "https://[::1]:9",
+        "http://[0:0:0:0:0:0:0:1]",
+        "http://127.0.0.2",
+        "https://LOCALHOST",
+    ] {
+        let text = format!(r#"let url = "{literal}";"#);
+        assert_eq!(
+            findings_in("probe.rs", &text),
+            Vec::<String>::new(),
+            "{literal}"
+        );
+    }
 }
