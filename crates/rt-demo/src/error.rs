@@ -29,6 +29,20 @@ pub enum Refusal {
         /// The protected location it resolves to or below.
         protected: String,
     },
+    /// An output location cannot be resolved, for example a dangling or
+    /// looping symbolic link, so it cannot be shown to lie outside the
+    /// protected directories.
+    UnresolvablePath {
+        /// The option or configuration field that names the location.
+        option: String,
+        /// The location as written.
+        path: String,
+        /// The operating system message.
+        problem: String,
+    },
+    /// The configuration field still holds the placeholder model of the
+    /// example configuration.
+    PlaceholderModel(String),
     /// An environment variable other than the configured credential variable.
     EnvironmentNotAllowed(String),
 }
@@ -55,6 +69,15 @@ impl fmt::Display for Refusal {
             } => write!(
                 f,
                 "{option} '{path}' lies under '{protected}', which a live run never writes"
+            ),
+            Refusal::UnresolvablePath {
+                option,
+                path,
+                problem,
+            } => write!(f, "{option} '{path}' cannot be resolved: {problem}"),
+            Refusal::PlaceholderModel(field) => write!(
+                f,
+                "field '{field}' is the placeholder REPLACE_WITH_YOUR_MODEL_ID, not a model"
             ),
             Refusal::EnvironmentNotAllowed(n) => write!(
                 f,

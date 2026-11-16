@@ -29,12 +29,13 @@ pub struct Manifest {
 
 impl Manifest {
     /// Whether `ruletrace-ai` may be run for the document. Unknown documents
-    /// are refused.
+    /// are refused. When the manifest lists an id more than once, every entry
+    /// must permit the transmission.
     #[must_use]
     pub fn may_transmit(&self, document_id: &str) -> bool {
-        self.documents
-            .iter()
-            .any(|d| d.id == document_id && d.transmission_permitted)
+        let mut entries = self.documents.iter().filter(|d| d.id == document_id);
+        let listed = entries.clone().next().is_some();
+        listed && entries.all(|d| d.transmission_permitted)
     }
 
     /// Refuses a transmission for a document whose `transmission_permitted` is

@@ -193,6 +193,7 @@ struct Facts {
     mock_replay: bool,
     transmission_log: Option<String>,
     credential_env_var: Option<String>,
+    model: Option<(String, String)>,
 }
 
 fn string_of(table: &Table, key: &str) -> Option<String> {
@@ -214,7 +215,14 @@ fn facts_of(simple: &Simple) -> Facts {
         .keys()
         .chain(simple.tables.values().flat_map(BTreeMap::keys))
         .any(|k| k == "endpoint" || k == "credential_env_var");
+    let model = [
+        (provider_table, "provider.model"),
+        (Some(&simple.top), "model"),
+    ]
+    .into_iter()
+    .find_map(|(t, name)| Some((name.to_owned(), string_of(t?, "model")?)));
     Facts {
+        model,
         mock_replay: protocol.as_deref() == Some("mock-replay") && !has_network_field,
         transmission_log: string_of(&simple.top, "transmission_log"),
         credential_env_var: provider_table.and_then(|t| string_of(t, "credential_env_var")),
@@ -236,6 +244,36 @@ fn read_facts(path: &Path) -> Result<Facts, String> {
         .ok_or_else(|| "the file is outside the subset the guard reads".to_owned())
 }
 
+/// The placeholder model of the OpenAI example configuration. It is not a
+/// model, and a run that carries it would transmit to a provider.
+const PLACEHOLDER_MODEL: &str = "REPLACE_WITH_YOUR_MODEL_ID";
+
+/// Whether `argv0` names `ruletrace-ai` once directories, a trailing `.exe`
+/// and ASCII case are ignored. The runner joins `argv[0]` to the binary
+/// directory, so `./ruletrace-ai` or an absolute path would start the tool.
+fn names_ruletrace_ai(argv0: &str) -> bool {
+    let name = argv0
+        .trim_end_matches(['/', '\\'])
+        .rsplit(['/', '\\'])
+        .next()
+        .unwrap_or_default();
+    let stem = match name.len().checked_sub(4) {
+        Some(at)
+            if name
+                .get(at..)
+                .is_some_and(|e| e.eq_ignore_ascii_case(".exe")) =>
+        {
+            name.get(..at).unwrap_or_default()
+        }
+        _ => name,
+    };
+    stem.eq_ignore_ascii_case("ruletrace-ai")
+}
+
+fn is_ruletrace_ai(step: &Step) -> bool {
+    step.argv.first().is_some_and(|a| names_ruletrace_ai(a))
+}
+
 fn config_path(step: &Step, work_dir: &Path, name: &str) -> PathBuf {
     work_dir.join(&step.cwd).join(name)
 }
@@ -245,7 +283,7 @@ fn config_path(step: &Step, work_dir: &Path, name: &str) -> PathBuf {
 /// `ruletrace-ai` steps. Steps of other executables are offline.
 #[must_use]
 pub fn classify(step: &Step, work_dir: &Path) -> Class {
-    if step.argv.first().map(String::as_str) != Some("ruletrace-ai") {
+    if !is_ruletrace_ai(step) {
         return Class::Offline;
     }
     let offline = parse_ai_args(&step.argv).ok().is_some_and(|args| {
@@ -261,8 +299,10 @@ pub fn classify(step: &Step, work_dir: &Path) -> Class {
 }
 
 /// Resolves a path without requiring it to exist: `..` and symbolic links are
-/// followed component by component, as the operating system would.
-fn resolve(path: &Path) -> PathBuf {
+/// followed component by component, as the operating system would. A
+/// component that exists (a dangling or looping link, for example) but cannot
+/// be canonicalised makes the location unknowable, which is an error.
+fn resolve(path: &Path) -> Result<PathBuf, String> {
     let absolute = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
     let mut current = PathBuf::new();
     for component in absolute.components() {
@@ -274,13 +314,17 @@ fn resolve(path: &Path) -> PathBuf {
             }
             Component::Normal(name) => {
                 current.push(name);
-                if let Ok(real) = fs::canonicalize(&current) {
-                    current = real;
+                match fs::canonicalize(&current) {
+                    Ok(real) => current = real,
+                    Err(e) if fs::symlink_metadata(&current).is_ok() => {
+                        return Err(format!("'{}': {e}", current.display()));
+                    }
+                    Err(_) => {}
                 }
             }
         }
     }
-    current
+    Ok(current)
 }
 
 fn has_golden_component(path: &Path) -> bool {
@@ -288,23 +332,46 @@ fn has_golden_component(path: &Path) -> bool {
         .any(|c| c.as_os_str().eq_ignore_ascii_case("golden"))
 }
 
+/// The part of `path` below `base`, comparing components with ASCII case
+/// folded so the rule holds on case-insensitive file systems.
+fn strip_prefix_folded(path: &Path, base: &Path) -> Option<PathBuf> {
+    let mut rest = path.components();
+    for expected in base.components() {
+        let actual = rest.next()?;
+        if !actual
+            .as_os_str()
+            .eq_ignore_ascii_case(expected.as_os_str())
+        {
+            return None;
+        }
+    }
+    Some(rest.as_path().to_path_buf())
+}
+
 /// The protected location `path` lies at or under, if any.
-fn protected_location(path: &Path, demo_dir: &Path, work_dir: &Path) -> Option<String> {
-    let resolved = resolve(path);
-    let bases = [resolve(demo_dir), resolve(work_dir)];
+fn protected_location(
+    path: &Path,
+    demo_dir: &Path,
+    work_dir: &Path,
+) -> Result<Option<String>, String> {
+    let resolved = resolve(path)?;
+    let bases = [resolve(demo_dir)?, resolve(work_dir)?];
     for base in &bases {
+        let Some(below) = strip_prefix_folded(&resolved, base) else {
+            continue;
+        };
+        let first = below.components().next();
         for name in ["golden", "provider"] {
-            let root = base.join(name);
-            if resolved.starts_with(&root) {
-                return Some(root.display().to_string());
+            if first.is_some_and(|c| c.as_os_str().eq_ignore_ascii_case(name)) {
+                return Ok(Some(base.join(name).display().to_string()));
             }
         }
     }
     let tail = bases
         .iter()
-        .find_map(|b| resolved.strip_prefix(b).ok())
-        .unwrap_or(&resolved);
-    has_golden_component(tail).then(|| "a golden/ directory".to_owned())
+        .find_map(|b| strip_prefix_folded(&resolved, b))
+        .unwrap_or(resolved);
+    Ok(has_golden_component(&tail).then(|| "a golden/ directory".to_owned()))
 }
 
 fn refuse(step: &Step, refusal: Refusal) -> DemoError {
@@ -330,7 +397,7 @@ pub fn authorize_live(
     demo_dir: &Path,
     work_dir: &Path,
 ) -> Result<LiveAuthorization, DemoError> {
-    if step.argv.first().map(String::as_str) != Some("ruletrace-ai") {
+    if !is_ruletrace_ai(step) {
         return Err(refuse(step, Refusal::NotRuletraceAi));
     }
     if classify(step, work_dir) != Class::Live {
@@ -352,6 +419,11 @@ pub fn authorize_live(
     };
     let facts = read_facts(&config_path(step, work_dir, config))
         .map_err(|p| refuse(step, Refusal::UnreadableConfig(p)))?;
+    if let Some((field, value)) = &facts.model {
+        if value == PLACEHOLDER_MODEL {
+            return Err(refuse(step, Refusal::PlaceholderModel(field.clone())));
+        }
+    }
     let [store] = args.store.as_slice() else {
         return Err(refuse(step, Refusal::NoStore));
     };
@@ -368,7 +440,17 @@ pub fn authorize_live(
     ];
     locations.extend(args.out.iter().map(|o| ("--out", o.as_str())));
     for (option, written) in locations {
-        if let Some(protected) = protected_location(&base.join(written), demo_dir, work_dir) {
+        let found = protected_location(&base.join(written), demo_dir, work_dir).map_err(|p| {
+            refuse(
+                step,
+                Refusal::UnresolvablePath {
+                    option: option.to_owned(),
+                    path: written.to_owned(),
+                    problem: p,
+                },
+            )
+        })?;
+        if let Some(protected) = found {
             return Err(refuse(
                 step,
                 Refusal::ForbiddenOutput {

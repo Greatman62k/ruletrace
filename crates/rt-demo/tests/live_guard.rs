@@ -643,6 +643,252 @@ fn a_permitted_document_with_a_store_outside_golden_passes_the_guard() {
     );
 }
 
+#[test]
+fn argv0_is_recognised_as_ruletrace_ai_by_file_name_only() {
+    let f = Fixture::new("argv0", "transmission.log.jsonl");
+    let m = manifest(&[(DOC, true)]);
+    for argv0 in [
+        "./ruletrace-ai",
+        "/abs/dir/ruletrace-ai",
+        "bin/ruletrace-ai",
+        "RuleTrace-AI.EXE",
+        "ruletrace-ai.exe",
+        "C:\\tools\\ruletrace-ai.Exe",
+        "..\\ruletrace-ai",
+        "./RULETRACE-AI",
+    ] {
+        let mut s = f.live_step(&["--store", "live-store", "--consent", DOC]);
+        s.argv[0] = argv0.to_owned();
+        assert_eq!(classify(&s, &f.work), Class::Live, "{argv0}");
+        assert_eq!(
+            run_step(&s, &f.bin, &f.work).unwrap_err(),
+            refused(&s, Refusal::LiveStepInOfflineRunner),
+            "{argv0}"
+        );
+        // The live runner treats it as ruletrace-ai too: it reaches the
+        // output-location rules instead of stopping at NotRuletraceAi.
+        let mut golden = f.live_step(&["--store", "golden/x", "--consent", DOC]);
+        golden.argv[0] = argv0.to_owned();
+        let e = run_live_step(&golden, &f.context(&m), &f.bin, &f.work).unwrap_err();
+        assert!(
+            matches!(
+                &e,
+                DemoError::LiveRefused {
+                    refusal: Refusal::ForbiddenOutput { .. },
+                    ..
+                }
+            ),
+            "{argv0}: {e:?}"
+        );
+    }
+}
+
+#[test]
+fn other_file_names_are_not_ruletrace_ai() {
+    let f = Fixture::new("argv0-other", "transmission.log.jsonl");
+    for argv0 in [
+        "ruletrace",
+        "ruletrace-ai-x",
+        "xruletrace-ai",
+        "ruletrace-ai.exe.bak",
+        "ruletrace-aié",
+        "ruletrace-ai/",
+        "",
+    ] {
+        let mut s = f.live_step(&["--store", "live-store", "--consent", DOC]);
+        s.argv[0] = argv0.to_owned();
+        let class = classify(&s, &f.work);
+        // A trailing separator names the directory entry itself, which the
+        // guard also treats as the tool.
+        let expected = if argv0 == "ruletrace-ai/" {
+            Class::Live
+        } else {
+            Class::Offline
+        };
+        assert_eq!(class, expected, "{argv0:?}");
+    }
+}
+
+#[test]
+fn an_offline_config_stays_offline_whatever_the_path_of_argv0() {
+    let f = Fixture::new("argv0-offline", "transmission.log.jsonl");
+    let mut s = f.live_step(&["--store", "live-store", "--consent", DOC]);
+    s.argv[3] = "ai/mock-replay.toml".to_owned();
+    s.argv[0] = "./ruletrace-ai".to_owned();
+    assert_eq!(classify(&s, &f.work), Class::Offline);
+}
+
+#[test]
+fn a_manifest_that_lists_an_id_twice_needs_every_entry_permitted() {
+    let f = Fixture::new("duplicate-ids", "transmission.log.jsonl");
+    let s = f.live_step(&["--store", "live-store", "--consent", DOC]);
+    for entries in [
+        [(DOC, false), (DOC, true)],
+        [(DOC, true), (DOC, false)],
+        [(DOC, false), (DOC, false)],
+    ] {
+        let m = manifest(&entries);
+        assert!(!m.may_transmit(DOC), "{entries:?}");
+        let e = run_live_step(&s, &f.context(&m), &f.bin, &f.work).unwrap_err();
+        assert_eq!(e, permission_error(DOC), "{entries:?}");
+    }
+    let m = manifest(&[(DOC, true), (DOC, true)]);
+    assert!(m.may_transmit(DOC));
+    let e = run_live_step(&s, &f.context(&m), &f.bin, &f.work).unwrap_err();
+    assert!(
+        matches!(&e, DemoError::Step { problem, .. } if problem.contains("cannot run")),
+        "{e:?}"
+    );
+}
+
+#[test]
+fn golden_and_provider_are_matched_without_regard_to_ascii_case() {
+    let f = Fixture::new("case", "transmission.log.jsonl");
+    let m = manifest(&[(DOC, true)]);
+    for path in [
+        "GOLDEN/x",
+        "Golden/x",
+        "Provider/x",
+        "PROVIDER/x",
+        "pRoViDeR",
+        "../demo/Provider/x",
+        "a/../PROVIDER/x",
+    ] {
+        let s = f.live_step(&["--store", path, "--consent", DOC]);
+        let e = run_live_step(&s, &f.context(&m), &f.bin, &f.work).unwrap_err();
+        assert!(
+            matches!(
+                &e,
+                DemoError::LiveRefused {
+                    refusal: Refusal::ForbiddenOutput { option, path: p, .. },
+                    ..
+                } if option == "--store" && p == path
+            ),
+            "{path}: {e:?}"
+        );
+    }
+    for log in ["Provider/log.jsonl", "GOLDEN/log.jsonl"] {
+        let f = Fixture::new("case-log", log);
+        let s = f.live_step(&["--store", "live-store", "--consent", DOC]);
+        let e = run_live_step(&s, &f.context(&m), &f.bin, &f.work).unwrap_err();
+        assert!(
+            matches!(
+                &e,
+                DemoError::LiveRefused {
+                    refusal: Refusal::ForbiddenOutput { option, .. },
+                    ..
+                } if option == "transmission_log"
+            ),
+            "{log}: {e:?}"
+        );
+    }
+    let s = f.live_step(&[
+        "--out",
+        "Provider/o.json",
+        "--store",
+        "ok",
+        "--consent",
+        DOC,
+    ]);
+    assert!(matches!(
+        run_live_step(&s, &f.context(&m), &f.bin, &f.work).unwrap_err(),
+        DemoError::LiveRefused {
+            refusal: Refusal::ForbiddenOutput { option, .. },
+            ..
+        } if option == "--out"
+    ));
+    // A name that only starts like a protected one is allowed.
+    let s = f.live_step(&["--store", "providers/x", "--consent", DOC]);
+    let e = run_live_step(&s, &f.context(&m), &f.bin, &f.work).unwrap_err();
+    assert!(matches!(e, DemoError::Step { .. }), "{e:?}");
+}
+
+#[test]
+fn the_placeholder_model_is_refused_naming_the_field() {
+    let f = Fixture::new("placeholder", "transmission.log.jsonl");
+    let m = manifest(&[(DOC, true)]);
+    let example = fs::read_to_string(repo_demo().join("ai/openai.example.toml")).unwrap();
+    assert!(example.contains("model = \"REPLACE_WITH_YOUR_MODEL_ID\""));
+    fs::write(f.work.join("ai/openai.toml"), &example).unwrap();
+    let mut s = f.live_step(&["--store", "live-store", "--consent", DOC]);
+    s.argv[3] = "ai/openai.toml".to_owned();
+    assert_eq!(classify(&s, &f.work), Class::Live);
+    let e = run_live_step(&s, &f.context(&m), &f.bin, &f.work).unwrap_err();
+    assert_eq!(
+        e,
+        refused(&s, Refusal::PlaceholderModel("provider.model".to_owned()))
+    );
+    assert!(e.to_string().contains("provider.model"));
+    // With a real-looking model the same file passes the guard.
+    let replaced = example.replace("REPLACE_WITH_YOUR_MODEL_ID", "some-model-1");
+    fs::write(f.work.join("ai/openai.toml"), replaced).unwrap();
+    let e = run_live_step(&s, &f.context(&m), &f.bin, &f.work).unwrap_err();
+    assert!(
+        matches!(&e, DemoError::Step { problem, .. } if problem.contains("cannot run")),
+        "{e:?}"
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn an_output_path_that_cannot_be_resolved_is_refused() {
+    use std::os::unix::fs::symlink;
+    let f = Fixture::new("unresolvable", "transmission.log.jsonl");
+    let m = manifest(&[(DOC, true)]);
+    symlink("/nonexistent-rt-target", f.work.join("dangling")).unwrap();
+    symlink("loop-b", f.work.join("loop-a")).unwrap();
+    symlink("loop-a", f.work.join("loop-b")).unwrap();
+    for store in [
+        "dangling",
+        "dangling/store",
+        "loop-a/store",
+        "x/../dangling/s",
+    ] {
+        let s = f.live_step(&["--store", store, "--consent", DOC]);
+        let e = run_live_step(&s, &f.context(&m), &f.bin, &f.work).unwrap_err();
+        assert!(
+            matches!(
+                &e,
+                DemoError::LiveRefused {
+                    refusal: Refusal::UnresolvablePath { option, path, .. },
+                    ..
+                } if option == "--store" && path == store
+            ),
+            "{store}: {e:?}"
+        );
+    }
+    let s = f.live_step(&["--out", "dangling", "--store", "ok", "--consent", DOC]);
+    let e = run_live_step(&s, &f.context(&m), &f.bin, &f.work).unwrap_err();
+    assert!(
+        matches!(
+            &e,
+            DemoError::LiveRefused {
+                refusal: Refusal::UnresolvablePath { option, .. },
+                ..
+            } if option == "--out"
+        ),
+        "{e:?}"
+    );
+    let g = Fixture::new("unresolvable-log", "dangling-log.jsonl");
+    symlink("/nonexistent-rt-target", g.work.join("dangling-log.jsonl")).unwrap();
+    let s = g.live_step(&["--store", "live-store", "--consent", DOC]);
+    let e = run_live_step(&s, &g.context(&m), &g.bin, &g.work).unwrap_err();
+    assert!(
+        matches!(
+            &e,
+            DemoError::LiveRefused {
+                refusal: Refusal::UnresolvablePath { option, .. },
+                ..
+            } if option == "transmission_log"
+        ),
+        "{e:?}"
+    );
+    // The refusal does not name a non-existent path that is merely absent.
+    let s = f.live_step(&["--store", "absent/deeper", "--consent", DOC]);
+    let e = run_live_step(&s, &f.context(&m), &f.bin, &f.work).unwrap_err();
+    assert!(matches!(e, DemoError::Step { .. }), "{e:?}");
+}
+
 #[cfg(unix)]
 mod before_spawn {
     use super::fake::Probe;
@@ -739,6 +985,36 @@ mod before_spawn {
         assert_eq!(fs::read_to_string(&probe.marker).unwrap(), "canary/unset");
         assert_eq!(probe.connections(), 1);
         assert!(!String::from_utf8_lossy(&c.stdout).contains("canary"));
+    }
+
+    #[test]
+    fn a_path_spelling_of_ruletrace_ai_is_refused_before_the_process_starts() {
+        let f = Fixture::new("argv0-spawn", "transmission.log.jsonl");
+        let probe = Probe::install(&f.bin);
+        let absolute = f.bin.join("ruletrace-ai").display().to_string();
+        for argv0 in ["./ruletrace-ai", absolute.as_str()] {
+            let mut s = f.live_step(&["--store", "live-store", "--consent", DOC]);
+            s.argv[0] = argv0.to_owned();
+            assert_eq!(
+                run_step(&s, &f.bin, &f.work).unwrap_err(),
+                refused(&s, Refusal::LiveStepInOfflineRunner),
+                "{argv0}"
+            );
+        }
+        assert!(!probe.marker.exists(), "ruletrace-ai was started");
+        assert_eq!(probe.connections(), 0);
+    }
+
+    #[test]
+    fn positive_control_the_fake_runs_through_a_path_spelling_when_offline() {
+        let f = Fixture::new("argv0-control", "transmission.log.jsonl");
+        let probe = Probe::install(&f.bin);
+        let mut s = f.live_step(&["--store", "live-store", "--consent", DOC]);
+        s.argv[3] = "ai/mock-replay.toml".to_owned();
+        s.argv[0] = "./ruletrace-ai".to_owned();
+        assert_eq!(run_step(&s, &f.bin, &f.work).unwrap().exit, 0);
+        assert!(probe.marker.exists());
+        assert_eq!(probe.connections(), 1);
     }
 
     #[test]
