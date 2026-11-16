@@ -255,7 +255,7 @@ pub enum Code {
     AiProviderRateLimited,
     /// `RT-AI-0104`: Authentication failed
     AiProviderAuthFailed,
-    /// `RT-AI-0105`: Other provider error, 4xx, redirect
+    /// `RT-AI-0105`: Other provider error, 4xx other than 429, redirect, or HTTP 504; not retried
     AiProviderError,
     /// `RT-AI-0106`: All permitted attempts transient failures
     AiProviderRetryExhausted,

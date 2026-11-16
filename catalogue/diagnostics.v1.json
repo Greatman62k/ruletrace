@@ -123,7 +123,7 @@
   {"code": "RT-AI-0102", "mnemonic": "AI_PROVIDER_TIMEOUT", "severity": "Warning", "meaning": "Attempt timed out", "exit": 0, "executable": "ai"},
   {"code": "RT-AI-0103", "mnemonic": "AI_PROVIDER_RATE_LIMITED", "severity": "Warning", "meaning": "Attempt got HTTP 429", "exit": 0, "executable": "ai"},
   {"code": "RT-AI-0104", "mnemonic": "AI_PROVIDER_AUTH_FAILED", "severity": "Error", "meaning": "Authentication failed", "exit": 5, "executable": "ai"},
-  {"code": "RT-AI-0105", "mnemonic": "AI_PROVIDER_ERROR", "severity": "Error", "meaning": "Other provider error, 4xx, redirect", "exit": 5, "executable": "ai"},
+  {"code": "RT-AI-0105", "mnemonic": "AI_PROVIDER_ERROR", "severity": "Error", "meaning": "Other provider error, 4xx other than 429, redirect, or HTTP 504; not retried", "exit": 5, "executable": "ai"},
   {"code": "RT-AI-0106", "mnemonic": "AI_PROVIDER_RETRY_EXHAUSTED", "severity": "Error", "meaning": "All permitted attempts transient failures", "exit": 5, "executable": "ai"},
   {"code": "RT-AI-0107", "mnemonic": "AI_PROVIDER_DEADLINE_EXCEEDED", "severity": "Error", "meaning": "Deadline cannot fit another attempt", "exit": 5, "executable": "ai"},
   {"code": "RT-AI-0108", "mnemonic": "AI_PROVIDER_TLS_FAILED", "severity": "Error", "meaning": "TLS or certificate failure", "exit": 5, "executable": "ai"},

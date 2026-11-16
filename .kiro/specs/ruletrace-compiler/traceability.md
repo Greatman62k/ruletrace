@@ -527,7 +527,7 @@ One test fixture of mine was wrong at first (`rtc-Zq7x` is eight bytes, not seve
 
 ## UD-37 amendment: Meta Model API over the Responses protocol (spec only, 2026-11)
 
-Decision record: `tools/decisions/UD-37.md` (Confirmed, user). No Rust code, `Cargo.toml`, `deny.toml`, `allowed-edges.v1`, `ci.yml` or catalogue file changed. Nothing is weakened: every earlier check keeps its code, severity and exit code, and Req 29.2 is unchanged.
+Decision record: `tools/decisions/UD-37.md` (Confirmed, user). At that commit no Rust code, `Cargo.toml`, `deny.toml`, `allowed-edges.v1`, `ci.yml` or catalogue file changed. Nothing is weakened: every earlier check keeps its code, severity and exit code, and Req 29.2 was unchanged then (superseded by the sections below).
 
 | Req | Title | Status | Changed criteria | New criteria | Cause |
 | --- | --- | --- | --- | --- | --- |
