@@ -21,8 +21,16 @@ fn repo() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+const CAPTURED_P3: &str = "Meta Model API muse-spark-1.3, reasoning_effort low, prompt-3, captured 2026-11-16 by the user, synthetic stand-in document";
+const RECORDING_P3: &str = "demo/stand-in-ai/provider/recorded-meta-muse-spark-1.3-prompt-3.json";
+
 fn live_batch() -> Vec<u8> {
     std::fs::read(repo().join("crates/rt-ai-tool/tests/fixtures/live-run1-prompt-2/batch.json"))
+        .unwrap()
+}
+
+fn live_batch_p3() -> Vec<u8> {
+    std::fs::read(repo().join("crates/rt-ai-tool/tests/fixtures/live-run2-prompt-3/batch.json"))
         .unwrap()
 }
 
@@ -109,6 +117,78 @@ fn the_live_store_exports_to_the_committed_recording_byte_for_byte() {
     // The live response identifier and usage are not members of the format.
     assert!(!text.contains("resp_6afa910e4a3898da13064e79"));
     assert!(!text.contains("total_tokens"));
+}
+
+// Expected bytes: the committed recording, reviewed against the live batch
+// fixture. The store here is built from that fixture, not from a home
+// directory. The same Request_Identifier as prompt-2 is a different file.
+#[test]
+fn the_prompt_3_store_exports_twice_to_the_committed_recording_byte_for_byte() {
+    let committed = std::fs::read(repo().join(RECORDING_P3)).unwrap();
+    for name in ["p3-a", "p3-b"] {
+        let dir = Dir::new(name);
+        dir.batch(&format!("{LIVE_ID}.json"), &live_batch_p3());
+        let before = dir.state();
+        run(&dir.args("script.json", &[("--captured", CAPTURED_P3)])).unwrap();
+        let got = std::fs::read(dir.0.join("script.json")).unwrap();
+        assert_eq!(got, committed, "{name}");
+        let mut after = dir.state();
+        assert!(after.remove("script.json").is_some());
+        assert_eq!(after, before);
+    }
+    let text = String::from_utf8(committed).unwrap();
+    assert!(text.contains(&format!("\"captured\": \"{CAPTURED_P3}\"")));
+    assert!(text.contains("\"adapter_version\": \"responses-1/prompt-3\""));
+    assert!(text.contains(
+        "\"response_sha256\": \"7f3371ca503a4f614dda9c4288e346a1822e9fde88546bc058ecba9294706c26\""
+    ));
+    // Reported metadata of the live batch has no member in the format.
+    assert!(!text.contains("resp_6afac8228767f9e2ab67450a"));
+    assert!(!text.contains("total_tokens"));
+    let prompt_2 = std::fs::read(
+        repo().join("demo/stand-in-ai/provider/recorded-meta-muse-spark-1.3-prompt-2.json"),
+    )
+    .unwrap();
+    assert_ne!(text.as_bytes(), prompt_2.as_slice());
+}
+
+#[test]
+fn the_committed_prompt_3_recording_is_never_overwritten_by_an_export() {
+    let dir = Dir::new("p3-keep");
+    dir.batch(&format!("{LIVE_ID}.json"), &live_batch_p3());
+    let committed = std::fs::read(repo().join(RECORDING_P3)).unwrap();
+    std::fs::write(dir.0.join("script.json"), &committed).unwrap();
+    let args = dir.args("script.json", &[("--captured", CAPTURED_P3)]);
+    let err = run(&args).unwrap_err();
+    assert!(err.contains("cannot be created"), "{err}");
+    assert_eq!(std::fs::read(dir.0.join("script.json")).unwrap(), committed);
+}
+
+// Two request identifiers, so the store holds two files. The recordings of
+// different prompt profiles are still never merged into one script.
+#[test]
+fn a_store_holding_prompt_2_and_prompt_3_batches_is_refused_and_writes_nothing() {
+    let dir = Dir::new("mixed");
+    dir.batch(&format!("{LIVE_ID}.json"), &live_batch());
+    let other = "f".repeat(64);
+    let mut batch = parse_batch(&InputId::new("b").unwrap(), &live_batch_p3()).unwrap();
+    batch.request_id = rt_hash::Sha256Hex::parse(&other).unwrap();
+    for (index, proposal) in batch.proposals.iter_mut().enumerate() {
+        proposal.proposal_id = rt_proposals::proposal_id(&batch.request_id, index);
+    }
+    dir.batch(&format!("{other}.json"), print_batch(&batch).as_bytes());
+    let before = dir.state();
+    let err = run(&dir.args("script.json", &[])).unwrap_err();
+    assert!(
+        err.contains(&format!("batches/{other}.json: request {other}")),
+        "{err}"
+    );
+    assert!(
+        err.contains("adapter_version is 'responses-1/prompt-3', expected 'responses-1/prompt-2'"),
+        "{err}"
+    );
+    assert!(err.contains("never relabelled or merged"), "{err}");
+    assert_eq!(dir.state(), before);
 }
 
 #[test]
