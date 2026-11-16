@@ -2,6 +2,7 @@
 //! `tools/dependencies.v1` with a purpose, the alternatives considered and a
 //! maintenance status (Req 21.5, 21.6).
 
+use crate::metadata::Metadata;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
@@ -14,6 +15,8 @@ const HEADER: &str = "# format: ruletrace-dependencies v1";
 /// One justification row. Empty text means the field was absent or blank.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Entry {
+    /// Crates that the row names as direct users.
+    pub used_by: Vec<String>,
     /// Purpose text.
     pub purpose: String,
     /// Alternatives considered, including the standard library.
@@ -72,7 +75,13 @@ pub fn parse_entries(text: &str) -> Result<BTreeMap<String, Entry>, String> {
         while let Some(key) = it.next() {
             let value = it.next().unwrap_or_default();
             match key.as_str() {
-                "used-by" => {}
+                "used-by" => {
+                    entry.used_by = value
+                        .split(',')
+                        .map(|n| n.trim().to_string())
+                        .filter(|n| !n.is_empty())
+                        .collect();
+                }
                 "purpose" => entry.purpose = value.trim().to_string(),
                 "alternatives" => entry.alternatives = value.trim().to_string(),
                 "status" => entry.status = value.trim().to_string(),
@@ -152,16 +161,111 @@ pub fn check_texts(lock: &str, dependencies: &str) -> Result<usize, String> {
     }
 }
 
-/// `check-justification` on the repository at `root`.
+/// Shipped executables whose normal-dependency closure a row may not
+/// describe as development-only.
+pub const SHIPPED_BINARIES: [&str; 2] = ["rt-cli", "rt-ai-tool"];
+
+const NOT_SHIPPED_PHRASES: [&str; 5] = [
+    "dev-dependency",
+    "dev-only",
+    "dev only",
+    "never in a shipped binary",
+    "never a normal dependency",
+];
+
+fn reaches(graph: &BTreeMap<String, BTreeSet<String>>, from: &str, to: &str) -> bool {
+    let mut seen: BTreeSet<&str> = BTreeSet::new();
+    let mut stack = vec![from];
+    while let Some(next) = stack.pop() {
+        for dep in graph.get(next).into_iter().flatten() {
+            if dep == to {
+                return true;
+            }
+            if seen.insert(dep.as_str()) {
+                stack.push(dep.as_str());
+            }
+        }
+    }
+    false
+}
+
+/// Truth check of the rows. `closures` maps each shipped executable to the
+/// package names in its normal-dependency closure (`cargo tree -e normal
+/// --target all`). A row that says the crate is development-only must not be
+/// in any closure, and every crate named in `used-by` must reach it through
+/// the resolved graph (the pulling crate of a transitive row counts).
+#[must_use]
+pub fn check_claims(
+    entries: &BTreeMap<String, Entry>,
+    md: &Metadata,
+    closures: &BTreeMap<String, BTreeSet<String>>,
+) -> Vec<String> {
+    let Some(all) = &md.resolved else {
+        return vec![format!(
+            "{DEPENDENCIES_PATH}: cargo metadata has no resolve section; row claims cannot be checked"
+        )];
+    };
+    let mut findings = Vec::new();
+    for (name, entry) in entries {
+        let text = format!("{} {}", entry.purpose, entry.status).to_lowercase();
+        let binaries: Vec<&str> = closures
+            .iter()
+            .filter(|(_, crates)| crates.contains(name))
+            .map(|(binary, _)| binary.as_str())
+            .collect();
+        if let Some(phrase) = NOT_SHIPPED_PHRASES.iter().find(|p| text.contains(**p)) {
+            if !binaries.is_empty() {
+                findings.push(format!(
+                    "{name}: row says \"{phrase}\" but the crate is in the normal closure of {}",
+                    binaries.join(", ")
+                ));
+            }
+        }
+        for user in &entry.used_by {
+            if !reaches(all, user, name) {
+                findings.push(format!(
+                    "{name}: row names used-by {user}, which does not depend on it"
+                ));
+            }
+        }
+    }
+    findings
+}
+
+/// Package names listed by `cargo tree --prefix none` output.
+#[must_use]
+pub fn tree_crates(output: &str) -> BTreeSet<String> {
+    output
+        .lines()
+        .filter_map(|l| l.split_whitespace().next())
+        .map(str::to_string)
+        .collect()
+}
+
+/// `check-justification` on the repository at `root`. `metadata_bytes` is the
+/// output of `cargo metadata` and `closures` the normal closures of
+/// [`SHIPPED_BINARIES`].
 ///
 /// # Errors
 /// One line per finding, or the file that could not be read.
-pub fn run(root: &Path) -> Result<usize, String> {
+pub fn run(
+    root: &Path,
+    metadata_bytes: &[u8],
+    closures: &BTreeMap<String, BTreeSet<String>>,
+) -> Result<usize, String> {
     let read = |rel: &str| {
         let path = root.join(rel);
         std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))
     };
-    check_texts(&read(LOCK_PATH)?, &read(DEPENDENCIES_PATH)?)
+    let dependencies = read(DEPENDENCIES_PATH)?;
+    let count = check_texts(&read(LOCK_PATH)?, &dependencies)?;
+    let md = crate::metadata::parse_metadata(metadata_bytes)?;
+    let findings = check_claims(&parse_entries(&dependencies)?, &md, closures);
+    if findings.is_empty() {
+        Ok(count)
+    } else {
+        Err(findings.join("\n"))
+    }
 }
 
 #[cfg(test)]
@@ -206,5 +310,56 @@ mod tests {
         assert!(parse_entries(&format!("{HEADER}\ndep foo purpose \"x")).is_err());
         assert!(parse_entries(&format!("{HEADER}\ndep foo bogus \"x\"")).is_err());
         assert!(parse_entries(&format!("{HEADER}\ndep foo\ndep foo")).is_err());
+    }
+
+    fn metadata_with(shipped_dep: &str) -> (Metadata, BTreeMap<String, BTreeSet<String>>) {
+        let json = format!(
+            "{{\"packages\":[{{\"name\":\"rt-cli\",\"id\":\"a\",\"dependencies\":[]}},{{\"name\":\"{shipped_dep}\",\"id\":\"b\",\"dependencies\":[]}},{{\"name\":\"devonly\",\"id\":\"c\",\"dependencies\":[]}}],\"workspace_members\":[\"a\"],\"resolve\":{{\"nodes\":[{{\"id\":\"a\",\"deps\":[{{\"pkg\":\"b\",\"dep_kinds\":[{{\"kind\":null,\"target\":null}}]}},{{\"pkg\":\"c\",\"dep_kinds\":[{{\"kind\":\"dev\",\"target\":null}}]}}]}},{{\"id\":\"b\",\"deps\":[]}},{{\"id\":\"c\",\"deps\":[]}}]}}}}"
+        );
+        let closure = tree_crates(&format!("rt-cli v0.1.0 (/x)\n{shipped_dep} v1.0.0\n"));
+        let closures = BTreeMap::from([("rt-cli".to_string(), closure)]);
+        (
+            crate::metadata::parse_metadata(json.as_bytes()).unwrap(),
+            closures,
+        )
+    }
+
+    fn rows(text: &str) -> BTreeMap<String, Entry> {
+        parse_entries(&format!("{HEADER}\n{text}\n")).unwrap()
+    }
+
+    #[test]
+    fn dev_only_claim_on_a_shipped_crate_is_a_finding() {
+        let (md, closures) = metadata_with("getrandom");
+        let bad = rows("dep getrandom used-by rt-cli purpose \"entropy; dev-dependency closure only\" alternatives \"std\" status \"s\"");
+        let findings = check_claims(&bad, &md, &closures);
+        assert_eq!(
+            findings,
+            vec![
+                "getrandom: row says \"dev-dependency\" but the crate is in the normal closure of rt-cli"
+                    .to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn honest_rows_and_dev_only_crates_pass() {
+        let (md, closures) = metadata_with("getrandom");
+        let ok = rows(
+            "dep getrandom used-by rt-cli purpose \"entropy for ring\" alternatives \"std\" status \"s\"\ndep devonly used-by rt-cli purpose \"test oracle; dev-only\" alternatives \"std\" status \"s\"",
+        );
+        assert_eq!(check_claims(&ok, &md, &closures), Vec::<String>::new());
+    }
+
+    #[test]
+    fn used_by_naming_a_non_dependent_is_a_finding() {
+        let (md, closures) = metadata_with("getrandom");
+        let bad = rows(
+            "dep getrandom used-by rt-cli,ghost purpose \"p\" alternatives \"a\" status \"s\"",
+        );
+        assert_eq!(
+            check_claims(&bad, &md, &closures),
+            vec!["getrandom: row names used-by ghost, which does not depend on it".to_string()]
+        );
     }
 }

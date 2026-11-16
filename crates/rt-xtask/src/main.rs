@@ -61,8 +61,15 @@ fn run(args: &[String]) -> Result<(), String> {
                 };
                 rt_xtask::catalogue::check(&root, &tags).map(|report| println!("{report}"))
             }
-            "check-justification" => rt_xtask::justification::run(&root)
-                .map(|n| println!("check-justification: ok ({n} external crates)")),
+            "check-justification" => {
+                let bytes = match &metadata {
+                    Some(bytes) => bytes,
+                    None => metadata.insert(cargo_metadata(&root)?),
+                };
+                let closures = shipped_closures(&root)?;
+                rt_xtask::justification::run(&root, bytes, &closures)
+                    .map(|n| println!("check-justification: ok ({n} external crates)"))
+            }
             "scan-sources" => rt_xtask::scan::run(&root)
                 .map(|(c, f)| println!("scan-sources: ok ({c} crates, {f} files)")),
             "scan-api" => rt_xtask::api::run(&root)
@@ -133,4 +140,31 @@ fn cargo_metadata(root: &Path) -> Result<Vec<u8>, String> {
             String::from_utf8_lossy(&output.stderr)
         ))
     }
+}
+
+/// Normal-dependency closure of each shipped executable, for every target.
+fn shipped_closures(
+    root: &Path,
+) -> Result<std::collections::BTreeMap<String, std::collections::BTreeSet<String>>, String> {
+    let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let mut out = std::collections::BTreeMap::new();
+    for binary in rt_xtask::justification::SHIPPED_BINARIES {
+        let output = Command::new(&cargo)
+            .args(["tree", "-p", binary, "-e", "normal", "--target", "all"])
+            .args(["--prefix", "none", "--manifest-path"])
+            .arg(root.join("Cargo.toml"))
+            .output()
+            .map_err(|e| format!("cannot run cargo tree: {e}"))?;
+        if !output.status.success() {
+            return Err(format!(
+                "cargo tree -p {binary} failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            ));
+        }
+        out.insert(
+            binary.to_string(),
+            rt_xtask::justification::tree_crates(&String::from_utf8_lossy(&output.stdout)),
+        );
+    }
+    Ok(out)
 }
