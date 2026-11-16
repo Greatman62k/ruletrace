@@ -619,3 +619,9 @@ Both changes were approved by the orchestrator under the user's standing instruc
 - Evidence: CI run 43799230103 (commit a2ce236), CI run 43847096409 (commit 438b700), `crates/rt-ai-responses/tests/stub_http.rs`, `docs/provider-profiles.md`, the goldens changed by 10.14 and by the proposer label.
 - Not satisfied, closed by user decision: the gate text lists blockers 10.5 and 10.15, which remain open (`[-]`). They are not claimed complete.
 - The independent code reviews (`docs/reviews/*ud37*`, waves 1 to 7) are separate from the user review and are listed apart in UD-37 section 8.5.
+
+## Task 10.5 `live-openai` CI job (2026-11-16)
+
+- Requirements 21.14, 35.9. Secret `RULETRACE_OPENAI_API_KEY` and variable `RULETRACE_OPENAI_MODEL`: `tools/decisions/UD-15.md` section 6. Job: `.github/workflows/ci.yml` (`live-openai`, not in `ci-gate` needs).
+- Tests: `crates/rt-xtask/tests/live_openai_job.rs` (structure rules and mutants, gate script behaviour with a canary, configuration step with hostile model texts). Regression: a model value with an embedded line feed passed a `grep -E` check; the bash regex refuses it.
+- Unverified: the Actions run (skip expected without the secret) and any live run. Task 10.5 stays `[-]`.
