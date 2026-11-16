@@ -22,7 +22,7 @@ struct Allowed {
     reason: &'static str,
 }
 
-const ALLOWED: [Allowed; 5] = [
+const ALLOWED: [Allowed; 6] = [
     Allowed {
         file: "crates/rt-ai-tool/src/tests_e2e_responses.rs",
         host: "api.meta.ai",
@@ -42,6 +42,11 @@ const ALLOWED: [Allowed; 5] = [
         file: "crates/rt-ai-tool/src/tests_cli_order.rs",
         host: "api",
         reason: "prefix of a replacement that turns the default endpoint into http; providers are test doubles",
+    },
+    Allowed {
+        file: "crates/rt-tests-ai/tests/live_ci_config.rs",
+        host: "api.openai.com",
+        reason: "expected text of a --dry-run announcement and of the CI step's endpoint; nothing is sent",
     },
     Allowed {
         file: "crates/rt-demo/src/tests.rs",
