@@ -97,3 +97,79 @@ larger than the response limit is returned as its first `limit + 1` bytes, so
 the caller reports RT-AI-0203. HTTP 504 maps to `GatewayTimeout`, a final
 failure under Req 29.2 (OD-37-1, resolved by the user on 2026-11-16). Every
 other 5xx maps to `Unavailable` (transient).
+
+## Error bodies are never read (task 10.15, user decision of 2026-11-16)
+
+The mutant "branch on the error body `type`" cannot exist, so it is accepted
+as structurally impossible and no error-body parser is added. The mapping is
+`status::failure_for(status, retry_after)` in
+`crates/rt-ai-responses/src/status.rs`, which takes a status code and the
+`Retry-After` header values only. In `crates/rt-ai-responses/src/transport.rs`
+the function `read` returns for every non-2xx status before it touches the
+body reader, and drops the response. Tests in
+`crates/rt-ai-responses/tests/stub_http.rs`:
+
+- `a_stalled_error_body_is_not_waited_for`: the head of a 401 and of a 403
+  declares a 1 MiB body, the stub sends a few bytes and stalls for 3 s, and the
+  adapter returns `AuthFailed` in under 1.5 s. A transport that read the body
+  would wait for the stall.
+- `a_401_or_403_is_auth_failed_with_one_attempt_for_every_body_shape`: changed
+  `type`, a `type` that names a rate limit, empty body with and without a
+  content type, non-JSON text, invalid UTF-8, truncated JSON, HTML, JSON under
+  another content type, no content type, and the credential echoed in the
+  body. Each gives `AuthFailed`, one request, `NonTransient` stop in the retry
+  decision, and no canary in the report.
+- `an_oversize_error_body_gives_the_same_failure_as_an_empty_one` and
+  `a_401_is_not_retried_even_when_a_success_is_waiting`.
+
+## Host refusal before any connection (task 10.13, cited by 10.15)
+
+The stub of the end-to-end tests cannot count a connection to a foreign host,
+because the foreign host is not the stub. The older test
+`tests_e2e_responses.rs::a_foreign_host_is_rt_ai_0013_before_any_connection`
+asserts `stub.connections() == 0`, which would also hold if the run connected
+to the foreign host. It does fail in practice, since the runtime guard in
+`hosted::responses_adapter` panics for a non-loopback endpoint in a test, but
+that is an indirect proof. The direct proof is
+`tests_host_before_connection.rs`: a `Providers` implementation counts every
+request for an adapter or a catalogue and builds none. For six foreign
+spellings the run ends with the exact code (RT-AI-0013, RT-AI-0004 or
+RT-AI-0003) and exit 2, with zero adapter and catalogue requests, no
+Transmission_Log entry and no canary, in `propose` and in `models`. A control
+test shows that the official origin does reach the provider factory. No
+adapter means no transport, so no connection can have been made.
+
+## Re-read of the Meta documentation, 2026-11-16
+
+Read on 2026-11-16 (`date -u`), the same day as the earlier reads, so a
+change since those reads is unlikely and none was found. "Same" means the fact
+in the profile matches the page. Pages are summarised, not quoted.
+
+| Fact in the profile | URL | Result |
+| --- | --- | --- |
+| Strict JSON Schema through `text.format` on Responses | /docs/structured-output, /docs/protocols/responses | Same. The page says `strict` defaults to false, and the request sets it to true explicitly. |
+| Nesting depth 10 | /docs/structured-output | Same. |
+| Total properties 5,000 | /docs/structured-output | Same. |
+| Recursive (`$ref` cycle) schema rejected | /docs/structured-output | Same. |
+| Other schema limits: 120,000 characters of names and enum values, 1,000 enum values, a single enum over 250 values capped at 15,000 characters, 200,000 nodes after inlining | /docs/structured-output | Documented, not in the profile constants. `tests_proposal_schema.rs` already measures the generated schema against the first two (`MAX_NAME_CHARS`, `MAX_ENUM_VALUES`); the largest enum is 6 values and the schema has no `$ref`, so the other two cannot be reached. |
+| Strict subset: plain object root, no `allOf` or `oneOf`, `anyOf` below the root only, `additionalProperties: false` on every object, `required` lists every property | /docs/structured-output | Same as the rules the schema tests check (`forbidden_combinators`, `open_objects`, `required_mismatches`, `nested_root_any_of`). A violation returns HTTP 400 only with `strict: true`. |
+| Effort values `minimal`, `low`, `medium`, `high`, `xhigh`, `max`; `none` refused with 400 | /docs/reasoning, /docs/protocols/responses | Same. Both pages list `none` among the accepted names and then refuse it for the three reasoning models. |
+| `max` only for `muse-spark-1.3`, `muse-ember-1.0`, `muse-wonder-1.0` | /docs/reasoning, /docs/protocols/responses | Same. Not available with `muse-spark-1.3-contributor`. |
+| Default effort when omitted | /docs/reasoning | New, not in the profile: `max` on Wonder and Ember, `high` on every Spark version. RuleTrace sends an effort only when configured. |
+| `store` default and `store: false` | /docs/protocols/responses | Same. The default is `true`; `store: false` with stateless replay keeps no server copy. |
+| Usage members `input_tokens`, `output_tokens`, `total_tokens` | /docs/protocols/responses | Same. `output_tokens_details.reasoning_tokens` appears on retrieved responses only. |
+| Non-streaming time limit, HTTP 504 `gateway_timeout`, final | /docs/protocols/responses, /docs/error-handling | Same. The error page also says not to retry a 504 unchanged, which agrees with Req 29.2 as decided on OD-37-1. |
+| Status mapping 400, 402, 404 final; 401, 403 authentication; 429 rate limit; 500 and 503 retryable | /docs/error-handling | Same. The page says not to retry 400, 401, 402, 403, 404 and 413. |
+| 503 `service_overloaded` and `backend_unavailable` carry `Retry-After: 60` | /docs/error-handling | Same. `server_shutting_down` carries a shorter window of a few seconds. The page asks clients to honour the header. Req 29.3 treats it as absent and keeps the 2 s and 8 s schedule, a deliberate design decision that retries earlier than the page asks. |
+| 429 carries `Retry-After` | /docs/error-handling | Same. |
+| Error body shape | /docs/error-handling | The page puts the category in `type` (`authentication_error` for 401, `rate_limit_error` for 429, `billing_error` for 402, `server_error` for 5xx) and the machine code in `code` (`invalid_api_key`, `rate_limit_exceeded`, `service_overloaded`, `backend_unavailable`, `gateway_timeout`). The older stub helper in `stub_http.rs::meta_error_shapes_map_by_status` writes the code into `type`. The bodies are never read, so no result depends on it, and the new tests add the documented shape. The page also says to branch on status and `type`; RuleTrace branches on status only, which is stricter. |
+| Base URL `https://api.meta.ai/v1`, Bearer authentication | /docs/structured-output, /docs/protocols/responses, /docs/authentication | Same. Seen in the code samples of three pages, which replaces the earlier search snippet. The profile constant keeps its old `read_on` text. The key prefix `LLM_` is documented and not used by any check. |
+| Model listing `GET /v1/models` | /docs/models | Now documented (the profile relied on an HTTP 401 probe). The page says the list is newest first with a `created` member. `models` sorts by identifier bytes on purpose (Req 35.18). |
+| Context window | /docs/models | Changed from unknown for two models: 1,048,576 tokens for `muse-wonder-1.0` and the Spark versions. The Ember row has no value. The output limit is not stated as a number. The profile keeps `Limit::Unknown` because it holds one value for every model, and no code reads it. |
+| `max_output_tokens` minimum 16, shared budget with input | /docs/protocols/responses | Same. Reasoning tokens count toward it. |
+| Rate limits | /docs/pricing-rate-limits | New, not in the profile: 3,000 requests and 4,000,000 tokens per minute per team for the Standard models, 150 requests per minute for the Contributor variants. Not used. |
+
+Findings: no profile constant is wrong, and no constant, source or test
+expectation was changed by this re-read. The two proposals, neither applied:
+update the `read_on` text of the base-URL fact in `profile.rs`, and record
+the 1,048,576-token context window per model if a later task needs it.
