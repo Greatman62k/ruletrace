@@ -22,7 +22,7 @@ struct Allowed {
     reason: &'static str,
 }
 
-const ALLOWED: [Allowed; 10] = [
+const ALLOWED: [Allowed; 13] = [
     Allowed {
         file: "crates/rt-ai-tool/src/tests_e2e_responses.rs",
         host: "api.meta.ai",
@@ -67,6 +67,21 @@ const ALLOWED: [Allowed; 10] = [
         file: "crates/rt-tests-ai/tests/live_ci_config.rs",
         host: "api.openai.com",
         reason: "expected text of a --dry-run announcement and of the CI step's endpoint; nothing is sent",
+    },
+    Allowed {
+        file: "crates/rt-tests-ai/tests/live_examples.rs",
+        host: "api.meta.ai",
+        reason: "expected endpoint of the shipped Meta example configuration; the test only parses text and sends nothing",
+    },
+    Allowed {
+        file: "crates/rt-tests-ai/tests/live_examples.rs",
+        host: "api.openai.com",
+        reason: "expected endpoint of the shipped OpenAI example configuration; the test only parses text and sends nothing",
+    },
+    Allowed {
+        file: "crates/rt-tests-ai/tests/live_examples.rs",
+        host: "example.org",
+        reason: "foreign host that the loader must refuse with RT-AI-0013; nothing is sent",
     },
     Allowed {
         file: "crates/rt-demo/src/tests.rs",

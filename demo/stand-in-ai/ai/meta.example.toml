@@ -1,0 +1,30 @@
+# Example AI_Configuration for a LIVE run against Meta (task 10.7). Local use.
+# Copy it OUTSIDE this repository (for example to ~/ruletrace-live/meta.toml),
+# chmod 600, and export MODEL_API_KEY in your own shell. The credential is
+# named by variable only; never write it into this file.
+#
+# A live run sends the text of the consented document to the provider. The
+# harness refuses it unless the manifest entry of that document has
+# transmission_permitted = true (see RUNBOOK.md, "Live steps and document
+# transmission"). Keep the store and the transmission log outside golden/
+# and outside provider/.
+schema_version = 2
+enabled = true
+allow_document_text = true
+ai_identities = ["meta", "muse-spark-1.3"]
+transmission_log = "transmission.log.jsonl"
+max_clauses_per_request = 5
+
+[provider]
+id = "meta"
+protocol = "openai-responses"
+model = "muse-spark-1.3"
+endpoint = "https://api.meta.ai"
+credential_env_var = "MODEL_API_KEY"
+reasoning_effort = "low"
+
+[limits]
+total_deadline_secs = 120
+attempt_timeout_secs = 90
+max_retries = 0
+max_response_bytes = 1048576

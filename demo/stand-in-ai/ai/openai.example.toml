@@ -1,0 +1,34 @@
+# Example AI_Configuration for a LIVE run against OpenAI (task 10.7). Local use.
+# Copy it OUTSIDE this repository (for example to ~/ruletrace-live/openai.toml),
+# chmod 600, and export OPENAI_API_KEY in your own shell. The credential is
+# named by variable only; never write it into this file.
+#
+# YOU MUST REPLACE the model line below with a model identifier of your own
+# account. The value REPLACE_WITH_YOUR_MODEL_ID is a placeholder, not a model,
+# and no model identifier is chosen for you. No reasoning_effort is set: the
+# OpenAI profile does not verify that capability (docs/provider-profiles.md).
+#
+# A live run sends the text of the consented document to the provider. The
+# harness refuses it unless the manifest entry of that document has
+# transmission_permitted = true (see RUNBOOK.md, "Live steps and document
+# transmission"). Keep the store and the transmission log outside golden/
+# and outside provider/.
+schema_version = 2
+enabled = true
+allow_document_text = true
+ai_identities = ["openai"]
+transmission_log = "transmission.log.jsonl"
+max_clauses_per_request = 5
+
+[provider]
+id = "openai"
+protocol = "openai-responses"
+model = "REPLACE_WITH_YOUR_MODEL_ID"
+endpoint = "https://api.openai.com"
+credential_env_var = "OPENAI_API_KEY"
+
+[limits]
+total_deadline_secs = 120
+attempt_timeout_secs = 90
+max_retries = 0
+max_response_bytes = 1048576

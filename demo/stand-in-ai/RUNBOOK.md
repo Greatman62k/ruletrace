@@ -582,3 +582,86 @@ Golden files under `golden/` are produced by the real binaries and blessed with 
   ]
 }
 ```
+
+## Live steps and document transmission
+
+This section is about the optional live flow (design §8.11.6, Req 33.10). Nothing in it runs in the
+offline acceptance test, in CI or by default. The harness never executes a fenced block marked
+`live`, and the `ai` profile above stays offline and byte-identical.
+
+**What is transmitted.** A live `ruletrace-ai propose` sends the text of the documents named by
+`--consent`, one `--consent <document id>` per document, and nothing else. For this stand-in the only
+document is `stand-in-rules.md`: a synthetic text written for RuleTrace. Each send is logged in the
+Transmission_Log without document text and without credentials. Without `--consent` naming a document,
+`ruletrace-ai` and the harness both refuse.
+
+**Permission.** The harness runs a live step only when `manifest.json` has an entry for every
+document the step names with `--consent` and that entry's `transmission_permitted` is exactly the
+boolean `true`. A document that is missing from the manifest, has `false`, or has any other value is
+refused before `ruletrace-ai` is started, and the refusal names the document and the field. A live
+step that names no `--consent` is refused. The harness treats every `ruletrace-ai` step as live unless
+its configuration is the `mock-replay` provider; a configuration it cannot read, or one with an
+unknown protocol, counts as live. The real Kiroween and ICC documents are not in this repository.
+They get manifest entries with task 11.1, and they are not transmitted before an entry with
+`transmission_permitted = true` exists.
+
+**Where a live run writes.** The live flow writes its store, its `--out` files and its
+Transmission_Log only outside `golden/` and outside `provider/`. The harness refuses a live step whose
+`--store`, `--out` or configured `transmission_log` is, or resolves (through `..` or a symbolic link)
+to, a location at or under `golden/` or `provider/` of the demonstration. A live run never replaces a
+golden file or a Recorded_Provider_Script. To keep a live response, the user inspects the batches and
+exports a candidate script with `rt-xtask export-script` in a deliberate commit (task 10.8).
+
+**Configurations.** `ai/meta.example.toml` (credential variable `MODEL_API_KEY`) and
+`ai/openai.example.toml` (credential variable `OPENAI_API_KEY`) are examples for local use. Copy one
+outside the repository, set the mode to 600 and edit it there. The OpenAI example holds the placeholder
+`REPLACE_WITH_YOUR_MODEL_ID` as its model; you must put your own model identifier in your copy. The
+files name the credential variable only. Never write a credential into a file.
+
+**Running a live step by hand today.** Export the credential variable in your own shell first. Do not
+paste a credential into a file or into this document. The blocks below are marked `live`, so the
+harness parser accepts them and never runs them. `REPO` is your checkout. Run all blocks in one shell,
+where the first block puts `target/debug` on `PATH`.
+
+```sh live
+export REPO="$HOME/Desktop/ruletrace"
+export PATH="$REPO/target/debug:$PATH"
+cargo build --manifest-path "$REPO/Cargo.toml" -p rt-cli -p rt-ai-tool
+mkdir -p ~/ruletrace-live/documents ~/ruletrace-live/rulebook ~/ruletrace-live/work
+cd ~/ruletrace-live
+cp "$REPO/demo/stand-in-ai/documents/stand-in-rules.md" documents/
+cp "$REPO/demo/stand-in-ai/rulebook/seed.json" rulebook/
+cp "$REPO/demo/stand-in-ai/ai/meta.example.toml" meta.toml
+chmod 600 meta.toml
+```
+
+Ingest the document and print the Request_Identifier. The dry run sends nothing and reads no
+credential:
+
+```sh live
+cd ~/ruletrace-live
+ruletrace ingest --document documents/stand-in-rules.md \
+  --document-id stand-in-rules.md --out work/source-model.json --candidates work/candidates.json
+ruletrace-ai propose --dry-run \
+  --config meta.toml --rulebook rulebook/seed.json \
+  --source-model work/source-model.json --candidates work/candidates.json \
+  --store work/store --created-at 2026-11-16T00:00:00Z \
+  --consent stand-in-rules.md
+```
+
+The live propose. It sends the text of `stand-in-rules.md` to the provider named in `meta.toml`.
+It needs the credential variable exported in the same shell. Start from a fresh `work/store`:
+
+```sh live
+cd ~/ruletrace-live
+ruletrace-ai propose \
+  --config meta.toml --rulebook rulebook/seed.json \
+  --source-model work/source-model.json --candidates work/candidates.json \
+  --store work/store --created-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --consent stand-in-rules.md
+```
+
+**Machine-readable live steps.** A step of the `ruletrace-runbook` block may carry `"live": true`. It
+must be a `ruletrace-ai` step with no golden `outputs`. `steps_for` leaves it out, so the offline
+runner never sees it, and only `run_live_step` runs it, with the checks above. No such step is
+committed today.
