@@ -15,8 +15,8 @@
 )]
 
 use rt_demo::{
-    check_manifest, classify, copy_demo, parse_runbook, run_live_step, run_runbook_recorded,
-    run_step, Class, DemoError, LiveContext, Manifest, ManifestDocument, Mode, Refusal, Step,
+    check_manifest, classify, copy_demo, parse_runbook, run_live_step, run_step, Class, DemoError,
+    LiveContext, Manifest, ManifestDocument, Refusal, Step,
 };
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -647,6 +647,7 @@ fn a_permitted_document_with_a_store_outside_golden_passes_the_guard() {
 mod before_spawn {
     use super::fake::Probe;
     use super::*;
+    use rt_demo::{run_runbook_recorded, Mode};
 
     #[test]
     fn positive_control_the_fake_runs_for_a_permitted_offline_step() {
