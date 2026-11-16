@@ -28,8 +28,17 @@ const MAX_SCHEMA_BYTES: u64 = 1 << 20;
 /// Deepest schema nesting that the adapter parses.
 const MAX_SCHEMA_DEPTH: u32 = 64;
 
-/// The adapter version that this crate reports.
-const ADAPTER_VERSION: &str = env!("CARGO_PKG_VERSION");
+/// The prompt profile: the number of the current wording of
+/// [`crate::INPUT_PREAMBLE`] and of the schema descriptions that the tool
+/// sends. It is part of [`ADAPTER_VERSION`], so a stored batch shows which
+/// wording produced it. The tool pins the profile together with the hashes
+/// of the preamble and the schema, so a change of either text fails a test
+/// until the number moves.
+pub const PROMPT_PROFILE: u32 = 2;
+
+/// The adapter version that this crate reports (Req 35.23): the protocol
+/// integration and the prompt profile.
+pub const ADAPTER_VERSION: &str = "responses-1/prompt-2";
 
 /// Everything the adapter needs besides the credential.
 #[derive(Clone, Debug)]

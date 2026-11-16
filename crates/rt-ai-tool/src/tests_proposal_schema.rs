@@ -24,6 +24,7 @@ pub(crate) struct Measure {
     pub(crate) depth: usize,
     pub(crate) properties: usize,
     pub(crate) name_chars: usize,
+    pub(crate) description_chars: usize,
     pub(crate) largest_enum: usize,
     pub(crate) refs: usize,
     pub(crate) forbidden_combinators: usize,
@@ -53,6 +54,9 @@ fn walk(v: &Value<Position>, depth: usize, m: &mut Measure) {
         if member.key == "oneOf" || member.key == "allOf" {
             m.forbidden_combinators += 1;
         }
+    }
+    if let Some(text) = get(v, "description").and_then(Value::as_str) {
+        m.description_chars += text.chars().count();
     }
     if let Some(Kind::Array(options)) = get(v, "enum").map(Value::kind) {
         m.largest_enum = m.largest_enum.max(options.len());
@@ -115,6 +119,12 @@ pub(crate) fn violations(m: &Measure) -> Vec<&'static str> {
     check(m.depth > MAX_DEPTH, "depth");
     check(m.properties > MAX_PROPERTIES, "properties");
     check(m.name_chars > MAX_NAME_CHARS, "name characters");
+    // Descriptions are not named in the provider limit; counting them keeps
+    // the total string length of the schema within it under any reading.
+    check(
+        m.name_chars + m.description_chars > MAX_NAME_CHARS,
+        "name and description characters",
+    );
     check(m.largest_enum > MAX_ENUM_VALUES, "enum values");
     check(m.refs > 0, "$ref or $defs");
     check(m.forbidden_combinators > 0, "oneOf or allOf");
@@ -160,7 +170,7 @@ fn the_measurer_detects_each_kind_of_violation() {
         .map(|i| format!("\"v{i}\""))
         .collect::<Vec<_>>()
         .join(",");
-    let mutants: [(&str, String, &str); 7] = [
+    let mutants: [(&str, String, &str); 8] = [
         (
             "a reference",
             text.replacen(
@@ -196,8 +206,21 @@ fn the_measurer_detects_each_kind_of_violation() {
         ),
         (
             "an eleventh level",
-            text.replacen(r#""quote":{"type":"string"}"#, deeper, 1),
+            text.replacen(
+                r#""quote":{"type":"string","description":"The document bytes from start to end, copied exactly."}"#,
+                deeper,
+                1,
+            ),
             "depth",
+        ),
+        (
+            "descriptions past the string length limit",
+            text.replacen(
+                r#""description":"Document identifier"#,
+                &format!(r#""description":"{}"#, "d".repeat(MAX_NAME_CHARS)),
+                1,
+            ),
+            "name and description characters",
         ),
         (
             "an oversized enum",
@@ -221,7 +244,13 @@ fn the_measurer_counts_depth_and_properties_on_a_hand_built_schema() {
     assert_eq!(m.properties, 2);
     assert_eq!(m.largest_enum, 2);
     assert_eq!(m.name_chars, 4);
+    assert_eq!(m.description_chars, 0);
     assert!(violations(&m).is_empty());
+    let described = measure(&tree(
+        br#"{"type":"object","description":"abcde","additionalProperties":false,"required":["a"],"properties":{"a":{"type":"string","description":"xyz"}}}"#,
+    ));
+    assert_eq!(described.description_chars, 8);
+    assert_eq!(described.depth, 2);
 }
 
 #[test]

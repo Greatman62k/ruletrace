@@ -104,6 +104,8 @@ mod tests_plan;
 #[cfg(test)]
 mod tests_profile;
 #[cfg(test)]
+mod tests_prompt_contract;
+#[cfg(test)]
 mod tests_proposal_schema;
 #[cfg(test)]
 mod tests_provenance;

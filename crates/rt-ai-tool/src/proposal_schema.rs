@@ -30,6 +30,34 @@ const DIRECTIONS: [&str; 2] = ["asc", "desc"];
 
 type Prop = (&'static str, Value<()>);
 
+// Sentences that the schema says to the model. Each states a rule that the
+// local parser or the provenance check enforces, and the tests of
+// `tests_prompt_contract` back each one.
+const DOCUMENT_TEXT: &str = "Document identifier, copied from the clause.";
+const SHA256_TEXT: &str = "The sha256 that the request gives for that document.";
+const START_TEXT: &str = "UTF-8 byte offset in the whole document where the quote starts.";
+const END_TEXT: &str = "UTF-8 byte offset in the whole document after the last byte of the quote.";
+const LINE_TEXT: &str = "1-based line of start; CR, LF and CRLF each end a line.";
+const COLUMN_TEXT: &str = "1-based column of start, counted in characters.";
+const QUOTE_TEXT: &str = "The document bytes from start to end, copied exactly.";
+const SPANS_TEXT: &str = "Must repeat the evidence one for one in the same order.";
+const NODES_TEXT: &str = "Expression nodes. A member that holds an expression holds an index into this array. Every index must exist, a node's children have greater indexes than the node, and every node is named exactly once by the rule or by one other node.";
+const UNRECOGNIZED_NODE_TEXT: &str = "Use only when no other node expresses the operation. A rule that holds it is stored with a blocking Unsupported finding.";
+const UNRECOGNIZED_RULE_TEXT: &str = "Use only when no rule kind expresses the clause. The rule is stored with a blocking Unsupported finding.";
+
+// The schema object with a `description` member right after its first
+// member, so that a reviewer reads the type and then the sentence.
+fn described(schema: Option<Value<()>>, text: &str) -> Option<Value<()>> {
+    let schema = schema?;
+    let mut members: Vec<(String, Value<()>)> = schema
+        .as_object()?
+        .iter()
+        .map(|m| (m.key.clone(), m.value.clone()))
+        .collect();
+    members.insert(1, ("description".to_owned(), Value::string(text)));
+    object(members)
+}
+
 fn object(members: Vec<(String, Value<()>)>) -> Option<Value<()>> {
     Value::object(members).ok()
 }
@@ -139,11 +167,14 @@ fn node_variant(name: &str) -> Option<Value<()>> {
 }
 
 fn unrecognized_node() -> Option<Value<()>> {
-    closed(vec![
-        ("node", single("unrecognized")?),
-        ("name", text()?),
-        ("detail", text()?),
-    ])
+    described(
+        closed(vec![
+            ("node", single("unrecognized")?),
+            ("name", text()?),
+            ("detail", text()?),
+        ]),
+        UNRECOGNIZED_NODE_TEXT,
+    )
 }
 
 // Node names come from the decoder table, so a node that the decoder
@@ -231,22 +262,27 @@ fn rule_draft(kind: &str, option: Ud32Option) -> Option<Value<()>> {
         props.push(("detail", text()?));
     } else {
         props.extend(kind_members(kind)?);
-        props.push(("nodes", nodes_table(option)?));
+        props.push(("nodes", described(nodes_table(option), NODES_TEXT)?));
     }
     props.push(("markers", array_of(marker()?)?));
-    props.push(("spans", array_of(span()?)?));
-    closed(props)
+    props.push(("spans", described(array_of(span()?), SPANS_TEXT)?));
+    let rule = closed(props);
+    if kind == "unrecognized" {
+        described(rule, UNRECOGNIZED_RULE_TEXT)
+    } else {
+        rule
+    }
 }
 
 fn evidence() -> Option<Value<()>> {
     closed(vec![
-        ("document", text()?),
-        ("sha256", text()?),
-        ("start", integer()?),
-        ("end", integer()?),
-        ("line", integer()?),
-        ("column", integer()?),
-        ("quote", text()?),
+        ("document", described(text(), DOCUMENT_TEXT)?),
+        ("sha256", described(text(), SHA256_TEXT)?),
+        ("start", described(integer(), START_TEXT)?),
+        ("end", described(integer(), END_TEXT)?),
+        ("line", described(integer(), LINE_TEXT)?),
+        ("column", described(integer(), COLUMN_TEXT)?),
+        ("quote", described(text(), QUOTE_TEXT)?),
     ])
 }
 

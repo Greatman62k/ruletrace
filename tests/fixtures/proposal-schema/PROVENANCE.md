@@ -5,3 +5,11 @@
 - Independent checks of this file, made outside the Rust code with a separate Python walk (2026-11): nesting depth 10 (root 1, each property, `items` and `anyOf` alternative one level deeper), 535 properties, 3,567 characters of names and enum values, largest enum 6 values, no `$ref`, `$defs`, `oneOf` or `allOf`, every object closed with `required` equal to its property names, root a plain object without `anyOf`, 31,706 bytes compact. The limits are those of UD-37 section 2 (nesting 10, 5,000 properties, 120,000 characters, 1,000 enum values).
 - Shape: one `proposals` item variant for each of the four advisory kinds and one `rule_suggestion` variant for each rule kind (eligibility, derived, weighted_score, ranking, default, unrecognized). A rule carries its expressions as a `nodes` table and holds node indexes where the nested form holds a sub-expression. The node variants have exactly the fields of the Rule_IR decoder table (`rt_ir::NODE_FIELDS`) and one `unrecognized` variant.
 - Changing this file is a golden change under the testing policy, section 9: show the old and new output and the affected criteria.
+
+## Change of 2026-11-16: descriptions (review wave 3, issue 8)
+
+- Old file sha256 `26ce264c564b3408cc02fc1feae495dc7da9bde359eee40ae4cf8f08e73a8d60` (133,196 bytes), new `cb46520d67b22069d9e01d4918db60de1bce9d7bea4b716d72d458d15cefbe5d` (142,819 bytes). The compact bytes that a provider receives grow from 31,706 to 39,249 bytes.
+- The only change is `description` members: 87 occurrences of 11 distinct sentences, 6,064 characters in total. Stripping every `description` from the new file gives a document equal to the old one (checked with a separate Python script, not Rust).
+- Re-measured outside Rust: nesting depth 10 (a description is a string member and adds no level), 535 properties, 3,567 characters of names and enum values, 9,631 characters with descriptions, no `$ref`, `$defs`, `oneOf` or `allOf`. Limits: depth 10, 5,000 properties, 120,000 characters.
+- Each sentence states a rule that the parser or the provenance check enforces and is backed by a test in `crates/rt-ai-tool/src/tests_prompt_contract.rs`.
+- The prompt profile is `prompt-2` (`responses-1/prompt-2`, Req 35.23). The compact schema hash `d2df2f075a6e857b7d0311254bf99cfe91224fec9db16f483e60cbf57d055d78` is pinned there.

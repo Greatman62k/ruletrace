@@ -222,7 +222,7 @@ fn success_with_usage_stores_a_version_2_batch_with_the_reported_metadata() {
         r#""reported_model":"muse-reported""#,
         r#""response_id":"resp_1""#,
         r#""usage":{"input_tokens":11,"output_tokens":22,"total_tokens":33}"#,
-        r#""adapter_version":"0.1.0""#,
+        r#""adapter_version":"responses-1/prompt-2""#,
     ] {
         assert!(batch.contains(member), "{member} missing in {batch}");
     }
@@ -284,7 +284,9 @@ fn the_stub_receives_the_exact_request_bytes() {
     assert_eq!(header("authorization"), Some(bearer.as_str()));
     let body = std::str::from_utf8(sent.body()).unwrap();
     assert!(!body.contains(CANARY));
-    let preamble = rt_ai_responses::INPUT_PREAMBLE.replace('\n', "\\n");
+    let preamble = rt_ai_responses::INPUT_PREAMBLE
+        .replace('"', "\\\"")
+        .replace('\n', "\\n");
     let head = format!(r#"{{"model":"muse-spark-1.3","input":"{preamble}"#);
     let tail_at = body
         .find(r#"","text":{"format":{"type":"json_schema","name":"ruletrace_proposals","schema":"#)

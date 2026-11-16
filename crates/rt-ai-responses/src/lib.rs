@@ -33,7 +33,7 @@ mod tests_envelope;
 #[cfg(test)]
 mod tests_status;
 
-pub use adapter::{ResponsesAdapter, Settings, SettingsError};
+pub use adapter::{ResponsesAdapter, Settings, SettingsError, ADAPTER_VERSION, PROMPT_PROFILE};
 pub use body::{INPUT_PREAMBLE, MIN_MAX_OUTPUT_TOKENS};
 pub use clock::SystemClock;
 pub use credential::{Credential, CredentialError, EnvReader, ProcessEnv};

@@ -72,9 +72,13 @@ nothing. Its capabilities equal those of `ReplayProvider`: structured output
 `POST {endpoint}/v1/responses` with exactly these members, in this order:
 `model`, `input`, `text.format` (`json_schema`, `name`, `schema`, `strict:
 true`), `store: false`, `max_output_tokens`, and `reasoning.effort` only when
-configured. There is no `tools` member. `input` is a constant sentence
-(`INPUT_PREAMBLE`, provisional wording) followed by the canonical request
-bytes that passed the credential scan. The credential travels only in the
+configured. There is no `tools` member. `input` is a constant text
+(`INPUT_PREAMBLE`, eleven lines, each a rule that the tool enforces and that a
+test in `rt-ai-tool` asserts) followed by the canonical request bytes that
+passed the credential scan. The schema carries `description` members under the
+same rule. The wording is the prompt profile `N` of the adapter version
+`responses-1/prompt-N` (Req 35.23), which a stored batch records; it is not
+part of the Request_Identifier. The credential travels only in the
 `Authorization: Bearer` header to the configured host. Redirects are not
 followed, proxy variables are ignored, and the embedded `webpki-roots` store
 verifies the server. Error response bodies are never read.

@@ -54,25 +54,32 @@
                   ],
                   "properties": {
                     "document": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Document identifier, copied from the clause."
                     },
                     "sha256": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The sha256 that the request gives for that document."
                     },
                     "start": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document where the quote starts."
                     },
                     "end": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document after the last byte of the quote."
                     },
                     "line": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based line of start; CR, LF and CRLF each end a line."
                     },
                     "column": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based column of start, counted in characters."
                     },
                     "quote": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The document bytes from start to end, copied exactly."
                     }
                   }
                 }
@@ -117,25 +124,32 @@
                   ],
                   "properties": {
                     "document": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Document identifier, copied from the clause."
                     },
                     "sha256": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The sha256 that the request gives for that document."
                     },
                     "start": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document where the quote starts."
                     },
                     "end": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document after the last byte of the quote."
                     },
                     "line": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based line of start; CR, LF and CRLF each end a line."
                     },
                     "column": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based column of start, counted in characters."
                     },
                     "quote": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The document bytes from start to end, copied exactly."
                     }
                   }
                 }
@@ -180,25 +194,32 @@
                   ],
                   "properties": {
                     "document": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Document identifier, copied from the clause."
                     },
                     "sha256": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The sha256 that the request gives for that document."
                     },
                     "start": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document where the quote starts."
                     },
                     "end": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document after the last byte of the quote."
                     },
                     "line": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based line of start; CR, LF and CRLF each end a line."
                     },
                     "column": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based column of start, counted in characters."
                     },
                     "quote": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The document bytes from start to end, copied exactly."
                     }
                   }
                 }
@@ -243,25 +264,32 @@
                   ],
                   "properties": {
                     "document": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Document identifier, copied from the clause."
                     },
                     "sha256": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The sha256 that the request gives for that document."
                     },
                     "start": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document where the quote starts."
                     },
                     "end": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document after the last byte of the quote."
                     },
                     "line": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based line of start; CR, LF and CRLF each end a line."
                     },
                     "column": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based column of start, counted in characters."
                     },
                     "quote": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The document bytes from start to end, copied exactly."
                     }
                   }
                 }
@@ -307,25 +335,32 @@
                   ],
                   "properties": {
                     "document": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Document identifier, copied from the clause."
                     },
                     "sha256": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The sha256 that the request gives for that document."
                     },
                     "start": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document where the quote starts."
                     },
                     "end": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document after the last byte of the quote."
                     },
                     "line": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based line of start; CR, LF and CRLF each end a line."
                     },
                     "column": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based column of start, counted in characters."
                     },
                     "quote": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The document bytes from start to end, copied exactly."
                     }
                   }
                 }
@@ -364,6 +399,7 @@
                   },
                   "nodes": {
                     "type": "array",
+                    "description": "Expression nodes. A member that holds an expression holds an index into this array. Every index must exist, a node's children have greater indexes than the node, and every node is named exactly once by the rule or by one other node.",
                     "items": {
                       "anyOf": [
                         {
@@ -814,6 +850,7 @@
                         },
                         {
                           "type": "object",
+                          "description": "Use only when no other node expresses the operation. A rule that holds it is stored with a blocking Unsupported finding.",
                           "additionalProperties": false,
                           "required": [
                             "node",
@@ -891,6 +928,7 @@
                   },
                   "spans": {
                     "type": "array",
+                    "description": "Must repeat the evidence one for one in the same order.",
                     "items": {
                       "type": "object",
                       "additionalProperties": false,
@@ -963,25 +1001,32 @@
                   ],
                   "properties": {
                     "document": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Document identifier, copied from the clause."
                     },
                     "sha256": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The sha256 that the request gives for that document."
                     },
                     "start": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document where the quote starts."
                     },
                     "end": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document after the last byte of the quote."
                     },
                     "line": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based line of start; CR, LF and CRLF each end a line."
                     },
                     "column": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based column of start, counted in characters."
                     },
                     "quote": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The document bytes from start to end, copied exactly."
                     }
                   }
                 }
@@ -1020,6 +1065,7 @@
                   },
                   "nodes": {
                     "type": "array",
+                    "description": "Expression nodes. A member that holds an expression holds an index into this array. Every index must exist, a node's children have greater indexes than the node, and every node is named exactly once by the rule or by one other node.",
                     "items": {
                       "anyOf": [
                         {
@@ -1470,6 +1516,7 @@
                         },
                         {
                           "type": "object",
+                          "description": "Use only when no other node expresses the operation. A rule that holds it is stored with a blocking Unsupported finding.",
                           "additionalProperties": false,
                           "required": [
                             "node",
@@ -1547,6 +1594,7 @@
                   },
                   "spans": {
                     "type": "array",
+                    "description": "Must repeat the evidence one for one in the same order.",
                     "items": {
                       "type": "object",
                       "additionalProperties": false,
@@ -1619,25 +1667,32 @@
                   ],
                   "properties": {
                     "document": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Document identifier, copied from the clause."
                     },
                     "sha256": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The sha256 that the request gives for that document."
                     },
                     "start": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document where the quote starts."
                     },
                     "end": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document after the last byte of the quote."
                     },
                     "line": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based line of start; CR, LF and CRLF each end a line."
                     },
                     "column": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based column of start, counted in characters."
                     },
                     "quote": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The document bytes from start to end, copied exactly."
                     }
                   }
                 }
@@ -1721,6 +1776,7 @@
                   },
                   "nodes": {
                     "type": "array",
+                    "description": "Expression nodes. A member that holds an expression holds an index into this array. Every index must exist, a node's children have greater indexes than the node, and every node is named exactly once by the rule or by one other node.",
                     "items": {
                       "anyOf": [
                         {
@@ -2171,6 +2227,7 @@
                         },
                         {
                           "type": "object",
+                          "description": "Use only when no other node expresses the operation. A rule that holds it is stored with a blocking Unsupported finding.",
                           "additionalProperties": false,
                           "required": [
                             "node",
@@ -2248,6 +2305,7 @@
                   },
                   "spans": {
                     "type": "array",
+                    "description": "Must repeat the evidence one for one in the same order.",
                     "items": {
                       "type": "object",
                       "additionalProperties": false,
@@ -2320,25 +2378,32 @@
                   ],
                   "properties": {
                     "document": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Document identifier, copied from the clause."
                     },
                     "sha256": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The sha256 that the request gives for that document."
                     },
                     "start": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document where the quote starts."
                     },
                     "end": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document after the last byte of the quote."
                     },
                     "line": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based line of start; CR, LF and CRLF each end a line."
                     },
                     "column": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based column of start, counted in characters."
                     },
                     "quote": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The document bytes from start to end, copied exactly."
                     }
                   }
                 }
@@ -2416,6 +2481,7 @@
                   },
                   "nodes": {
                     "type": "array",
+                    "description": "Expression nodes. A member that holds an expression holds an index into this array. Every index must exist, a node's children have greater indexes than the node, and every node is named exactly once by the rule or by one other node.",
                     "items": {
                       "anyOf": [
                         {
@@ -2866,6 +2932,7 @@
                         },
                         {
                           "type": "object",
+                          "description": "Use only when no other node expresses the operation. A rule that holds it is stored with a blocking Unsupported finding.",
                           "additionalProperties": false,
                           "required": [
                             "node",
@@ -2943,6 +3010,7 @@
                   },
                   "spans": {
                     "type": "array",
+                    "description": "Must repeat the evidence one for one in the same order.",
                     "items": {
                       "type": "object",
                       "additionalProperties": false,
@@ -3015,25 +3083,32 @@
                   ],
                   "properties": {
                     "document": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Document identifier, copied from the clause."
                     },
                     "sha256": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The sha256 that the request gives for that document."
                     },
                     "start": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document where the quote starts."
                     },
                     "end": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document after the last byte of the quote."
                     },
                     "line": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based line of start; CR, LF and CRLF each end a line."
                     },
                     "column": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based column of start, counted in characters."
                     },
                     "quote": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The document bytes from start to end, copied exactly."
                     }
                   }
                 }
@@ -3072,6 +3147,7 @@
                   },
                   "nodes": {
                     "type": "array",
+                    "description": "Expression nodes. A member that holds an expression holds an index into this array. Every index must exist, a node's children have greater indexes than the node, and every node is named exactly once by the rule or by one other node.",
                     "items": {
                       "anyOf": [
                         {
@@ -3522,6 +3598,7 @@
                         },
                         {
                           "type": "object",
+                          "description": "Use only when no other node expresses the operation. A rule that holds it is stored with a blocking Unsupported finding.",
                           "additionalProperties": false,
                           "required": [
                             "node",
@@ -3599,6 +3676,7 @@
                   },
                   "spans": {
                     "type": "array",
+                    "description": "Must repeat the evidence one for one in the same order.",
                     "items": {
                       "type": "object",
                       "additionalProperties": false,
@@ -3671,31 +3749,39 @@
                   ],
                   "properties": {
                     "document": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Document identifier, copied from the clause."
                     },
                     "sha256": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The sha256 that the request gives for that document."
                     },
                     "start": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document where the quote starts."
                     },
                     "end": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "UTF-8 byte offset in the whole document after the last byte of the quote."
                     },
                     "line": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based line of start; CR, LF and CRLF each end a line."
                     },
                     "column": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "1-based column of start, counted in characters."
                     },
                     "quote": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The document bytes from start to end, copied exactly."
                     }
                   }
                 }
               },
               "rule": {
                 "type": "object",
+                "description": "Use only when no rule kind expresses the clause. The rule is stored with a blocking Unsupported finding.",
                 "additionalProperties": false,
                 "required": [
                   "id",
@@ -3782,6 +3868,7 @@
                   },
                   "spans": {
                     "type": "array",
+                    "description": "Must repeat the evidence one for one in the same order.",
                     "items": {
                       "type": "object",
                       "additionalProperties": false,
