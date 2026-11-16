@@ -7,6 +7,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      propose:
+        description: "live-openai only: also run one live propose over the synthetic stand-in document (needs the secret and the model variable)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -356,6 +362,107 @@ jobs:
           name: demo-offline-${{ matrix.os }}
           path: ci-output/
           if-no-files-found: warn
+
+  # Design §7.4, Req 21.14, UD-15 section 6. Not required: it is not in the `needs` of ci-gate.
+  # Live steps run only when the repository secret and the model variable are both set. Fork pull
+  # requests have no secrets, so they skip cleanly. The secret is referenced only in this env block.
+  live-openai:
+    name: live-openai (linux, optional)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    env:
+      RULETRACE_OPENAI_API_KEY: ${{ secrets.RULETRACE_OPENAI_API_KEY }}
+      RULETRACE_OPENAI_MODEL: ${{ vars.RULETRACE_OPENAI_MODEL }}
+    steps:
+      - name: Gate (is the live job configured?)
+        id: gate
+        run: |
+          configured=false
+          if [ -z "${RULETRACE_OPENAI_API_KEY:-}" ]; then
+            echo "live-openai skipped: the repository secret RULETRACE_OPENAI_API_KEY is not set."
+          elif [ -z "${RULETRACE_OPENAI_MODEL:-}" ]; then
+            echo "live-openai skipped: the secret is set but the repository variable RULETRACE_OPENAI_MODEL is empty or absent."
+          else
+            configured=true
+            echo "live-openai configured: the secret and the model variable are set."
+          fi
+          echo "configured=$configured" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v5
+        if: steps.gate.outputs.configured == 'true'
+      - name: Install pinned toolchain
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - name: Build the executables
+        if: steps.gate.outputs.configured == 'true'
+        run: cargo build --locked --bins -p rt-ai-tool -p rt-cli
+      - name: Write the configuration (mode 600, credential by name only)
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          # The model text comes from a variable. Refuse anything outside a conservative charset.
+          # A bash regex matches the whole value, so an embedded line feed is refused too.
+          pattern='^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$'
+          if ! [[ "$RULETRACE_OPENAI_MODEL" =~ $pattern ]]; then
+            echo "RULETRACE_OPENAI_MODEL is not a plain model identifier (letters, digits, . _ : -, at most 100). Nothing was written." >&2
+            exit 1
+          fi
+          dir="$RUNNER_TEMP/live-openai"
+          mkdir -p "$dir"
+          for use in models propose; do
+            allow=false
+            if [ "$use" = propose ]; then allow=true; fi
+            umask 077
+            cat > "$dir/$use.toml" <<EOF
+          schema_version = 2
+          enabled = true
+          allow_document_text = $allow
+          ai_identities = ["openai", "$RULETRACE_OPENAI_MODEL"]
+          transmission_log = "$dir/$use-transmission.log.jsonl"
+          max_clauses_per_request = 5
+
+          [provider]
+          id = "openai"
+          protocol = "openai-responses"
+          model = "$RULETRACE_OPENAI_MODEL"
+          endpoint = "https://api.openai.com"
+          credential_env_var = "RULETRACE_OPENAI_API_KEY"
+
+          [limits]
+          total_deadline_secs = 60
+          attempt_timeout_secs = 20
+          max_retries = 0
+          max_response_bytes = 1048576
+          EOF
+            chmod 600 "$dir/$use.toml"
+          done
+      - name: Model catalogue (authenticated GET, no document text)
+        if: steps.gate.outputs.configured == 'true'
+        run: target/debug/ruletrace-ai models --config "$RUNNER_TEMP/live-openai/models.toml"
+      - name: Live propose over the synthetic stand-in document (manual run only)
+        if: steps.gate.outputs.configured == 'true' && github.event_name == 'workflow_dispatch' && inputs.propose == true
+        run: |
+          dir="$RUNNER_TEMP/live-openai"
+          bin="$PWD/target/debug"
+          cd demo/stand-in-ai
+          "$bin/ruletrace" ingest --document documents/stand-in-rules.md --document-id stand-in-rules.md \
+            --out "$dir/source-model.json" --candidates "$dir/candidates.json"
+          set +e
+          "$bin/ruletrace-ai" propose --config "$dir/propose.toml" --rulebook rulebook/seed.json \
+            --source-model "$dir/source-model.json" --candidates "$dir/candidates.json" \
+            --store "$dir/store" --created-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --consent stand-in-rules.md
+          code=$?
+          set -e
+          echo "ruletrace-ai propose exit code: $code"
+          case "$code" in
+            0|2|3|5|6) echo "informational: no assertion is made on the model output." ;;
+            *) echo "internal error or unexpected exit code $code" >&2; exit 1 ;;
+          esac
 
   # Single required check for branch protection. It fails if any job, on any platform, is
   # failed, skipped or cancelled, and if a platform is missing from a matrix (design §7.4, Req 21.4).
