@@ -16,7 +16,7 @@ use rt_numeric::parse_literal;
 use rt_trace::{CriterionResult, Entry, NotAppliedReason, Place, TraceValue};
 use std::collections::BTreeMap;
 
-fn ranking(id: &str, key: Direction, tie_breakers: &[Direction]) -> CompiledRule {
+pub(crate) fn ranking(id: &str, key: Direction, tie_breakers: &[Direction]) -> CompiledRule {
     let mut n = Nodes::default();
     let key_node = n.field(NUM, 0);
     let tbs: Vec<CompiledTieBreaker> = tie_breakers
@@ -41,14 +41,14 @@ fn ranking(id: &str, key: Direction, tie_breakers: &[Direction]) -> CompiledRule
     )
 }
 
-fn rank_all() -> Question {
+pub(crate) fn rank_all() -> Question {
     Question::Rank {
         target: TargetName::new("standings").unwrap(),
         participants: None,
     }
 }
 
-fn scored(people: &[(&str, Option<&str>, Option<&str>)]) -> CompetitionData {
+pub(crate) fn scored(people: &[(&str, Option<&str>, Option<&str>)]) -> CompetitionData {
     data(
         people
             .iter()
@@ -80,7 +80,7 @@ fn ids(items: &[&str]) -> Vec<String> {
     items.iter().map(|s| (*s).to_owned()).collect()
 }
 
-const INPUTS: [(&str, CType); 3] = [("a", NUM), ("b", NUM), ("c", NUM)];
+pub(crate) const INPUTS: [(&str, CType); 3] = [("a", NUM), ("b", NUM), ("c", NUM)];
 
 #[test]
 fn a_tie_is_one_tie_group_and_the_next_position_skips_its_size() {
@@ -425,7 +425,7 @@ fn unequal_results_without_precedence_give_one_conflict_and_record_each_result()
 
 // ----- published comparison -----
 
-fn published(entries: &[(&str, &str, PublishedValue)]) -> PublishedResult {
+pub(crate) fn published(entries: &[(&str, &str, PublishedValue)]) -> PublishedResult {
     PublishedResult::new(
         entries
             .iter()
@@ -442,7 +442,7 @@ fn published(entries: &[(&str, &str, PublishedValue)]) -> PublishedResult {
     )
 }
 
-fn pnum(text: &str) -> PublishedValue {
+pub(crate) fn pnum(text: &str) -> PublishedValue {
     PublishedValue::Number(PublishedNumber::parse(text).unwrap())
 }
 
