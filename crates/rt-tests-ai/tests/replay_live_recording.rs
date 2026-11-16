@@ -122,7 +122,12 @@ fn the_replay_stores_the_proposals_and_payload_of_the_live_batch_unchanged() {
         "{}",
         ran.stdout
     );
-    assert_eq!(ran.codes(), ["RT-AI-0305"], "{}", ran.stderr);
+    assert_eq!(
+        ran.codes(),
+        support::stored_with_blocking_findings_codes(),
+        "{}",
+        ran.stderr
+    );
     // No connection reached the listener during the run.
     assert!(matches!(
         listener.accept(),
