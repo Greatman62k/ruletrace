@@ -352,7 +352,7 @@ fn a_429_with_retry_after_waits_the_longer_time_on_the_simulated_clock_then_succ
     let stub = Stub::start(vec![
         http(
             "429 Too Many Requests",
-            &[("Retry-After", "3")],
+            &[("Retry-After", "30")],
             br#"{"error":{"type":"rate_limit"}}"#,
         ),
         success(USAGE),
@@ -366,8 +366,14 @@ fn a_429_with_retry_after_waits_the_longer_time_on_the_simulated_clock_then_succ
         Some("RT-AI-0103")
     );
     assert_eq!(stub.connections(), 2);
-    assert_eq!(rig.waits(), [Duration::from_secs(3)]);
-    assert!(started.elapsed() < Duration::from_secs(2), "the test slept");
+    assert_eq!(rig.waits(), [Duration::from_secs(30)]);
+    assert_eq!(rig.waits.now.get(), Duration::from_secs(30));
+    // The wait is 30 s on the simulated clock. A real sleep would take at
+    // least that long, so this bound has a wide margin over a loaded run.
+    assert!(
+        started.elapsed() < Duration::from_secs(15),
+        "the test slept"
+    );
     assert_eq!(rig.log_lines().len(), 2);
     assert!(rig.batch_path().exists());
     drop(stub.finish());
