@@ -176,14 +176,17 @@ pub const OPENAI: Profile = Profile {
 };
 
 /// The offline replay of a recorded script. It sends nothing and applies no
-/// reasoning effort, matching the capabilities of the replay provider.
+/// reasoning effort, matching the capabilities of the replay provider. A
+/// configured effort is part of the Request_Identifier, so a recording made
+/// under another effort is a miss (RT-AI-0105) and one made under the same
+/// effort replays, which is why the capability is declared.
 pub const MOCK_REPLAY: Profile = Profile {
     id: "mock-replay",
     protocol: Protocol::MockReplay,
     official_host: None,
     capabilities: Capabilities {
         structured_output: Tri::Yes,
-        reasoning_effort: Tri::No,
+        reasoning_effort: Tri::Yes,
         usage_reporting: Tri::No,
     },
     schema_mode: SchemaMode::JsonSchemaStrict,

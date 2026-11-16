@@ -244,3 +244,30 @@ fn flag_keys_and_truncation_are_rejected() {
     let cut = &good()[..60];
     assert!(matches!(load(cut), Err(ScriptError::Parse(_))));
 }
+
+// Design §8.11.7: version 1 carries an optional provider identifier.
+#[test]
+fn the_optional_provider_identifier_is_read_and_its_absence_is_valid() {
+    let with_id = good().replace(
+        r#""kind":"openai-responses","#,
+        r#""kind":"openai-responses","id":"meta","#,
+    );
+    let parsed = RecordedScript::parse(&id(), with_id.as_bytes()).unwrap();
+    assert_eq!(parsed.provider_id.as_deref(), Some("meta"));
+    assert_eq!(parsed.provider_kind, "openai-responses");
+    let without = RecordedScript::parse(&id(), good().as_bytes()).unwrap();
+    assert_eq!(without.provider_id, None);
+    for bad in [r#""id":1,"#, r#""id":null,"#, r#""region":"eu","#] {
+        let text = good().replace(
+            r#""kind":"openai-responses","#,
+            &format!(r#""kind":"openai-responses",{bad}"#),
+        );
+        assert!(
+            matches!(
+                RecordedScript::parse(&id(), text.as_bytes()),
+                Err(ScriptError::Invalid(_))
+            ),
+            "{bad}"
+        );
+    }
+}

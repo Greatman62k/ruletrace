@@ -644,7 +644,9 @@ name = "rt-xtask"
 version = "0.1.0"
 dependencies = [
  "rt-foundation",
+ "rt-hash",
  "rt-json",
+ "rt-proposals",
 ]
 
 [[package]]

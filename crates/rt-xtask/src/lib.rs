@@ -6,6 +6,7 @@ pub mod api;
 pub mod catalogue;
 pub mod decisions;
 pub mod edges;
+pub mod export;
 pub mod graph;
 pub mod justification;
 pub mod metadata;

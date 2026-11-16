@@ -13,15 +13,19 @@
 //! * A rule draft is carried as canonical RT-JSON with its identifier and
 //!   Draft hash. The draft hash is computed by the proposal pipeline with
 //!   `rt_ir::draft_hash`, which needs the declared documents of a Rulebook.
+//! * [`export_script`] turns stored batches into a Recorded_Provider_Script
+//!   (UD-36). It is pure and is run by `rt-xtask export-script`.
 //! * The crate does no file access and has no write or append function. The
 //!   `ruletrace` workflow never writes the store (design D-8).
 #![forbid(unsafe_code)]
 
+mod export;
 mod model;
 mod parse;
 mod pending;
 mod print;
 
+pub use export::{export_script, ExportError, NamedBatch, ScriptHeader};
 pub use model::{
     proposal_id, Batch, Completion, Evidence, Extras, Format, Proposal, ProposalKind, RuleDraft,
     StoredDiagnostic, StoredLocation, StoredResponse, StoredUsage, FORMAT_NAME, FORMAT_VERSION_1,
@@ -33,6 +37,8 @@ pub use print::print_batch;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_export;
 #[cfg(test)]
 mod tests_identifier_property;
 #[cfg(test)]

@@ -17,9 +17,13 @@ fn main() -> ExitCode {
     }
 }
 
-const USAGE: &str = "usage: rt-xtask [--root <dir>] gen-catalogue | check-graph | check-tree | scan-sources | scan-api | check-decisions | check-catalogue | check-justification [--release-tags <git tag --list output>] ...";
+const USAGE: &str = "usage: rt-xtask [--root <dir>] gen-catalogue | check-graph | check-tree | scan-sources | scan-api | check-decisions | check-catalogue | check-justification [--release-tags <git tag --list output>] ... | export-script --store <dir> --provider <kind> [--provider-id <id>] --model <id> --captured \"<text>\" --out <file>";
 
 fn run(args: &[String]) -> Result<(), String> {
+    if let Some(("export-script", rest)) = args.split_first().map(|(c, r)| (c.as_str(), r)) {
+        let parsed = rt_xtask::export::parse_args(rest)?;
+        return rt_xtask::export::run(&parsed).map(|report| println!("{report}"));
+    }
     let mut root = PathBuf::from(".");
     let mut commands: Vec<&str> = Vec::new();
     let mut release_tags: Option<String> = None;

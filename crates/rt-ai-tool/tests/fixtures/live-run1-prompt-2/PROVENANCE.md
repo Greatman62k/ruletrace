@@ -16,3 +16,11 @@
 - Read-only evidence. The test `tests_live_run1` re-runs today's acceptance
   path over the payload and expects the findings recorded here. Do not edit
   the file; a prompt-3 capture gets its own directory.
+
+## inputs/
+
+- `meta.toml`, `candidates.json`, `source-model.json`: copies of the inputs of
+  that run (`~/ruletrace-live/run1`). The configuration names the credential
+  only by environment variable name. They let a test show that the
+  Request_Identifier of the run is still `1c574c2d...` under later prompt
+  profiles (`crates/rt-tests-ai/tests/request_id_pin.rs`).

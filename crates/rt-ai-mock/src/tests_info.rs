@@ -41,6 +41,14 @@ fn replay_provider() -> ReplayProvider {
     ReplayProvider::new(RecordedScript::parse(&id(), text.as_bytes()).unwrap())
 }
 
+// The replay provider declares a reasoning effort as supported, because the
+// effort is part of the Request_Identifier that a recording is keyed by.
+const REPLAY: Capabilities = Capabilities {
+    structured_output: Tri::Yes,
+    reasoning_effort: Tri::Yes,
+    usage_reporting: Tri::No,
+};
+
 const SCHEMA_ONLY: Capabilities = Capabilities {
     structured_output: Tri::Yes,
     reasoning_effort: Tri::No,
@@ -64,7 +72,7 @@ fn the_replay_provider_declares_the_adapter_version_of_its_script() {
     assert_eq!(identity.provider.as_str(), "mock-replay");
     assert_eq!(identity.protocol, Protocol::MockReplay);
     assert_eq!(identity.adapter_version, "0.1.0");
-    assert_eq!(p.capabilities(), SCHEMA_ONLY);
+    assert_eq!(p.capabilities(), REPLAY);
 }
 
 #[test]
@@ -91,17 +99,17 @@ fn negotiation_against_a_mock_follows_its_declared_capabilities() {
         structured_output: true,
         reasoning_effort: true,
     };
-    for caps in [
-        step_provider().capabilities(),
-        replay_provider().capabilities(),
-    ] {
-        assert_eq!(negotiate(&need_schema, &caps), Ok(()));
-        assert_eq!(
-            negotiate(&need_both, &caps),
-            Err(vec![Unmet {
-                capability: "reasoning_effort",
-                value: Tri::No
-            }])
-        );
+    let step = step_provider().capabilities();
+    let replay = replay_provider().capabilities();
+    for caps in [&step, &replay] {
+        assert_eq!(negotiate(&need_schema, caps), Ok(()));
     }
+    assert_eq!(
+        negotiate(&need_both, &step),
+        Err(vec![Unmet {
+            capability: "reasoning_effort",
+            value: Tri::No
+        }])
+    );
+    assert_eq!(negotiate(&need_both, &replay), Ok(()));
 }

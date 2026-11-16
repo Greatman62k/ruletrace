@@ -2850,6 +2850,10 @@ Recorded_Provider_Script format (`rt-ai-mock`, RT-JSON). Version 1 is unchanged:
                "response_sha256":"<64 hex of payload bytes>","payload":"<exact response text>"} ] }
 ```
 
+Export rules as implemented (task 10.6): the script's `adapter_version` is the one the batches record, and batches of different adapter versions, models, protocols or providers are refused rather than merged or relabelled; a batch of protocol `mock-replay` (or a v1 batch of kind `mock-replay`) is refused, because labelling a replayed or authored entry `recorded` would call it provider output (Req 33.8); the output file must not exist. The format has no member for the reported model, the response identifier, the usage or a document hash, so those stay in the batch only (no format change).
+
+Replay of a recording made with a reasoning effort (user decision 2026-11-16): the `mock-replay` profile and the replay provider declare `reasoning_effort = yes`. The effort is part of the Request_Identifier, so a replay configuration that names the recorded effort matches the recording and any other effort is a miss (RT-AI-0105). The replay still sends nothing and applies nothing.
+
 `rt-ai-mock` gains a replay mode (`provider = "mock-replay"`): `attempt` computes `request.request_id()`, returns the entry's payload with `elapsed` zero, and returns `ProviderFailure::Other` with the Request_Identifier in `AttemptReport.detail` if no entry matches. `ruletrace-ai` then reports AI_PROVIDER_ERROR (RT-AI-0105, exit 5) under Req 16.16, as Req 33.8 requires. The Request_Identifier covers the request's model, limits, clauses, declarations and `vocabulary`, so any change to the request builder, the vocabulary (including the UD-32 option) or the declarations invalidates the script. This is deliberate: the test fails with "no entry for request <id>" and a deliberate re-record is required (RN-27, R-D10). Entries of origin `authored` (Slice 1) carry the label in the file, in the manifest `origins` count and in the Proof_Report header; no document calls an authored entry provider output (Req 33.8).
 
 #### 8.11.8 Coverage_Statement generator (Req 33.6)

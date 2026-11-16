@@ -767,11 +767,29 @@ fn an_effort_for_openai_fails_closed_as_an_unsupported_capability() {
     }
 }
 
+// Changed on 2026-11-16 (user decision, Task C option A): the replay profile
+// declares reasoning_effort = yes, because the effort is part of the
+// Request_Identifier of a recording. An effort is accepted and reaches the
+// request; a declaration that lowers the capability is still RT-AI-0011.
 #[test]
-fn an_effort_for_the_replay_provider_is_an_unsupported_capability_with_value_no() {
+fn an_effort_for_the_replay_provider_is_accepted_and_kept() {
     let text = V2_MOCK.replace(
         "model = \"model-1\"",
         "model = \"model-1\"\nreasoning_effort = \"low\"",
+    );
+    let ok = run(&text, &MapEnv::new(&[])).unwrap();
+    assert_eq!(ok.config.reasoning_effort.as_deref(), Some("low"));
+    assert_eq!(ok.config.capabilities.reasoning_effort, Tri::Yes);
+}
+
+#[test]
+fn an_effort_for_the_replay_provider_with_the_capability_lowered_is_rt_ai_0011() {
+    let text = format!(
+        "{}\n[capabilities]\nreasoning_effort = \"no\"\n",
+        V2_MOCK.replace(
+            "model = \"model-1\"",
+            "model = \"model-1\"\nreasoning_effort = \"low\"",
+        )
     );
     let d = one(run(&text, &MapEnv::new(&[])), Code::AiCapabilityUnsupported);
     assert_eq!(at(&d), loc(12, "provider.reasoning_effort"));

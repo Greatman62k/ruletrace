@@ -71,7 +71,9 @@ fn the_mock_replay_profile_matches_the_replay_provider_and_has_no_host() {
     assert_eq!(p.official_host, None);
     assert_eq!(p.protocol, Protocol::MockReplay);
     assert_eq!(p.capabilities.structured_output, Tri::Yes);
-    assert_eq!(p.capabilities.reasoning_effort, Tri::No);
+    // Changed on 2026-11-16 from No: an effort is part of the
+    // Request_Identifier, so a recording made under it must replay.
+    assert_eq!(p.capabilities.reasoning_effort, Tri::Yes);
     assert_eq!(p.capabilities.usage_reporting, Tri::No);
 }
 

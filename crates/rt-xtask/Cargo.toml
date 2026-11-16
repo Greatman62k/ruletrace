@@ -14,3 +14,8 @@ workspace = true
 [dependencies]
 rt-foundation = { path = "../rt-foundation" }
 rt-json = { path = "../rt-json" }
+rt-proposals = { path = "../rt-proposals" }
+
+[dev-dependencies]
+# The export tests build batches whose payload hash they must compute.
+rt-hash = { path = "../rt-hash" }

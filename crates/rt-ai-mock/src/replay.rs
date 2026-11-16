@@ -39,8 +39,12 @@ pub struct RecordedEntry {
 /// A parsed `ruletrace-recorded-script`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecordedScript {
-    /// Provider kind recorded in the file.
+    /// Provider kind recorded in the file: the protocol label of a
+    /// recording, or the label of an authored script.
     pub provider_kind: String,
+    /// The optional provider identifier of the recording, for example
+    /// `meta` (UD-37). A script without it stays valid.
+    pub provider_id: Option<String>,
     /// Model identifier recorded in the file.
     pub model: String,
     /// Adapter version recorded in the file.
@@ -78,8 +82,13 @@ impl RecordedScript {
         let Some(provider) = provider else {
             return Err(invalid(&doc, ".provider", "missing field"));
         };
-        let keys = ["kind", "model", "adapter_version"];
-        members(provider, ".provider", &keys, &keys)?;
+        let required = ["kind", "model", "adapter_version"];
+        let allowed = ["kind", "id", "model", "adapter_version"];
+        members(provider, ".provider", &allowed, &required)?;
+        let provider_id = match provider.get("id") {
+            Some(_) => Some(text(provider, "id", ".provider")?.to_owned()),
+            None => None,
+        };
         let entries_value = doc.get("entries").map(|m| &m.value);
         let Some(list) = entries_value.and_then(Value::as_array) else {
             return Err(invalid(&doc, ".entries", "expected an array"));
@@ -95,6 +104,7 @@ impl RecordedScript {
         }
         Ok(Self {
             provider_kind: text(provider, "kind", ".provider")?.to_owned(),
+            provider_id,
             model: text(provider, "model", ".provider")?.to_owned(),
             adapter_version: text(provider, "adapter_version", ".provider")?.to_owned(),
             captured: text(&doc, "captured", "")?.to_owned(),
@@ -208,11 +218,13 @@ impl AdapterInfo for ReplayProvider {
     }
 
     fn capabilities(&self) -> Capabilities {
-        // A replay returns a stored payload. It sends nothing, so it applies
-        // no reasoning effort and reports no usage.
+        // A replay returns a stored payload and sends nothing. A configured
+        // reasoning effort is part of the Request_Identifier, so only a
+        // recording made under that effort matches (a miss is RT-AI-0105).
+        // It reports no usage.
         Capabilities {
             structured_output: Tri::Yes,
-            reasoning_effort: Tri::No,
+            reasoning_effort: Tri::Yes,
             usage_reporting: Tri::No,
         }
     }

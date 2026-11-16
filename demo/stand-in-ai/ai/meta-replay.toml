@@ -1,0 +1,23 @@
+# Offline replay of the first live recording (Meta muse-spark-1.3, prompt-2).
+# Provider mock-replay: no endpoint, no credential, nothing is sent. The
+# model, reasoning effort, limits and clause batching repeat those of the
+# live run, so the Request_Identifier equals the recorded one (1c574c2d...).
+schema_version = 2
+enabled = true
+script = "provider/recorded-meta-muse-spark-1.3-prompt-2.json"
+allow_document_text = true
+ai_identities = ["mock-replay", "meta", "muse-spark-1.3"]
+transmission_log = "work/replay/transmission.log.jsonl"
+max_clauses_per_request = 5
+
+[provider]
+id = "mock-replay"
+protocol = "mock-replay"
+model = "muse-spark-1.3"
+reasoning_effort = "low"
+
+[limits]
+total_deadline_secs = 120
+attempt_timeout_secs = 90
+max_retries = 0
+max_response_bytes = 1048576
