@@ -37,4 +37,4 @@ pub use adapter::{ResponsesAdapter, Settings, SettingsError, ADAPTER_VERSION, PR
 pub use body::{INPUT_PREAMBLE, MIN_MAX_OUTPUT_TOKENS};
 pub use clock::SystemClock;
 pub use credential::{Credential, CredentialError, EnvReader, ProcessEnv};
-pub use endpoint::{is_loopback_host, Endpoint, EndpointError};
+pub use endpoint::{has_unusable_character, is_loopback_host, Endpoint, EndpointError};

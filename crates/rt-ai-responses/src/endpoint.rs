@@ -38,10 +38,7 @@ impl Endpoint {
     /// # Errors
     /// The first rule that `text` breaks.
     pub fn parse(text: &str) -> Result<Self, EndpointError> {
-        if text
-            .chars()
-            .any(|c| c.is_control() || c == ' ' || c == '\\')
-        {
+        if has_unusable_character(text) {
             return Err(EndpointError::Character);
         }
         let (clear_text, rest) = split_scheme(text).ok_or(EndpointError::Scheme)?;
@@ -57,7 +54,7 @@ impl Endpoint {
             return Err(EndpointError::InsecureHost);
         }
         let scheme = if clear_text { "http" } else { "https" };
-        let path = path.strip_suffix('/').unwrap_or(path);
+        let path = path.trim_end_matches('/');
         Ok(Self {
             base: format!("{scheme}://{authority}{path}"),
             host: host.to_ascii_lowercase(),
@@ -121,6 +118,26 @@ fn host_of(authority: &str) -> Option<&str> {
         }
     }
     Some(host)
+}
+
+/// True when `text` has a character that no endpoint may contain: a
+/// control character, white space, a backslash, or a Unicode format
+/// character (general category Cf) such as U+200B or U+202E. The tool and
+/// the adapter share this check, so they agree on every endpoint text.
+#[must_use]
+pub fn has_unusable_character(text: &str) -> bool {
+    text.chars()
+        .any(|c| c.is_control() || c.is_whitespace() || c == '\\' || is_format(c))
+}
+
+// The characters of general category Cf in Unicode 15, by range.
+fn is_format(c: char) -> bool {
+    matches!(u32::from(c),
+        0xAD | 0x600..=0x605 | 0x61C | 0x6DD | 0x70F | 0x890..=0x891 | 0x8E2
+        | 0x180E | 0x200B..=0x200F | 0x202A..=0x202E | 0x2060..=0x2064
+        | 0x2066..=0x206F | 0xFEFF | 0xFFF9..=0xFFFB | 0x110BD | 0x110CD
+        | 0x13430..=0x1343F | 0x1BCA0..=0x1BCA3 | 0x1D173..=0x1D17A
+        | 0xE0001 | 0xE0020..=0xE007F)
 }
 
 /// The one loopback definition of the tool and the adapter (Req 28.6):

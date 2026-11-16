@@ -63,6 +63,23 @@ fn accepted_endpoints_and_their_urls() {
     }
 }
 
+// Wave 3 issue 10: no trailing slash survives, so the request path never
+// starts with `//`.
+#[test]
+fn every_trailing_slash_is_removed_from_the_base() {
+    let rows = [
+        ("https://h//", "https://h/v1/responses"),
+        ("https://h///", "https://h/v1/responses"),
+        ("https://h/", "https://h/v1/responses"),
+        ("https://h/base//", "https://h/base/v1/responses"),
+        ("https://h/a//b/", "https://h/a//b/v1/responses"),
+    ];
+    for (text, url) in rows {
+        let e = Endpoint::parse(text).unwrap_or_else(|e| panic!("{text}: {e:?}"));
+        assert_eq!(e.url("/v1/responses"), url, "{text}");
+    }
+}
+
 #[test]
 fn refused_endpoints() {
     let rows = [
@@ -89,6 +106,12 @@ fn refused_endpoints() {
         ("https://api.meta.ai/a b", E::Character),
         ("https://api.meta.ai\\x", E::Character),
         ("https://api.meta.ai\n", E::Character),
+        ("https://api.meta.ai\u{200b}", E::Character),
+        ("https://api.meta.ai/a\u{202e}b", E::Character),
+        ("https://api\u{feff}.meta.ai", E::Character),
+        ("https://api.meta.ai\u{ad}", E::Character),
+        ("https://api.meta.ai/a\u{2060}", E::Character),
+        ("https://api.meta.ai/\u{a0}", E::Character),
     ];
     for (text, want) in rows {
         assert_eq!(Endpoint::parse(text), Err(want), "{text:?}");

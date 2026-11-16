@@ -208,7 +208,7 @@ pub fn parse_response(
     if size > response_limit {
         return Err(Diagnostic::new(
             Code::AiResponseTooLarge,
-            format!("provider response is {size} bytes, above the limit of {response_limit}"),
+            format!("provider response is larger than the limit of {response_limit} bytes"),
             at.plain(None),
         ));
     }

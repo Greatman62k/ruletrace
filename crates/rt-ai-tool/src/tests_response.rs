@@ -866,6 +866,18 @@ fn assert_expected_mismatch(text: &str, what: &str) {
     );
 }
 
+// The Responses adapter returns limit + 1 bytes for an oversize answer, so
+// the message must not state the payload length as the size of the answer.
+#[test]
+fn too_large_says_larger_than_the_limit_and_never_prints_the_payload_length() {
+    let payload = vec![b'x'; 11];
+    let d = parse_with(Completion::Complete, &payload, 10).unwrap_err();
+    assert_eq!(
+        d.message(),
+        "provider response is larger than the limit of 10 bytes"
+    );
+}
+
 #[test]
 fn too_large_outranks_malformed() {
     let d = parse_with(Completion::Complete, b"not json at all", 3).unwrap_err();

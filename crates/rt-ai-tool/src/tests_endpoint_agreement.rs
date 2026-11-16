@@ -64,7 +64,7 @@ fn every_refused_spelling_is_rt_ai_0004_with_exit_2() {
 // implementation.
 #[test]
 fn validation_and_the_adapter_endpoint_agree_on_every_spelling() {
-    let table: [(&str, bool); 34] = [
+    let table: [(&str, bool); 40] = [
         ("http://localhost", true),
         ("http://LOCALHOST", true),
         ("http://localhost:9", true),
@@ -99,6 +99,12 @@ fn validation_and_the_adapter_endpoint_agree_on_every_spelling() {
         ("http://[::1%25lo]", false),
         ("http://[::1", false),
         ("http://::1", false),
+        ("http://127.0.0.1\u{200b}", false),
+        ("http://127.0.0.1/\u{202e}", false),
+        ("http://local\u{feff}host", false),
+        ("http://127.0.0.1/a b", false),
+        ("http://127.0.0.1\\x", false),
+        ("http://127.0.0.1//", true),
     ];
     for (url, loopback) in table {
         let tool = crate::endpoint::parse(url)

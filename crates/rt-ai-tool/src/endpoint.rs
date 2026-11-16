@@ -49,7 +49,7 @@ fn valid_port(port: &str) -> bool {
 /// with a non-empty host. Backslashes, whitespace and control characters
 /// are refused so that two parsers cannot disagree on the host.
 pub(crate) fn parse(raw: &str) -> Option<ParsedEndpoint> {
-    if raw.contains('\\') || raw.chars().any(|c| c.is_whitespace() || c.is_control()) {
+    if rt_ai_responses::has_unusable_character(raw) {
         return None;
     }
     let (scheme, _) = raw.split_once("://")?;
