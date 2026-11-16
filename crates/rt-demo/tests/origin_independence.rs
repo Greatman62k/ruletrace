@@ -65,7 +65,18 @@ fn demo_dir() -> PathBuf {
         .join("stand-in-ai")
 }
 
+// Parallel tests of one binary each ran a nested `cargo build`, which can
+// relink the executable while another test starts it (macOS NotFound in run
+// 43892679845). The build runs once per test process.
 fn bin_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    static BUILT: std::sync::OnceLock<Result<PathBuf, String>> = std::sync::OnceLock::new();
+    BUILT
+        .get_or_init(|| build_bin_dir().map_err(|e| e.to_string()))
+        .clone()
+        .map_err(Into::into)
+}
+
+fn build_bin_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
     if let Some(dir) = std::env::var_os("RT_BIN_DIR") {
         return Ok(PathBuf::from(dir));
     }

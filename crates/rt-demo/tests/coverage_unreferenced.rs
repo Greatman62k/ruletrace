@@ -26,7 +26,18 @@ fn fixture() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/coverage-unreferenced")
 }
 
+// Parallel tests of one binary each ran a nested `cargo build`, which can
+// relink the executable while another test starts it (macOS NotFound in run
+// 43892679845). The build runs once per test process.
 fn binary() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    static BUILT: std::sync::OnceLock<Result<PathBuf, String>> = std::sync::OnceLock::new();
+    BUILT
+        .get_or_init(|| build_binary().map_err(|e| e.to_string()))
+        .clone()
+        .map_err(Into::into)
+}
+
+fn build_binary() -> Result<PathBuf, Box<dyn std::error::Error>> {
     let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
     let status = Command::new(cargo)
         .args(["build", "--quiet", "-p", "rt-cli", "--bin", "ruletrace"])
