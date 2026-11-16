@@ -24,8 +24,57 @@ rt-xtask export-script --store <copy of the live store> \
   the reported model, the response identifier, the token usage or the
   document hash; those stay in the source batch only.
 - A recording of another prompt profile gets its own file, named with its
-  profile (for example `...-prompt-3.json`). This file is never overwritten.
+  profile. This file is never overwritten.
 - This recording is not part of the runbook and of no golden file.
+
+## The recordings
+
+Both recordings have the same Request_Identifier, because the prompt profile
+does not change it. They are separate files and are never merged: the export
+refuses a store whose batches differ in adapter version, the script loader
+refuses a repeated `request_id`, and a configuration names exactly one
+script (`script` is a single string; a list or a second key is refused).
+
+| | prompt-2 | prompt-3 |
+|---|---|---|
+| File | `recorded-meta-muse-spark-1.3-prompt-2.json` | `recorded-meta-muse-spark-1.3-prompt-3.json` |
+| Capture text | `Meta Model API muse-spark-1.3, reasoning_effort low, captured 2026-11-16 by the user, synthetic stand-in document` | `Meta Model API muse-spark-1.3, reasoning_effort low, prompt-3, captured 2026-11-16 by the user, synthetic stand-in document` |
+| Request id | `1c574c2d...` | `1c574c2d...` (same) |
+| Response sha256 | `9585ce1dac804dc1...` | `7f3371ca503a4f61...` |
+| Adapter version | `responses-1/prompt-2` | `responses-1/prompt-3` |
+| Source batch | `crates/rt-ai-tool/tests/fixtures/live-run1-prompt-2/batch.json` | `crates/rt-ai-tool/tests/fixtures/live-run2-prompt-3/batch.json` |
+| Replay configuration | `ai/meta-replay.toml` | `ai/meta-replay-prompt-3.toml` |
+| File sha256 | `628dc20dd933c69a...` | `f0a1a377b9e2f476...` |
+
+The prompt-3 file was exported from a read-only copy of the live store with
+the command above, the prompt-3 capture text and `--out` set to its path.
+The store was the user's `~/ruletrace-live/run2/work/store`.
+
+## What the recording keeps
+
+| Held in the recording script (version 1) | Only in the original batch |
+|---|---|
+| provider identifier, protocol, model | reported model |
+| adapter version | response identifier |
+| capture text | token usage |
+| request identifier | `created_at` |
+| completion, payload, payload hash | `ai_identities` |
+| | proposals as stored, with their validation outcomes |
+| | document hash and the Transmission_Log |
+
+A replay writes only what the script holds, plus what the replay run itself
+computes (its own proposals, `created_at` from `--created-at`). It does not
+fill a member that the script does not hold: the reported model, response
+identifier and usage of a replayed batch are absent, and its provider and
+protocol are `mock-replay`. Nothing omitted is fabricated.
+
+The adapter version is kept: the prompt-3 replay stores `responses-1/prompt-3`
+and the prompt-2 replay stores `responses-1/prompt-2`, though the hosted
+adapter of this build reports prompt-3. The test
+`replay_live_recording.rs` proves, per recording and against the live batch
+fixture, that the replayed payload, response hash, proposals, request id,
+model, `created_at` and adapter version equal the live ones, and that the two
+replays differ from each other in payload hash and adapter version.
 
 ## Offline replay
 
@@ -40,7 +89,8 @@ ruletrace-ai propose --config ai/meta-replay.toml --rulebook rulebook/seed.json 
   --store work/replay/store --created-at 2026-11-16T05:13:25Z --consent stand-in-rules.md
 ```
 
-The run stores `work/replay/store/batches/1c574c2d....json` whose
+For prompt-3, use `ai/meta-replay-prompt-3.toml` and `--created-at
+2026-11-16T09:08:32Z`. Each run stores `work/replay/store/batches/1c574c2d....json` whose
 `response`, `response_sha256`, `proposals` and `adapter_version` equal those
 of the live batch. Its `provider` and `protocol` are `mock-replay`, and it
 has no reported model, response identifier or usage, because the replay
