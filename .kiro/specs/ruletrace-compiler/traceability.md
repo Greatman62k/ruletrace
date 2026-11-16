@@ -612,3 +612,10 @@ Both changes were approved by the orchestrator under the user's standing instruc
 - Proposer label (Req 23.12, option A): `rt-cli` `origin_text`; tests `tests_review_adopt` (pending and adopted wording, control characters escaped, manual origin unchanged); goldens `demo/stand-in-ai/golden/steps/s02b.stdout` and `s03f.stdout` (wording only); note in `demo/stand-in-ai/provider/RECORDINGS.md`.
 - Changed expectations (disclosed): `tests_config_v2` (an effort for `mock-replay` is now accepted; the RT-AI-0011 case is kept with a lowering declaration), `tests_profile` and `rt-ai-mock` `tests_info` (replay capability `yes`).
 
+
+## Task 10.17 user review gate (2026-11-16)
+
+- Requirements 35.22, 28.21, 29.2. The user closed the gate by explicit instruction. Record and evidence: `tools/decisions/UD-37.md` section 8; task note in `tasks.md` 10.17.
+- Evidence: CI run 43799230103 (commit a2ce236), CI run 43847096409 (commit 438b700), `crates/rt-ai-responses/tests/stub_http.rs`, `docs/provider-profiles.md`, the goldens changed by 10.14 and by the proposer label.
+- Not satisfied, closed by user decision: the gate text lists blockers 10.5 and 10.15, which remain open (`[-]`). They are not claimed complete.
+- The independent code reviews (`docs/reviews/*ud37*`, waves 1 to 7) are separate from the user review and are listed apart in UD-37 section 8.5.
