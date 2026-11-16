@@ -856,8 +856,10 @@ mod gate_script {
         let text = mutate_text("          export LC_ALL=C\n", "");
         assert!(!pin_present(&text));
         // Where the machine has a UTF-8 locale, show that the defect is
-        // real: the unpinned step accepts letters outside ASCII.
-        match utf8_locale() {
+        // real: the unpinned step accepts letters outside ASCII. The job
+        // runs on Linux only, and the bash on macOS does not show the
+        // defect, so the behavioural half is asserted on Linux alone.
+        match utf8_locale().filter(|_| cfg!(target_os = "linux")) {
             Some(lc) => {
                 let accepted = NON_ASCII
                     .iter()
@@ -865,7 +867,7 @@ mod gate_script {
                     .count();
                 assert!(accepted > 0, "no non-ASCII text accepted under {lc}");
             }
-            None => eprintln!("en_US.UTF-8 is not installed: only the structural check ran"),
+            None => eprintln!("no Linux UTF-8 locale: only the structural check ran"),
         }
     }
 
