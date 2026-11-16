@@ -618,6 +618,11 @@ outside the repository, set the mode to 600 and edit it there. The OpenAI exampl
 `REPLACE_WITH_YOUR_MODEL_ID` as its model; you must put your own model identifier in your copy. The
 files name the credential variable only. Never write a credential into a file.
 
+**The by-hand blocks do not check the manifest.** The shell blocks below run `ruletrace-ai` directly.
+They do not consult `manifest.json`, and the harness guard does not run for them. Before you run one,
+open `manifest.json` yourself and confirm that the document you name with `--consent` has
+`transmission_permitted` set to `true`. The consent binds the document id only.
+
 **Running a live step by hand today.** Export the credential variable in your own shell first. Do not
 paste a credential into a file or into this document. The blocks below are marked `live`, so the
 harness parser accepts them and never runs them. `REPO` is your checkout. Run all blocks in one shell,
