@@ -1,8 +1,10 @@
 //! The subprocess runner and the runbook driver (design §8.11.12 steps 3 and
 //! 4).
 
-use crate::error::DemoError;
+use crate::error::{DemoError, Refusal};
 use crate::golden::{check_golden, Mode};
+use crate::guard::{authorize_live, classify, Class};
+use crate::manifest::Manifest;
 use crate::runbook::{Runbook, Step};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -33,12 +35,75 @@ pub fn binary_path(bin_dir: &Path, logical: &str) -> PathBuf {
     bin_dir.join(format!("{logical}{}", std::env::consts::EXE_SUFFIX))
 }
 
-/// Runs one step in `work_dir` with an empty environment and no standard input.
+/// Runs one offline step in `work_dir` with an empty environment and no
+/// standard input.
+///
+/// The guard classifies the step first. A `ruletrace-ai` step whose
+/// configuration is not provably the `mock-replay` provider is live, and this
+/// function refuses it before any process starts. Live steps run only through
+/// [`run_live_step`].
 ///
 /// # Errors
-/// [`DemoError::Step`] when the process cannot start or ends without an exit
-/// code.
+/// [`DemoError::LiveRefused`] for a live step, [`DemoError::Step`] when the
+/// process cannot start or ends without an exit code.
 pub fn run_step(step: &Step, bin_dir: &Path, work_dir: &Path) -> Result<Captured, DemoError> {
+    if classify(step, work_dir) == Class::Live {
+        return Err(DemoError::LiveRefused {
+            step: step.id.clone(),
+            refusal: Refusal::LiveStepInOfflineRunner,
+        });
+    }
+    spawn(step, bin_dir, work_dir, &[])
+}
+
+/// What the live runner needs besides the step.
+#[derive(Clone, Copy, Debug)]
+pub struct LiveContext<'a> {
+    /// The checked manifest of the demonstration.
+    pub manifest: &'a Manifest,
+    /// The committed demonstration directory, with its `golden/` and
+    /// `provider/`.
+    pub demo_dir: &'a Path,
+    /// Environment variables passed to the process, supplied by the caller
+    /// because the harness reads no environment. Only the credential variable
+    /// of the step's configuration is accepted.
+    pub environment: &'a [(String, String)],
+}
+
+/// Runs one live step, the explicit opt-in of the live flow (Req 33.10).
+///
+/// [`authorize_live`] decides first. Nothing is started, written or read from
+/// the environment when it refuses. The output is never compared with a
+/// golden file.
+///
+/// # Errors
+/// The refusal of [`authorize_live`], [`DemoError::LiveRefused`] for an
+/// environment variable that is not the credential variable, or
+/// [`DemoError::Step`] when the process cannot start.
+pub fn run_live_step(
+    step: &Step,
+    context: &LiveContext<'_>,
+    bin_dir: &Path,
+    work_dir: &Path,
+) -> Result<Captured, DemoError> {
+    let allowed = authorize_live(step, context.manifest, context.demo_dir, work_dir)?;
+    for (name, _) in context.environment {
+        if allowed.credential_env_var.as_deref() != Some(name.as_str()) {
+            return Err(DemoError::LiveRefused {
+                step: step.id.clone(),
+                refusal: Refusal::EnvironmentNotAllowed(name.clone()),
+            });
+        }
+    }
+    spawn(step, bin_dir, work_dir, context.environment)
+}
+
+fn spawn(
+    step: &Step,
+    bin_dir: &Path,
+    work_dir: &Path,
+    environment: &[(String, String)],
+) -> Result<Captured, DemoError> {
     let fail = |problem: String| DemoError::Step {
         step: step.id.clone(),
         problem,
@@ -52,6 +117,7 @@ pub fn run_step(step: &Step, bin_dir: &Path, work_dir: &Path) -> Result<Captured
         .args(step.argv.iter().skip(1))
         .current_dir(work_dir.join(&step.cwd))
         .env_clear()
+        .envs(environment.iter().map(|(k, v)| (k, v)))
         .stdin(Stdio::null())
         .output()
         .map_err(|e| fail(format!("cannot run '{}': {e}", binary.display())))?;

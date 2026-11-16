@@ -9,6 +9,7 @@
 pub mod coverage;
 pub mod error;
 pub mod golden;
+pub mod guard;
 mod json;
 pub mod leak;
 pub mod manifest;
@@ -16,12 +17,14 @@ pub mod runbook;
 pub mod runner;
 pub mod summary;
 
-pub use error::DemoError;
+pub use error::{DemoError, Refusal};
 pub use golden::{check_golden, first_difference, Mode};
+pub use guard::{authorize_live, classify, Class, LiveAuthorization};
 pub use manifest::{check_manifest, Manifest, ManifestDocument};
 pub use runbook::{parse_runbook, Runbook, Step, StepOutput};
 pub use runner::{
-    binary_path, copy_demo, run_runbook, run_runbook_recorded, run_step, Captured, StepRecord,
+    binary_path, copy_demo, run_live_step, run_runbook, run_runbook_recorded, run_step, Captured,
+    LiveContext, StepRecord,
 };
 pub use summary::{describe_evaluate, describe_ledger, diagnostic_codes};
 

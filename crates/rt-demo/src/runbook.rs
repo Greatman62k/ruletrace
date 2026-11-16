@@ -1,7 +1,7 @@
 //! The `ruletrace-runbook` block of `RUNBOOK.md` (design §8.11.12, Req 33.12).
 
 use crate::error::DemoError;
-use crate::json::{array, check_relative, integer, parse_strict, string};
+use crate::json::{array, boolean, check_relative, integer, parse_strict, string};
 use rt_json::{Kind, Position, Value};
 use std::collections::BTreeSet;
 
@@ -47,12 +47,16 @@ pub struct Step {
 pub struct Runbook {
     /// Declared profile names.
     pub profiles: BTreeSet<String>,
-    /// Steps in execution order.
+    /// Steps in execution order, live steps included.
     pub steps: Vec<Step>,
+    /// Identifiers of the steps declared `"live": true`. The offline runner
+    /// never runs them; only `run_live_step` does, and only when asked.
+    pub live: BTreeSet<String>,
 }
 
 impl Runbook {
-    /// The steps of `profile` in order.
+    /// The offline steps of `profile` in order. Steps declared live are not
+    /// included.
     ///
     /// # Errors
     /// [`DemoError::Runbook`] when the profile is not declared.
@@ -65,6 +69,25 @@ impl Runbook {
         Ok(self
             .steps
             .iter()
+            .filter(|s| !self.live.contains(&s.id))
+            .filter(|s| s.profiles.is_empty() || s.profiles.iter().any(|p| p == profile))
+            .collect())
+    }
+
+    /// The steps of `profile` declared live, in order.
+    ///
+    /// # Errors
+    /// [`DemoError::Runbook`] when the profile is not declared.
+    pub fn live_steps_for(&self, profile: &str) -> Result<Vec<&Step>, DemoError> {
+        if !self.profiles.contains(profile) {
+            return Err(DemoError::Runbook(format!(
+                "profile '{profile}' is not declared"
+            )));
+        }
+        Ok(self
+            .steps
+            .iter()
+            .filter(|s| self.live.contains(&s.id))
             .filter(|s| s.profiles.is_empty() || s.profiles.iter().any(|p| p == profile))
             .collect())
     }
@@ -279,6 +302,7 @@ pub fn parse_runbook(markdown: &str) -> Result<Runbook, DemoError> {
         }
     };
     let mut steps: Vec<Step> = Vec::new();
+    let mut live = BTreeSet::new();
     for node in array(&doc, "steps").map_err(top("steps"))? {
         let step = parse_step(node)?;
         if steps.iter().any(|s| s.id == step.id) {
@@ -292,7 +316,30 @@ pub fn parse_runbook(markdown: &str) -> Result<Runbook, DemoError> {
                 return Err(bad(&step.id, "profile", &format!("'{p}' is not declared")));
             }
         }
+        if node.get("live").is_some()
+            && boolean(node, "live").map_err(|p| bad(&step.id, "live", &p))?
+        {
+            if step.argv.first().map(String::as_str) != Some("ruletrace-ai") {
+                return Err(bad(
+                    &step.id,
+                    "live",
+                    "only a ruletrace-ai step may be live",
+                ));
+            }
+            if !step.outputs.is_empty() {
+                return Err(bad(
+                    &step.id,
+                    "outputs",
+                    "a live step has no golden outputs; its output never feeds a golden file",
+                ));
+            }
+            live.insert(step.id.clone());
+        }
         steps.push(step);
     }
-    Ok(Runbook { profiles, steps })
+    Ok(Runbook {
+        profiles,
+        steps,
+        live,
+    })
 }
