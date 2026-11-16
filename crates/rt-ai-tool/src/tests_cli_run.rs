@@ -299,7 +299,7 @@ fn dry_run_prints_each_request_identifier_and_sends_nothing() {
     assert_eq!(
         ran.stderr,
         format!(
-            "dry run, nothing is sent: request {id}: provider openai-responses, endpoint host api.openai.com, documents ['rules.md'], clauses 1, bytes {bytes}\n"
+            "dry run, nothing is sent: request {id}: provider openai, endpoint host api.openai.com, documents ['rules.md'], clauses 1, bytes {bytes}\n"
         )
     );
     assert!(env.reads().is_empty(), "{:?}", env.reads());
