@@ -572,3 +572,9 @@ Deviations and limits:
 - The lowered draft of a version "2" response is decoded with a cap of 61 containers (the batch limit of 64 less the three around a stored rule), not the response container limit of 32, so an expression above 16 levels reaches the validator as `RT-LIM-0003` and a rule above 61 containers is refused with `RT-LIM-0003` before storage. A decoder error inside a lowered draft is located at the rule, with the inner field path of the lowered text.
 - The depth of the generated schema is 10 when each `anyOf` alternative, `items` and property counts as a level. The Meta documentation does not say how it counts. If it counts differently, the schema stays within 10 in this stricter count.
 - Not verified here: the three-platform CI run, the Windows runs of the new tests (a `cargo check` for `x86_64-pc-windows-gnu` was run), and that the Meta API accepts the generated schema (a live step, not run).
+
+## Approvals of the UD-37 golden changes (recorded 2026-11-16)
+
+Two authoritative goldens changed in the UD-37 work: the `protocol` member of the Transmission_Log lines in `demo/stand-in-ai/golden/artifacts/transmission.log.jsonl` (Req 28.8), and the `description` members of `tests/fixtures/proposal-schema/proposal-schema-v2.json` (see `PROVENANCE.md` there).
+
+Both changes were approved by the orchestrator under the user's standing instruction to take decisions during the user's break. The user has not confirmed them yet. User confirmation is pending. The commit texts that say "user pre-approved" for the transmission log golden overstate this: the user gave a standing instruction, not a decision on this diff. Until the user confirms, both goldens count as provisionally approved.
