@@ -4,8 +4,8 @@
 //! through the real `ruletrace-ai propose` path with the mock-replay
 //! provider. The expected batch is the live batch itself (a read-only
 //! fixture), so nothing here is derived from the replay output. The run gets
-//! no environment value, no endpoint and no credential. A loopback listener
-//! that the test binds must see no connection.
+//! no environment value, no endpoint and no credential. A second test shows that
+//! a loopback endpoint in the configuration is refused.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -62,6 +62,12 @@ fn config(work: &Work) -> String {
 }
 
 fn replay(name: &str) -> (Work, support::Ran) {
+    replay_with(name, None)
+}
+
+// `endpoint` is a loopback URL added to the committed configuration, to test
+// that the replay never uses an endpoint it is given.
+fn replay_with(name: &str, endpoint: Option<&str>) -> (Work, support::Ran) {
     let work = Work::new(name);
     let dir = demo();
     work.copy_from(
@@ -84,7 +90,16 @@ fn replay(name: &str) -> (Work, support::Ran) {
         &work.arg("candidates.json"),
     ]);
     assert_eq!(ingest.code, 0, "{}", ingest.stderr);
-    work.write("meta-replay.toml", config(&work).as_bytes());
+    let mut text = config(&work);
+    if let Some(url) = endpoint {
+        text = text.replacen(
+            "[provider]\n",
+            &format!("[provider]\nendpoint = \"{url}\"\n"),
+            1,
+        );
+        assert!(text.contains(url), "{text}");
+    }
+    work.write("meta-replay.toml", text.as_bytes());
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -113,8 +128,6 @@ fn replay(name: &str) -> (Work, support::Ran) {
 
 #[test]
 fn the_replay_stores_the_proposals_and_payload_of_the_live_batch_unchanged() {
-    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    listener.set_nonblocking(true).unwrap();
     let (work, ran) = replay("replay-live");
     assert_eq!(ran.code, 0, "{}", ran.stderr);
     assert!(
@@ -128,11 +141,6 @@ fn the_replay_stores_the_proposals_and_payload_of_the_live_batch_unchanged() {
         "{}",
         ran.stderr
     );
-    // No connection reached the listener during the run.
-    assert!(matches!(
-        listener.accept(),
-        Err(e) if e.kind() == std::io::ErrorKind::WouldBlock
-    ));
 
     let file = format!("store/batches/{LIVE_ID}.json");
     assert!(work.exists(&file), "{:?}", work.state().keys());
@@ -158,6 +166,33 @@ fn the_replay_stores_the_proposals_and_payload_of_the_live_batch_unchanged() {
     assert_eq!(extras.reported_model, None);
     assert_eq!(extras.response_id, None);
     assert_eq!(extras.usage, None);
+}
+
+// Proves: the configuration cannot point a mock-replay run at an endpoint.
+// A loopback endpoint is refused with RT-AI-0002 before any provider is
+// built, nothing is stored, and the listener sees no connection. It does not
+// prove that no other network use exists; the rig passes no environment, so
+// proxy variables cannot reach the run, and the no-route namespace is the
+// remaining evidence.
+#[test]
+fn a_mock_replay_configuration_naming_an_endpoint_is_refused_and_nothing_connects() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    let (work, ran) = replay_with("replay-endpoint", Some(&url));
+    assert_eq!(ran.code, 2, "{}", ran.stderr);
+    assert_eq!(ran.codes(), vec!["RT-AI-0002"], "{}", ran.stderr);
+    assert!(
+        ran.stderr
+            .contains("field `provider.endpoint` must be absent for provider `mock-replay`"),
+        "{}",
+        ran.stderr
+    );
+    assert!(!work.exists(&format!("store/batches/{LIVE_ID}.json")));
+    assert!(matches!(
+        listener.accept(),
+        Err(e) if e.kind() == std::io::ErrorKind::WouldBlock
+    ));
 }
 
 #[test]
