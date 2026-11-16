@@ -20,21 +20,18 @@ fn workflow() -> String {
 // The `run` block of the step whose name starts with "Write the
 // configuration", with its YAML indentation removed.
 fn config_script(text: &str) -> String {
-    let lines: Vec<&str> = text.lines().collect();
-    let start = lines
-        .iter()
-        .position(|l| l.starts_with("      - name: Write the configuration"))
-        .unwrap();
-    let run = start
-        + lines[start..]
-            .iter()
-            .position(|l| *l == "        run: |")
-            .unwrap();
-    let body = lines[run + 1..]
-        .iter()
+    let mut lines = text
+        .lines()
+        .skip_while(|l| !l.starts_with("      - name: Write the configuration"))
+        .skip_while(|l| *l != "        run: |")
+        .skip(1);
+    let body: Vec<&str> = lines
+        .by_ref()
         .take_while(|l| l.is_empty() || l.starts_with("          "))
-        .map(|l| l.strip_prefix("          ").unwrap_or(l));
-    body.collect::<Vec<_>>().join("\n") + "\n"
+        .map(|l| l.strip_prefix("          ").unwrap_or(l))
+        .collect();
+    assert!(!body.is_empty());
+    body.join("\n") + "\n"
 }
 
 fn written_by(text: &str, work: &Work) {
