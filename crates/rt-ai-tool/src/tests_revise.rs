@@ -194,7 +194,7 @@ fn observable_a_revision_run_sends_the_hand_written_request_and_stores_a_proposa
     assert_eq!(draft.id.as_str(), "elig.basic");
     assert_eq!(draft.json, NEW_CONTENT);
     let expected_log = format!(
-        r#"{{"provider":"mock-replay","model":"model-1","endpoint_host":"","documents":[{{"document":"rules.md","sha256":"{RULES_HASH}"}}],"clauses":1,"request_bytes":{},"request_id":"{id}","attempt":1,"time":"2026-11-15T00:00:00Z"}}"#,
+        r#"{{"provider":"mock-replay","protocol":"mock-replay","model":"model-1","endpoint_host":"","documents":[{{"document":"rules.md","sha256":"{RULES_HASH}"}}],"clauses":1,"request_bytes":{},"request_id":"{id}","attempt":1,"time":"2026-11-15T00:00:00Z"}}"#,
         expected_bytes(1, FEEDBACK).len()
     );
     assert_eq!(log_lines(&fixture), [expected_log]);

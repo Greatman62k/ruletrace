@@ -158,6 +158,7 @@ fn log_written_for(credential: &str, redact: bool) -> String {
         |from: usize, to: usize| -> String { credential.chars().skip(from).take(to).collect() };
     let context = LogContext {
         provider: format!("provider-{}", cut(0, 12)),
+        protocol: format!("protocol-{}", cut(1, 12)),
         model: format!("model-{credential}"),
         endpoint_host: format!("{}.example.org", cut(2, 14)),
         documents: vec![
@@ -222,6 +223,7 @@ fn a_log_failure_message_keeps_its_code() {
     let mut log = TransmissionLog::new(Failing, redactor(CANARY), at);
     let context = LogContext {
         provider: "p".to_owned(),
+        protocol: "q".to_owned(),
         model: "m".to_owned(),
         endpoint_host: String::new(),
         documents: vec![],

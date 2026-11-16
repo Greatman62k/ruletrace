@@ -44,7 +44,8 @@ fn request() -> ProviderRequest {
 
 fn context() -> LogContext {
     LogContext {
-        provider: "openai-responses".to_owned(),
+        provider: "openai".to_owned(),
+        protocol: "openai-responses".to_owned(),
         model: "model-1".to_owned(),
         endpoint_host: "api.openai.com".to_owned(),
         documents: vec![(DocumentId::new("a.md").unwrap(), sha256(b"document a"))],
@@ -143,7 +144,7 @@ fn entry_has_exactly_the_specified_fields_and_no_text() {
         .unwrap();
     let canonical = req.canonical_bytes().unwrap();
     let expected = format!(
-        "{{\"provider\":\"openai-responses\",\"model\":\"model-1\",\"endpoint_host\":\"api.openai.com\",\"documents\":[{{\"document\":\"a.md\",\"sha256\":\"{}\"}}],\"clauses\":3,\"request_bytes\":{},\"request_id\":\"{}\",\"attempt\":1,\"time\":\"2025-01-02T03:04:05Z\"}}\n",
+        "{{\"provider\":\"openai\",\"protocol\":\"openai-responses\",\"model\":\"model-1\",\"endpoint_host\":\"api.openai.com\",\"documents\":[{{\"document\":\"a.md\",\"sha256\":\"{}\"}}],\"clauses\":3,\"request_bytes\":{},\"request_id\":\"{}\",\"attempt\":1,\"time\":\"2025-01-02T03:04:05Z\"}}\n",
         sha256(b"document a"),
         canonical.len(),
         sha256(&canonical),

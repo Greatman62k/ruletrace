@@ -255,6 +255,7 @@ impl Shared {
         }
         let log = LogContext {
             provider: self.config.profile.id.to_owned(),
+            protocol: self.config.provider.protocol().to_owned(),
             model: self.config.model.clone(),
             endpoint_host: self
                 .config

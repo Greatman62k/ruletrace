@@ -14,8 +14,10 @@ use std::time::Duration;
 /// What every entry of one run shares.
 #[derive(Clone, Debug)]
 pub struct LogContext {
-    /// Provider kind.
+    /// Provider identifier.
     pub provider: String,
+    /// Protocol of the provider (Req 28.8).
+    pub protocol: String,
     /// Model identifier.
     pub model: String,
     /// Host of the endpoint; empty for a provider with no endpoint.
@@ -102,6 +104,10 @@ fn entry_line(
         (
             "provider".to_owned(),
             Value::string(context.provider.as_str()),
+        ),
+        (
+            "protocol".to_owned(),
+            Value::string(context.protocol.as_str()),
         ),
         ("model".to_owned(), Value::string(context.model.as_str())),
         (

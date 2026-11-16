@@ -169,7 +169,7 @@ pub(crate) fn announced_size(line: &str) -> u64 {
 /// The Transmission_Log line of attempt `attempt` of one request.
 pub(crate) fn log_line(id: &str, bytes: u64, attempt: u32) -> String {
     format!(
-        r#"{{"provider":"mock-replay","model":"model-1","endpoint_host":"","documents":[{{"document":"rules.md","sha256":"{RULES_HASH}"}}],"clauses":1,"request_bytes":{bytes},"request_id":"{id}","attempt":{attempt},"time":"{CREATED_AT}"}}"#
+        r#"{{"provider":"mock-replay","protocol":"mock-replay","model":"model-1","endpoint_host":"","documents":[{{"document":"rules.md","sha256":"{RULES_HASH}"}}],"clauses":1,"request_bytes":{bytes},"request_id":"{id}","attempt":{attempt},"time":"{CREATED_AT}"}}"#
     )
 }
 

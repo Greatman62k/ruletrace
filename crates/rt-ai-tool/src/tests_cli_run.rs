@@ -67,7 +67,7 @@ fn observable_a_mock_replay_run_stores_a_batch_and_a_log_entry_and_exits_0() {
 
     let bytes = announced_bytes(&ran.stderr);
     let expected = format!(
-        r#"{{"provider":"mock-replay","model":"model-1","endpoint_host":"","documents":[{{"document":"rules.md","sha256":"{RULES_HASH}"}}],"clauses":1,"request_bytes":{bytes},"request_id":"{id}","attempt":1,"time":"{CREATED_AT}"}}"#
+        r#"{{"provider":"mock-replay","protocol":"mock-replay","model":"model-1","endpoint_host":"","documents":[{{"document":"rules.md","sha256":"{RULES_HASH}"}}],"clauses":1,"request_bytes":{bytes},"request_id":"{id}","attempt":1,"time":"{CREATED_AT}"}}"#
     );
     assert_eq!(log_lines(&fixture), [expected]);
     assert_eq!(

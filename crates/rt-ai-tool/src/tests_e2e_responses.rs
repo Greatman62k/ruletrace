@@ -560,7 +560,11 @@ fn the_transmission_log_names_no_document_text_and_no_credential() {
     assert_eq!(exit(rig.run().code), 0);
     let lines = rig.log_lines();
     assert_eq!(lines.len(), 1, "{lines:?}");
-    assert!(lines[0].contains(r#""provider":"meta""#), "{}", lines[0]);
+    assert!(
+        lines[0].starts_with(r#"{"provider":"meta","protocol":"openai-responses","model":"#),
+        "{}",
+        lines[0]
+    );
     assert!(
         lines[0].contains(r#""model":"muse-spark-1.3""#),
         "{}",

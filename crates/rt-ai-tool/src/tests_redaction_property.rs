@@ -234,7 +234,8 @@ fn record_with_model(redactor: &Redactor, model: &str) -> String {
         context: Vec::new(),
     };
     let context = LogContext {
-        provider: "openai-responses".to_owned(),
+        provider: "openai".to_owned(),
+        protocol: "openai-responses".to_owned(),
         model: model.to_owned(),
         endpoint_host: "api.openai.com".to_owned(),
         documents: vec![(DocumentId::new("a.md").unwrap(), sha256(b"a"))],
