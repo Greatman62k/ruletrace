@@ -64,7 +64,7 @@ fn list_shows_the_pending_proposal_with_revision_hash_origin_and_source_text() {
     );
     assert!(
         block.contains(&format!(
-            "  origin: AI proposal '{}' (proposer 'ai-1', provider 'mock', model 'm1')\n",
+            "  origin: AI proposal '{}' (proposer claimed by the model: 'ai-1', provider 'mock', model 'm1')\n",
             fx.proposal_id
         )),
         "{text}"
@@ -87,6 +87,57 @@ fn list_shows_the_pending_proposal_with_revision_hash_origin_and_source_text() {
         "{text}"
     );
     assert_eq!(fs.snapshot(), before, "list writes nothing");
+}
+
+#[test]
+fn a_claimed_proposer_is_escaped_in_the_pending_origin() {
+    let mut batch = batch_of("d.b", "b");
+    batch.proposals[0].proposer = Identity::new("a\u{1b}[0m\rx\ny").unwrap();
+    let fs = fs_with(&rulebook_text(), &batch);
+    let text = list_text(&fs, &["--proposals", "store"]);
+    let want = format!(
+        "  origin: AI proposal '{}' (proposer claimed by the model: \
+         'a\\u{{1b}}[0m\\u{{d}}x\\u{{a}}y', provider 'mock', model 'm1')\n",
+        batch.proposals[0].proposal_id
+    );
+    assert!(pending_block(&text).contains(&want), "{text}");
+    assert!(!text.contains('\u{1b}') && !text.contains('\r'), "{text:?}");
+}
+
+#[test]
+fn an_adopted_revision_lists_the_claimed_proposer_wording() {
+    let fx = fixture();
+    let fs = adoption_fs(&fx, true);
+    let out = run(&decide_args("approve", "d.b", &fx.hash, &[]), &fs);
+    assert_eq!(out.code.value(), 0, "{}", out.stderr);
+    let text = list_text(&fs, &["--proposals", "store", "--rule", "d.b"]);
+    let want = format!(
+        "rule 'd.b' revision 1 status Approved\n  origin: AI proposal '{}' \
+         (proposer claimed by the model: 'ai-1', provider 'mock', model 'm1')\n",
+        fx.proposal_id
+    );
+    assert!(text.starts_with(&want), "{text}");
+}
+
+#[test]
+fn a_manual_origin_is_listed_without_the_claimed_proposer_wording() {
+    let fx = fixture();
+    let fs = adoption_fs(&fx, true);
+    let text = list_text(&fs, &[]);
+    assert!(
+        text.starts_with("rule 'd.a' revision 1 status Proposed\n  origin: manual\n"),
+        "{text}"
+    );
+    let authored = rulebook_text().replace(r#""author":null"#, r#""author":"bo\u0007b""#);
+    let fs = fs_with(&authored, &batch_of("d.b", "b"));
+    let text = list_text(&fs, &[]);
+    assert!(
+        text.starts_with(
+            "rule 'd.a' revision 1 status Proposed\n  origin: manual, author 'bo\\u{7}b'\n"
+        ),
+        "{text}"
+    );
+    assert!(!text.contains("claimed"), "{text}");
 }
 
 #[test]

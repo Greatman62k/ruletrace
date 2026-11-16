@@ -461,8 +461,10 @@ fn origin_text(origin: &Origin) -> String {
         Origin::Manual { author: Some(a) } => {
             format!("manual, author '{}'", escape_controls(a.as_str()))
         }
+        // The proposer is text the model supplied. Provider and model are
+        // assigned by the tool from its configuration.
         Origin::AiProposal(o) => format!(
-            "AI proposal '{}' (proposer '{}', provider '{}', model '{}')",
+            "AI proposal '{}' (proposer claimed by the model: '{}', provider '{}', model '{}')",
             escape_controls(&o.proposal_id),
             escape_controls(o.proposer.as_str()),
             escape_controls(&o.provider),

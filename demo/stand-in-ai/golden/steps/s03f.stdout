@@ -1,5 +1,5 @@
 pending proposal '544b9c57c637b21015123e71df48b19db2092887708fb8cf2764c3f9cc735e4a' for rule 'prize.split' prospective revision 1
-  origin: AI proposal '544b9c57c637b21015123e71df48b19db2092887708fb8cf2764c3f9cc735e4a' (proposer 'authored-script', provider 'mock-replay', model 'authored-script')
+  origin: AI proposal '544b9c57c637b21015123e71df48b19db2092887708fb8cf2764c3f9cc735e4a' (proposer claimed by the model: 'authored-script', provider 'mock-replay', model 'authored-script')
   prospective content hash: 4a53a574e35d66722ec5fdd55c17f4d53dadf8e8be6d701cd151e4e454bc27c3
   diagnostic: unsupported RT-VAL-0003: unsupported rule kind 'unrecognized': unrecognized construct 'unrecognized'
   span stand-in-rules.md bytes 427..500 (line 8, column 1): text "4. The top three entrants share the prize money in the ratio 5 to 3 to 2."
