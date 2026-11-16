@@ -625,4 +625,37 @@ Both changes were approved by the orchestrator under the user's standing instruc
 
 - Requirements 21.14, 35.9. Secret `RULETRACE_OPENAI_API_KEY` and variable `RULETRACE_OPENAI_MODEL`: `tools/decisions/UD-15.md` section 6. Job: `.github/workflows/ci.yml` (`live-openai`, not in `ci-gate` needs).
 - Tests: `crates/rt-xtask/tests/live_openai_job.rs` (structure rules and mutants, gate script behaviour with a canary, configuration step with hostile model texts). Regression: a model value with an embedded line feed passed a `grep -E` check; the bash regex refuses it.
-- Unverified: the Actions run (skip expected without the secret) and any live run. Task 10.5 stays `[-]`.
+- Unverified: any live run. Task 10.5 stays `[-]`.
+- User decision 2026-11-16: credentialed live execution of `live-openai` is DEFERRED and UNVERIFIED. The skip evidence is run 43864502388 (commit a52d67b, latest green), job `live-openai (linux, optional)` 133289465599: `Gate` step success, all later steps skipped. This is a skip, NOT an authenticated request. `tasks.md` 10.5 observable and note amended; the original text is kept in the observable.
+
+## Task 10.8 recorded script (amended by user decision 2026-11-16)
+
+- Requirements 33.8, 33.10, 28.21, 23.27, 35.22. The user decided that `demo/stand-in-ai/provider/recorded-meta-muse-spark-1.3-prompt-2.json` and `demo/stand-in-ai/provider/recorded-meta-muse-spark-1.3-prompt-3.json` satisfy the recorded-script criterion; no duplicate `recorded-script.json` is created. `tasks.md` 10.8 observable and 10.9 exit criterion are amended with the original text preserved.
+- Covered by the decision: the recorded-script criterion for the synthetic stand-in document only.
+- Deferred, not satisfied: live recording over the UD-34 documents (Kiroween 2026 Official Rules; ICC Men's T20 World Cup 2026 Playing Conditions 16.10.1 to 16.10.7), which need the snapshots of task 11.1; also the 10.7 guard (open), the observed `max_output_tokens` need in `docs/provider-profiles.md` (still provisional 8192), and the optional `muse-ember-1.0` benchmark. Task 10.8 stays `[ ]`.
+
+| | prompt-2 | prompt-3 |
+|---|---|---|
+| File | `recorded-meta-muse-spark-1.3-prompt-2.json` | `recorded-meta-muse-spark-1.3-prompt-3.json` |
+| `provider.adapter_version` | `responses-1/prompt-2` | `responses-1/prompt-3` |
+| Request id | `1c574c2d1e2658ba060f68b788c2407f9aa712efd697e23c997d8c8c653b54b2` | same |
+| Response sha256 (recomputed from payload, equals recorded) | `9585ce1dac804dc1c2ceebe5c2221bc67c70245abb7099d918d7afeb123f098e` | `7f3371ca503a4f614dda9c4288e346a1822e9fde88546bc058ecba9294706c26` |
+| File sha256 prefix | `628dc20dd933c69a` | `f0a1a377b9e2f476` |
+| Offline replay | `replay_live_recording.rs`, 13 tests green (2026-11-16) | same run |
+
+## Task 10.9 checklist (Phase 8 exit), prepared 2026-11-16, not marked complete
+
+`PENDING` means the evidence depends on the final CI run. The orchestrator fills it after the reviews and CI. Tasks 10.5, 10.7, 10.9 and 10.15 are not complete.
+
+| Criterion | Evidence | Status |
+| --- | --- | --- |
+| Full gate set green | Local: fmt, clippy, tests per task notes. CI run: `PENDING` | PENDING |
+| `check-tree` passes for `rt-cli` and core crates | `cargo run -p rt-xtask -- check-tree`: ok (26 workspace crates), exit 0, 2026-11-16 at 8af808c. Final CI run: `PENDING` | local pass, CI PENDING |
+| `check-graph` lists `rt-ai-responses`, no `rt-ai-openai`, `rt-ai-meta`, `rt-ai-modal` | `check-graph: ok (26 workspace crates)`, exit 0. `cargo metadata --no-deps --offline` members include `rt-ai-responses`, none of the three others. `tools/allowed-edges.v1` lines 23, 24, 30, 48, 52, 53; `deny.toml` lines 34, 36; `ci.yml` line 251; `Cargo.lock` line 356. grep for the three absent names over `tools/allowed-edges.v1`, `deny.toml`, `ci.yml`, `Cargo.toml`, `Cargo.lock`: no match. Final CI run: `PENDING` | local pass, CI PENDING |
+| `check-catalogue` passes | `check-catalogue: ok (152 codes)`, exit 0. Final CI run: `PENDING` | local pass, CI PENDING |
+| Stub tests (including Meta profile tests) green, no external network | `crates/rt-ai-responses/tests/stub_http.rs`; CI runs 43799230103 (a2ce236) and 43847096409 (438b700) per UD-37 section 8.3. Final CI run: `PENDING`. Task 10.15 is still `[-]` | PARTIAL, PENDING |
+| Canary tests pass | `stub_http.rs`, `rt-xtask/tests/live_openai_job.rs`, `rt-tests-ai`. Final CI run: `PENDING` | PENDING |
+| User review gate 10.17 answered | `tools/decisions/UD-37.md` section 8 (user decision; blockers 10.5 and 10.15 stay open, commit 4efccee) | Met by user decision |
+| Live job runnable but not required | `ci.yml` job `live-openai`, not in `ci-gate` needs; `live_openai_job.rs`. Run 43864502388 job 133289465599: success, steps skipped. Skip, NOT an authenticated request. Credentialed execution DEFERRED and UNVERIFIED by user decision. Final run: `PENDING` | Skip evidence only |
+| Recorded script committed with hashes, or recording deferred | Stand-in: the two recordings above (commits d4f1ca4, 31b3fb3), amended by user decision 2026-11-16. Real-document recordings deferred | Met for stand-in by user decision; real documents deferred |
+| Independent reviews of 10.5, 10.6, 10.7, 10.15 | `PENDING` | PENDING |
