@@ -639,32 +639,67 @@ fn a_401_is_not_retried_even_when_a_success_is_waiting() {
 }
 
 // The body of an error is not consumed. The head declares a body of 1 MiB,
-// the server sends a few bytes of it and then stalls for 3 s. A transport that
-// read the body would block until the stall ends (the attempt timeout is
-// 5 s), so a result well inside the stall shows the body was not awaited.
+// the server sends a few bytes of it and then stalls for 1.5 s. A transport
+// that read the body would block until the stall ends (the attempt timeout is
+// 5 s), so a result within 500 ms shows the body was not awaited. The cases
+// run in parallel because each one waits for its stub to finish.
 #[test]
-fn a_stalled_error_body_is_not_waited_for() {
-    for status in ["401 Unauthorized", "403 Forbidden"] {
-        let head = format!(
-            "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: 1048576\r\nConnection: close\r\n\r\n{{\"error\":{{\"ty"
-        );
-        let stall = Duration::from_secs(3);
-        let (report, got) = run(
-            vec![Reply::Slow {
-                head_and_part: head.into_bytes(),
-                pause: stall,
-            }],
-            None,
-            1 << 20,
-        );
-        assert_eq!(failure_of(&report), F::AuthFailed, "{status}");
-        assert_eq!(got.len(), 1, "{status}");
-        assert!(
-            report.elapsed < Duration::from_millis(1500),
-            "{status}: took {:?}, the stalled body was awaited",
-            report.elapsed
-        );
-    }
+fn a_stalled_error_body_is_not_waited_for_in_any_non_2xx_status() {
+    let cases = [
+        (
+            "400 Bad Request",
+            F::Other {
+                http_status: Some(400),
+            },
+        ),
+        ("401 Unauthorized", F::AuthFailed),
+        (
+            "402 Payment Required",
+            F::Other {
+                http_status: Some(402),
+            },
+        ),
+        ("403 Forbidden", F::AuthFailed),
+        (
+            "429 Too Many Requests",
+            F::RateLimited {
+                retry_after_secs: None,
+            },
+        ),
+        ("500 Internal Server Error", F::Unavailable),
+        ("503 Service Unavailable", F::Unavailable),
+        ("504 Gateway Timeout", F::GatewayTimeout),
+    ];
+    std::thread::scope(|scope| {
+        let handles: Vec<_> = cases
+            .iter()
+            .map(|(status, expected)| {
+                scope.spawn(move || {
+                    let head = format!(
+                        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: 1048576\r\nConnection: close\r\n\r\n{{\"error\":{{\"ty"
+                    );
+                    let (report, got) = run(
+                        vec![Reply::Slow {
+                            head_and_part: head.into_bytes(),
+                            pause: Duration::from_millis(1500),
+                        }],
+                        None,
+                        1 << 20,
+                    );
+                    assert_eq!(&failure_of(&report), expected, "{status}");
+                    assert_eq!(got.len(), 1, "{status}");
+                    assert!(
+                        report.elapsed < Duration::from_millis(500),
+                        "{status}: took {:?}, the stalled body was awaited",
+                        report.elapsed
+                    );
+                })
+            })
+            .collect();
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    });
 }
 
 // An error body far larger than the success limit gives the same result,

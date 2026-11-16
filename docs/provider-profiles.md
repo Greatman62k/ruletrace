@@ -38,7 +38,7 @@ loopback address (for the stub tests) receives the credential.
 | Model discovery (`GET /v1/models`) | `yes`. An unauthenticated request answers HTTP 401, so the path exists. | UD-37 section 2 | 2026-11 |
 | Base URL for OpenAI-compatible clients | `https://api.meta.ai/v1` | https://dev.meta.ai/docs/authentication | 2026-11 (UD-37, search snippet) |
 | Usage reporting | The capability stays `Unknown` until a live run observes it. The Responses page documents `usage` with `input_tokens`, `output_tokens` and `total_tokens`, and the adapter reads exactly those three members, each only when it is a non-negative integer. A retrieved response also carries `output_tokens_details.reasoning_tokens`, which is not read. | https://dev.meta.ai/docs/protocols/responses | 2026-11-16 |
-| Gateway timeout | A non-streaming request that runs longer than a server-side time limit returns HTTP 504 (`gateway_timeout`). Streaming requests are exempt. RuleTrace does not stream, so a long reasoning generation can end in 504. A 504 is a final failure, never retried (Req 29.2; OD-37-1 resolved by the user on 2026-11-16). | https://dev.meta.ai/docs/protocols/responses | 2026-11-16 |
+| Gateway timeout | A non-streaming request that runs longer than a server-side time limit returns HTTP 504 (`gateway_timeout`). Streaming requests are exempt. RuleTrace does not stream, so a long reasoning generation can end in 504. A 504 is a final failure, never retried (Req 29.2; OD-37-1 resolved by the user on 2026-11-16). The error page names `background: true` on the Responses API as the most reliable remedy, because background requests are subject to neither time limit; the request would then be polled or retrieved. RuleTrace does not use background mode, and a design decision would be needed before it did. | https://dev.meta.ai/docs/protocols/responses | 2026-11-16 |
 
 ## `openai`
 
@@ -109,10 +109,12 @@ the function `read` returns for every non-2xx status before it touches the
 body reader, and drops the response. Tests in
 `crates/rt-ai-responses/tests/stub_http.rs`:
 
-- `a_stalled_error_body_is_not_waited_for`: the head of a 401 and of a 403
-  declares a 1 MiB body, the stub sends a few bytes and stalls for 3 s, and the
-  adapter returns `AuthFailed` in under 1.5 s. A transport that read the body
-  would wait for the stall.
+- `a_stalled_error_body_is_not_waited_for_in_any_non_2xx_status`: for each of
+  400, 401, 402, 403, 429, 500, 503 and 504 the head declares a 1 MiB body, the
+  stub sends a few bytes and stalls for 1.5 s, and the adapter returns the
+  status's failure in under 500 ms. A transport that read the body would wait
+  for the stall. A mutant that drains the body of any one of these statuses
+  fails the test.
 - `a_401_or_403_is_auth_failed_with_one_attempt_for_every_body_shape`: changed
   `type`, a `type` that names a rate limit, empty body with and without a
   content type, non-JSON text, invalid UTF-8, truncated JSON, HTML, JSON under
@@ -145,29 +147,29 @@ Read on 2026-11-16 (`date -u`), the same day as the earlier reads, so a
 change since those reads is unlikely and none was found. "Same" means the fact
 in the profile matches the page. Pages are summarised, not quoted.
 
-| Fact in the profile | URL | Result |
+| Fact in the profile | Page (full URL) | Result |
 | --- | --- | --- |
-| Strict JSON Schema through `text.format` on Responses | /docs/structured-output, /docs/protocols/responses | Same. The page says `strict` defaults to false, and the request sets it to true explicitly. |
-| Nesting depth 10 | /docs/structured-output | Same. |
-| Total properties 5,000 | /docs/structured-output | Same. |
-| Recursive (`$ref` cycle) schema rejected | /docs/structured-output | Same. |
-| Other schema limits: 120,000 characters of names and enum values, 1,000 enum values, a single enum over 250 values capped at 15,000 characters, 200,000 nodes after inlining | /docs/structured-output | Documented, not in the profile constants. `tests_proposal_schema.rs` already measures the generated schema against the first two (`MAX_NAME_CHARS`, `MAX_ENUM_VALUES`); the largest enum is 6 values and the schema has no `$ref`, so the other two cannot be reached. |
-| Strict subset: plain object root, no `allOf` or `oneOf`, `anyOf` below the root only, `additionalProperties: false` on every object, `required` lists every property | /docs/structured-output | Same as the rules the schema tests check (`forbidden_combinators`, `open_objects`, `required_mismatches`, `nested_root_any_of`). A violation returns HTTP 400 only with `strict: true`. |
-| Effort values `minimal`, `low`, `medium`, `high`, `xhigh`, `max`; `none` refused with 400 | /docs/reasoning, /docs/protocols/responses | Same. Both pages list `none` among the accepted names and then refuse it for the three reasoning models. |
-| `max` only for `muse-spark-1.3`, `muse-ember-1.0`, `muse-wonder-1.0` | /docs/reasoning, /docs/protocols/responses | Same. Not available with `muse-spark-1.3-contributor`. |
-| Default effort when omitted | /docs/reasoning | New, not in the profile: `max` on Wonder and Ember, `high` on every Spark version. RuleTrace sends an effort only when configured. |
-| `store` default and `store: false` | /docs/protocols/responses | Same. The default is `true`; `store: false` with stateless replay keeps no server copy. |
-| Usage members `input_tokens`, `output_tokens`, `total_tokens` | /docs/protocols/responses | Same. `output_tokens_details.reasoning_tokens` appears on retrieved responses only. |
-| Non-streaming time limit, HTTP 504 `gateway_timeout`, final | /docs/protocols/responses, /docs/error-handling | Same. The error page also says not to retry a 504 unchanged, which agrees with Req 29.2 as decided on OD-37-1. |
-| Status mapping 400, 402, 404 final; 401, 403 authentication; 429 rate limit; 500 and 503 retryable | /docs/error-handling | Same. The page says not to retry 400, 401, 402, 403, 404 and 413. |
-| 503 `service_overloaded` and `backend_unavailable` carry `Retry-After: 60` | /docs/error-handling | Same. `server_shutting_down` carries a shorter window of a few seconds. The page asks clients to honour the header. Req 29.3 treats it as absent and keeps the 2 s and 8 s schedule, a deliberate design decision that retries earlier than the page asks. |
-| 429 carries `Retry-After` | /docs/error-handling | Same. |
-| Error body shape | /docs/error-handling | The page puts the category in `type` (`authentication_error` for 401, `rate_limit_error` for 429, `billing_error` for 402, `server_error` for 5xx) and the machine code in `code` (`invalid_api_key`, `rate_limit_exceeded`, `service_overloaded`, `backend_unavailable`, `gateway_timeout`). The older stub helper in `stub_http.rs::meta_error_shapes_map_by_status` writes the code into `type`. The bodies are never read, so no result depends on it, and the new tests add the documented shape. The page also says to branch on status and `type`; RuleTrace branches on status only, which is stricter. |
-| Base URL `https://api.meta.ai/v1`, Bearer authentication | /docs/structured-output, /docs/protocols/responses, /docs/authentication | Same. Seen in the code samples of three pages, which replaces the earlier search snippet. The profile constant keeps its old `read_on` text. The key prefix `LLM_` is documented and not used by any check. |
-| Model listing `GET /v1/models` | /docs/models | Now documented (the profile relied on an HTTP 401 probe). The page says the list is newest first with a `created` member. `models` sorts by identifier bytes on purpose (Req 35.18). |
-| Context window | /docs/models | Changed from unknown for two models: 1,048,576 tokens for `muse-wonder-1.0` and the Spark versions. The Ember row has no value. The output limit is not stated as a number. The profile keeps `Limit::Unknown` because it holds one value for every model, and no code reads it. |
-| `max_output_tokens` minimum 16, shared budget with input | /docs/protocols/responses | Same. Reasoning tokens count toward it. |
-| Rate limits | /docs/pricing-rate-limits | New, not in the profile: 3,000 requests and 4,000,000 tokens per minute per team for the Standard models, 150 requests per minute for the Contributor variants. Not used. |
+| Strict JSON Schema through `text.format` on Responses | https://dev.meta.ai/docs/structured-output, https://dev.meta.ai/docs/protocols/responses | Same. The page says `strict` defaults to false, and the request sets it to true explicitly. |
+| Nesting depth 10 | https://dev.meta.ai/docs/structured-output | Same. |
+| Total properties 5,000 | https://dev.meta.ai/docs/structured-output | Same. |
+| Recursive (`$ref` cycle) schema rejected | https://dev.meta.ai/docs/structured-output | Same. |
+| Other schema limits: 120,000 characters of names and enum values, 1,000 enum values, a single enum over 250 values capped at 15,000 characters, 200,000 nodes after inlining | https://dev.meta.ai/docs/structured-output | Documented, not in the profile constants. `tests_proposal_schema.rs` already measures the generated schema against the first two (`MAX_NAME_CHARS`, `MAX_ENUM_VALUES`); the largest enum is 6 values and the schema has no `$ref`, so the other two cannot be reached. |
+| Strict subset: plain object root, no `allOf` or `oneOf`, `anyOf` below the root only, `additionalProperties: false` on every object, `required` lists every property | https://dev.meta.ai/docs/structured-output | Same as the rules the schema tests check (`forbidden_combinators`, `open_objects`, `required_mismatches`, `nested_root_any_of`). The page also forbids a root `enum` and a root `not`, and validates the subset inside `$defs` and `definitions` as well. The schema tests do not check a root `enum` or `not` (the root test accepts any root with `type: object`), and they reject every `$ref` and `$defs`, so the `$defs` rule cannot be reached. The generated schema is a plain object with neither. A violation returns HTTP 400 only with `strict: true`. |
+| Effort values `minimal`, `low`, `medium`, `high`, `xhigh`, `max`; `none` refused with 400 | https://dev.meta.ai/docs/reasoning, https://dev.meta.ai/docs/protocols/responses | Same. Both pages list `none` among the accepted names and then refuse it for the three reasoning models. |
+| `max` only for `muse-spark-1.3`, `muse-ember-1.0`, `muse-wonder-1.0` | https://dev.meta.ai/docs/reasoning, https://dev.meta.ai/docs/protocols/responses | Same. Not available with `muse-spark-1.3-contributor`. |
+| Default effort when omitted | https://dev.meta.ai/docs/reasoning | New, not in the profile: `max` on Wonder and Ember, `high` on every Spark version. RuleTrace sends an effort only when configured. |
+| `store` default and `store: false` | https://dev.meta.ai/docs/protocols/responses | Same. The default is `true`; `store: false` with stateless replay keeps no server copy. |
+| Usage members `input_tokens`, `output_tokens`, `total_tokens` | https://dev.meta.ai/docs/protocols/responses | Same. `output_tokens_details.reasoning_tokens` appears on retrieved responses only. |
+| Non-streaming time limit, HTTP 504 `gateway_timeout`, final | https://dev.meta.ai/docs/protocols/responses, https://dev.meta.ai/docs/error-handling | Same. The error page also says not to retry a 504 unchanged, which agrees with Req 29.2 as decided on OD-37-1. |
+| Status mapping 400, 402, 404 final; 401, 403 authentication; 429 rate limit; 500 and 503 retryable | https://dev.meta.ai/docs/error-handling | Same. The page says not to retry 400, 401, 402, 403, 404 and 413. |
+| 503 `service_overloaded` and `backend_unavailable` carry `Retry-After: 60` | https://dev.meta.ai/docs/error-handling | Same. `server_shutting_down` carries a shorter window of a few seconds. The page asks clients to honour the header. Req 29.3 treats it as absent and keeps the 2 s and 8 s schedule, a deliberate design decision that retries earlier than the page asks. |
+| 429 carries `Retry-After` | https://dev.meta.ai/docs/error-handling | Same. |
+| Error body shape | https://dev.meta.ai/docs/error-handling | The page puts the category in `type` (`authentication_error` for 401, `rate_limit_error` for 429, `billing_error` for 402, `server_error` for 5xx) and the machine code in `code` (`invalid_api_key`, `rate_limit_exceeded`, `service_overloaded`, `backend_unavailable`, `gateway_timeout`). The older stub helper in `stub_http.rs::meta_error_shapes_map_by_status` writes the code into `type`. The bodies are never read, so no result depends on it, and the new tests add the documented shape. The page also says to branch on status and `type`; RuleTrace branches on status only, which is stricter. |
+| Base URL `https://api.meta.ai/v1`, Bearer authentication | https://dev.meta.ai/docs/structured-output, https://dev.meta.ai/docs/protocols/responses, https://dev.meta.ai/docs/authentication | Same. Seen in the code samples of three pages, which replaces the earlier search snippet. The profile constant keeps its old `read_on` text. The key prefix `LLM_` is documented and not used by any check. |
+| Model listing `GET /v1/models` | https://dev.meta.ai/docs/models | Now documented (the profile relied on an HTTP 401 probe). The page says the list is newest first with a `created` member. `models` sorts by identifier bytes on purpose (Req 35.18). |
+| Context window | https://dev.meta.ai/docs/models | Changed from unknown for two models: 1,048,576 tokens for `muse-wonder-1.0` and the Spark versions. The Ember row has no value. The output limit is not stated as a number. The profile keeps `Limit::Unknown` because it holds one value for every model, and no code reads it. |
+| `max_output_tokens` minimum 16, shared budget with input | https://dev.meta.ai/docs/protocols/responses | Same. Reasoning tokens count toward it. |
+| Rate limits | https://dev.meta.ai/docs/pricing-rate-limits | New, not in the profile: 3,000 requests and 4,000,000 tokens per minute per team for the Standard models, 150 requests per minute for the Contributor variants. Not used. |
 
 Findings: no profile constant is wrong, and no constant, source or test
 expectation was changed by this re-read. The two proposals, neither applied:
