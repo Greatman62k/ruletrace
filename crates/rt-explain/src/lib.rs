@@ -9,7 +9,8 @@
 //! is derived from its spans and its diagnostics.
 //!
 //! Also here: the shared results-file serializer ([`results`]) and the
-//! Proof_Report builder ([`report`]).
+//! Proof_Report builder and the application report model and writers
+//! ([`report`]).
 #![forbid(unsafe_code)]
 
 mod render;
@@ -25,3 +26,12 @@ mod tests;
 
 #[cfg(test)]
 mod tests_report;
+
+#[cfg(test)]
+mod tests_app_fixtures;
+
+#[cfg(test)]
+mod tests_app_report;
+
+#[cfg(test)]
+mod tests_app_property;

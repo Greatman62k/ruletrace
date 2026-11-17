@@ -383,7 +383,7 @@ fn pad(label: &str) -> String {
 }
 
 // Fixed by a user decision: states how a ranking relates to eligibility.
-const RANKING_SCOPE_LABEL: &str = "Score ranking \u{2014} all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.";
+pub(crate) const RANKING_SCOPE_LABEL: &str = "Score ranking \u{2014} all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.";
 
 fn render_section(out: &mut String, d: &DecisionSection) {
     let t = &d.trace;
