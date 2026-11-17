@@ -55,6 +55,7 @@ Examples already in the repository (verify before quoting):
 | Date | Entry |
 | --- | --- |
 | 2026-11-16 | Log created. Sequencing decision recorded in `tasks.md`. |
+| 2026-11-17 | First real review by the `ruletrace-reviewer` custom agent (task 9.2, `docs/reviews/2026-11-17-review-9.2-4a3bc77.md`): APPROVED with three surviving mutants that showed test gaps. The `review_integrity.py` baseline was recorded before the review and verified after it (main worktree and HEAD unchanged; scratch worktree removed). The agent's `git tag` deny rule stopped it from listing tags, which it reported as a gap. The Stop hook wrote `.git/ruletrace-hooks/last-stop-report.txt`, confirming the hook fires in this workspace. |
 | 2026-11-17 | Phase D: five workspace skills created and loaded by both custom agents (discovery verified). |
 | 2026-11-17 | Phase C: Context7 MCP trialled with two real dependency questions against the built-in web tools; equal accuracy, weaker version pinning; not retained. |
 | 2026-11-17 | Phase B: hook scripts built by the `ruletrace-implementer` agent (first real use of the custom agent) and wired. Hooks verified in a fresh Kiro CLI session in this workspace. During verification an unguarded `git push origin HEAD` was run by the orchestrator in a session where the hooks were not yet loaded: it published the local branch `m3` (5eb7d1a) to origin. See the incident note in `docs/kiro-tooling.md`. |
