@@ -702,3 +702,8 @@ Kept, not deferred: 9.10 and all essential compiler, provenance, approval, AI tr
 
 - Requirements 13.12, 13.20, 31.7 and 32.6 (engine part): the engine classifies each ranking difference as `value_differs`, `tie_broken_without_declared_criterion` or `tie_not_in_computed_result`, with published value, computed value, Decision_Trace entry and group members. Tests: `crates/rt-engine/src/tests_published_ranks.rs` (hand-computed cases, a 256-case property against an independent model, a 256-case equal-means-no-difference property). Eight mutants were killed.
 - RN-26 amendment text proposed in `docs/requirements-amendments.md`; the user has not approved it. Req 31.7 and 32.6 are met by the engine only; the application reports (9.4 onward) and Property 46 (9.13, deferred) remain open. Independent review and CI: `PENDING`.
+
+
+## Submission sequencing (recorded 2026-11-16)
+
+User decision: finish M2 closure and M3, then M4, then write the submission material; keep engineering documents, decision records, reviews and deferrals current throughout; record Kiro usage factually as it happens (`docs/kiro-usage-log.md`); add no MCP, hook or custom agent for appearance only; do not restructure the workspace before the exact Skeleton Crew folder rule is verified. The ordering, the deferred submission items and the open folder-rule question are in `tasks.md` under "Submission sequencing". No requirement, task or acceptance criterion changed. The tree check at this point: tasks 9.1 (aborted run) left no changes in the working tree, so 9.1 is not started.

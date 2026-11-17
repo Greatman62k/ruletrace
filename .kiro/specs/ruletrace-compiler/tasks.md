@@ -111,6 +111,36 @@ Milestones: M3 is Prize Check and Bracket Check (group 9), M4 is the demonstrati
 | 10.4, 10.7 | Deferral superseded | not applicable |
 
 
+## Submission sequencing (user decision, 2026-11-16)
+
+Context: the project is entered in the Kiroween "Skeleton Crew" category (a lean skeleton plus two distinct applications built from it). This section orders the work. It adds no task, no requirement and no scope, and it changes no acceptance criterion.
+
+Order of work:
+1. Close M2 (10.6, 10.7, 10.15, then the 10.9 checkpoint) once the final required three-platform CI run exists. Until then M2 is pending, not complete.
+2. Implement M3 (tasks 9.1, 9.2, 9.4, then 9.5 to 9.8, 9.10, 9.11, 9.16, 9.18, 9.20) on the local branch `m3`, which is not pushed until the required CI verification is available. `m2-final` (local branch) and `main` keep the exact M2 commit `5644e52` and its run 43896108442.
+3. Implement M4 (real documents, data, goldens, acceptance test, honest-claims text).
+4. Only then write the submission material (see the table).
+
+Standing rules during 1 to 3:
+- Engineering documents stay current as the work proceeds: specification, decision records, traceability, test evidence, independent reviews and explicit deferrals.
+- Evidence of Kiro usage is recorded as it happens, factually, in `docs/kiro-usage-log.md`. No usage is invented or exaggerated.
+- No MCP server, hook or custom agent is added to improve the appearance of Kiro usage. One is proposed only where it gives a demonstrable engineering benefit, and needs the user's approval.
+- The Cargo workspace is not restructured on assumption. The exact Skeleton Crew rule on separate application folders is verified first (open item below).
+- No existing technical standard, test, requirement or architecture check is weakened to ease submission preparation.
+
+Submission material, deferred until the stated point (nothing here is a task of this specification):
+
+| Item | When | Status |
+| --- | --- | --- |
+| Open-source licence file (required by the rules; the licence is chosen by the user) | Before submission; introduce with the minimal README | Not present. Licence choice pending. |
+| Minimal, accurate README (build, verified commands) | When the workspace structure and verified commands are stable (after M3) | Not present |
+| Comprehensive README, application guides, "build a third app" guide | After M3 interfaces are stable | Deferred |
+| Final Kiro usage narrative | After M4, from `docs/kiro-usage-log.md` | Log started; narrative deferred |
+| Project overview, honest-claims document, demo walkthrough, video script, Devpost description | After M4 | Deferred |
+| Demo video (under three minutes, public on YouTube) | After M4 | Deferred |
+
+Open item, Skeleton Crew application folders. The user quoted the rule as: "For Skeleton Crew projects: Your repo must contain 2 separate repo folders for the 2 separate applications." The Devpost rules page returned HTTP 403 to automated fetching on 2026-11-16, so the primary text has not been read by the project agent. Unverified: whether "repo folders" means top-level directories, and whether packages inside the single Cargo workspace (`crates/*`) would satisfy it. Task 9.5 and 9.6 do not fix a path for the packages. No restructuring happens until the user reads the Rules tab (or asks the organisers) and records the answer here. The decision is needed before task 9.5 creates the `prize-check` package.
+
 ## Tasks
 
 - [x] 1. Decision gates
