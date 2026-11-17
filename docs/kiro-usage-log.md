@@ -26,12 +26,13 @@ The final Kiro usage narrative is written after M4 from this log.
 | Mutation checks by hand | Controlled mutants applied and reverted to show that new tests detect the behaviour they claim | Commit messages and review reports |
 | Custom agents (Kiro CLI 3.3.0, v3 format) | `ruletrace-implementer` and `ruletrace-reviewer`, defined in `.kiro/agents/`. Validated with `kiro-cli agent validate`, listed by `kiro-cli agent list`, called by name as sub-agents. Permission boundaries probed in the CLI and as sub-agents: `deny` rules hold in both; `ask` rules and unlisted shell commands are not enforced for sub-agents | `.kiro/agents/`, `docs/kiro-tooling.md` (table of probes) |
 | Agent hooks (Kiro CLI 3.3.0, `.kiro/hooks/ruletrace.json`) | Five PreToolUse, PostToolUse and Stop hooks guard goldens, shell commands, review-report integrity, formatting and end-of-session reporting. Real-CLI probes established the payloads and the blocking behaviour; PostToolUse and Stop output does not reach the agent in headless mode | `.kiro/hooks/`, `tools/hooks/` (108 tests, 88 mutants), `docs/kiro-tooling.md` |
+| Workspace skills (`.kiro/skills/`) | Five procedure skills for gates, catalogue changes, golden changes, independent review and CI inspection. Discovery verified in the default and the reviewer agent | `.kiro/skills/*/SKILL.md`, `docs/kiro-tooling.md` (Phase D). Activation in real work: not yet recorded |
 | Task orchestration | Tasks moved through `[ ]`, `[-]`, `[x]` with evidence notes | `tasks.md` |
 
 ## Not used (so far)
 
 - MCP servers: none configured for the project. Context7 was trialled on 2026-11-17 in a throwaway clone and not retained (no demonstrable benefit; see `docs/kiro-tooling.md`, Phase C).
-- Kiro powers: none.
+- Kiro powers: none. Packaging the skills as a Power is deferred until the skills show repeated value (user decision, 2026-11-17).
 
 Adding any of these happens only where it gives a demonstrable engineering
 benefit, with the user's approval.
@@ -54,6 +55,7 @@ Examples already in the repository (verify before quoting):
 | Date | Entry |
 | --- | --- |
 | 2026-11-16 | Log created. Sequencing decision recorded in `tasks.md`. |
+| 2026-11-17 | Phase D: five workspace skills created and loaded by both custom agents (discovery verified). |
 | 2026-11-17 | Phase C: Context7 MCP trialled with two real dependency questions against the built-in web tools; equal accuracy, weaker version pinning; not retained. |
 | 2026-11-17 | Phase B: hook scripts built by the `ruletrace-implementer` agent (first real use of the custom agent) and wired. Hooks verified in a fresh Kiro CLI session in this workspace. During verification an unguarded `git push origin HEAD` was run by the orchestrator in a session where the hooks were not yet loaded: it published the local branch `m3` (5eb7d1a) to origin. See the incident note in `docs/kiro-tooling.md`. |
 | 2026-11-17 | Phase A of the Kiro tooling: two custom agents created, validated and probed. Findings and limits in `docs/kiro-tooling.md`. The reviewer has not yet been used for a real review. |

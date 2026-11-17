@@ -146,3 +146,29 @@ questions; the web route was better at pinning the exact version the project
 uses, which matters for a pinned lockfile. Context7 is not retained and no MCP
 server is configured for the project. The experiment can be repeated if a
 dependency appears whose documentation is hard to reach through docs.rs.
+
+## Phase D: workspace skills (2026-11-17)
+
+Location verified against the Kiro docs (`kiro.dev/docs/skills.md`): workspace
+skills live in `.kiro/skills/<name>/SKILL.md` (Agent Skills format, YAML front
+matter with `name` and `description`), are discovered at session start, and
+are loaded in full only when a request matches the description or the skill is
+invoked as `/<name>`. Custom agents do not load skills unless they list them;
+both RuleTrace agents now have `skill://.kiro/skills/*/SKILL.md` in
+`resources`.
+
+| Skill | Purpose |
+| --- | --- |
+| `ruletrace-verify-gates` | The approved wrapper, scoped checks and the full gate list in CI order |
+| `ruletrace-catalogue-change` | Catalogue entry, `gen-catalogue`, requirement and design tables, `check-catalogue`, test |
+| `ruletrace-golden-change` | Reason, old and new bytes, the `golden_approve.py` flow, recording rule |
+| `ruletrace-independent-review` | Baseline with `review_integrity.py begin`, reviewer brief without the implementer's conclusions, after-review checks |
+| `ruletrace-ci-inspection` | Read-only `gh` commands and the cancellation diagnosis steps |
+
+The skills hold procedures only; the rules stay in the steering documents.
+
+Verified: in a fresh v3 session of a clone, the default agent and the
+`ruletrace-reviewer` agent both list the five skills; the reviewer also has the
+steering documents and its prompt in context. Not yet verified: a skill
+activating automatically from a matching request during real work. Use is to
+be recorded in the usage log when it happens.

@@ -15,7 +15,8 @@
     "file://../steering/technical-architecture.md",
     "file://../steering/rust-engineering-and-testing.md",
     "file://../steering/rust-engineering-standards.md",
-    "file://../steering/testing-integrity-and-anti-gaming.md"
+    "file://../steering/testing-integrity-and-anti-gaming.md",
+    "skill://.kiro/skills/*/SKILL.md"
   ],
   "permissions": {
     "rules": [
