@@ -168,6 +168,38 @@ def store_dir(cwd):
     return os.path.join(git_common_dir(cwd), "ruletrace-golden")
 
 
+def report_dir(cwd):
+    """Directory of the persistent hook reports, under the git directory."""
+    return os.path.join(git_common_dir(cwd), "ruletrace-hooks")
+
+
+def utc_now():
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+FMT_WARNINGS = "fmt-warnings.json"
+STOP_REPORT = "last-stop-report.txt"
+
+
+def load_fmt_warnings(directory):
+    """Return (entries, problem). A missing or damaged file yields no entries.
+
+    The file is a derived cache, so a damaged one is reported and replaced
+    by the next write instead of blocking the hook.
+    """
+    path = os.path.join(directory, FMT_WARNINGS)
+    if not os.path.exists(path):
+        return {}, None
+    try:
+        with open(path) as handle:
+            data = json.load(handle)
+    except (ValueError, OSError) as exc:
+        return {}, "%s is unreadable: %s" % (path, exc)
+    if not isinstance(data, dict):
+        return {}, "%s is not a JSON object" % path
+    return data, None
+
+
 @contextlib.contextmanager
 def locked(directory):
     os.makedirs(directory, exist_ok=True)
@@ -176,13 +208,22 @@ def locked(directory):
         yield
 
 
-def write_json_atomic(path, value):
+def write_text_atomic(path, text):
+    """Write `text` to `path` through a temporary file and a rename."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp = "%s.tmp.%d" % (path, os.getpid())
-    with open(tmp, "w") as handle:
-        json.dump(value, handle, indent=2, sort_keys=True)
-        handle.write("\n")
-    os.replace(tmp, path)
+    try:
+        with open(tmp, "w") as handle:
+            handle.write(text)
+        os.replace(tmp, path)
+    except OSError:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+        raise
+
+
+def write_json_atomic(path, value):
+    write_text_atomic(path, json.dumps(value, indent=2, sort_keys=True) + "\n")
 
 
 class CorruptStore(Exception):

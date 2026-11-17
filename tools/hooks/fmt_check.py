@@ -2,11 +2,17 @@
 """Warn when a written Rust file is not rustfmt-clean.
 
 Event: PostToolUse for fs_write, str_replace, fs_append and delete_file.
-Never modifies files. Exit 1 (a warning only, the tool already ran) when
-`rustfmt --edition 2021 --check` reports a difference for the file. Exit 0
-when the file is formatted, is not a Rust file, no longer exists, lies
-outside the repository, or when rustfmt is missing or times out (a one-line
-notice goes to stderr).
+Never modifies source files. Exit 1 (a warning only, the tool already ran)
+when `rustfmt --edition 2021 --check` reports a difference for the file.
+Exit 0 when the file is formatted, is not a Rust file, no longer exists,
+lies outside the repository, or when rustfmt is missing or times out (a
+one-line notice goes to stderr).
+
+The agent does not see PostToolUse output in headless mode, so the latest
+report per path is also kept in `.git/ruletrace-hooks/fmt-warnings.json`.
+An entry is removed when the path is later found clean or is deleted. When
+that file cannot be written, one notice goes to stderr and the exit code is
+unchanged.
 """
 
 import os
@@ -40,22 +46,13 @@ def file_hunks(output, target):
     return kept
 
 
-def evaluate(payload):
-    if payload.get("tool_name") not in hooklib.WRITE_TOOLS:
-        return 0, ""
-    path = hooklib.tool_path(payload.get("tool_input"))
-    cwd = payload.get("cwd")
-    if path is None or not path.endswith(".rs") or not isinstance(cwd, str):
-        return 0, ""
-    try:
-        root = hooklib.repo_root(cwd)
-    except RuntimeError:
-        return 0, ""
-    full = os.path.realpath(os.path.join(cwd, os.path.expanduser(path)))
-    if not hooklib.rel_candidates(root, cwd, path) or not os.path.isfile(full):
-        return 0, ""
-    if os.path.commonpath([root, full]) != root:
-        return 0, ""
+def run_rustfmt(root, full):
+    """Check one file. Returns (status, payload).
+
+    Status is `unavailable` or `timeout` (payload: notice), `clean`, `diff`
+    (payload: the hunk lines of this file only) or `error` (payload: detail
+    text).
+    """
     try:
         proc = subprocess.run(
             ["rustfmt", "--edition", "2021", "--color", "never", "--check", full],
@@ -66,27 +63,83 @@ def evaluate(payload):
             timeout=TIMEOUT,
         )
     except FileNotFoundError:
-        return 0, "fmt_check: rustfmt not found; format not checked\n"
+        return "unavailable", "rustfmt not found; format not checked"
     except subprocess.TimeoutExpired:
-        return 0, "fmt_check: rustfmt timed out after %d s; format not checked\n" % TIMEOUT
+        return "timeout", "rustfmt timed out after %d s; format not checked" % TIMEOUT
     if proc.returncode == 0:
-        return 0, ""
+        return "clean", ""
     hunks = file_hunks(proc.stdout, full)
-    rel = os.path.relpath(full, root)
     if hunks:
-        shown = hunks[:MAX_REPORT_LINES]
-        more = len(hunks) - len(shown)
-        text = "fmt_check: %s is not rustfmt-clean. Run `rustfmt --edition 2021 %s`.\n" % (rel, rel)
-        text += "\n".join(shown) + "\n"
-        if more > 0:
-            text += "... %d more diff lines\n" % more
-        return 1, text
+        return "diff", hunks
     if "Diff in " in proc.stdout and "error" not in proc.stderr:
-        return 0, ""
+        return "clean", ""
     detail = (proc.stderr or proc.stdout).strip().splitlines()[:5]
     if not detail:
-        return 0, ""
-    return 1, "fmt_check: rustfmt could not check %s:\n%s\n" % (rel, "\n".join(detail))
+        return "clean", ""
+    return "error", "\n".join(detail)
+
+
+def render_diff(rel, hunks):
+    shown = hunks[:MAX_REPORT_LINES]
+    more = len(hunks) - len(shown)
+    text = "fmt_check: %s is not rustfmt-clean. Run `rustfmt --edition 2021 %s`.\n" % (rel, rel)
+    text += "\n".join(shown) + "\n"
+    if more > 0:
+        text += "... %d more diff lines\n" % more
+    return text
+
+
+def evaluate(payload):
+    """Return (exit code, stderr text, state update or None).
+
+    The update is ("set", rel, report) or ("clear", rel, "").
+    """
+    if payload.get("tool_name") not in hooklib.WRITE_TOOLS:
+        return 0, "", None
+    path = hooklib.tool_path(payload.get("tool_input"))
+    cwd = payload.get("cwd")
+    if path is None or not path.endswith(".rs") or not isinstance(cwd, str):
+        return 0, "", None
+    try:
+        root = hooklib.repo_root(cwd)
+    except RuntimeError:
+        return 0, "", None
+    full = os.path.realpath(os.path.join(cwd, os.path.expanduser(path)))
+    if not hooklib.rel_candidates(root, cwd, path):
+        return 0, "", None
+    if os.path.commonpath([root, full]) != root:
+        return 0, "", None
+    rel = os.path.relpath(full, root).replace(os.sep, "/")
+    if not os.path.isfile(full):
+        return 0, "", ("clear", rel, "")
+    status, payload_out = run_rustfmt(root, full)
+    if status in ("unavailable", "timeout"):
+        return 0, "fmt_check: %s\n" % payload_out, None
+    if status == "clean":
+        return 0, "", ("clear", rel, "")
+    if status == "diff":
+        text = render_diff(rel, payload_out)
+    else:
+        text = "fmt_check: rustfmt could not check %s:\n%s\n" % (rel, payload_out)
+    return 1, text, ("set", rel, text)
+
+
+def record(cwd, update):
+    """Apply a state update to fmt-warnings.json under a lock."""
+    kind, rel, text = update
+    directory = hooklib.report_dir(cwd)
+    target = os.path.join(directory, hooklib.FMT_WARNINGS)
+    if kind == "clear" and not os.path.exists(target):
+        return
+    with hooklib.locked(directory):
+        entries, _ = hooklib.load_fmt_warnings(directory)
+        if kind == "set":
+            entries[rel] = {"report": text, "timestamp": hooklib.utc_now()}
+        elif rel in entries:
+            del entries[rel]
+        else:
+            return
+        hooklib.write_json_atomic(target, entries)
 
 
 def main():
@@ -94,9 +147,16 @@ def main():
     if payload is None:
         sys.stderr.write("fmt_check: stdin is not a JSON object; skipped\n")
         return 0
-    code, message = evaluate(payload)
+    code, message, update = evaluate(payload)
     if message:
         sys.stderr.write(message)
+    if update is not None:
+        try:
+            record(payload["cwd"], update)
+        except (OSError, RuntimeError) as exc:
+            sys.stderr.write(
+                "fmt_check: cannot update the warnings file: %s\n" % exc
+            )
     return code
 
 

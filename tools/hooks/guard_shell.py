@@ -10,6 +10,11 @@ Rules: (a) destructive or publishing git, (b) GitHub write operations,
 Only (f) can be approved, for one exact command, with
 `golden_approve.py --command`.
 
+Rule (e) also covers `cargo mutants|llvm-cov|tarpaulin|miri|careful`, which
+run project tests. Rule (f) blocks `RT_DEMO_BLESS` only as an environment
+assignment and `--bless` only as an argument of a command that is not a
+read-only text tool, so searching for the words stays allowed.
+
 This is best-effort pattern detection on a parsed command line, not a
 sandbox. A python or perl one-liner that writes a file, a script that was
 written earlier, variable indirection and similar tricks are not detected.
@@ -35,7 +40,7 @@ PUNCT = ";&|()<>\n"
 MAX_DEPTH = 3
 SHELLS = ("sh", "bash", "zsh", "dash", "ksh")
 INTERPRETERS = ("python", "perl", "ruby", "node", "php", "lua", "awk", "gawk")
-ASSIGN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+ASSIGN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*\+?=")
 KEYWORDS = ("if", "then", "else", "elif", "do", "while", "until", "!", "{", "}")
 
 WRAPPER = ["unshare", "-rn", "sh", "-c", 'ip link set lo up && exec "$@"', "sh"]
@@ -128,11 +133,38 @@ FALLBACK_WORDS = (
     re.compile(r"\bprintenv\b"),
     re.compile(r"\bsudo\b"),
     PROVIDER_HOST,
-    re.compile(r"\bcargo\b[^\n]*\b(test|run|nextest|bench)\b"),
+    re.compile(
+        r"\bcargo\b[^\n]*\b(test|run|nextest|bench|mutants|llvm-cov|"
+        r"tarpaulin|miri|careful)\b"
+    ),
     re.compile(r"ruletrace-ai"),
     re.compile(r"\bunshare\b"),
     re.compile(r"--bless"),
+    re.compile(r"RT_DEMO_BLESS\s*\+?="),
 )
+
+BLESS_ASSIGN = re.compile(r"^RT_DEMO_BLESS\+?=")
+ASSIGN_BUILTINS = ("export", "declare", "typeset", "readonly", "local")
+BLESS_READERS = (
+    "grep",
+    "egrep",
+    "fgrep",
+    "rg",
+    "echo",
+    "printf",
+    "cat",
+    "less",
+    "head",
+    "tail",
+    "awk",
+    "gawk",
+    "wc",
+)
+
+TEST_RUNNING_CARGO = ("mutants", "llvm-cov", "tarpaulin", "miri", "careful")
+TEST_RUNNING_BINARIES = tuple("cargo-" + name for name in TEST_RUNNING_CARGO)
+INFO_FLAGS = ("--version", "-V", "--help", "-h")
+MUTANTS_LIST_FLAGS = ("--list", "--list-files", "--list-dirs")
 
 
 class Finding:
@@ -530,9 +562,34 @@ def check_cargo(args, wrapped):
         executes = True
     elif sub == "nextest":
         executes = not (rest and rest[0] == "list")
+    elif sub in TEST_RUNNING_CARGO:
+        executes = not info_only(sub, rest)
     if executes:
         return [Finding("e", network_isolation_text("cargo %s" % sub))]
     return []
+
+
+def info_only(sub, rest):
+    """True when a test-running cargo tool only prints information.
+
+    Every other form is treated as executing project tests, including
+    `cargo mutants --check` and `cargo miri setup`.
+    """
+    if any(arg in INFO_FLAGS for arg in rest):
+        return True
+    return sub == "mutants" and any(arg in MUTANTS_LIST_FLAGS for arg in rest)
+
+
+def bless_flag_exempt(base, args):
+    """Read-only text tools may carry `--bless` as plain text."""
+    if base in BLESS_READERS:
+        return True
+    return (
+        base == "sed"
+        and (short_has(args, "n") or any(long_is(a, "quiet") or a == "--silent" for a in args))
+        and not short_has(args, "i")
+        and not any(long_is(a, "in-place") for a in args)
+    )
 
 
 def network_isolation_text(what):
@@ -632,18 +689,32 @@ def golden_text(path):
     )
 
 
+BLESS_TEXT = "golden-write: RT_DEMO_BLESS regenerates goldens"
+BLESS_FLAG_TEXT = "golden-write: `--bless` regenerates goldens"
+
+
 def analyze_words(words, ctx, depth, wrapped):
     core, bare_env, extra = strip_prefix(words)
     out = []
+    for word in words[: len(words) - len(core)]:
+        if BLESS_ASSIGN.match(word):
+            out.append(Finding("f", BLESS_TEXT, True))
     for text in extra:
         out.extend(analyze_command(text, ctx, depth + 1, wrapped))
     if bare_env:
         out.append(Finding("c", "credential-exposure: bare `env` prints the environment"))
+    command = os.path.basename(core[0]) if core else ""
+    if not bless_flag_exempt(command, core[1:]):
+        for word in words:
+            if word == "--bless" or word.startswith("--bless="):
+                out.append(Finding("f", BLESS_FLAG_TEXT, True))
     if not core:
         return out
     base = os.path.basename(core[0])
     args = core[1:]
 
+    if base in ASSIGN_BUILTINS and any(BLESS_ASSIGN.match(a) for a in args):
+        out.append(Finding("f", BLESS_TEXT, True))
     if base in ("sudo", "doas"):
         out.append(Finding("sudo", "sudo: privilege escalation is blocked"))
         return out
@@ -690,6 +761,8 @@ def analyze_words(words, ctx, depth, wrapped):
         out.extend(check_gh(args))
     elif base == "cargo":
         out.extend(check_cargo(args, wrapped))
+    elif base in TEST_RUNNING_BINARIES:
+        out.extend(check_cargo([base[len("cargo-") :]] + args, wrapped))
     elif base == "printenv":
         out.append(Finding("c", "credential-exposure: `printenv`"))
     elif base == "export" and (not args or "-p" in args):
@@ -730,9 +803,6 @@ def analyze_words(words, ctx, depth, wrapped):
     if "/" in core[0] and base in EXEC_NAMES and not wrapped:
         out.append(Finding("e", network_isolation_text(core[0])))
 
-    for word in core:
-        if word == "--bless" or word.startswith("--bless="):
-            out.append(Finding("f", "golden-write: `--bless` regenerates goldens", True))
     for path, mode in targets_for(core):
         if path_findings(ctx, path, mode):
             out.append(Finding("f", golden_text(path), True))
@@ -747,8 +817,6 @@ def analyze_command(text, ctx, depth=0, wrapped=False):
         out.append(Finding("c", "credential-exposure: /proc/*/environ exposes secrets"))
     if ".modal.toml" in text or ".config/gh/hosts.yml" in text:
         out.append(Finding("c", "credential-exposure: credential file access"))
-    if "RT_DEMO_BLESS" in text:
-        out.append(Finding("f", "golden-write: RT_DEMO_BLESS regenerates goldens", True))
     if depth > MAX_DEPTH:
         return out + fallback_findings(text)
     try:

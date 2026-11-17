@@ -6,6 +6,12 @@ another agent turn. Every report line is labelled OK, WARN or FAIL and the
 last line is `stop-report: N fail, M warn`. Project checks run only when
 the changed paths make them relevant, inside the approved isolation
 wrapper, within a 180 s total budget. Stop does not fire for sub-agents.
+
+The agent does not see Stop output in headless mode, so the complete report
+is also written to `.git/ruletrace-hooks/last-stop-report.txt`, replaced
+atomically on every run. When that file cannot be written, one notice goes
+to stderr and the exit code is unchanged. The FORMAT section runs the
+read-only `rustfmt --check` and never modifies files.
 """
 
 import os
@@ -15,6 +21,7 @@ import time
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import fmt_check  # noqa: E402
 import hooklib  # noqa: E402
 import review_integrity as ri  # noqa: E402
 
@@ -29,6 +36,8 @@ POLICY_FILES = (
     "Cargo.toml",
     "Cargo.lock",
 )
+MAX_FORMAT_FILES = 40
+MAX_FORMAT_HUNK_LINES = 20
 CATALOGUE_GENERATED = "crates/rt-foundation/src/code_generated.rs"
 
 
@@ -123,6 +132,56 @@ def run_check(root, name, deadline):
     return "FAIL", "%s exited %d: %s" % (name, proc.returncode, tail), False
 
 
+def format_lines(root, entries):
+    """FORMAT section: read-only rustfmt check of changed `.rs` files."""
+    lines = ["FORMAT"]
+    paths = sorted(
+        {
+            path
+            for _, path in entries
+            if path.endswith(".rs") and os.path.isfile(os.path.join(root, path))
+        }
+    )
+    if not paths:
+        lines.append("OK   no changed .rs file to format-check")
+    for path in paths[:MAX_FORMAT_FILES]:
+        status, detail = fmt_check.run_rustfmt(root, os.path.join(root, path))
+        if status == "unavailable":
+            lines.append("WARN %s" % detail)
+            break
+        if status == "timeout":
+            lines.append("WARN format %s: %s" % (path, detail))
+            continue
+        if status == "clean":
+            lines.append("OK   format %s" % path)
+        elif status == "error":
+            lines.append("WARN format %s: rustfmt could not check it" % path)
+            lines.extend("    " + row for row in detail.splitlines())
+        else:
+            lines.append("WARN format %s: not rustfmt-clean" % path)
+            lines.extend("    " + row for row in detail[:MAX_FORMAT_HUNK_LINES])
+            if len(detail) > MAX_FORMAT_HUNK_LINES:
+                lines.append(
+                    "    ... %d more diff lines"
+                    % (len(detail) - MAX_FORMAT_HUNK_LINES)
+                )
+    if len(paths) > MAX_FORMAT_FILES:
+        lines.append(
+            "WARN format: %d more .rs files not checked (limit %d)"
+            % (len(paths) - MAX_FORMAT_FILES, MAX_FORMAT_FILES)
+        )
+    pending, problem = hooklib.load_fmt_warnings(hooklib.report_dir(root))
+    if problem:
+        lines.append("WARN fmt-warnings.json: %s" % problem)
+    for path in sorted(pending):
+        entry = pending[path]
+        stamp = entry.get("timestamp") if isinstance(entry, dict) else None
+        lines.append("WARN fmt-warnings pending: %s (since %s)" % (path, stamp))
+    if not pending and not problem:
+        lines.append("OK   no pending fmt-warnings entry")
+    return lines
+
+
 def build_report(cwd):
     lines = []
     root = hooklib.repo_root(cwd)
@@ -157,6 +216,7 @@ def build_report(cwd):
         lines.append("%s %s" % (label.ljust(4), text))
         if stop and label == "WARN" and "not run" in text:
             break
+    lines.extend(format_lines(root, entries))
     try:
         baseline = ri.active_baseline(root)
     except ri.IntegrityError:
@@ -184,7 +244,15 @@ def main():
     except (RuntimeError, OSError) as exc:
         lines = ["FAIL stop-report could not inspect the repository: %s" % exc,
                  "stop-report: 1 fail, 0 warn"]
-    print("\n".join(lines))
+    text = "\n".join(lines)
+    print(text)
+    try:
+        directory = hooklib.report_dir(cwd)
+        hooklib.write_text_atomic(
+            os.path.join(directory, hooklib.STOP_REPORT), text + "\n"
+        )
+    except (OSError, RuntimeError) as exc:
+        sys.stderr.write("stop-report: cannot write the report file: %s\n" % exc)
     return 0
 
 
