@@ -708,3 +708,8 @@ Kept, not deferred: 9.10 and all essential compiler, provenance, approval, AI tr
 ## Submission sequencing (recorded 2026-11-16)
 
 User decision: finish M2 closure and M3, then M4, then write the submission material; keep engineering documents, decision records, reviews and deferrals current throughout; record Kiro usage factually as it happens (`docs/kiro-usage-log.md`); add no MCP, hook or custom agent for appearance only; do not restructure the workspace before the exact Skeleton Crew folder rule is verified. The ordering, the deferred submission items and the open folder-rule question are in `tasks.md` under "Submission sequencing". No requirement, task or acceptance criterion changed. The tree check at this point: tasks 9.1 (aborted run) left no changes in the working tree, so 9.1 is not started.
+
+
+## Task 9.2 closed (2026-11-17)
+
+Closed by user instruction on two independent reviews (both APPROVED) and the local workspace run (1941 passed). RN-26 approval, the difference kind naming and catalogue codes are open user decisions. Three-platform CI evidence is pending until M3 is pushed and is checked at task 9.20. Non-blocking gaps N3 and O2 are recorded in `docs/reviews/2026-11-17-review-9.2-tests-62b7b83.md`.
