@@ -9,6 +9,9 @@
 //! (Req 8.27) that the engine parses with `rt-numeric` against the declared
 //! type.
 //!
+//! The [`tabular`] module reads the CSV Application_Input_Format into these
+//! types and writes their canonical bytes (design §8.3, §8.4).
+//!
 //! # File formats (all canonical RT-JSON, pretty form, fixed key order)
 //!
 //! Competition_Data:
@@ -49,6 +52,7 @@ mod data;
 mod ids;
 mod published;
 mod questions;
+pub mod tabular;
 
 pub use common::default_parse_limits;
 pub use data::{
