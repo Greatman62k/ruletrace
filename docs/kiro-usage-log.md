@@ -24,13 +24,12 @@ The final Kiro usage narrative is written after M4 from this log.
 | Sub-agents | Implementation work and independent reviews delegated to separate agents with fresh context. Reviewers ran in separate git worktrees and wrote review reports | `docs/reviews/*.md` |
 | Property-based testing | Invariants checked with `proptest` (determinism, round trips, ordering, configuration checks, endpoint agreement) with at least 256 cases where generation is real | Property tests under `crates/*/src/tests_*.rs` and `crates/*/tests/` |
 | Mutation checks by hand | Controlled mutants applied and reverted to show that new tests detect the behaviour they claim | Commit messages and review reports |
+| Custom agents (Kiro CLI 3.3.0, v3 format) | `ruletrace-implementer` and `ruletrace-reviewer`, defined in `.kiro/agents/`. Validated with `kiro-cli agent validate`, listed by `kiro-cli agent list`, called by name as sub-agents. Permission boundaries probed in the CLI and as sub-agents: `deny` rules hold in both; `ask` rules and unlisted shell commands are not enforced for sub-agents | `.kiro/agents/`, `docs/kiro-tooling.md` (table of probes) |
 | Task orchestration | Tasks moved through `[ ]`, `[-]`, `[x]` with evidence notes | `tasks.md` |
 
 ## Not used (so far)
 
-- Agent hooks: none committed (`.kiro/hooks` does not exist).
-- Custom agents: none committed (`.kiro/agents` does not exist). The sub-agent
-  roles above were built-in agents driven by written prompts.
+- Agent hooks: none committed yet (`.kiro/hooks` does not exist).
 - MCP servers: none configured for the project.
 - Kiro powers: none.
 
@@ -55,3 +54,4 @@ Examples already in the repository (verify before quoting):
 | Date | Entry |
 | --- | --- |
 | 2026-11-16 | Log created. Sequencing decision recorded in `tasks.md`. |
+| 2026-11-17 | Phase A of the Kiro tooling: two custom agents created, validated and probed. Findings and limits in `docs/kiro-tooling.md`. The reviewer has not yet been used for a real review. |
