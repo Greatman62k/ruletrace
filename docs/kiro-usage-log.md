@@ -30,7 +30,7 @@ The final Kiro usage narrative is written after M4 from this log.
 
 ## Not used (so far)
 
-- MCP servers: none configured for the project.
+- MCP servers: none configured for the project. Context7 was trialled on 2026-11-17 in a throwaway clone and not retained (no demonstrable benefit; see `docs/kiro-tooling.md`, Phase C).
 - Kiro powers: none.
 
 Adding any of these happens only where it gives a demonstrable engineering
@@ -54,5 +54,6 @@ Examples already in the repository (verify before quoting):
 | Date | Entry |
 | --- | --- |
 | 2026-11-16 | Log created. Sequencing decision recorded in `tasks.md`. |
+| 2026-11-17 | Phase C: Context7 MCP trialled with two real dependency questions against the built-in web tools; equal accuracy, weaker version pinning; not retained. |
 | 2026-11-17 | Phase B: hook scripts built by the `ruletrace-implementer` agent (first real use of the custom agent) and wired. Hooks verified in a fresh Kiro CLI session in this workspace. During verification an unguarded `git push origin HEAD` was run by the orchestrator in a session where the hooks were not yet loaded: it published the local branch `m3` (5eb7d1a) to origin. See the incident note in `docs/kiro-tooling.md`. |
 | 2026-11-17 | Phase A of the Kiro tooling: two custom agents created, validated and probed. Findings and limits in `docs/kiro-tooling.md`. The reviewer has not yet been used for a real review. |

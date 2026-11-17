@@ -119,3 +119,30 @@ path in a throwaway clone) instead.
 
 User decision (2026-11-17): leave the remote branch `m3` on origin for now; it is
 cleaned up later. It is not a release or review point.
+
+## Phase C: Context7 MCP experiment (2026-11-17)
+
+Setup checked first: the hosted server `https://mcp.context7.com/mcp` answered an
+unauthenticated MCP `initialize` (HTTP 200, server version 4.7.0), so no key or
+paid account was needed. It was configured only in a throwaway clone
+(`.kiro/settings/mcp.json` with `url` only, no headers) and started in a v3
+session (`--require-mcp-startup`, tools `context7::resolve-library-id` and
+`context7::query-docs`). Only public library names and API questions were sent.
+
+Two real questions about RuleTrace dependencies were asked in fresh headless
+sessions, once restricted to the Context7 tools and once with the built-in web
+tools only:
+
+| Question | With Context7 | Web tools only | Checked against |
+| --- | --- | --- | --- |
+| ureq 3.5.x `ConfigBuilder`: no redirects, status not an error, no proxy from the environment, one overall timeout | Correct method names and types (`max_redirects(u32)`, `http_status_as_error(bool)`, `proxy(Option<Proxy>)`, `timeout_global(Option<Duration>)`). Context7 served docs.rs `latest` only and listed no 3.5.x version | Same four answers, read from the docs.rs 3.5.0 page and source; gave the version | The ureq 3.5.2 source in the local cargo registry and `crates/rt-ai-responses/src/transport.rs`: both correct; neither mentioned `max_redirects_will_error`, which the transport also sets |
+| proptest 1.x: `cases` field and default, per-block 512, default failure persistence path, `PROPTEST_CASES` | Correct, with one extra caveat (an older book page conflicts) | Correct | The repository's `crates/rt-ai-tool/proptest-regressions/*.txt` layout matches both |
+
+Session sizes (events): ureq 163 with Context7 against 193 without; proptest 258
+against 160.
+
+Result: no demonstrable benefit. Both routes gave correct answers to these
+questions; the web route was better at pinning the exact version the project
+uses, which matters for a pinned lockfile. Context7 is not retained and no MCP
+server is configured for the project. The experiment can be repeated if a
+dependency appears whose documentation is hard to reach through docs.rs.
