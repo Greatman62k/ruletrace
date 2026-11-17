@@ -66,3 +66,53 @@ commands with exit codes, changed expectations, deviations, open decisions,
 not verified). Reviewer: nine headings (verdict, scope, blocking findings,
 non-blocking findings, what held up, commands, mutants, not verified,
 integrity). Both are in the prompt files.
+
+## Phase B: hooks
+
+Wiring: `.kiro/hooks/ruletrace.json` (CLI hook format `{"version":"v1","hooks":[...]}`).
+Scripts and their tests: `tools/hooks/` (Python 3 standard library only; see
+`tools/hooks/README.md`). Test suite: `python3 -B -m unittest discover -s tools/hooks/tests`
+(108 tests) and the mutant runner `python3 -B tools/hooks/tests/mutants.py` (88 mutants).
+
+| Hook | Event and matcher | Effect |
+| --- | --- | --- |
+| `guard-golden` | PreToolUse, write tools | Blocks writes to goldens, fixtures and recordings. The user approves the exact change (path, old hash, new hash, expiry, single use) with `tools/hooks/golden_approve.py <id>` on a TTY |
+| `review-integrity` | PreToolUse, write tools | A report under `docs/reviews/*.md` can be written only while the main worktree and `HEAD` match the baseline recorded by `tools/hooks/review_integrity.py begin <id>` |
+| `guard-shell` | PreToolUse, `execute_bash` | Blocks `git push` and destructive git, GitHub write verbs, credential exposure, direct provider calls, bless commands, and `cargo test|run|nextest|bench|mutants|llvm-cov` outside the exact wrapper `unshare -rn sh -c 'ip link set lo up && exec "$@"' sh <cmd>` |
+| `fmt-check` | PostToolUse, write tools | Runs `rustfmt --edition 2021 --check` on a written `.rs` file and records the result in `.git/ruletrace-hooks/fmt-warnings.json`. Never rewrites |
+| `stop-report` | Stop | Prints the working-tree state, flags goldens, catalogue, architecture-edge and decision changes, runs the relevant `rt-xtask` checks and a read-only FORMAT check, and writes `.git/ruletrace-hooks/last-stop-report.txt` |
+
+### Verified on Kiro CLI 3.3.0
+
+| Check | Result |
+| --- | --- |
+| Hook payloads | `session_id`, `hook_event_name`, `cwd`, `tool_name`, `tool_input` (`fs_write`: `path` (absolute), `text`; `str_replace`: `path`, `oldStr`, `newStr`, `replace_all`; `execute_bash`: `command`, `cwd`, `description`, `timeout`, `run_in_background`); PostToolUse adds `tool_response`. The payload has no agent name |
+| Working directory of a hook | The project root |
+| PreToolUse exit 2 | Blocks the call. The hook's stderr text is shown to the agent. Verified in the CLI, for a sub-agent, and in a fresh session in this workspace |
+| Wired hooks, fresh session | Protected fixture write blocked with a pending id; `echo $MODEL_API_KEY` blocked; `git status` allowed |
+| Sub-agents | Workspace hooks apply to sub-agents (probe). A Stop event was not observed for sub-agent runs |
+| PostToolUse and Stop output | Never reached the agent in headless mode, for exit codes 0, 1 and 2. The interactive TUI display is not verified. The scripts therefore also write their results under `.git/ruletrace-hooks/` |
+| Hot loading | Not reliable. After `.kiro/hooks/` was deleted and recreated, a running session did not pick up the new file. Start a new session |
+| `fs_append`, `delete_file` | Not present in the tool set that was probed; the scripts fail closed for protected paths if they appear |
+| Approved wrapper | `unshare -rn sh -c 'ip link set lo up && exec "$@"' sh cargo test -p rt-ai-responses --test stub_http` passes (21 tests). Without `ip link set lo up` 18 of 21 fail, so the exact wrapper is required |
+
+### Limits
+
+- Shell write detection (golden and bless rules) is pattern based. A
+  `python3 -c` or `perl` one-liner that writes a golden file is not detected.
+- The review integrity check is tamper evidence at the moment the report is
+  written. It does not stop a write to the main worktree during the review.
+- Nothing here is a security boundary against a determined agent. It makes
+  accidents and shortcuts visible and, for the listed patterns, blocked.
+
+### Incident, 2026-11-17
+
+While testing, the orchestrator ran `git push origin HEAD` in a running session
+to confirm that `guard-shell` blocked it. That session had not loaded the newly
+created hook file (hot loading is unreliable), so the command executed and
+pushed the local branch `m3` (commit `5eb7d1a`, which includes work that had
+not been independently reviewed) to origin. `main` was not touched and no CI
+run started (the workflow runs on pushes to `main` and on pull requests). The
+user's rule was that nothing is pushed. A blocking test must never be a command
+with an irreversible effect: use a harmless stand-in (a write to a protected
+path in a throwaway clone) instead.
