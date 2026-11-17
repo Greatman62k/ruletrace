@@ -116,3 +116,6 @@ run started (the workflow runs on pushes to `main` and on pull requests). The
 user's rule was that nothing is pushed. A blocking test must never be a command
 with an irreversible effect: use a harmless stand-in (a write to a protected
 path in a throwaway clone) instead.
+
+User decision (2026-11-17): leave the remote branch `m3` on origin for now; it is
+cleaned up later. It is not a release or review point.
