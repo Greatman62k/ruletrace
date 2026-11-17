@@ -702,6 +702,7 @@ Kept, not deferred: 9.10 and all essential compiler, provenance, approval, AI tr
 
 - Requirements 13.12, 13.20, 31.7 and 32.6 (engine part): the engine classifies each ranking difference as `value_differs`, `tie_broken_without_declared_criterion` or `tie_not_in_computed_result`, with published value, computed value, Decision_Trace entry and group members. Tests: `crates/rt-engine/src/tests_published_ranks.rs` (hand-computed cases, a 256-case property against an independent model, a 256-case equal-means-no-difference property). Eight mutants were killed.
 - RN-26 amendment text proposed in `docs/requirements-amendments.md`; the user has not approved it. Req 31.7 and 32.6 are met by the engine only; the application reports (9.4 onward) and Property 46 (9.13, deferred) remain open. Independent review and CI: `PENDING`.
+- Review follow-up (2026-11-17), same Requirements: tests only in `crates/rt-engine/src/tests_published_ranks.rs` close the review's gaps (Indeterminate beside Known in a published tie, Boolean beside the number 1, entry-order independence through `parse_published`); mutants M4, M6 and M10 killed, no production change.
 
 
 ## Submission sequencing (recorded 2026-11-16)
