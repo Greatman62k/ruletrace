@@ -701,7 +701,7 @@ Kept, not deferred: 9.10 and all essential compiler, provenance, approval, AI tr
 ## Task 9.2 evidence (2026-11-17, still `[-]`)
 
 - Requirements 13.12, 13.20, 31.7 and 32.6 (engine part): the engine classifies each ranking difference as `value_differs`, `tie_broken_without_declared_criterion` or `tie_not_in_computed_result`, with published value, computed value, Decision_Trace entry and group members. Tests: `crates/rt-engine/src/tests_published_ranks.rs` (hand-computed cases, a 256-case property against an independent model, a 256-case equal-means-no-difference property). Eight mutants were killed.
-- RN-26 amendment text proposed in `docs/requirements-amendments.md`; the user has not approved it. Req 31.7 and 32.6 are met by the engine only; the application reports (9.4 onward) and Property 46 (9.13, deferred) remain open. Independent review and CI: `PENDING`.
+- RN-26 amendment approved by the user on 2026-11-17 (text in `docs/requirements-amendments.md`, applied to Req 13.12). Req 31.7 and 32.6 are met by the engine only; the application reports (9.4 onward) and Property 46 (9.13, deferred) remain open. Independent review and CI: `PENDING`.
 - Review follow-up (2026-11-17), same Requirements: tests only in `crates/rt-engine/src/tests_published_ranks.rs` close the review's gaps (Indeterminate beside Known in a published tie, Boolean beside the number 1, entry-order independence through `parse_published`); mutants M4, M6 and M10 killed, no production change.
 
 
@@ -712,4 +712,11 @@ User decision: finish M2 closure and M3, then M4, then write the submission mate
 
 ## Task 9.2 closed (2026-11-17)
 
-Closed by user instruction on two independent reviews (both APPROVED) and the local workspace run (1941 passed). RN-26 approval, the difference kind naming and catalogue codes are open user decisions. Three-platform CI evidence is pending until M3 is pushed and is checked at task 9.20. Non-blocking gaps N3 and O2 are recorded in `docs/reviews/2026-11-17-review-9.2-tests-62b7b83.md`.
+Closed by user instruction on two independent reviews (both APPROVED) and the local workspace run (1941 passed). RN-26 was approved and the difference kind naming and catalogue codes were decided by the user on 2026-11-17 (see the next section). Three-platform CI evidence is pending until M3 is pushed and is checked at task 9.20. Non-blocking gaps N3 and O2 are recorded in `docs/reviews/2026-11-17-review-9.2-tests-62b7b83.md`.
+
+
+## RN-26 approved and catalogue codes RT-EXE-0012 and RT-EXE-0013 (user decisions, 2026-11-17)
+
+- Req 13.12 now contains the RN-26 text. Open points 1 and 2 were settled as implemented; point 3 by decision 2: one code per difference kind. `RT-EXE-0011` (`PUBLISHED_RESULT_DIFFERS`, `value_differs`), `RT-EXE-0012` (`PUBLISHED_TIE_GROUP_SPLIT`, `tie_broken_without_declared_criterion`) and `RT-EXE-0013` (`PUBLISHED_TIE_NOT_COMPUTED`, `tie_not_in_computed_result`) are Warnings with exit code 0, so a published difference never changes the evaluation exit code. The `RT-EXE-0011` meaning text now says value difference only.
+- Files: `catalogue/diagnostics.v1.json`, generated `crates/rt-foundation/src/code_generated.rs`, `crates/rt-cli/src/evaluate.rs`, design §3.6.3, §9.4 and the §4.3 catalogue table.
+- Tests: `crates/rt-cli/src/tests_published_kinds.rs` (four evaluate-level tests), `crates/rt-foundation/tests/catalogue_rn26.rs` (four tests). `catalogue_ud37.rs` count assertion raised from 152 to 154 (two new codes).

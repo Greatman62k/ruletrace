@@ -33,7 +33,7 @@ use rt_data::{
     CompetitionData, DataLimits, ParticipantId, PublishedResult, PublishedValue, Question,
     TargetName,
 };
-use rt_engine::{evaluate, Comparison, Computed, Evaluation};
+use rt_engine::{evaluate, Comparison, Computed, DifferenceKind, Evaluation};
 use rt_explain::report::{
     build_proof_report, render_proof_human, render_proof_json, ApprovalFacts, ApprovalView,
     ProofInputs, PublishedFact,
@@ -378,13 +378,23 @@ fn published_facts(
         .collect()
 }
 
-/// One Warning `RT-EXE-0011` for each published value that differs.
+/// The catalogue code of one difference kind (one failure mode, one code).
+fn difference_code(kind: DifferenceKind) -> Code {
+    match kind {
+        DifferenceKind::ValueDiffers => Code::PublishedResultDiffers,
+        DifferenceKind::TieBrokenWithoutDeclaredCriterion => Code::PublishedTieGroupSplit,
+        DifferenceKind::TieNotInComputedResult => Code::PublishedTieNotComputed,
+    }
+}
+
+/// One Warning for each published difference, coded by its kind.
 fn published_warnings(comparison: &Comparison, input: Option<&InputId>) -> Vec<Diagnostic> {
     comparison
         .differences
         .iter()
         .map(|d| {
-            let location = input.map_or(Location::None(Code::PublishedResultDiffers), |input| {
+            let code = difference_code(d.kind);
+            let location = input.map_or(Location::None(code), |input| {
                 Location::Input(InputLocation {
                     input: input.clone(),
                     line: None,
@@ -392,7 +402,7 @@ fn published_warnings(comparison: &Comparison, input: Option<&InputId>) -> Vec<D
                     field: Some(format!("entries[{}/{}]", d.participant, d.target)),
                 })
             });
-            Diagnostic::new(Code::PublishedResultDiffers, d.message.clone(), location)
+            Diagnostic::new(code, d.message.clone(), location)
         })
         .collect()
 }

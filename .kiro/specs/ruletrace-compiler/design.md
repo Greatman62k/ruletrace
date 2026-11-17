@@ -1747,7 +1747,9 @@ The catalogue is one file, `catalogue/diagnostics.v1.json` (RT-JSON array of `{c
 | RT-EXE-0008 (N) | DATA_DUPLICATE_PARTICIPANT | Error | Duplicate participant id in Competition_Data | 2 | rt evaluate |
 | RT-EXE-0009 (N) | DATA_MALFORMED | Error | Competition_Data, Questions or Published_Result malformed | 2 | rt evaluate |
 | RT-EXE-0010 (N) | QUESTION_INVALID | Error | Question names an unknown target or participant | 2 | rt evaluate |
-| RT-EXE-0011 (N) | PUBLISHED_RESULT_DIFFERS | Warning | Published result differs from computed Outcome | 0 | rt evaluate |
+| RT-EXE-0011 (N) | PUBLISHED_RESULT_DIFFERS | Warning | Published value differs from the computed value (kind value_differs) | 0 | rt evaluate |
+| RT-EXE-0012 (N) | PUBLISHED_TIE_GROUP_SPLIT | Warning | Published result gives members of one computed Tie_Group different positions (kind tie_broken_without_declared_criterion) | 0 | rt evaluate |
+| RT-EXE-0013 (N) | PUBLISHED_TIE_NOT_COMPUTED | Warning | Published result ties participants that the computed result separates (kind tie_not_in_computed_result) | 0 | rt evaluate |
 | RT-PRV-0001 (R) | PROV_DOCUMENT_MISSING | Error | No Source_Model for the span's document | 2 | rt evaluate |
 | RT-PRV-0002 (R) | PROV_HASH_MISMATCH | Error | Recorded hash differs from Source_Model hash | 2 | rt evaluate |
 | RT-PRV-0003 (R) | PROV_SPAN_OUT_OF_RANGE | Error | Span outside the document or start not below end | 2 | rt evaluate |
