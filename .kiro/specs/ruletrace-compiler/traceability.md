@@ -725,3 +725,8 @@ Closed by user instruction on two independent reviews (both APPROVED) and the lo
 ## Tasks 9.1 and 9.4 (2026-11-17)
 
 Implemented and independently reviewed; no blocking finding open (9.1: three reviews, final APPROVED; 9.4: four reviews, final APPROVED). Both stay `[-]` until the user accepts the open items listed in their status notes, and three-platform CI is pending until M3 is pushed (task 9.20). User decisions applied: trailing CSV delimiter, unrequested published rows (design §8.3, `e240d5f`), difference kind as text plus code with one table, Bracket ranking-scope header.
+
+
+## Tasks 9.1 and 9.4 closed (2026-11-17)
+
+Closed by the user's acceptance after the final follow-ups (`715db8c`, `ecf9550`) and the focused check `docs/reviews/2026-11-17-review-final-9.4-ecf9550.md` (APPROVED). The four accepted 9.4 limitations are recorded as invariants in the 9.4 task note; invariant (1) (positional trace-to-verification binding) must be revisited before any change that reorders or filters entries. Three-platform CI evidence is pending until M3 is pushed (task 9.20).
