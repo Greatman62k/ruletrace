@@ -730,3 +730,234 @@ Implemented and independently reviewed; no blocking finding open (9.1: three rev
 ## Tasks 9.1 and 9.4 closed (2026-11-17)
 
 Closed by the user's acceptance after the final follow-ups (`715db8c`, `ecf9550`) and the focused check `docs/reviews/2026-11-17-review-final-9.4-ecf9550.md` (APPROVED). The four accepted 9.4 limitations are recorded as invariants in the 9.4 task note; invariant (1) (positional trace-to-verification binding) must be revisited before any change that reorders or filters entries. Three-platform CI evidence is pending until M3 is pushed (task 9.20).
+
+
+## UD-38 amendments (2026-11-18)
+
+Cause: the user decision UD-38 (`tools/decisions/UD-38.md`): category Frankenstein, one integrated local RuleTrace Laboratory, runtime executables `ruletrace`, `ruletrace-ai`, `ruletrace-lab`, `prize-check` and `bracket-check` as library Workflow_Modules. Documentation only. Every amended criterion carries the marker "(Amended by UD-38, 2026-11-18.)" in `requirements.md`. The marker is removed below from the recorded old and new text.
+
+New requirements: Requirement 36 (RuleTrace Laboratory, 24 criteria) and Requirement 37 (Laboratory threat model and local security, 23 criteria). New criteria elsewhere: 24.13, 33.18, 33.19, 34.9, 34.10. No criterion was renumbered. Criteria that were not amended keep their text.
+
+Amended and new text, old wording then new wording:
+
+### 1. Introduction, paragraph 3 (exclusion)
+
+Old: RuleTrace never invents a rule and never treats an ambiguous rule as having a definite interpretation. The compiler is the product. This specification excludes any dashboard, chatbot, or hosted service.
+
+New: RuleTrace never invents a rule and never treats an ambiguous rule as having a definite interpretation. The compiler is the product. This specification excludes any dashboard, chatbot, or hosted service, with the single exception of the local RuleTrace_Laboratory (Requirements 36 and 37; UD-38).
+
+### 2. Introduction, Demonstration applications, first sentence
+
+Old: The first version contains two thin demonstration Application_Layers, Prize_Check and Bracket_Check (Requirements 31 and 32), which prove that one Rules_Engine powers two different applications. Each Application_Layer maps its own input format to Competition_Data, calls the shared Rules_Engine through the library interface, and renders a report. Each Application_Layer contains input mapping and report layout only, and no eligibility, scoring, ranking, or tie-breaking logic (Requirement 15 criteria 5 and 6). Prize_Check demonstrates eligibility, weighted scoring, ranking with Tie_Groups, and a published-result consistency check. Bracket_Check demonstrates standings (ranking with ordered tie-breaking criteria), qualification as defined by the Qualification_Predicate of Requirement 14 criterion 11, Tie_Groups, and a published-standings consistency check.
+
+New: The first version contains two thin demonstration Workflow_Modules (also named Application_Layers), Prize_Check and Bracket_Check (Requirements 31 and 32), which prove that one Rules_Engine powers two different workflows and which the RuleTrace_Laboratory presents as the selectable Prize workflow and Tournament standings workflow (Requirement 36 criterion 18). Each Application_Layer maps its own input format to Competition_Data, calls the shared Rules_Engine through the library interface, and renders a report. Each Application_Layer contains input mapping and report layout only, and no eligibility, scoring, ranking, or tie-breaking logic (Requirement 15 criteria 5 and 6). Prize_Check demonstrates eligibility, weighted scoring, ranking with Tie_Groups, and a published-result consistency check. Bracket_Check demonstrates standings (ranking with ordered tie-breaking criteria), qualification as defined by the Qualification_Predicate of Requirement 14 criterion 11, Tie_Groups, and a published-standings consistency check.
+
+### 3. Scope, in scope: workspace and executables
+
+Old: - A Cargo workspace of Rust crates covering the seven pipeline stages, with two RuleTrace executables: the deterministic ruletrace (the CLI), which has four pipeline commands and the review command group, and the separate optional ruletrace-ai (Requirement 27), plus two thin Demonstration_Executables, prize-check and bracket-check (Requirements 27 and 31; UD-33).
+
+New: - A Cargo workspace of Rust crates covering the seven pipeline stages, with three runtime executables: the deterministic ruletrace (the CLI), which has four pipeline commands and the review command group, the separate optional ruletrace-ai (Requirement 27), and the local RuleTrace_Laboratory ruletrace-lab (Requirements 27, 36, and 37; UD-38), plus the library packages prize-check and bracket-check (Requirement 31), which have no binary target.
+
+### 4. Scope, in scope: Application_Layers
+
+Old: - Two thin demonstration Application_Layers, Prize_Check and Bracket_Check, limited to input mapping and report layout over the shared Rules_Engine (Requirements 15, 31, and 32).
+
+New: - Two thin demonstration Workflow_Modules (Application_Layers), Prize_Check and Bracket_Check, limited to input mapping, Question construction, and report presentation over the shared Rules_Engine (Requirements 15, 31, and 32).
+
+### 5. Scope, in scope: new bullet (Laboratory)
+
+Old: (none)
+
+New: - The local RuleTrace_Laboratory ruletrace-lab: one integrated local application with a loopback browser interface in front of ruletrace and ruletrace-ai, with the Prize workflow and the Tournament standings workflow, an offline demo mode, and the local security requirements of Requirement 37 (UD-38).
+
+### 6. Scope, out of scope: full applications
+
+Old: - The full Prize Check and Bracket Check applications, their user interfaces, and their domain-specific workflows beyond the thin Application_Layers of Requirements 31 and 32; and any prize allocation, slot-based qualification, seeding, bracket generation, progression, or multi-stage competition logic in any crate, including the Application_Layers.
+
+New: - The full Prize Check and Bracket Check applications, their user interfaces (other than the single local RuleTrace_Laboratory of Requirements 36 and 37), and their domain-specific workflows beyond the thin Application_Layers of Requirements 31 and 32; and any prize allocation, slot-based qualification, seeding, bracket generation, progression, or multi-stage competition logic in any crate, including the Application_Layers.
+
+### 7. Scope, out of scope: dashboards
+
+Old: - Dashboards, chatbots, web services operated by RuleTrace, databases, and microservices.
+
+New: - Dashboards, chatbots, web services operated by RuleTrace, hosted application services, cloud dashboards, user accounts and remote authentication services, hosted databases, general-purpose workflow services, databases, microservices, and any replacement of the compiler or the Rules_Engine by user-interface logic. The single local RuleTrace_Laboratory (Requirements 36 and 37) is the only user interface in scope.
+
+### 8. Glossary: Prize_Check
+
+Old: - **Prize_Check**: The first-version thin demonstration Application_Layer of Requirement 31, which demonstrates eligibility, weighted scoring, ranking with Tie_Groups, and a published-result consistency check through the shared Rules_Engine, and performs no prize allocation. The full Prize Check application remains a future application.
+
+New: - **Prize_Check**: The first-version thin demonstration Workflow_Module (Application_Layer) of Requirement 31, presented by the RuleTrace_Laboratory as the Prize workflow, which demonstrates eligibility, weighted scoring, ranking with Tie_Groups, and a published-result consistency check through the shared Rules_Engine, and performs no prize allocation. The full Prize Check application remains a future application.
+
+### 9. Glossary: Bracket_Check
+
+Old: - **Bracket_Check**: The first-version thin demonstration Application_Layer of Requirements 31 and 32, which demonstrates standings, Qualification_Predicates, Tie_Groups, and a published-standings consistency check through the shared Rules_Engine, and performs no seeding, bracket generation, progression, or multi-stage logic. The full Bracket Check application remains a future application.
+
+New: - **Bracket_Check**: The first-version thin demonstration Workflow_Module (Application_Layer) of Requirements 31 and 32, presented by the RuleTrace_Laboratory as the Tournament standings workflow, which demonstrates standings, Qualification_Predicates, Tie_Groups, and a published-standings consistency check through the shared Rules_Engine, and performs no seeding, bracket generation, progression, or multi-stage logic. The full Bracket Check application remains a future application.
+
+### 10. Glossary: Application_Layer
+
+Old: - **Application_Layer**: A crate that contains only the input mapping of its own Application_Input_Format to Competition_Data, the construction of Questions, and report layout, and that calls the shared Rules_Engine through the library interface (Requirement 31). Prize_Check and Bracket_Check are the only Application_Layers of the first version.
+
+New: - **Application_Layer**: A Workflow_Module; the two terms are synonyms and Workflow_Module is preferred. A library crate without a binary target that contains only the input mapping of its own Application_Input_Format to Competition_Data, the construction of Questions, and report layout, and that calls the shared Rules_Engine through the library interface (Requirement 31). Prize_Check and Bracket_Check are the only Application_Layers of the first version.
+
+### 11. Glossary: Demonstration_Executable
+
+Old: - **Demonstration_Executable**: A small executable that wraps one Application_Layer for file input and report output at its binary edge. The Demonstration_Executables are prize-check and bracket-check (UD-33).
+
+New: - **Demonstration_Executable**: A small executable that wraps one Application_Layer for file input and report output at its binary edge. Superseded by UD-38: no executable of the first version is a Demonstration_Executable. The packages prize-check and bracket-check are library-only Workflow_Modules, and the term remains defined only so that the historical text of UD-33 is readable.
+
+### 12. Glossary: new entry
+
+Old: (none)
+
+New: - **Workflow_Module**: A library crate that contains only the input mapping of an Application_Input_Format to Competition_Data, the construction of Questions, and the presentation of a report, with no binary target and no business logic (Requirement 31). The Workflow_Modules are prize-check and bracket-check. The RuleTrace_Laboratory invokes them.
+
+### 13. Glossary: new entry
+
+Old: (none)
+
+New: - **RuleTrace_Laboratory** (also the Laboratory): The one integrated local application of Requirements 36 and 37, served by the executable ruletrace-lab on the loopback interface. It orchestrates ruletrace and ruletrace-ai as subprocesses and displays their results. It holds no AI credential, writes no Approval_Ledger record, and makes no decision, approval, or computation of its own (UD-38).
+
+### 14. Glossary: new entry
+
+Old: (none)
+
+New: - **Laboratory_Session**: The period between the exchange of a Launch_Secret for a session cookie and the invalidation of that cookie, with its own temporary directory and its own CSRF token (Requirement 37).
+
+### 15. Glossary: new entry
+
+Old: (none)
+
+New: - **Launch_Secret**: A random value of at least 128 bits that ruletrace-lab generates at each start and gives to the user only through the terminal, and that the user exchanges once for a session cookie (Requirement 37 criteria 5 and 6).
+
+### 16. Glossary: new entry
+
+Old: (none)
+
+New: - **Hand_Off_Artifact**: A file that one subprocess of the RuleTrace_Laboratory produces and the next subprocess consumes, whose SHA-256 hash the Laboratory records and verifies before use (Requirement 36 criterion 9). A valid hash does not make the content trusted.
+
+### 17. Glossary: new entry
+
+Old: (none)
+
+New: - **Runtime_Executable**: An executable that the RuleTrace delivers to a user: ruletrace, ruletrace-ai, and ruletrace-lab. A development or test utility that the workspace builds (for example rt-xtask) is not a Runtime_Executable (Requirement 27 criterion 1).
+
+### 18. 7.23
+
+Old: 23. THE RuleTrace SHALL list in the Diagnostic_Catalogue the code RANK_REFERENCE_CYCLE (Requirement 14 criterion 12, WHERE the option Rank_Reference of UD-32 is selected) and the Diagnostic codes that Requirement 31 criterion 9 names (APP_INPUT_MALFORMED, APP_INPUT_FIELD_MISSING, APP_INPUT_DUPLICATE_PARTICIPANT, APP_INPUT_VALUE_INVALID, APP_TARGET_NOT_DECLARED, APP_TARGET_KIND_MISMATCH), each with exactly one catalogue identifier, a Severity, a meaning, an exit code, and an executable (the Demonstration_Executable that returns it), and SHALL bind each of these mnemonics to its identifier under criterion 16. The design assigns the family of the application codes (RT-APP is proposed). The checks of Requirement 33 and 34 are test failures and not Diagnostics, and need no catalogue code.
+
+New: 23. THE RuleTrace SHALL list in the Diagnostic_Catalogue the code RANK_REFERENCE_CYCLE (Requirement 14 criterion 12, WHERE the option Rank_Reference of UD-32 is selected) and the Diagnostic codes that Requirement 31 criterion 9 names (APP_INPUT_MALFORMED, APP_INPUT_FIELD_MISSING, APP_INPUT_DUPLICATE_PARTICIPANT, APP_INPUT_VALUE_INVALID, APP_TARGET_NOT_DECLARED, APP_TARGET_KIND_MISMATCH), each with exactly one catalogue identifier, a Severity, a meaning, an exit code, and an executable (ruletrace-lab, which reports the Diagnostic that a Workflow_Module returns), and SHALL bind each of these mnemonics to its identifier under criterion 16. The design assigns the family of the application codes (RT-APP is proposed). The checks of Requirement 33 and 34 are test failures and not Diagnostics, and need no catalogue code.
+
+### 19. 24.12
+
+Old: 12. THE RuleTrace SHALL add to the allowed-dependency list of criterion 5 the edges of each Application_Layer crate and Demonstration_Executable, which are limited to the Rules_Engine crate, the crates for the Compiled_Rulebook and Competition_Data types and their parsers, the Explainer crate, the Source_Model crate, and the shared Diagnostic, Location, and Exact_Number crates, and SHALL fail the automated check of criterion 5, with the offending crate name and edge, WHEN an Application_Layer or Demonstration_Executable depends, directly or transitively, on the ruletrace binary crate, on the review library crate, on a crate that contains the Approval_Ledger append function, on the Validator, Compiler, Ingestor, or Extractor crate, on an Auxiliary_Crate, or on a network client library, or WHEN a Core_Crate or Auxiliary_Crate depends on an Application_Layer crate or a Demonstration_Executable.
+
+New: 12. THE RuleTrace SHALL add to the allowed-dependency list of criterion 5 the edges of each Application_Layer crate, which are limited to the Rules_Engine crate, the crates for the Compiled_Rulebook and Competition_Data types and their parsers, the Explainer crate, the Source_Model crate, and the shared Diagnostic, Location, and Exact_Number crates, and SHALL fail the automated check of criterion 5, with the offending crate name and edge, WHEN an Application_Layer depends, directly or transitively, on the ruletrace binary crate, on the review library crate, on a crate that contains the Approval_Ledger append function, on the Validator, Compiler, Ingestor, or Extractor crate, on an Auxiliary_Crate, or on a network client library, or WHEN a Core_Crate or Auxiliary_Crate depends on an Application_Layer crate.
+
+### 20. 24.13 (new)
+
+Old: (none)
+
+New: 13. THE RuleTrace SHALL add to the allowed-dependency list of criterion 5 the edges of the ruletrace-lab crate, which are limited to the two Application_Layer crates, the shared Diagnostic, Location, and Exact_Number crates, and one HTTP server library with a written justification, and SHALL fail the automated check of criterion 5, with the offending crate name and edge, WHEN ruletrace-lab depends, directly or transitively, on an AI_Crate, an AI provider library, the review library crate, a crate that contains the Approval_Ledger append function, the Validator, Compiler, Ingestor, or Extractor crate, or WHEN a Core_Crate, an Auxiliary_Crate, an Application_Layer crate, ruletrace, or ruletrace-ai depends on ruletrace-lab or on its HTTP server library, and SHALL fail the source scan of Requirement 36 criterion 5 WHEN a source file of ruletrace-lab calls a Rules_Engine evaluation function (UD-38).
+
+### 21. 27 user story
+
+Old: **User Story:** As a maintainer, I want exactly two RuleTrace executables with separated responsibilities, so that no network or AI code can reach the deterministic workflow or the approval ledger.
+
+New: **User Story:** As a maintainer, I want exactly three runtime executables with separated responsibilities, so that no network or AI code can reach the deterministic workflow or the approval ledger, and so that the browser interface can reach neither the AI credential nor the approval ledger directly.
+
+### 22. 27.1
+
+Old: 1. THE RuleTrace SHALL deliver exactly two RuleTrace executables, ruletrace and ruletrace-ai (the AI_Tool), and, in addition, exactly two Demonstration_Executables, prize-check and bracket-check (Requirement 31 criterion 3), and no other executable. The responsibilities of the two RuleTrace executables are those of the following table. This criterion supersedes the earlier statement of exactly two executables and no third (UD-33).
+
+New: 1. THE RuleTrace SHALL deliver exactly three Runtime_Executables, ruletrace, ruletrace-ai (the AI_Tool), and ruletrace-lab (the Laboratory executable of Requirements 36 and 37), and no other Runtime_Executable, and SHALL build prize-check and bracket-check as library packages without a binary target (Requirement 31 criterion 3). A development or test utility that the workspace builds and does not deliver, for example rt-xtask, is not a Runtime_Executable and SHALL appear in a documented allow-list of such utilities. The responsibilities of ruletrace and ruletrace-ai are those of the following table, and those of ruletrace-lab are those of Requirements 36 and 37. This criterion supersedes the earlier statements of exactly two executables (UD-22) and of exactly two Demonstration_Executables (UD-33).
+
+### 23. 27.15
+
+Old: 15. THE RuleTrace SHALL include a test that the set of executables that the workspace builds equals exactly ruletrace, ruletrace-ai, prize-check, and bracket-check, and that fails with the name of any other executable, and criteria 5 to 7 and 9 to 13 SHALL apply to ruletrace and ruletrace-ai unchanged, so that neither Demonstration_Executable is a command of ruletrace, is started by ruletrace or ruletrace-ai, or appears in the dependency tree of ruletrace or ruletrace-ai.
+
+New: 15. THE RuleTrace SHALL include a test that the set of executables that the workspace builds equals exactly ruletrace, ruletrace-ai, and ruletrace-lab, together with the development and test utilities of the allow-list of criterion 1, and that fails with the name of any other executable (including a binary target of prize-check or bracket-check), and criteria 5 to 7 and 9 to 13 SHALL apply to ruletrace and ruletrace-ai unchanged, so that ruletrace-lab is not a command of ruletrace, is not started by ruletrace or ruletrace-ai, and does not appear in the dependency tree of ruletrace or ruletrace-ai.
+
+### 24. 31.3
+
+Old: 3. THE RuleTrace SHALL deliver each Application_Layer with one Demonstration_Executable of the same name as its crate (prize-check and bracket-check), which performs the reading of its named input files and the writing of its named report files at its binary edge and calls the library of its Application_Layer for everything else (UD-33).
+
+New: 3. THE RuleTrace SHALL deliver each Application_Layer as a library crate named prize-check or bracket-check with no binary target, and THE RuleTrace_Laboratory (ruletrace-lab) SHALL perform the reading of its named input files and the writing of its named report files within the roots of Requirement 37 criterion 13 and SHALL call the library of the Application_Layer for input mapping, Question construction, and report presentation (UD-33, UD-38).
+
+### 25. 31.10
+
+Old: 10. THE RuleTrace SHALL include an automated source scan of the Application_Layer crates and the Demonstration_Executables that fails with the crate, file, and line WHEN a source file contains a call or an operator that adds, subtracts, multiplies, divides, rounds, compares, or aggregates Exact_Number values, a sorting, ordering, minimum, maximum, or ranking function applied to participants, scores, or Outcomes, a tie-breaking rule, a literal weight, threshold, or rounding mode, or a field name of a specific competition, and SHALL include a negative test fixture for each of these violations that makes the scan fail with the expected file and line, so that no ranking, scoring, eligibility, or tie-breaking logic exists in an Application_Layer (Requirement 15 criterion 6).
+
+New: 10. THE RuleTrace SHALL include an automated source scan of the Application_Layer crates and of the ruletrace-lab crate that fails with the crate, file, and line WHEN a source file contains a call or an operator that adds, subtracts, multiplies, divides, rounds, compares, or aggregates Exact_Number values, a sorting, ordering, minimum, maximum, or ranking function applied to participants, scores, or Outcomes, a tie-breaking rule, a literal weight, threshold, or rounding mode, or a field name of a specific competition, and SHALL include a negative test fixture for each of these violations that makes the scan fail with the expected file and line, so that no ranking, scoring, eligibility, or tie-breaking logic exists in an Application_Layer (Requirement 15 criterion 6).
+
+### 26. 31.11
+
+Old: 11. THE Application_Layer library crates SHALL perform no file, network, clock, random, or environment access and start no subprocess, THE Demonstration_Executables SHALL open only the input files and the report files that their command-line arguments name, SHALL open no network connection, SHALL read no environment variable, no AI_Configuration, and no credential, SHALL start no subprocess, and SHALL write byte-identical standard output, standard error, report files, and exit code whether or not ruletrace, ruletrace-ai, an AI_Configuration file, or a credential environment variable is present, as verified by the scan of criterion 10, the dependency check of Requirement 24 criterion 12, and a test under at least two values of the clock, the working directory, and the locale.
+
+New: 11. THE Application_Layer library crates SHALL perform no file, network, clock, random, or environment access and start no subprocess, and SHALL return byte-identical reports and the same result classification of criterion 12 whether or not ruletrace, ruletrace-ai, an AI_Configuration file, or a credential environment variable is present, as verified by the scan of criterion 10, the dependency check of Requirement 24 criterion 12, and a test under at least two values of the clock, the working directory, and the locale.
+
+### 27. 31.12
+
+Old: 12. THE Demonstration_Executables SHALL exit with exactly these codes: 0 WHEN the report is complete and no Outcome is Indeterminate, 4 WHEN at least one Outcome is Indeterminate, 2 for invalid input (criterion 9, a contradictory diagnostic or lifecycle state under Requirement 22, a missing or unreadable input file, an unknown argument, a Source_Model that is missing for a document or whose hash differs, as Requirement 16 criterion 8 defines it), and 70 for an internal error, and each Demonstration_Executable SHALL return the same exit code as `ruletrace evaluate` returns for the same Compiled_Rulebook, Competition_Data, Questions, Published_Result, and Source_Models, and SHALL write no partial report as if the run had succeeded (Requirement 16 criteria 9 and 12).
+
+New: 12. THE Application_Layer SHALL return a result classification that ruletrace-lab maps to exactly these exit codes: 0 WHEN the report is complete and no Outcome is Indeterminate, 4 WHEN at least one Outcome is Indeterminate, 2 for invalid input (criterion 9, a contradictory diagnostic or lifecycle state under Requirement 22, a missing or unreadable input file, an unknown argument, a Source_Model that is missing for a document or whose hash differs, as Requirement 16 criterion 8 defines it), and 70 for an internal error, and each result classification SHALL equal the exit code that `ruletrace evaluate` returns for the same Compiled_Rulebook, Competition_Data, Questions, Published_Result, and Source_Models, and THE Application_Layer SHALL write no partial report as if the run had succeeded (Requirement 16 criteria 9 and 12).
+
+### 28. 32.1
+
+Old: 1. THE Bracket_Check Application_Layer SHALL report Standings for each requested ranking Target, listing each participant with its Rank_Position or its Tie_Group, listing each Tie_Group as one entry with its members, listing each Indeterminate position with the missing input, and listing for each ranking comparison the tie-breaking criteria applied in order and the compared values that the Decision_Trace records (Requirement 12 criterion 7).
+
+New: 1. THE Bracket_Check Application_Layer SHALL report Standings for each requested ranking Target, listing each participant with its Rank_Position or its Tie_Group, listing each Tie_Group as one entry with its members, listing each Indeterminate position with the missing input, and listing for each ranking comparison the tie-breaking criteria applied in order and the compared values that the Decision_Trace records (Requirement 12 criterion 7), and THE RuleTrace_Laboratory SHALL name this workflow Tournament standings and SHALL describe it as standings and tie groups only, with no bracket, seeding, or progression (Requirement 36 criterion 18).
+
+### 29. 33.7
+
+Old: 7. THE RuleTrace SHALL document the demonstration flow as these ordered steps, each with its command, its inputs, and its expected exit code: (1) ingest the demonstration Source_Documents with the --candidates option; (2) run ruletrace-ai propose on the Candidate_Clauses; (3) list and review the Proposals with ruletrace review list, approve, and reject using a caller-supplied Reviewer and time; (4) validate the Rulebook with the Approval_Ledger; (5) compile; (6) evaluate on the demonstration Competition_Data with the Source_Models and a Published_Result; (7) render the Decision_Traces and the Proof_Report through the Explainer; (8) run Prize_Check and Bracket_Check on the same Compiled_Rulebook or on the Compiled_Rulebook of each demonstration document (the Demo_Runbook states which), and compare their Outcomes and Decision_Traces with the output of step 6 under Requirement 31 criterion 5.
+
+New: 7. THE RuleTrace SHALL document the demonstration flow as these ordered steps, each with its command, its inputs, and its expected exit code: (1) ingest the demonstration Source_Documents with the --candidates option; (2) run ruletrace-ai propose on the Candidate_Clauses; (3) list and review the Proposals with ruletrace review list, approve, and reject using a caller-supplied Reviewer and time; (4) validate the Rulebook with the Approval_Ledger; (5) compile; (6) evaluate on the demonstration Competition_Data with the Source_Models and a Published_Result; (7) render the Decision_Traces and the Proof_Report through the Explainer; (8) run the Prize workflow and the Tournament standings workflow through the RuleTrace_Laboratory (Requirement 36 criterion 18; the machine-readable block gives the Laboratory command or test-harness command) on the same Compiled_Rulebook or on the Compiled_Rulebook of each demonstration document (the Demo_Runbook states which), and compare their Outcomes and Decision_Traces with the output of step 6 under Requirement 31 criterion 5.
+
+### 30. 34.1
+
+Old: 1. THE RuleTrace SHALL state in every demonstration document, in the Demo_Runbook, in the user-facing documentation, and in the header of the Proof_Report and of each application report only capabilities that lie within the First_Version_Support_Boundary, and SHALL NOT claim support for arbitrary or universal rulebooks, PDF ingestion, prize allocation, slot-based qualification, seeding, bracket generation, tournament progression, or multi-stage competitions, and SHALL NOT describe the Prize_Check and Bracket_Check Application_Layers as the full Prize Check and Bracket Check applications.
+
+New: 1. THE RuleTrace SHALL state in every demonstration document, in the Demo_Runbook, in the user-facing documentation, and in the header of the Proof_Report and of each application report only capabilities that lie within the First_Version_Support_Boundary, and SHALL NOT claim support for arbitrary or universal rulebooks, PDF ingestion, prize allocation, slot-based qualification, seeding, bracket generation, tournament progression, or multi-stage competitions, and SHALL NOT describe the Prize_Check and Bracket_Check Workflow_Modules as the full Prize Check and Bracket Check applications, and SHALL NOT describe the RuleTrace_Laboratory as the source of any decision or approval.
+
+### 31. Requirement 33 new criterion
+
+Old: (none)
+
+New: 18. THE RuleTrace SHALL run the demonstration of criteria 7 and 9 through the RuleTrace_Laboratory in demo mode (Requirement 36 criterion 20) with the Recorded_Provider_Script, so that every artifact that the Laboratory writes equals the golden file of criterion 9, and THE Demo_Runbook SHALL state the commands that build and start the Laboratory, the steps that a user performs in the browser, and which Ledger_Records are replayed recorded decisions.
+
+### 32. Requirement 33 new criterion
+
+Old: (none)
+
+New: 19. THE demonstration acceptance test of criterion 15 SHALL include a run that drives the HTTP interface of ruletrace-lab (Requirement 36 criterion 24) and SHALL compare the artifacts of that run with the same golden files.
+
+### 33. Requirement 34 new criterion
+
+Old: (none)
+
+New: 9. THE RuleTrace SHALL state in the Demo_Runbook, in the user-facing documentation, and on the first screen of the RuleTrace_Laboratory that the Laboratory decides nothing and approves nothing by itself, that every Outcome is the result of `ruletrace evaluate`, that every approval is a recorded human act through `ruletrace review`, and that every Proposal shown is untrusted AI output.
+
+### 34. Requirement 34 new criterion
+
+Old: (none)
+
+New: 10. THE RuleTrace SHALL state in the Demo_Runbook and in the user-facing documentation that the stage names Brain, Spine, Heart, Lightning, Ghost, and Autopsy name the components of Requirement 36 criterion 17, that the Prize workflow reports eligibility and ranking as separate Outcomes of separate Rules and that eligibility does not filter rankings, that Tournament standings are not brackets, seeding, or progression, and that a demo-mode run replays recorded provider output and recorded Reviewer decisions, and THE required-statement list and the prohibited-phrase list of criterion 7 SHALL include these statements and the phrases "AI approved", "AI decided", "automatically approved", and "bracket generator".
+
+### 35. Register UD-22
+
+Old: - **UD-22 Packaging** (Resolved-by-user 2026-11-14; amended by UD-33; affects 5.12, 17.1, 18.13, 24.5, 27.x): Two RuleTrace executables, ruletrace and ruletrace-ai, plus (UD-33, Recommended-pending) two Demonstration_Executables. Human approval is an explicit operation in the main workflow through the Review_Group, which supersedes the earlier separate Review_Tool.
+
+New: - **UD-22 Packaging** (Resolved-by-user 2026-11-14; amended by UD-33; affects 5.12, 17.1, 18.13, 24.5, 27.x): Two RuleTrace executables, ruletrace and ruletrace-ai, plus (UD-33, Recommended-pending) two Demonstration_Executables. Superseded by UD-38: the runtime executable set is ruletrace, ruletrace-ai, and ruletrace-lab. Human approval is an explicit operation in the main workflow through the Review_Group, which supersedes the earlier separate Review_Tool.
+
+### 36. Register UD-33 entry
+
+Old: - **UD-33 Packaging of the Application_Layers** (Recommended-pending; decided by the user; affects 27.1, 27.15, 31.3): Compared options: (A) a third RuleTrace executable with prize-check and bracket-check subcommands; (B) two separate small Demonstration_Executables, prize-check and bracket-check, each a thin binary over its library crate; (C) library crates only, with Cargo example binaries and tests as the only entry points. Option A couples both applications into one binary and one dependency tree, which weakens the demonstration that two different applications use one engine, and adds a third entry point to the RuleTrace executables. Option C leaves 27.1 unchanged but offers no ordinary command for a demonstration and for a reviewer. Option B keeps the applications independent, keeps ruletrace and ruletrace-ai unchanged (their dependency trees contain no Application_Layer, 24.12, 27.15), and costs one amendment of 27.1. Recommendation: Option B, applied in this revision: 27.1 now says exactly two RuleTrace executables plus exactly two Demonstration_Executables. If the user chooses Option C, 27.1 reverts to its earlier wording and 31.3 and 27.15 change accordingly.
+
+New: - **UD-33 Packaging of the Application_Layers** (Recommended-pending; decided by the user; affects 27.1, 27.15, 31.3): Compared options: (A) a third RuleTrace executable with prize-check and bracket-check subcommands; (B) two separate small Demonstration_Executables, prize-check and bracket-check, each a thin binary over its library crate; (C) library crates only, with Cargo example binaries and tests as the only entry points. Option A couples both applications into one binary and one dependency tree, which weakens the demonstration that two different applications use one engine, and adds a third entry point to the RuleTrace executables. Option C leaves 27.1 unchanged but offers no ordinary command for a demonstration and for a reviewer. Option B keeps the applications independent, keeps ruletrace and ruletrace-ai unchanged (their dependency trees contain no Application_Layer, 24.12, 27.15), and costs one amendment of 27.1. Recommendation: Option B, applied in this revision: 27.1 now says exactly two RuleTrace executables plus exactly two Demonstration_Executables. If the user chooses Option C, 27.1 reverts to its earlier wording and 31.3 and 27.15 change accordingly. Superseded by UD-38 (2026-11-18): option B is replaced by library Workflow_Modules and the executable ruletrace-lab; the four binding constraints stay for the libraries.
+
+### 37. Register UD-38 (new)
+
+Old: (none)
+
+New: - **UD-38 RuleTrace Laboratory, category Frankenstein** (Confirmed by the user 2026-11-18, see `tools/decisions/UD-38.md`; affects the Introduction, Scope, Glossary, 7.23, 24.12, 24.13, 27, 31.3, 31.10 to 31.12, 32.1, 33.7, 33.18, 33.19, 34.1, 34.9, 34.10, 36, 37): One integrated local application served by ruletrace-lab; runtime executables ruletrace, ruletrace-ai, ruletrace-lab; prize-check and bracket-check as library Workflow_Modules; process separation, credential isolation, loopback-only local web interface, and metaphors that name real behaviour. The credential mechanism, the session mechanism, and the HTTP server library are decided by the Laboratory threat model (task L1), not by this specification.
