@@ -55,3 +55,54 @@ pub fn classify_evaluation(
         EvaluationClass::Success
     }
 }
+
+/// How a Workflow_Module run ended. It has no stored validity flag: it is
+/// derived from the Outcomes and Diagnostics.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ResultClass {
+    /// The report is complete and no Outcome is Indeterminate (exit code 0).
+    Complete,
+    /// At least one Outcome is Indeterminate, or the evaluation reported an
+    /// Error (exit code 4).
+    Indeterminate,
+    /// Invalid input, or a provenance Error of the Explainer (exit code 2).
+    InvalidInput,
+    /// An internal error (exit code 70).
+    Internal,
+}
+
+impl ResultClass {
+    /// Classifies an evaluation from its Outcomes, its own Diagnostics and
+    /// the Explainer's verifications. Never `Internal`: that class comes from
+    /// a failure to build the report.
+    #[must_use]
+    pub fn of(
+        outcomes: &[Outcome],
+        diagnostics: &DiagnosticState,
+        verifications: &[Verification],
+    ) -> Self {
+        match classify_evaluation(outcomes, diagnostics, verifications) {
+            EvaluationClass::Success => Self::Complete,
+            EvaluationClass::Indeterminate => Self::Indeterminate,
+            EvaluationClass::InvalidInput => Self::InvalidInput,
+        }
+    }
+}
+
+/// The classification of a run that reached the engine. A report that could
+/// not be built is an internal error, except for a Question the inputs cannot
+/// answer, which is invalid input and writes nothing, as `ruletrace evaluate`
+/// does.
+#[must_use]
+pub fn class_of_run(
+    outcomes: &[Outcome],
+    diagnostics: &DiagnosticState,
+    verifications: &[Verification],
+    report_built: bool,
+) -> ResultClass {
+    if !report_built && !has_question_fault(diagnostics) {
+        ResultClass::Internal
+    } else {
+        ResultClass::of(outcomes, diagnostics, verifications)
+    }
+}

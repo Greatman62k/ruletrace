@@ -21,7 +21,9 @@ pub mod report;
 pub mod results;
 mod verify;
 
-pub use classify::{classify_evaluation, has_question_fault, EvaluationClass};
+pub use classify::{
+    class_of_run, classify_evaluation, has_question_fault, EvaluationClass, ResultClass,
+};
 pub use render::render_trace;
 pub use verify::{verify_trace, SpanResolution, SpanVerdict, Verification, VerificationStatus};
 
@@ -45,3 +47,9 @@ mod tests_app_property;
 
 #[cfg(test)]
 mod tests_app_gaps;
+
+#[cfg(test)]
+mod tests_assemble;
+
+#[cfg(test)]
+mod tests_result_class;

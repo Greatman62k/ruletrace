@@ -2,12 +2,12 @@
 //! and return the canonical bytes of what the engine receives (design §11.3).
 
 use crate::classify::ResultClass;
-use crate::mapping::{
-    input_schema, internal, map_files, target_kinds, FileInputs, Mapped, NamedFile,
-};
+use crate::mapping::{input_schema, internal, target_kinds, FileInputs, NamedFile};
 use crate::questions::{build_questions, check_request, PrizeRequest};
 use rt_compiled::{sha256_of, CompiledRulebook};
-use rt_data::tabular::{data_bytes, published_bytes, questions_bytes, UnusedPublished};
+use rt_data::tabular::{
+    data_bytes, map_files, published_bytes, questions_bytes, MappedFiles, UnusedPublished,
+};
 use rt_data::{CompetitionData, PublishedResult, Question};
 use rt_explain::report::Sha256Hex;
 use rt_foundation::{Diagnostic, DiagnosticState};
@@ -162,7 +162,7 @@ pub fn prepare(
         state.push(d);
     }
     let mapped = map_files(&schema, &kinds, &checked.all(), files, &mut state);
-    let Some(Mapped { data, published }) = mapped else {
+    let Some(MappedFiles { data, published }) = mapped else {
         return Err(Rejection::InvalidInput(state.sorted()));
     };
     if !state.as_slice().is_empty() {

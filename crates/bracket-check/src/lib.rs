@@ -47,6 +47,8 @@ mod report;
 #[cfg(test)]
 mod tests_classify;
 #[cfg(test)]
+mod tests_diagnostics;
+#[cfg(test)]
 mod tests_fixture;
 #[cfg(test)]
 mod tests_mapping;

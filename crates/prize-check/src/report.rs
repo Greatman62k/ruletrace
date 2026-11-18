@@ -13,16 +13,15 @@ use rt_compiled::CompiledRulebook;
 use rt_data::tabular::{TargetKind, UnusedPublished};
 use rt_data::PublishedValue;
 use rt_engine::{Comparison, Computed, DecisionTrace, Difference, Outcome, TraceValue};
+pub use rt_explain::report::PresentError;
 use rt_explain::report::{
-    DifferenceFacts, EligibilityEntry, PublishedDifference, PublishedSection, PublishedUnused,
-    ReportApplication, ReportDoc, ReportError, ReportHeader, ReportSection, ScoreEntry, Sha256Hex,
-    StandingsTable, StatementId, TraceRef,
+    assemble_report, compared_section, AssembleInputs, DifferenceFacts, EligibilityEntry,
+    PublishedSection, PublishedUnused, ReportApplication, ReportDoc, ScoreEntry, SectionEntry,
+    Sha256Hex, StandingsTable, StatementId, TraceRef,
 };
 use rt_explain::Verification;
-use rt_foundation::{Diagnostic, DiagnosticState};
+use rt_foundation::DiagnosticState;
 use rt_numeric::to_canonical;
-use std::collections::BTreeSet;
-use std::fmt;
 
 /// Everything Present reads.
 #[derive(Clone, Copy, Debug)]
@@ -48,77 +47,6 @@ pub struct PresentInputs<'a> {
     pub statements: &'a [StatementId],
     /// Whether the data is synthetic, as the caller states it. A label only.
     pub synthetic_data: Option<bool>,
-}
-
-/// Why no report could be built. It is an internal error of the caller or
-/// the engine, never a property of the user's input.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum PresentError {
-    /// The Outcomes, traces and verifications are not one list each of the
-    /// same length.
-    CountMismatch {
-        /// Number of Outcomes.
-        outcomes: usize,
-        /// Number of Decision_Traces.
-        traces: usize,
-        /// Number of verifications.
-        verifications: usize,
-    },
-    /// An Outcome differs from the Outcome inside its trace.
-    OutcomeNotInTrace {
-        /// Index of the trace.
-        trace: usize,
-    },
-    /// The trace answers a Target that the Compiled_Rulebook does not declare
-    /// with a reportable kind.
-    TargetNotReportable {
-        /// Index of the trace.
-        trace: usize,
-    },
-    /// A published difference carries a computed value that is neither a
-    /// number nor a Boolean.
-    ComputedValueNotComparable {
-        /// Index of the Question.
-        question: usize,
-    },
-    /// The Compiled_Rulebook hash is not a valid digest.
-    RulebookHash,
-    /// The report model refused an entry or the document.
-    Report(ReportError),
-}
-
-impl fmt::Display for PresentError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::CountMismatch {
-                outcomes,
-                traces,
-                verifications,
-            } => write!(
-                f,
-                "{outcomes} Outcomes, {traces} traces and {verifications} verifications are not one list"
-            ),
-            Self::OutcomeNotInTrace { trace } => {
-                write!(f, "the Outcome of trace {trace} differs from its trace")
-            }
-            Self::TargetNotReportable { trace } => {
-                write!(f, "the Target of trace {trace} cannot be reported")
-            }
-            Self::ComputedValueNotComparable { question } => {
-                write!(f, "the computed value of Question {question} is not a number or a Boolean")
-            }
-            Self::RulebookHash => f.write_str("the Compiled_Rulebook hash is not a valid digest"),
-            Self::Report(e) => write!(f, "{e}"),
-        }
-    }
-}
-
-impl std::error::Error for PresentError {}
-
-impl From<ReportError> for PresentError {
-    fn from(e: ReportError) -> Self {
-        Self::Report(e)
-    }
 }
 
 fn published_text(value: &PublishedValue) -> String {
@@ -158,7 +86,7 @@ fn published_section(
             non_terminating: d.non_terminating,
             group: d.group.iter().map(|p| p.as_str().to_owned()).collect(),
         };
-        differences.push(PublishedDifference::new(d.kind.as_str(), facts)?);
+        differences.push((d.kind.as_str(), facts));
     }
     let engine_unused = comparison.unused.iter().map(|(p, t)| PublishedUnused {
         participant: p.as_str().to_owned(),
@@ -168,18 +96,7 @@ fn published_section(
         participant: u.participant.as_str().to_owned(),
         target: u.target.as_str().to_owned(),
     });
-    Ok(PublishedSection::Compared {
-        differences,
-        unused: engine_unused.chain(file_unused).collect(),
-    })
-}
-
-fn run_diagnostics(inputs: &PresentInputs<'_>) -> Vec<Diagnostic> {
-    let mut all: BTreeSet<Diagnostic> = inputs.diagnostics.as_slice().iter().cloned().collect();
-    for v in inputs.verifications {
-        all.extend(v.diagnostics().as_slice().iter().cloned());
-    }
-    all.into_iter().collect()
+    compared_section(differences, engine_unused.chain(file_unused).collect())
 }
 
 /// Builds the Prize report.
@@ -196,61 +113,33 @@ fn run_diagnostics(inputs: &PresentInputs<'_>) -> Vec<Diagnostic> {
 /// that cannot be reported, or the report model refuses an entry. No partial
 /// report is returned.
 pub fn present(inputs: &PresentInputs<'_>) -> Result<ReportDoc, PresentError> {
-    let (n_out, n_trace, n_ver) = (
-        inputs.outcomes.len(),
-        inputs.traces.len(),
-        inputs.verifications.len(),
-    );
-    if n_out != n_trace || n_trace != n_ver {
-        return Err(PresentError::CountMismatch {
-            outcomes: n_out,
-            traces: n_trace,
-            verifications: n_ver,
-        });
-    }
     let kinds = target_kinds_by_name(inputs.compiled);
-    let mut eligibility = Vec::new();
-    let mut scores = Vec::new();
-    let mut standings = Vec::new();
-    let rows = inputs.traces.iter().zip(inputs.verifications);
-    for (index, ((trace, verification), outcome)) in rows.zip(inputs.outcomes).enumerate() {
-        if outcome != trace.outcome() {
-            return Err(PresentError::OutcomeNotInTrace { trace: index });
+    let entry_of = |index: usize, trace: &DecisionTrace, at: &TraceRef<'_>| match kinds
+        .get(&trace.question().target)
+    {
+        Some(TargetKind::Eligibility) => {
+            Ok(SectionEntry::Eligibility(EligibilityEntry::from_trace(at)?))
         }
-        let at = TraceRef::new(index, trace, verification)?;
-        match kinds.get(&trace.question().target) {
-            Some(TargetKind::Eligibility) => eligibility.push(EligibilityEntry::from_trace(&at)?),
-            Some(TargetKind::Derived | TargetKind::Score) => {
-                scores.push(ScoreEntry::from_trace(&at)?);
-            }
-            Some(TargetKind::Ranking) => standings.push(StandingsTable::from_trace(&at, false)?),
-            Some(TargetKind::Other) | None => {
-                return Err(PresentError::TargetNotReportable { trace: index });
-            }
+        Some(TargetKind::Derived | TargetKind::Score) => {
+            Ok(SectionEntry::Score(ScoreEntry::from_trace(at)?))
         }
-    }
-    let mut sections = Vec::new();
-    if !eligibility.is_empty() {
-        sections.push(ReportSection::Eligibility(eligibility));
-    }
-    if !scores.is_empty() {
-        sections.push(ReportSection::Scores(scores));
-    }
-    if !standings.is_empty() {
-        sections.push(ReportSection::Standings(standings));
-    }
-    sections.push(ReportSection::Published(published_section(
-        inputs.comparison,
-        inputs.not_requested,
-    )?));
-    sections.push(ReportSection::Diagnostics(run_diagnostics(inputs)));
-    let header = ReportHeader {
+        Some(TargetKind::Ranking) => Ok(SectionEntry::Standings(StandingsTable::from_trace(
+            at, false,
+        )?)),
+        Some(TargetKind::Other) | None => Err(PresentError::TargetNotReportable { trace: index }),
+    };
+    let shared = AssembleInputs {
         application: ReportApplication::PrizeCheck,
-        statements: inputs.statements.to_vec(),
-        rulebook_hash: Sha256Hex::new(inputs.compiled.rulebook_hash().as_str())
-            .ok_or(PresentError::RulebookHash)?,
-        input_hashes: inputs.input_hashes.to_vec(),
+        outcomes: inputs.outcomes,
+        traces: inputs.traces,
+        verifications: inputs.verifications,
+        diagnostics: inputs.diagnostics,
+        rulebook_hash: inputs.compiled.rulebook_hash().as_str(),
+        input_hashes: inputs.input_hashes,
+        statements: inputs.statements,
         synthetic_data: inputs.synthetic_data,
     };
-    Ok(ReportDoc::new(header, inputs.verifications, sections)?)
+    assemble_report(&shared, entry_of, || {
+        published_section(inputs.comparison, inputs.not_requested)
+    })
 }

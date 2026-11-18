@@ -10,6 +10,7 @@
 mod cells;
 mod collections;
 mod csv;
+mod files;
 mod header;
 mod participants;
 mod published;
@@ -19,6 +20,8 @@ mod schema;
 
 #[cfg(test)]
 mod tests_csv;
+#[cfg(test)]
+mod tests_files;
 #[cfg(test)]
 mod tests_map;
 #[cfg(test)]
@@ -30,6 +33,7 @@ mod tests_unused;
 
 pub use collections::map_collections;
 pub use csv::{parse_csv, ByteLimit, Cell, Table, MAX_DATA_ROWS};
+pub use files::{map_files, FileInputs, MappedFiles, NamedFile};
 pub use participants::map_participants;
 pub use published::map_published;
 pub use schema::{

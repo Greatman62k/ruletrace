@@ -1,6 +1,7 @@
 //! Reports built from Decision_Traces. Task 5.12 provides the Proof_Report;
 //! task 9.4 provides the application report model and writers of design §8.5.
 
+mod assemble;
 mod common;
 mod difference;
 mod fields;
@@ -9,6 +10,7 @@ mod machine;
 pub mod model;
 pub mod proof;
 
+pub use assemble::{assemble_report, compared_section, AssembleInputs, PresentError, SectionEntry};
 pub use common::{APP_REPORT_FORMAT, APP_REPORT_VERSION};
 pub use difference::{difference_kind, DifferenceKindInfo, DIFFERENCE_KINDS};
 pub use fields::{FIELD_SET_BRACKET, FIELD_SET_PRIZE};
