@@ -720,3 +720,8 @@ Closed by user instruction on two independent reviews (both APPROVED) and the lo
 - Req 13.12 now contains the RN-26 text. Open points 1 and 2 were settled as implemented; point 3 by decision 2: one code per difference kind. `RT-EXE-0011` (`PUBLISHED_RESULT_DIFFERS`, `value_differs`), `RT-EXE-0012` (`PUBLISHED_TIE_GROUP_SPLIT`, `tie_broken_without_declared_criterion`) and `RT-EXE-0013` (`PUBLISHED_TIE_NOT_COMPUTED`, `tie_not_in_computed_result`) are Warnings with exit code 0, so a published difference never changes the evaluation exit code. The `RT-EXE-0011` meaning text now says value difference only.
 - Files: `catalogue/diagnostics.v1.json`, generated `crates/rt-foundation/src/code_generated.rs`, `crates/rt-cli/src/evaluate.rs`, design §3.6.3, §9.4 and the §4.3 catalogue table.
 - Tests: `crates/rt-cli/src/tests_published_kinds.rs` (four evaluate-level tests), `crates/rt-foundation/tests/catalogue_rn26.rs` (four tests). `catalogue_ud37.rs` count assertion raised from 152 to 154 (two new codes).
+
+
+## Tasks 9.1 and 9.4 (2026-11-17)
+
+Implemented and independently reviewed; no blocking finding open (9.1: three reviews, final APPROVED; 9.4: four reviews, final APPROVED). Both stay `[-]` until the user accepts the open items listed in their status notes, and three-platform CI is pending until M3 is pushed (task 9.20). User decisions applied: trailing CSV delimiter, unrequested published rows (design §8.3, `e240d5f`), difference kind as text plus code with one table, Bracket ranking-scope header.
