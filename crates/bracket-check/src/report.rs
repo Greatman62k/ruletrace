@@ -8,8 +8,8 @@
 //! computes, compares and orders nothing. Entries follow the order of the
 //! Outcomes.
 
-use crate::mapping::target_kinds_by_name;
 use rt_compiled::CompiledRulebook;
+use rt_data::tabular::target_kinds_by_name;
 use rt_data::tabular::{TargetKind, UnusedPublished};
 use rt_data::PublishedValue;
 use rt_engine::{Comparison, Computed, DecisionTrace, Difference, Outcome, TraceValue};

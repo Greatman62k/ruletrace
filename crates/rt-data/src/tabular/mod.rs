@@ -9,6 +9,7 @@
 
 mod cells;
 mod collections;
+mod compiled;
 mod csv;
 mod files;
 mod header;
@@ -18,6 +19,8 @@ mod report;
 mod reserved;
 mod schema;
 
+#[cfg(test)]
+mod tests_compiled;
 #[cfg(test)]
 mod tests_csv;
 #[cfg(test)]
@@ -32,6 +35,7 @@ mod tests_trailing;
 mod tests_unused;
 
 pub use collections::map_collections;
+pub use compiled::{input_schema, target_kinds, target_kinds_by_name};
 pub use csv::{parse_csv, ByteLimit, Cell, Table, MAX_DATA_ROWS};
 pub use files::{map_files, FileInputs, MappedFiles, NamedFile};
 pub use participants::map_participants;

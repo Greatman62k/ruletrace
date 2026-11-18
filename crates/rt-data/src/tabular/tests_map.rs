@@ -183,8 +183,9 @@ fn the_task_observable_a_missing_column_a_duplicate_and_a_bad_number() {
 
 #[test]
 fn rt_data_depends_on_no_engine_or_compiler_crate() {
-    // The mapper takes values only, so no engine can be called. The manifest is
-    // the evidence the crate cannot name one.
+    // UD-41 (C1) approves the one added edge to rt-compiled, which is read
+    // for declarations only. No engine, compiler, validator or explain crate
+    // may appear. The manifest is the evidence the crate cannot name one.
     let manifest = include_str!("../../Cargo.toml");
     let deps = manifest
         .split("[dev-dependencies]")
@@ -201,7 +202,7 @@ fn rt_data_depends_on_no_engine_or_compiler_crate() {
         .collect();
     assert_eq!(
         names,
-        BTreeSet::from(["rt-foundation", "rt-json", "rt-numeric"])
+        BTreeSet::from(["rt-compiled", "rt-foundation", "rt-json", "rt-numeric"])
     );
 }
 

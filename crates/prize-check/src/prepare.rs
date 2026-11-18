@@ -2,12 +2,13 @@
 //! and return the canonical bytes of what the engine receives (design §11.3).
 
 use crate::classify::ResultClass;
-use crate::mapping::{input_schema, internal, target_kinds, FileInputs, NamedFile};
+use crate::mapping::{internal, FileInputs, NamedFile};
 use crate::questions::{build_questions, check_request, PrizeRequest};
 use rt_compiled::{sha256_of, CompiledRulebook};
 use rt_data::tabular::{
     data_bytes, map_files, published_bytes, questions_bytes, MappedFiles, UnusedPublished,
 };
+use rt_data::tabular::{input_schema, target_kinds};
 use rt_data::{CompetitionData, PublishedResult, Question};
 use rt_explain::report::Sha256Hex;
 use rt_foundation::{Diagnostic, DiagnosticState};

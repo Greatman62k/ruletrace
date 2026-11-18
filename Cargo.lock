@@ -462,6 +462,7 @@ name = "rt-data"
 version = "0.1.0"
 dependencies = [
  "proptest",
+ "rt-compiled",
  "rt-foundation",
  "rt-json",
  "rt-numeric",

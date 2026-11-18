@@ -110,3 +110,10 @@ Recommendation: **E1**.
 - No existing assertion, golden or fixture changes in Part 1.
 - The source scans of `prize_check_no_io.rs` and `bracket_check_no_io.rs` still find exactly one `rt_engine::evaluate` call per app.
 - rt-explain still has no edge to rt-engine (`forbid` rules and Req 15.9).
+
+## 5. Final ownership (UD-41)
+
+- **Group C (C1) moved to `rt-data`.** `input_schema`, `target_kinds` and `target_kinds_by_name` are public in `rt_data::tabular` (`crates/rt-data/src/tabular/compiled.rs`). `field_type` and `kind_of` are private there. The edge `rt-data -> rt-compiled` is in `tools/allowed-edges.v1`, together with `forbid-transitive rt-data -> rt-engine rt-compile rt-validate rt-explain rt-review rt-cli rt-ai-*`. The module reads declarations only; it has no evaluation path. The assertion `rt_data_depends_on_no_engine_or_compiler_crate` now allows `{rt-compiled, rt-foundation, rt-json, rt-numeric}` (approved by UD-41). Tests: `crates/rt-data/src/tabular/tests_compiled.rs`. The internal-error branch for a Ranking-typed input stays as defence in depth. It cannot be reached with a valid Compiled_Rulebook, because `rt-compiled` refuses such a declaration (`check.rs`), and the test shows the refusal.
+- **Group D (D3) stays in the apps.** The comparison adapters are in each app's `report.rs` (145 lines in prize-check, 144 in bracket-check, adapters only). The engine owns the comparison.
+- **Group E (E1) stays in the apps.** One `rt_engine::evaluate` call per app. Remaining orchestration: `prepare.rs` 184 lines, `evaluate.rs` 122 lines, `questions.rs` 150 and 145 lines, each app. `mapping.rs` (17 lines, `internal` and the re-exports) and `classify.rs` (13 lines) are still byte-identical.
+- **Drift guard.** `crates/rt-tests-core/tests/workflow_module_copies.rs` is unchanged: `mapping.rs` and `classify.rs` still exist and are identical, so both stay in `COPIED`. The `cfg(test)` check is kept. `prepare.rs`, `report.rs`, `questions.rs` and `evaluate.rs` differ between the apps and are not guarded.

@@ -11,6 +11,7 @@ license.workspace = true
 workspace = true
 
 [dependencies]
+rt-compiled = { path = "../rt-compiled" }
 rt-foundation = { path = "../rt-foundation" }
 rt-json = { path = "../rt-json" }
 rt-numeric = { path = "../rt-numeric" }
