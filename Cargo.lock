@@ -30,6 +30,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "bracket-check"
+version = "0.1.0"
+dependencies = [
+ "rt-compiled",
+ "rt-data",
+ "rt-engine",
+ "rt-explain",
+ "rt-foundation",
+ "rt-numeric",
+ "rt-srcmodel",
+]
+
+[[package]]
 name = "bytes"
 version = "1.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -609,6 +622,7 @@ dependencies = [
 name = "rt-tests-core"
 version = "0.1.0"
 dependencies = [
+ "bracket-check",
  "num-bigint",
  "prize-check",
  "proptest",
