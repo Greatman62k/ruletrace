@@ -961,3 +961,23 @@ New: - **UD-33 Packaging of the Application_Layers** (Recommended-pending; decid
 Old: (none)
 
 New: - **UD-38 RuleTrace Laboratory, category Frankenstein** (Confirmed by the user 2026-11-18, see `tools/decisions/UD-38.md`; affects the Introduction, Scope, Glossary, 7.23, 24.12, 24.13, 27, 31.3, 31.10 to 31.12, 32.1, 33.7, 33.18, 33.19, 34.1, 34.9, 34.10, 36, 37): One integrated local application served by ruletrace-lab; runtime executables ruletrace, ruletrace-ai, ruletrace-lab; prize-check and bracket-check as library Workflow_Modules; process separation, credential isolation, loopback-only local web interface, and metaphors that name real behaviour. The credential mechanism, the session mechanism, and the HTTP server library are decided by the Laboratory threat model (task L1), not by this specification.
+
+### Requirements 36 and 37 detailed (2026-11-18)
+
+The acceptance criteria of Requirements 36 and 37 were refined by a requirement-detailing step. Headings and user stories are unchanged, and criterion numbers are stable.
+
+Criteria changed in Requirement 36: 2, 4, 6, 7, 8, 9, 13, 14, 18, 21.
+
+Criteria changed in Requirement 37: 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18, 21, 23, and new criterion 24 (single current session and single session cookie).
+
+Settled points:
+
+- Requirement 36 criterion 4 keeps "and the Rulebook", because Requirement 27 criterion 12 already lets `ruletrace review approve` write the Rulebook during adoption.
+- Requirement 36 criterion 14 counts `ruletrace evaluate` exit code 4 (Indeterminate) as an executed evaluation.
+
+OPEN POINTS for the user:
+
+- (a) Requirement 37 criterion 6 now limits the Laboratory to one Laboratory_Session at a time. This is an addition and must be confirmed against UD-38 open item 11 (two browser tabs).
+- (b) Requirement 37 criterion 11 forbids inline styles, which constrains the front end (no style attributes).
+- (c) Requirement 37 criterion 3 refuses the Host value `localhost` (only `127.0.0.1:<port>` or `[::1]:<port>`), so the user opens the literal address.
+- (d) Requirement 37 criterion 21 leaves open for L1 whether the credential mechanism changes Requirement 28.
