@@ -356,4 +356,4 @@ Details are in design §11.5. In short:
 | Date | Reviewer | Result |
 | --- | --- | --- |
 | 2026-11-18 | independent reviewer, `docs/reviews/2026-11-18-review-L1-threat-model-d0c821c.md` | CHANGES REQUIRED (B1 to B3, N1 to N11) |
-| 2026-11-18 | independent reviewer, `docs/reviews/2026-11-18-review-L1-fix-6f7e851.md` | APPROVED WITH FINDINGS (F1 to F7, low; addressed in `66ef6ec`) |
+| 2026-11-18 | independent reviewer, `docs/reviews/2026-11-18-review-L1-fix-6f7e851.md` | APPROVED WITH FINDINGS (F1 to F7, low; addressed in `66ef6ec`, which was not separately reviewed) |

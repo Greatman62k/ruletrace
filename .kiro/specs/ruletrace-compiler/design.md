@@ -3084,7 +3084,7 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 | UD-35 | Demonstration Competition_Data and Published_Results | **Open**; recommendation: real published values where they exist and are licensed, otherwise synthetic and labelled, with one equal and one seeded-difference Published_Result | §8.11.10; the manifest `nature` field supports both | User |
 | UD-36 | Capture of the recorded provider response | **Recommended-applied**: option 1, the Proposal_Store retains the accepted response and `rt-xtask export-script` writes the script (§8.11.7) | §3.7.5, §8.11.7; affects Req 27.3 (unchanged under option 1) and Req 30.1 (RN-27) | User confirms |
 | UD-37 | First real provider (Meta Model API over the Responses protocol), crate rename to `rt-ai-responses`, flat schema, store version 2, configuration version 2 with host restrictions, capabilities, `models` command | **Confirmed by the user** (`tools/decisions/UD-37.md`; Req 23.39, 35; OD-37-1 open) | §3.2, §3.4.5, §3.7.3, §3.7.5, §3.9.2 | none |
-| UD-38 | RuleTrace Laboratory, category Frankenstein, three runtime executables, library Workflow_Modules | **Confirmed by the user** 2026-11-18 (`tools/decisions/UD-38.md`). Supersedes UD-33 option B. Its open items are LT-1 to LT-9 of the threat model and RN-31 to RN-48 | §11 | User for LT-1 to LT-9 and the RNs |
+| UD-38 | RuleTrace Laboratory, category Frankenstein, three runtime executables, library Workflow_Modules | **Confirmed by the user** 2026-11-18 (`tools/decisions/UD-38.md`). Supersedes UD-33 option B. Its open items are LT-1 to LT-9 of the threat model and RN-31 to RN-49 | §11 | User for LT-1 to LT-9 and the RNs |
 
 (Amended by UD-38, 2026-11-18.) The UD-33 row above is superseded by UD-38: the packages are library-only. UD-33 keeps `status: Confirmed` in `tools/decisions/UD-33.md` because `tools/decision-gates.v1` reads it.
 
@@ -3159,6 +3159,7 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 | RN-46 | 36.2, 37.14, 37.20, 29.1 | Under M5 live proposal generation is not started by the Laboratory, so 36.2 is not met for live runs and the 37.20 canary test cannot run "a complete proposal workflow" through the Laboratory. Under M2 a live run with several Provider_Requests can exceed 300 s (29.1 allows up to 300 s per request) | Decided together with LT-1 |
 | RN-47 | 37.5 | LT-5 option "print a new Launch_Secret after a session ends" contradicts "print it once" at each start | Only if LT-5 chooses it |
 | RN-48 | 37.10, 37.23 | 37.10 lists no `Cache-Control: no-store`; 37.23 requires mutants for 3, 4, 7, 9, 13, 14, 19, 20 only, while 6, 21, 24, 25, 26 are the controls the checkpoint added; 37.25 "state of the session" is defined only in §11.5 | User decision: add `no-store` to 37.10, extend the mutant list of 37.23 (also 36.4, 36.6, 36.9), reference the state-version definition |
+| RN-49 | 7.16, 7.17 | 7.16 allows the families RT-DGN, RT-PRV, RT-APR, RT-AI and the families the design assigns to Requirements 1 to 14, 19 and 21. The Laboratory's own Diagnostics (Req 36, 37) need a family, proposed `RT-LAB`, which that list does not cover | User decision: add Requirements 36 and 37 to 7.16, or place the Laboratory codes in an existing family |
 
 ## Requirements Traceability
 
@@ -3493,7 +3494,7 @@ The criteria are **not** rewritten here. RN-34 to RN-38 state each mismatch and 
 | `ruletrace review list --format json`: the same facts as the text output (rule, revision, status, Origin, Rule_Content_Hash, Diagnostics, Ledger_Records, chain result), canonical RT-JSON | The approval form needs the exact hash; parsing human text is fragile; the Laboratory must not compute the hash itself | 17.1 limits commands, not options (RN-24); 36.6, 36.12 |
 | Results-file parser in `rt-explain::results`, the inverse of `serialize_results`, with a round-trip property test (at least 256 cases) | The Present group reads `evaluate`'s output | 36.5, 31.6 |
 | Scan that `rt-ai-tool` starts no subprocess | Keeps the process tree one level deep (§11.6) | 37.14, 37.17 |
-| Laboratory Diagnostic codes `RT-LAB-*` in the catalogue (through the catalogue-change procedure) | Every failure mode has one code | 7.x |
+| Laboratory Diagnostic codes `RT-LAB-*` in the catalogue (through the catalogue-change procedure) | Every failure mode has one code | 7.2, 7.16 (RN-49), 7.17 |
 
 ### 11.16 Testing (task L4)
 
@@ -3511,7 +3512,7 @@ The criteria are **not** rewritten here. RN-34 to RN-38 state each mismatch and 
 | LT-1 to LT-9 | Threat model decisions (credential mechanism, Req 28 change, variable name source, HTTP server, new secret after session end, cross-port cookie hardening, crash orphans, upload limits, connection limits) | **OPEN**, user |
 | L1-R | Independent review of the threat model and this section | Pending |
 | L1b | Credential-store feasibility spike on three platforms | Only if LT-1 selects M2 |
-| RN-31 to RN-48 | Requirements notes in §9.4 | User decision each |
+| RN-31 to RN-49 | Requirements notes in §9.4 | User decision each |
 | V-1 | Kill during a store write leaves no file that a later run rejects (§11.6) | To verify in L4 |
 | V-2 | Safe signal handling on three platforms (§11.11) | To decide in L2 |
 | V-3 | Windows environment allow-list for `ruletrace-ai` live mode (§11.6) | To verify in L1b or L4 |
