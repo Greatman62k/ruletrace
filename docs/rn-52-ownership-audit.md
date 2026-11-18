@@ -2,7 +2,7 @@
 
 Date: 2026-11-18. Required by UD-40 section 2 before task 9.21 moves code. Read-only analysis of `crates/prize-check/src` and `crates/bracket-check/src` at commit `5670e59`. Line numbers are those of `prize-check`; `bracket-check` lines are equal where the files are identical.
 
-Rules applied (UD-40): no generic common crate; `rt-data` owns preparation, parsing and data mapping; `rt-explain` owns result interpretation, explanation and reports; no move that needs a dependency edge or a Req 24.12 amendment without the user's decision; no path that lets a crate other than `rt-engine`'s callers reach an evaluation function; the Explainer must not depend on the engine (Req 15.9, design §3.1).
+Rules applied (UD-40): no generic common crate; `rt-data` owns preparation, parsing and data mapping; `rt-explain` owns result interpretation, explanation and reports; no move that needs a dependency edge or a Req 24.12 amendment without the user's decision; no path that lets a crate other than `rt-engine`'s callers reach an evaluation function; the Explainer must not depend on the engine (design §3.1: "The Explainer needs trace types and must not depend on the engine"; `tools/allowed-edges.v1` lists no such edge). Correction after review 9.21 F3: Req 15.9 states the reverse ban (the engine must not depend on the Explainer); the conclusion is unchanged.
 
 Current direct edges (`tools/allowed-edges.v1`):
 
