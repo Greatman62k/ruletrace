@@ -8,9 +8,11 @@
 //! never alters the trace: it returns a separate [`Verification`] whose status
 //! is derived from its spans and its diagnostics.
 //!
-//! Also here: the shared results-file serializer ([`results`]) and the
+//! Also here: the shared results-file serializer ([`results`]), the
 //! Proof_Report builder and the application report model and writers
-//! ([`report`]).
+//! ([`report`]), and the exit class of an evaluation
+//! ([`classify_evaluation`]), shared by `ruletrace evaluate` and the
+//! Workflow_Modules.
 #![forbid(unsafe_code)]
 
 mod classify;

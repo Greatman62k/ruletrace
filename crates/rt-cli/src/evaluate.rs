@@ -442,7 +442,7 @@ pub(crate) fn run(args: &EvaluateArgs, fs: &dyn Fs) -> Finished {
         .map(|trace| verify_trace(trace, &loaded.sources))
         .collect();
     let (state, code) = classify(&evaluation, &verifications, &loaded);
-    if code == ExitCode::InvalidInput && state.as_slice().iter().any(is_question_fault) {
+    if code == ExitCode::InvalidInput && rt_explain::has_question_fault(&state) {
         // A Question the inputs cannot answer is invalid input: nothing is
         // written.
         return Finished {
@@ -523,10 +523,6 @@ pub(crate) fn run(args: &EvaluateArgs, fs: &dyn Fs) -> Finished {
         state,
         code,
     }
-}
-
-fn is_question_fault(d: &Diagnostic) -> bool {
-    d.code() == Code::QuestionInvalid
 }
 
 /// The Diagnostics to report and the exit code (see the module documentation).

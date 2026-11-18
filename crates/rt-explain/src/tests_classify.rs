@@ -22,7 +22,8 @@ use rt_trace::{
 use EvaluationClass::{Indeterminate as Four, InvalidInput as Two, Success as Zero};
 
 /// (question fault, indeterminate Outcome, engine Error, provenance Error)
-/// and the class, all sixteen rows.
+/// and the class, all sixteen rows. The rows with an engine Error and no
+/// Indeterminate Outcome follow the code, not Req 16.11 (RN-38, undecided).
 const TABLE: [(bool, bool, bool, bool, EvaluationClass); 16] = [
     (false, false, false, false, Zero),
     (false, false, false, true, Two),
