@@ -37,7 +37,7 @@ Each decision has a gate task in group 1. The recommendation is the one the desi
 | 1.9 | UD-26: exit code when a stored proposal carries blocking semantic findings | Exit 0 with the Warning `RT-AI-0305` | `propose` exit codes (8.7, 8.8) | After Slice 0 |
 | 1.10 | UD-34: demonstration documents | The user supplies or confirms real documents against the selection criteria of Req 33.3. Until then the stand-in stays. | Real Demo_Corpus (11.1), live recording (10.8), UD-32 | After Slice 0 |
 | 1.11 | UD-32: rank-based qualification | Rank_Reference if the confirmed tournament document states qualification as top places, otherwise Threshold_Only. Decide before the request vocabulary is frozen. If UD-34 is still open, record Threshold_Only as the default and re-key the authored script if it changes (RN-27). | Request builder vocabulary (8.5), authored script (8.17), Rank_Reference work (9.3, 9.6, 9.15), live recording (10.8) | Before 8.5 |
-| 1.12 | UD-33: packaging of the Application_Layers | Option B: two Demonstration_Executables `prize-check` and `bracket-check`, one package each. Option C (libraries only) is the fallback. | Application packages (9.5 onward) | After Slice 1 |
+| 1.12 | UD-33: packaging of the Application_Layers | Option B: two Demonstration_Executables `prize-check` and `bracket-check`, one package each. Option C (libraries only) is the fallback. | Application packages (9.5 onward) | After Slice 1 (superseded by UD-38, 2026-11-18: library Workflow_Modules and `ruletrace-lab`) |
 | 1.13 | UD-35: demonstration data and Published_Results | Real published values where they exist and are licensed, otherwise synthetic and labelled, with one equal and one seeded-difference Published_Result | Demonstration data (11.2) | After Slice 1 |
 
 User actions that are not decisions: the live recording of provider responses (10.8) and the human review decisions on the real documents (11.4). Both are gate tasks that stop for the user.
@@ -113,7 +113,7 @@ Milestones: M3 is Prize Check and Bracket Check (group 9), M4 is the demonstrati
 
 ## Submission sequencing (user decision, 2026-11-16)
 
-Context: the project is entered in the Kiroween "Skeleton Crew" category (a lean skeleton plus two distinct applications built from it). This section orders the work. It adds no task, no requirement and no scope, and it changes no acceptance criterion.
+Context (superseded by UD-38 on 2026-11-18, see the amendment below): the project is entered in the Kiroween "Skeleton Crew" category (a lean skeleton plus two distinct applications built from it). This section orders the work. It adds no task, no requirement and no scope, and it changes no acceptance criterion.
 
 Order of work:
 1. Close M2 (10.6, 10.7, 10.15, then the 10.9 checkpoint) once the final required three-platform CI run exists. Until then M2 is pending, not complete.
@@ -138,6 +138,8 @@ Submission material, deferred until the stated point (nothing here is a task of 
 | Final Kiro usage narrative | After M4, from `docs/kiro-usage-log.md` | Log started; narrative deferred |
 | Project overview, honest-claims document, demo walkthrough, video script, Devpost description | After M4 | Deferred |
 | Demo video (under three minutes, public on YouTube) | After M4 | Deferred |
+
+(Amended by UD-38, 2026-11-18.) The category is now Kiroween "Frankenstein" (`tools/decisions/UD-38.md`). The open item below is superseded: the workspace stays as it is and no top-level application folders are created. Step 2 of the order of work is amended: 9.7 is superseded, and the Laboratory tasks 13.1 to 13.8 follow 9.5 to 9.11 and 9.16; no Laboratory code before 13.1 and 13.2 are closed.
 
 Open item, Skeleton Crew application folders. The user quoted the rule as: "For Skeleton Crew projects: Your repo must contain 2 separate repo folders for the 2 separate applications." The Devpost rules page returned HTTP 403 to automated fetching on 2026-11-16, so the primary text has not been read by the project agent. Unverified: whether "repo folders" means top-level directories, and whether packages inside the single Cargo workspace (`crates/*`) would satisfy it. Task 9.5 and 9.6 do not fix a path for the packages. No restructuring happens until the user reads the Rules tab (or asks the organisers) and records the answer here. The decision is needed before task 9.5 creates the `prize-check` package.
 
@@ -1075,6 +1077,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 1.12, 9.1, 9.4.
     - _Requirements: 31.1, 31.2, 31.4, 31.6, 31.7, 31.8, 31.9, 31.11, 31.14, 24.12, 15.5, 15.6_
     - Design §8.2, §8.4, §8.6
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): `prize-check` is a library Workflow_Module with no binary target. Its interface has the three groups of design §11.3: Prepare (mapping, Questions, canonical serialization), Present (report from a Compiled_Rulebook, a parsed results file and the Proof_Report) and Evaluate (map, one engine call, present, as this task states). `ruletrace-lab` uses only Prepare and Present; Evaluate serves the tests of Req 31.4 and 31.5. Ranking Questions name no participant set (design §11.3, RN-36). The Skeleton Crew folder open item that blocked this task is superseded (UD-38): the package lives at `crates/prize-check`. Gate 1.12 (UD-33) stays satisfied through its Confirmed record. Added requirement: 36.18.
 
   - [ ] 9.6 Implement the `bracket-check` package library
     - Create the package `bracket-check` (library target, same file layout and allowed edges as 9.5). It reports Standings per ranking Target, each Tie_Group as one entry with its members, each Indeterminate position with the missing input, the tie-breaking criteria applied with the compared values, and each requested Qualification_Predicate and participant as true, false or Indeterminate with rule id, revision, span and inputs read. A published-standings file is mapped to a Published_Result and each difference the engine returns is reported. Under Rank_Reference a Tie_Group at the threshold reports every member with the same Outcome and states that the count of true Outcomes can exceed the numeric threshold N. The library applies no tie-breaking and no seeding of its own.
@@ -1082,6 +1085,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 1.12, 9.1, 9.3, 9.4.
     - _Requirements: 32.1, 32.2, 32.3, 32.4, 32.5, 32.6, 31.1, 31.2, 31.8, 24.12_
     - Design §8.7, §8.9
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): library Workflow_Module with the Prepare, Present and Evaluate groups of design §11.3, as for 9.5. Under the user's sequence of 2026-11-18 this task proceeds without 9.3: every part except the Rank_Reference sentence (Tie_Group at the threshold) is implemented; that sentence stays unsatisfied with 9.3 (approved deferral), and Req 32.3 stays unsatisfied. The Laboratory names the workflow "Tournament standings" (Req 32.1, 36.18).
 
   - [ ] 9.7 Implement the two Demonstration_Executables
     - In each package add `src/main.rs` (argument parsing) and `src/io.rs` (read the named files, write the named report files by temp file and rename). Only `io.rs` and `main.rs` may open files, read arguments, exit or write standard streams. Options: `--compiled`, `--input`, the Targets, `[--published]`, `[--source-model...]`, `--report-human`, `--report-json`, and `--emit-data`, `--emit-questions`, `--emit-published`, `--emit-results` (the canonical data and results, for the byte-identity comparison). Exit codes: 0 when the report is complete and no Outcome is Indeterminate, 4 when at least one is, 2 for invalid input (including a Source_Model that is missing or whose hash differs), 70 for an internal error, equal to the code of `ruletrace evaluate` for the same inputs, and no partial report on failure. Read no environment variable, no AI_Configuration and no credential, open no network connection and start no subprocess. Extend Property 30 to both executables.
@@ -1089,6 +1093,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 9.5, 9.6.
     - _Requirements: 31.3, 31.11, 31.12, 31.13, 27.15_
     - Design §8.2, §8.4
+    - Superseded by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged) (user decision D4): no `src/main.rs` or `src/io.rs` is created and neither package has a binary target. The file reading and writing move to `ruletrace-lab` (Req 31.3 as amended, tasks 13.4 and 13.5). The result-classification duty (0, 4, 2, 70 equal to `ruletrace evaluate`) becomes Req 31.12 as amended (a classification that `ruletrace-lab` maps) and is tested in 13.6. Property 30 for the Laboratory is 36.22. The task stays `[ ]`, is not claimed complete, and is not counted as open work.
 
   - [ ] 9.8 Implement `rt-xtask check-app-layers` and `check-executables`
     - `check-app-layers`: a source scan of the application packages that fails with crate, file and line on an operator or call that adds, subtracts, multiplies, divides, rounds, compares or aggregates Exact_Number values, a sorting, ordering, minimum, maximum or ranking function over participants, scores or Outcomes, a tie-breaking rule, a literal weight, threshold or rounding mode, or a field name of a specific competition. It also fails on any file, network, clock, random, environment or subprocess use outside `io.rs` and `main.rs`, and on any edge outside the application allowed list, directly or transitively (including `rt-cli`, `rt-review`, `rt-ledger`, `rt-validate`, `rt-compile`, `rt-source`, `rt-proposals`, every `rt-ai-*`, the other application, `rt-demo`, `rt-xtask`). `check-executables`: the set of executables the workspace builds equals `ruletrace`, `ruletrace-ai`, `prize-check` and `bracket-check` and names any other (`rt-xtask` is a development binary that is not delivered, RN-25). Add one negative fixture per violation class; each must fail with the expected file and line. Required.
@@ -1096,6 +1101,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 9.7.
     - _Requirements: 31.10, 31.11, 24.12, 27.15, 15.8, 15.10, 20.17_
     - Design §3.3, §8.10
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): `check-app-layers` scans `prize-check`, `bracket-check` and, once it exists, `rt-lab` (Req 31.10 as amended). The libraries have no `io.rs` or `main.rs`, so any file, network, clock, random, environment or subprocess use in them fails. `check-executables` asserts that the binary targets of packages of class core, aux and lab equal the set in a new list file `tools/executables.v1`, that class app has no binary target, and that classes tool and test are excluded by rule (RN-25). This task writes the list with `ruletrace` and `ruletrace-ai`; task 13.4 adds `ruletrace-lab` in the same commit that creates `rt-lab`, so the check is exact at every commit. Blocked by: 9.5, 9.6 (not 9.7). Added requirements: 27.1, 27.15 (amended), 24.13.
 
   - [ ] 9.9 Write property test for mapping preserving missing values
     - **Property 44: Mapping preserves missing values and reports each violation once**
@@ -1109,12 +1115,14 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - For at least 256 generated Competition_Data sets, the results written by each application equal the bytes `ruletrace evaluate` writes for the same Compiled_Rulebook, canonical data, Questions, Published_Result and Source_Models, with the same exit code. Required.
     - Observable: the byte comparison passes for every generated set and for each Fixture.
     - **Validates: Requirements 31.5, 31.12, 15.7**
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): Property 42 is tested on the Evaluate group of the two Workflow_Modules (no executable). The Laboratory path (Prepare, `ruletrace evaluate`, Present) gets its own byte-identity test in 13.6 (Req 36.5). Blocked by: 9.5, 9.6.
 
   - [ ] 9.11 Write property test for parameters read only from the Compiled_Rulebook
     - **Property 43: Applications read every business parameter from the Compiled_Rulebook**
     - The metamorphic test of Req 31.4: change exactly one weight, one threshold and the order of two tie-breaking criteria in the Rulebook, compile each variant with a test ledger that approves it, run the unchanged application, and assert that the Outcomes equal those of `ruletrace evaluate` for the variant and differ from the unchanged Rulebook where the change is observable. Required (no duplicated business logic).
     - Observable: each variant's application output equals the engine's, and the observable change appears.
     - **Validates: Requirements 31.4, 15.6, 31.10**
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): the unchanged application is the Evaluate group of each Workflow_Module. Blocked by: 9.5, 9.6.
 
   - [ ] 9.12 Extend the contradictory-flag test to the application input kinds
     - **Property 5: Contradictory flag input is rejected**
@@ -1151,6 +1159,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 9.7, 9.2, 9.10.
     - _Requirements: 31.15, 32.7, 31.9, 31.14, 20.4_
     - Design §7.3, §8.5
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): golden reports are produced by the Present group from the output of `ruletrace evaluate`. Blocked by: 9.5, 9.6, 9.2, 9.10 (not 9.7). The Tie_Group-at-threshold fixture stays deferred with 9.3.
 
   - [ ] 9.17 Write the two-application isolation and process-independence tests
     - Isolation: run `prize-check` and `bracket-check` in the same process over two different Compiled_Rulebooks in any order and interleaved, and assert each result equals its result run alone. Process test: run each executable under at least two values of the clock, the working directory and the locale, with and without `ruletrace`, `ruletrace-ai`, an AI_Configuration file and a credential variable present, and assert byte-identical stdout, stderr, report files and exit code. Required.
@@ -1158,6 +1167,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 9.7.
     - _Requirements: 31.11, 31.15, 20.6, 27.15_
     - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: the two-application isolation test and the process-independence test (two clocks, working directories and locales, with and without the other executables, a configuration and a credential variable present) are not delivered. Unsatisfied: Requirements 31.11, 31.15, 20.6, 27.15 as this task states them. The Notes list isolation as required, so this is an open gap
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): the deferral stays. If resumed: the isolation test runs the Evaluate groups of the two libraries; the process-independence part applies to `ruletrace-lab` (Req 36.22, task 13.6).
 
   - [ ] 9.18 Add step s08 to the stand-in demonstration
     - Extend the runbook of the stand-in demonstration with s08 (`prize-check` and `bracket-check` on the CSV files with the `--emit-*` and `--report-*` options) and the extra step for `standings-missing.csv`. Assert in the acceptance test that the emitted canonical data, questions, published result and results equal the committed canonical files and the output of s06 (byte identity with `ruletrace evaluate`), and that the application reports equal their goldens. Bless the new goldens.
@@ -1165,6 +1175,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 9.16, 8.17.
     - _Requirements: 33.7, 33.15, 31.5_
     - Design §8.10, §8.11.4
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged) (reworded under D4): s08 runs the Prize workflow and the Tournament standings workflow through the Laboratory test harness of 13.6 (Req 33.7 step 8, 33.19). Until 13.5 exists, s08 is a harness step that calls the Prepare and Present groups and runs `ruletrace evaluate`. Byte identity with s06 is unchanged. No `--emit-*` or `--report-*` options exist. Blocked by: 9.16, 8.17; the Laboratory form also by 13.5.
 
   - [ ] 9.19 Apply the steering updates of design §9.3 items 6 to 8
     - Prepare the patch for items 6, 7 and 8 (two small demonstration executables beside the two RuleTrace executables, the application-layer dependency rule, the I/O wording for `io.rs` and `main.rs`, the quality gates for the acceptance test and the application scan, the isolation test of two applications). Show it to the user with the user_input tool and apply it only after the user confirms.
@@ -1173,11 +1184,13 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - _Requirements: 27.1, 27.15, 24.12, 31.10_
     - Design §9.3
     - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: blocked by 9.8; the steering files keep their current wording and design §9.3 items 6 to 8 are not applied (the task requires the user's confirmation of the patch first). Unsatisfied: Requirements 27.1, 27.15, 24.12, 31.10 as this task states them; 11.12 is related (see its deferral)
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): the deferral stays. Items 6 to 8 of design §9.3 are superseded where they name Demonstration_Executables; the steering text for UD-38 was applied in `fc0d799` (design §9.3 item 12).
 
   - [ ] 9.20 Checkpoint - Phase 7 exit
     - Run the full gate set, `check-app-layers` and `check-executables`, and the `demo-offline` job with the extended runbook.
     - Exit criteria: Properties 42, 43, 44, 46, 47 pass (45 if Rank_Reference); the application scan negative fixtures pass; the two-application isolation test and the process test pass; application results are byte-identical to `ruletrace evaluate`.
     - Ensure all tests pass, ask the user if questions arise.
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): `check-executables` runs with the list of 9.8 (two names until 13.4). Exit criteria no longer mention executables of the applications; the Laboratory has its own checkpoint 13.8.
 
 - [ ] 10. Phase 8: Provider integration over the Responses protocol (`rt-ai-responses`, Meta Model API first) and recording (`export-script`)
   - Decision UD-37 (`tools/decisions/UD-37.md`, Confirmed) governs this phase: no `rt-ai-meta` and no `rt-ai-modal` crate, the planned crate `rt-ai-openai` is `rt-ai-responses`, Meta and OpenAI are Provider_Profiles (data in `rt-ai-tool`), Modal is deferred, and the first real provider is the Meta Model API with `muse-spark-1.3`. The open decision OD-37-1 (HTTP 504 and Req 29.2) does not block any task here, and Req 29.2 is not changed by any task.
@@ -1401,6 +1414,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - _Requirements: 34.1, 34.7_
     - Design §8.12
     - Deferred (approved by the user, session handoff before 2026-11-15): scope reduction for this submission by user decision 2; the decision records no per-task reason; intended milestone: post-submission hardening; dependencies: `claims/*`, `rt-xtask gen-claims` and `scan-claims` and their negative fixtures are not delivered. Unsatisfied: Requirements 34.1, 34.7 as this task states them; the checkpoint 11.13 lists these commands, so it cannot be claimed in full. 11.9 and 11.10 must not claim a scan that does not exist
+    - Note (UD-38, 2026-11-18): the deferral stays. Req 34.10 needs these lists for the Laboratory statements, and 34.7 gives identifiers to criteria 2 to 6 only (RN-37). The user decides whether 11.8 moves before 13.8.
 
   - [ ] 11.9 Add the honest-claims statements to the reports and the runbook
     - Add to the header of the Proof_Report and of each application report, and to the Demo_Runbook, the statements of Req 34: only capabilities inside the First_Version_Support_Boundary, human approval of the exact revision through `ruletrace review`, a Proposal is untrusted until approval, the offline demonstration replays recorded Reviewer decisions, validation checks internal consistency and not fidelity to the regulation (with the undetected Conflict classes), what verified means, that a live provider can return different proposals, the number and identifiers of Unsupported and Ambiguity clauses (zero stated when none), and that synthetic data is synthetic. Re-bless the goldens and run `scan-claims`.
@@ -1422,6 +1436,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 11.6, 11.8.
     - _Requirements: 20.26, 20.27, 33.15, 33.16, 21.14, 21.3_
     - Design §7.4
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): `check-executables` uses the three-name list; the `graph` job also runs the Laboratory source scans of 13.4.
 
   - [ ] 11.12 Apply the remaining steering updates
     - Prepare the patch for the steering text still open after tasks 8.3 and 9.19: design §9.3 item 10 (demonstration documents state the boundary, the meaning of verified, the need for approval and the number of unsupported clauses, enforced by a scan) and the replay sentence of item 7. Show it to the user with the user_input tool and apply it only after confirmation. Item 5 stays open until DD-2 is decided.
@@ -1435,11 +1450,13 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Run the full gate set including `demo-offline` on all three platforms and the `rt-xtask` checks (`check-graph`, `check-tree`, `scan-sources`, `check-app-layers`, `check-executables`, `check-catalogue`, `check-justification`, `check-decisions`, `gen-claims`, `scan-claims`).
     - Exit criteria: Properties 48 to 52 pass; the acceptance test passes all assertions of Req 33.15 and 33.17 offline from the committed files; the Proof_Report headers state the limits and the number of Unsupported clauses; application results are byte-identical to `ruletrace evaluate`; the user has run the live flow once and its script was committed deliberately.
     - Ensure all tests pass, ask the user if questions arise.
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): "application results" means the Laboratory path (13.6) and the Evaluate groups (9.10).
 
   - [ ] 11.14 Demonstration checkpoint - Demo Slice 2
     - Run `cargo build --workspace --bins` and `cargo test -p rt-demo --test acceptance -- --nocapture` and show the user the whole story on the real documents: the manifest (source, licence, hash), the recorded proposals with their provider kind and model, the human decisions, the Coverage_Statement, the Outcomes, one Proof_Report section with source text and replayed calculation, the `prize-check` and `bracket-check` reports and their byte identity with `ruletrace evaluate`, the published-result equal and seeded-difference comparisons, and the three mutation results.
     - Observable: the user can follow one decision from the source clause to the proved outcome without trusting an AI statement. Then stop for the user's review before Phase 10.
     - Ensure all tests pass, ask the user if questions arise.
+    - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): the Prize and Tournament standings reports are shown through `ruletrace-lab` in demo mode (Req 33.18), not through `prize-check` and `bracket-check` executables.
 
 - [ ] 12. Phase 10: Hardening and release
   - [ ] 12.1 Write the no-panic parser property tests
@@ -1539,6 +1556,62 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Ensure all tests pass, ask the user if questions arise.
     - Reduced scope (approved by the user, session handoff before 2026-11-15): the acceptance used for this submission is one final green CI run with no skipped required jobs. Full criterion unsatisfied: the local full gate run recorded as such, the committed baseline (12.12), the boundary documents (11.10, 12.13) and the release checklist of Req 20.26, 14.8 and 34.8. Milestone: M4. No release tag is claimed. The task stays [ ]
 
+- [ ] 13. Phase L: RuleTrace Laboratory (UD-38; added 2026-11-18)
+  - Decision UD-38 (`tools/decisions/UD-38.md`, Confirmed) and design §11 govern this phase. The user's labels L1 to L4 map to 13.1 (L1), 13.4 (L2), 13.5 (L3) and 13.6 (L4); 13.2, 13.3, 13.7 and 13.8 are added by the design. No Laboratory code (13.4 onward) starts before 13.1 is closed.
+
+  - [-] 13.1 (L1) Laboratory threat model
+    - Write the threat model that Req 37.21 requires: assets, actors, trust boundaries, threats with mitigations and required evidence, the credential mechanisms with the five properties P1 to P5, residual risks and the decisions needed. Independent review before any Laboratory code.
+    - Observable: `docs/security/laboratory-threat-model.md` is reviewed, every review finding is resolved, and the user has decided LT-1 to LT-9 (or recorded each as deferred with its consequence).
+    - _Requirements: 37.21, 37.20, 37 (all), 36.2 to 36.10_
+    - Design §11, `docs/security/laboratory-threat-model.md`
+    - Status note (2026-11-18): draft in `d0c821c`; review `docs/reviews/2026-11-18-review-L1-threat-model-d0c821c.md` (CHANGES REQUIRED, B1 to B3); fixes `6f7e851`; review `docs/reviews/2026-11-18-review-L1-fix-6f7e851.md` (APPROVED WITH FINDINGS, F1 to F7 low); fixes `66ef6ec`. Open: LT-1 to LT-9 and RN-31 to RN-48 (user). Not complete until the user decides them.
+
+  - [ ] 13.2 Credential-store feasibility spike (only if LT-1 selects M2)
+    - On a scratch branch with no production code, store and read a canary with the candidate store crates on Linux (desktop Secret Service and headless keyutils), macOS and Windows, in CI and on the user's machine; record the dependency tree, the set-up each platform needs, and whether the Laboratory process can read the entry. Write the result into the threat model and propose the Req 28 amendment text for the user.
+    - Observable: a dated record of each platform's result; no change to `ruletrace-ai` before the user approves the Req 28 amendment.
+    - Blocked by: 13.1 (LT-1 = M2).
+    - _Requirements: 37.21, 28.2, 28.5, 28.13_
+    - Design §11.10
+
+  - [ ] 13.3 Core changes the Laboratory needs
+    - `ruletrace review list --format json` (same facts as the text output, canonical RT-JSON, Rule_Content_Hash included); the results-file parser in `rt-explain::results` with a round-trip property test of at least 256 cases; a source scan that `rt-ai-tool` starts no subprocess; the `RT-LAB-*` catalogue codes through the catalogue-change procedure; the test of RN-38 (whether an engine Error without an Indeterminate Outcome reaches exit 4). Each change gets its own review. No existing output changes byte for byte.
+    - Observable: the new option, parser and scan exist with tests; every existing golden is unchanged.
+    - Blocked by: 13.1.
+    - _Requirements: 36.6, 36.12, 36.5, 37.14, 7.x, 16.11_
+    - Design §11.15
+
+  - [ ] 13.4 (L2) `ruletrace-lab` skeleton and session security
+    - Create `crates/rt-lab` (binary `ruletrace-lab`), class `lab` in `tools/allowed-edges.v1` and `edges.rs`, the edge and forbid rules of design §11.3 (as the user decides RN-44), `ruletrace-lab` in `tools/executables.v1`, `SHIPPED_BINARIES` and the graph roots. Implement the loopback listener, the HTTP subset and its limits, Host and Origin checks, Launch_Secret exchange, session cookie, CSRF, the per-session mutex and state version, the headers and CSP, embedded assets, the session directory with marker and lock, start refusal of 37.21, and shutdown. No workflow step yet. Add the Laboratory source scans (no `rt_engine` path, no Workflow_Module Evaluate call, no shell, no float, Req 31.10 scan).
+    - Observable: the security tests of 13.6 for 37.1 to 37.11, 37.17, 37.18, 37.21, 37.22, 37.24 to 37.26 pass, with their mutants.
+    - Blocked by: 13.1, 9.8.
+    - _Requirements: 36.1, 36.3, 36.22, 37.1 to 37.12, 37.15 to 37.18, 37.21, 37.22, 37.24 to 37.26, 24.13, 27.1, 27.15_
+    - Design §11.3 to §11.5, §11.9, §11.11
+
+  - [ ] 13.5 (L3) Workflow screens and orchestration
+    - Subprocess invocation with argument vectors, environment allow-lists, limits, kill and reap; Hand_Off_Artifacts and fresh step directories; the steps ingest, propose (demo mode; live by the LT-1 mechanism), review list, approve, reject, validate, compile, evaluate; the six stages bound to their subprocess results; the Prize and Tournament standings workflows through the Prepare and Present groups; the result classification of design §11.8 as the user decides RN-31; demo mode with both review paths of design §11.13.
+    - Observable: the workflows run end to end in demo mode against the real executables, and every displayed Outcome equals the bytes of `ruletrace evaluate`.
+    - Blocked by: 13.3, 13.4, 9.5, 9.6.
+    - _Requirements: 36.2, 36.4 to 36.21, 37.13, 37.14, 37.16, 37.19, 37.20, 33.18_
+    - Design §11.2, §11.6 to §11.8, §11.12, §11.13
+
+  - [ ] 13.6 (L4) Laboratory tests
+    - Every criterion of Req 36 and 37 with the evidence of design §11.16: exact status, headers, exit code and byte state; recording stand-ins; property tests of the HTTP, cookie and multipart parsers (at least 256 cases each); the mutants of 37.23 and those that RN-48 adds; the two-tab, concurrency, stale-hash and second-session tests of 37.25; the canary test of 37.20 under the LT-1 mechanism; the network-namespace test of 37.12; the acceptance test of 36.24 and 33.19; V-1 (kill during a store write).
+    - Observable: all tests pass on three platforms, and each mutant is shown to fail.
+    - Blocked by: 13.5.
+    - _Requirements: 36.24, 37.23, 33.19, 37.20_
+    - Design §11.16
+
+  - [ ] 13.7 Reproducible run instructions
+    - Commit the build and run instructions of Req 36.23 (pinned toolchain, build command, demo-mode start without a credential, how to obtain the Launch_Secret, the literal loopback address) and a test that executes each command in a clean checkout.
+    - Observable: the instructions test passes; no hosted address is named.
+    - Blocked by: 13.5.
+    - _Requirements: 36.23, 34.9, 34.10_
+    - Design §11.11
+
+  - [ ] 13.8 Checkpoint - Laboratory
+    - Run the full gate set, the Laboratory tests and the demonstration with the Laboratory; independent review of the whole phase; show the user the workflow in a browser.
+    - Ensure all tests pass, ask the user if questions arise.
+
 ## Notes
 
 - Tasks marked with `*` are optional breadth tests (2.8, 4.11) and can be skipped for a faster path. Breadth tests that every release needs are not starred and sit in Phase 10 (12.1 to 12.13). Each of the 52 design properties appears in at least one task.
@@ -1550,6 +1623,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
 - A gate is not Confirmed until the user answers. A task that needs a gate lists it under `Blocked by`. The Pending records are checked mechanically by `rt-xtask check-decisions` (task 2.10).
 - `tools/allowed-edges.v1` and `tools/decision-gates.v1` are written once (tasks 2.9 and 2.1). Other shared `Cargo.toml` and `tools/` files are touched by tasks in different waves. Property tests live in separate files under `crates/rt-tests-core/tests/`, so tests in the same wave do not collide.
 - Checkpoint tasks, demonstration checkpoints and top-level parent tasks are not part of the dependency graph.
+- (Added by UD-38, 2026-11-18.) Phase 13 follows the waves of 9.5, 9.6 and 9.8; its waves 61 to 65 are listed after wave 60 for numbering only. 9.7 is superseded and stays in wave 47 as a record; it is not scheduled.
 
 ## Task Dependency Graph
 
@@ -1616,7 +1690,12 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     {"id": 57, "tasks": ["11.9", "12.1", "12.2", "12.3", "12.4", "12.5", "12.6", "12.7", "12.8", "12.9", "12.10", "12.11"]},
     {"id": 58, "tasks": ["11.10", "11.11", "11.12", "12.12"]},
     {"id": 59, "tasks": ["12.13"]},
-    {"id": 60, "tasks": ["12.14"]}
+    {"id": 60, "tasks": ["12.14"]},
+    {"id": 61, "tasks": ["13.1"]},
+    {"id": 62, "tasks": ["13.2", "13.3"]},
+    {"id": 63, "tasks": ["13.4"]},
+    {"id": 64, "tasks": ["13.5"]},
+    {"id": 65, "tasks": ["13.6", "13.7"]}
   ]
 }
 ```

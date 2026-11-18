@@ -1,5 +1,5 @@
 ---
-status: Draft, awaiting independent review (task L1) and user decisions LT-1 to LT-9
+status: Draft, independently reviewed (APPROVED WITH FINDINGS after fixes); awaiting user decisions LT-1 to LT-9
 document: RuleTrace Laboratory threat model (task L1)
 requirements: 36, 37 (37.21 names this record), 27, 28, 34.9, 34.10
 design: design.md §11
@@ -355,4 +355,5 @@ Details are in design §11.5. In short:
 
 | Date | Reviewer | Result |
 | --- | --- | --- |
-| (pending) | independent reviewer (`ruletrace-reviewer`) | |
+| 2026-11-18 | independent reviewer, `docs/reviews/2026-11-18-review-L1-threat-model-d0c821c.md` | CHANGES REQUIRED (B1 to B3, N1 to N11) |
+| 2026-11-18 | independent reviewer, `docs/reviews/2026-11-18-review-L1-fix-6f7e851.md` | APPROVED WITH FINDINGS (F1 to F7, low; addressed in `66ef6ec`) |
