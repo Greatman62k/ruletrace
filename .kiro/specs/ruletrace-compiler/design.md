@@ -3162,6 +3162,7 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 | RN-49 | 7.16, 7.17 | 7.16 allows the families RT-DGN, RT-PRV, RT-APR, RT-AI and the families the design assigns to Requirements 1 to 14, 19 and 21. The Laboratory's own Diagnostics (Req 36, 37) need a family, proposed `RT-LAB`, which that list does not cover | User decision: add Requirements 36 and 37 to 7.16, or place the Laboratory codes in an existing family Status 2026-11-18: **Decided (UD-39):** 7.16 amended; `RT-LAB` family |
 | RN-50 | 17.1, 37.17 | The lifeline containment of §11.18.6 adds `--lifeline-stdin` to `ruletrace` and `ruletrace-ai` | User decision with LT-7 |
 | RN-51 | 36.25, 36.14, 36.21, 34.9, 34.10 | Author decisions made while applying UD-39 that the user has not confirmed: (a) import indexes batches that the user's `ruletrace-ai` wrote into the workspace store, and offers no upload of a batch, because a Laboratory copy would make it a Proposal_Store writer (Req 27.1); (b) an `evaluate` exit 2 with a complete results file (provenance not verified, Req 13.18) counts as an executed evaluation and activates Lightning; (c) the R-8 phrase in 34.9 and the demonstration-ledger statement in 34.10; (d) the workspace layout and the session directory inside the workspace | User confirmation of (a) to (d) |
+| RN-52 | §8.2, 15.6, 24.12 | Review 9.6 F1: `mapping.rs` and `classify.rs` are byte-identical in `prize-check` and `bracket-check`, and `prepare.rs`, `evaluate.rs` and part of `report.rs` are near copies. No computation is duplicated (Req 15.6 holds), but §8.2 says shared code is not duplicated, and its table assigns no home to this glue. One home needs either an edge from `rt-data` or `rt-explain` to `rt-compiled` (where the Target-kind check reads the schema), or a new shared crate added to the Req 24.12 list. Until decided, `crates/rt-tests-core/tests/workflow_module_copies.rs` fails when the identical copies drift | User decision: where the shared glue lives (task 9.21) |
 
 ## Requirements Traceability
 
@@ -3528,7 +3529,7 @@ The criteria are **not** rewritten here. RN-34 to RN-38 state each mismatch and 
 | LT-9 | Connection limits | **Decided:** 16 connections, 4 concurrent requests, finite timeouts, 503 on overload (Req 37.27, §11.18.4) |
 | L1-R | Independent review of the threat model and this section | Reviewed three times on 2026-11-18; a review of the UD-39 changes is pending; L1 is approved only after LT-6 and LT-7 are accepted |
 | L1b | Credential-store spike | **Dropped** (UD-39: no OS credential store in this release) |
-| RN-36 to RN-38, RN-40 to RN-43, RN-45, RN-48, RN-50, RN-51 | Requirements notes not decided by UD-39 | User decision each |
+| RN-36 to RN-38, RN-40 to RN-43, RN-45, RN-48, RN-50 to RN-52 | Requirements notes not decided by UD-39 | User decision each |
 | V-4 | Kill of a real `ruletrace review approve` and `ruletrace-ai propose` during the write leaves a recoverable state | To verify in 13.3 |
 | V-1 | Kill during a store write leaves no file that a later run rejects (§11.6) | To verify in 13.3 (it matters for the containment of §11.18.6 too) |
 | V-2 | Safe signal handling on three platforms (§11.11) | To decide with LT-7 |
