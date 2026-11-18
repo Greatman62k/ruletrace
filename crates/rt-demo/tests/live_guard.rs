@@ -197,7 +197,27 @@ fn refused(step: &Step, refusal: Refusal) -> DemoError {
 mod fake {
     use super::*;
     use std::net::TcpListener;
-    use std::os::unix::fs::PermissionsExt;
+
+    /// Writes an executable script from a short-lived child process.
+    ///
+    /// A write descriptor opened in this process is inherited by any child
+    /// that another test thread forks, and a file with an open writer cannot
+    /// be executed (ETXTBSY). The writer descriptor lives only in the child,
+    /// which has exited before this returns. Linking or renaming would not
+    /// help, because the restriction is on the inode.
+    pub fn write_executable(exe: &Path, script: &str) {
+        let status = std::process::Command::new("/bin/sh")
+            .args([
+                "-c",
+                "printf '%s' \"$1\" > \"$2\" && chmod 755 \"$2\"",
+                "sh",
+            ])
+            .arg(script)
+            .arg(exe)
+            .status()
+            .unwrap();
+        assert!(status.success(), "writing {} failed", exe.display());
+    }
 
     /// A `ruletrace-ai` that records that it ran and opens one loopback
     /// connection. It is bash because `/dev/tcp` needs it.
@@ -217,9 +237,7 @@ mod fake {
                  exec 3<>/dev/tcp/127.0.0.1/{port}\n",
                 marker.display()
             );
-            let exe = bin.join("ruletrace-ai");
-            fs::write(&exe, script).unwrap();
-            fs::set_permissions(&exe, fs::Permissions::from_mode(0o755)).unwrap();
+            write_executable(&bin.join("ruletrace-ai"), &script);
             Self { marker, listener }
         }
 
@@ -230,6 +248,61 @@ mod fake {
             }
             n
         }
+    }
+}
+
+#[cfg(unix)]
+mod fake_install_race {
+    use super::fake::write_executable;
+    use std::fs;
+    use std::process::{Command, Stdio};
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    // Regression: a script written by this process can fail to execute with
+    // ETXTBSY while another thread forks, because the forked child holds the
+    // write descriptor until its own exec.
+    #[test]
+    fn a_freshly_installed_script_runs_while_other_threads_spawn() {
+        const INSTALLERS: usize = 4;
+        const PER_INSTALLER: usize = 400;
+        let dir = std::env::temp_dir().join(format!("rt-demo-etxtbsy-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let stop = AtomicBool::new(false);
+        let busy = std::thread::scope(|scope| {
+            for _ in 0..4 {
+                scope.spawn(|| {
+                    while !stop.load(Ordering::Relaxed) {
+                        Command::new("/bin/true")
+                            .stdout(Stdio::null())
+                            .status()
+                            .unwrap();
+                    }
+                });
+            }
+            let installers: Vec<_> = (0..INSTALLERS)
+                .map(|t| {
+                    let dir = &dir;
+                    scope.spawn(move || {
+                        let mut busy = 0;
+                        for i in 0..PER_INSTALLER {
+                            let exe = dir.join(format!("s{t}-{i}"));
+                            write_executable(&exe, "#!/bin/sh\nexit 0\n");
+                            match Command::new(&exe).status() {
+                                Ok(status) => assert!(status.success()),
+                                Err(e) if e.raw_os_error() == Some(26) => busy += 1,
+                                Err(e) => panic!("unexpected spawn error: {e}"),
+                            }
+                        }
+                        busy
+                    })
+                })
+                .collect();
+            let busy: usize = installers.into_iter().map(|h| h.join().unwrap()).sum();
+            stop.store(true, Ordering::Relaxed);
+            busy
+        });
+        fs::remove_dir_all(&dir).unwrap();
+        assert_eq!(busy, 0, "scripts that failed to execute with ETXTBSY");
     }
 }
 
