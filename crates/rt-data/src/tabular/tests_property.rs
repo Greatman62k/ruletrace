@@ -121,7 +121,7 @@ fn render(grid: &Grid, crlf: bool, bom: bool, final_eol: bool) -> (Vec<u8>, Expe
             let quote = *force
                 || text.starts_with('#')
                 || text.contains([',', '"', '\n', '\r'])
-                || (text.is_empty() && last);
+                || (text.is_empty() && last && (row.len() == 1 || r == 0));
             if quote {
                 out.push('"');
                 col += 1;
@@ -356,16 +356,87 @@ fn reference_valid(y: i64, m: i64, d: i64) -> bool {
         && civil_from_days(days_from_civil(y, m, d)) == (y, m, d)
 }
 
+/// Dates where the leap rules matter: multiples of 4 and of 100 in February
+/// and the end of other months, mixed with the full range.
+fn date_parts() -> impl Strategy<Value = (i64, i64, i64)> {
+    let wide = (0i64..=9999, 0i64..=14, 0i64..=33);
+    let leap_years = (0i64..=2499, Just(2i64), 27i64..=30).prop_map(|(k, m, d)| (k * 4, m, d));
+    let centuries = (0i64..=99, Just(2i64), 27i64..=30).prop_map(|(c, m, d)| (c * 100, m, d));
+    let month_ends = (1i64..=9999, 1i64..=12, 28i64..=32);
+    prop_oneof![wide, leap_years, centuries, month_ends]
+}
+
 proptest! {
     #![proptest_config(cases(1024))]
 
     #[test]
     fn dates_are_accepted_exactly_when_a_reference_calendar_says_so(
-        y in 0i64..=9999, m in 0i64..=14, d in 0i64..=33
+        (y, m, d) in date_parts()
     ) {
         let cell = format!("{y:04}-{m:02}-{d:02}");
         let r = super::tests_map::parts(&row_with(2, &cell));
         prop_assert_eq!(r.is_ok(), reference_valid(y, m, d), "{}", cell);
+    }
+}
+
+/// A header width, then which cells of the data row hold `x` (the others are
+/// empty) and the line end style. Positions are counted while writing.
+fn width_model() -> impl Strategy<Value = (usize, Vec<bool>, bool)> {
+    (
+        1usize..=5,
+        proptest::collection::vec(any::<bool>(), 1..=7),
+        any::<bool>(),
+    )
+}
+
+proptest! {
+    #![proptest_config(cases(512))]
+
+    #[test]
+    fn a_row_is_kept_only_when_its_cell_count_equals_the_header_count(
+        (width, filled, crlf) in width_model()
+    ) {
+        let names = ["a", "b", "c", "d", "e"];
+        let eol = if crlf { "\r\n" } else { "\n" };
+        let header = names[..width].join(",");
+        let mut row = String::new();
+        let mut starts = Vec::new();
+        let mut col = 1u32;
+        for (i, has_text) in filled.iter().enumerate() {
+            starts.push(col);
+            if i > 0 {
+                row.push(',');
+            }
+            if *has_text {
+                row.push('x');
+                col += 1;
+            }
+            col += 1;
+        }
+        let lone_empty = filled.len() == 1 && !filled[0];
+        if lone_empty {
+            row = "\"\"".to_owned();
+            col = 3;
+        }
+        let end = if lone_empty { col } else { col - 1 };
+        let text = format!("{header}{eol}{row}{eol}");
+        let got = parse_csv(text.as_bytes(), &input(), ByteLimit::DEFAULT);
+        let cells = filled.len();
+        if cells == width {
+            let table = got.map_err(|e| TestCaseError::fail(format!("{:?}", view(&e))))?;
+            prop_assert_eq!(table.rows.len(), 1);
+            prop_assert_eq!(table.rows[0].len(), width);
+            for (cell, has_text) in table.rows[0].iter().zip(&filled) {
+                prop_assert_eq!(cell.text.as_str(), if *has_text { "x" } else { "" });
+            }
+        } else if cells > width {
+            let want = vec![(Code::AppInputMalformed, Some(2), Some(starts[width]), None)];
+            prop_assert_eq!(view(&got.unwrap_err()), want);
+        } else {
+            let field = Some(names[cells].to_owned());
+            let want = vec![(Code::AppInputMalformed, Some(2), Some(end), field)];
+            prop_assert_eq!(view(&got.unwrap_err()), want);
+        }
     }
 }
 

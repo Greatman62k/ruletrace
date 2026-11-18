@@ -23,6 +23,10 @@ mod tests_csv;
 mod tests_map;
 #[cfg(test)]
 mod tests_property;
+#[cfg(test)]
+mod tests_trailing;
+#[cfg(test)]
+mod tests_unused;
 
 pub use collections::map_collections;
 pub use csv::{parse_csv, ByteLimit, Cell, Table, MAX_DATA_ROWS};
@@ -30,7 +34,7 @@ pub use participants::map_participants;
 pub use published::map_published;
 pub use schema::{
     FieldType, InputSchema, MappedPublished, MappingOptions, TargetKind, TargetKinds,
-    UnusedPublished,
+    UnusedPublished, UnusedReason,
 };
 
 use crate::{

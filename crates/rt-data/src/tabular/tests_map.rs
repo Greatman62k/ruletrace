@@ -885,10 +885,11 @@ fn published_rt_app_0005_undeclared_target_at_the_cell() {
 }
 
 #[test]
-fn published_rt_app_0006_declared_target_of_an_unreportable_kind() {
+fn published_rt_app_0006_requested_target_of_an_unreportable_kind() {
     let file = "participant,target,value\np1,fallback,1\n";
+    let requested_all = &["eligible", "score", "derived", "standing", "fallback"];
     assert_eq!(
-        publ_bad(file),
+        view(&publ(file, requested_all).unwrap_err()),
         vec![(
             Code::AppTargetKindMismatch,
             Some(2),

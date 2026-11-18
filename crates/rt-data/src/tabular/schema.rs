@@ -108,6 +108,18 @@ pub struct MappingOptions {
     pub ignore_columns: BTreeSet<String>,
 }
 
+/// Why a published row is listed as unused. Both reasons mean that the
+/// Target is declared and was not requested; the row is not an error.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum UnusedReason {
+    /// The Target is declared with a reportable kind and was not requested.
+    NotRequested,
+    /// The Target is declared with a kind an application cannot report
+    /// ([`TargetKind::Other`]) and was not requested. Its value cell is not
+    /// type-checked, because no value type is known for it.
+    NotRequestedKindNotReportable,
+}
+
 /// A published row for a declared Target that was not requested. It is not an
 /// error and is not part of the Published_Result.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -120,6 +132,8 @@ pub struct UnusedPublished {
     pub line: u32,
     /// 1-based column of the first cell of the row.
     pub column: u32,
+    /// Why the row is unused.
+    pub reason: UnusedReason,
 }
 
 /// The result of mapping a published file.

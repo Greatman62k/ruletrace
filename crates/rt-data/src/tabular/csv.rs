@@ -68,9 +68,14 @@ pub struct Table {
 /// ends, `,` separators, `"` quotes with `""` as an escaped quote (a quoted
 /// cell may hold separators and line ends), the first row as the header, and
 /// cells that are never trimmed. A blank line, a line whose first unquoted
-/// character is `#`, a separator at the end of a line, a NUL character and a
-/// row whose cell count differs from the header are errors. An empty last
-/// cell is therefore written `""`.
+/// character is `#`, a NUL character, a header line that ends in a separator
+/// (an empty column name) and a row whose cell count differs from the header
+/// are errors.
+///
+/// A data row that ends in a separator has an empty final cell, so `1,` and
+/// `1,""` are the same two cells. The row is then checked against the header
+/// like any other: a row whose empty final cell is one cell too many is
+/// reported at that cell, and a row one cell short is reported at its end.
 ///
 /// # Errors
 /// `RT-LIM-0001` for a file over `size`, `RT-LIM-0004` for more than 100,000
@@ -199,6 +204,9 @@ struct Row {
     cells: Vec<Cell>,
     ok: bool,
     end: (u32, u32),
+    /// Position of the separator that ends the row, when the row ends in
+    /// one. The empty cell after it is the last of `cells`.
+    trailing: Option<(u32, u32)>,
 }
 
 fn read_rows(text: &str, rep: &mut Reporter<'_>) -> (Option<Vec<Cell>>, Vec<Vec<Cell>>) {
@@ -237,7 +245,12 @@ fn read_rows(text: &str, rep: &mut Reporter<'_>) -> (Option<Vec<Cell>>, Vec<Vec<
         let row = lex_row(&mut lexer, rep);
         if !header_seen {
             header_seen = true;
-            if row.ok {
+            if let Some((sl, sc)) = row.trailing {
+                // An empty column name cannot be mapped to a field.
+                let at = rep.at(sl, sc, None);
+                let message = "the header ends in a separator (an empty column name)";
+                rep.push(Code::AppInputMalformed, at, message.to_owned());
+            } else if row.ok {
                 header = Some(row.cells);
             }
             continue;
@@ -295,34 +308,40 @@ fn lex_row(lexer: &mut Lexer<'_>, rep: &mut Reporter<'_>) -> Row {
                 cells,
                 ok: false,
                 end: lexer.pos(),
+                trailing: None,
             };
         };
         cells.push(Cell { text, line, column });
         match lexer.peek() {
             Some(',') => {
-                let (sl, sc) = lexer.pos();
+                let delimiter = lexer.pos();
                 lexer.bump();
                 if lexer.peek().is_none() || lexer.at_line_end() {
-                    let at = rep.at(sl, sc, None);
-                    rep.push(
-                        Code::AppInputMalformed,
-                        at,
-                        "separator at the end of the line (write an empty last cell as \"\")"
-                            .to_owned(),
-                    );
-                    let end = lexer.pos();
+                    // The delimiter closes the row: an empty final cell.
+                    let (line, column) = lexer.pos();
+                    cells.push(Cell {
+                        text: String::new(),
+                        line,
+                        column,
+                    });
                     lexer.consume_line_end();
                     return Row {
                         cells,
-                        ok: false,
-                        end,
+                        ok,
+                        end: (line, column),
+                        trailing: Some(delimiter),
                     };
                 }
             }
             _ => {
                 let end = lexer.pos();
                 lexer.consume_line_end();
-                return Row { cells, ok, end };
+                return Row {
+                    cells,
+                    ok,
+                    end,
+                    trailing: None,
+                };
             }
         }
     }

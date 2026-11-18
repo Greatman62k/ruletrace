@@ -201,11 +201,18 @@ fn a_comment_line_is_an_error() {
 }
 
 #[test]
-fn a_trailing_separator_is_an_error_at_the_separator() {
-    one("a,b\n1,2,\n", Code::AppInputMalformed, 2, 4);
+fn a_trailing_separator_that_exceeds_the_header_is_an_error_at_the_extra_cell() {
+    one("a,b\n1,2,\n", Code::AppInputMalformed, 2, 5);
+    one("a,b\n1,2,", Code::AppInputMalformed, 2, 5);
+    one("a,b\r\n1,2,\r\n", Code::AppInputMalformed, 2, 5);
+}
+
+#[test]
+fn a_header_ending_in_a_separator_is_an_error_at_the_separator() {
     one("a,b,\n1,2\n", Code::AppInputMalformed, 1, 4);
-    one("a,b\n1,2,", Code::AppInputMalformed, 2, 4);
-    one("a,b\r\n1,\r\n", Code::AppInputMalformed, 2, 2);
+    one("a,b,\r\n1,2\r\n", Code::AppInputMalformed, 1, 4);
+    one("a,b,", Code::AppInputMalformed, 1, 4);
+    one("a,\n1\n", Code::AppInputMalformed, 1, 2);
 }
 
 #[test]
