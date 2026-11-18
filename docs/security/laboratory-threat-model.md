@@ -34,8 +34,10 @@ listener on `127.0.0.1:<port>` or `[::1]:<port>`.
 Facts from the current code that this model relies on (read on 2026-11-18):
 
 - `ruletrace-ai` reads the credential only through `std::env::var_os` of the
-  one variable that `credential_env_var` names, after every configuration,
-  capability and consent check (`crates/rt-ai-responses/src/credential.rs`,
+  one variable that `credential_env_var` names. For `propose` the read comes
+  after every configuration, capability and consent check; for `models` it
+  comes after the configuration checks only (Req 35.18). `--dry-run` reads
+  none (`crates/rt-ai-responses/src/credential.rs`,
   `crates/rt-ai-tool/src/config.rs` `load`). `mock-replay` reads no variable.
 - The credential is a `Credential` newtype with a redacted `Debug` and no
   `Display`. Output goes through one `Redactor`. There is no zeroization.
@@ -148,7 +150,13 @@ must show it. A test name in quotes is a planned test of task L4.
 | T9 | Clickjacking of the approval button | `frame-ancestors 'none'`, `X-Frame-Options: DENY` | 37.10, 37.11 | Header test |
 | T10 | Cross-site scripting through document text, Proposal text, file names or Diagnostics | Context escaping of every value; no inline script or style; CSP `default-src 'none'` with `'self'` sources; data responses with a declared content type | 37.11, 37.16 | Payload test per displayed field; HTML asset scan |
 | T11 | Remote assets (fonts, scripts) leak use or allow injection | Assets embedded in the binary; no other origin referenced; no outbound connection | 37.12 | Asset scan; network-namespace test |
-| T12 | Oversized or slow requests exhaust memory or threads | Limits on header bytes, body bytes (1 MiB control requests, upload limits of §5.4), one request per connection, read timeout; Content-Length required for bodies, Transfer-Encoding refused | 37.14, 37.26 | Limit boundary tests (at limit accepted, limit + 1 refused with 413) |
+| T12 | Oversized or slow requests exhaust memory or threads | Limits on header bytes, body bytes (1 MiB control requests, upload limits of §5.4), one request per connection; a 10 s deadline for the request line and headers and a 30 s deadline for the body; at most 16 concurrent connections (further connections are closed without a response); a fixed pool of worker threads | 37.14, 37.26 | Limit boundary tests (at limit accepted, limit + 1 refused with 413); slow-header and connection-cap tests |
+| T12a | Request smuggling and parser confusion | Exactly one `Content-Length` with only ASCII digits; `Transfer-Encoding` refused; obsolete line folding, bare LF, lone CR, NUL and non-ASCII bytes in the request line or a header name refused with 400; duplicate Host refused (37.3) | 37.3, 37.15 | Property test over generated request bytes; table of each malformed form |
+| T12b | Browser cache, Back button, prefetch | `Cache-Control: no-store` on every response that carries session data or a CSRF token; GET, HEAD and prefetch have no side effect (37.9); every POST answers 303 to a GET; the status page refresh is a GET with no side effect; a resubmitted stale form is refused by the state version (37.25) | 37.9, 37.10, 37.25 | Header test; resubmission test |
+| T12c | Multipart abuse (boundary tricks, duplicate parts, oversized part headers) | Exactly one file part and the CSRF field per upload; part headers at most 4 KiB; the boundary from the Content-Type only; anything else 400 | 37.15, 37.26 | Property test over generated multipart bodies |
+| T12d | Launch_Secret in terminal scrollback, terminal logs (tmux, IDE, supervisors capturing standard error) or a shared screen | Printed once to standard error, never as a command argument (so not in shell history); the start page warns; the secret is consumed on first use, so a later read of the scrollback cannot open a session while one exists; no expiry before first use (residual R-L7) | 37.5, 37.6 | Test that the secret appears once in standard error and in no file |
+| T12e | Login CSRF on `POST /session` | Safe only because the secret has at least 128 bits and is unguessable; Host and Origin checks apply (37.9) | 37.4, 37.5 | Exchange matrix test |
+| T12f | Browser extensions reading the pages | Out of scope like X5; the pages carry no credential (37.20) | 37.20 | none |
 
 ### 5.2 B2: Laboratory to subprocess
 
@@ -169,7 +177,7 @@ must show it. A test name in quotes is a planned test of task L4.
 | T20 | A file changes between display and use (time of check to time of use) | SHA-256 recorded when produced and checked immediately before the next subprocess; mismatch stops the workflow | 36.9 | Mutation between steps test |
 | T21 | A file changes between the approval display and `review approve` | The confirmation carries rule, revision and Rule_Content_Hash; `ruletrace review approve` recomputes the hash under the ledger lock and refuses a stale hash (RT-APR-0203). This holds whichever browser tab sent the request | 36.6, 36.7, 37.25 | Stale-hash test with two tabs |
 | T22 | Path traversal through a request path or an uploaded file name | Paths only inside the workspace root and the session directory; canonicalization; uploaded files stored under names the Laboratory chooses (SHA-256 hex plus a fixed extension); the user's file name is display text only | 37.13 | Traversal table: `..`, absolute, symlink out of root |
-| T23 | Symlink swap after canonicalization | The session directory is created with mode 0700 by the Laboratory and only the Laboratory and its children write into it. Workspace files are read, hashed and copied into the session directory before use. Residual: a same-user process (X5) can still swap files | 37.13, 37.18 | Symlink test; residual documented |
+| T23 | Symlink swap after canonicalization | The session directory is created with mode 0700 by the Laboratory and only the Laboratory and its children write into it. Workspace files are read, hashed and copied into the session directory before use. Residual: a same-user process (X5) can still swap files. On Windows there is no mode 0700: the directory is created under the user's own temporary directory and inherits its owner-only ACL, which L2 must verify; the path check of 37.13 also refuses device names (`CON`, `NUL`, `COM1` and the like), `\\?\` and `\\.\` prefixes, alternate data streams (`:` after the drive letter) and compares names case-insensitively | 37.13, 37.18 | Symlink test; Windows path table; residual documented |
 | T24 | Hash-valid but malicious AI output treated as trusted | A valid hash proves only that the bytes did not change. Proposals stay untrusted, are labelled untrusted, and reach compilation only through `ruletrace review approve` | 36.10, 36.11 | Display test; approval path test |
 | T25 | Stale session directories fill the disk or are mistaken for live ones | Each session directory carries a marker file and an advisory lock held by the live Laboratory; at start only marked directories whose lock can be taken are deleted | 37.18 | Two-instance test; crash-leftover test |
 
@@ -225,24 +233,25 @@ The design claims P1-code. It claims P1-os only for M6.
 | M1 | The Laboratory inherits the variable and passes it to `ruletrace-ai` | **No**: the value is in the Laboratory's environment block from the moment it starts | No | Yes | Yes (allow-list) | Weak | Yes | No | No |
 | M2 | OS credential store read by `ruletrace-ai` only (macOS Keychain, Windows Credential Manager, Linux Secret Service or kernel keyutils). The configuration names a store entry (service and account), never a value | Yes | No (same-user readable on all three) | Yes | Yes | Yes | **Unproven**: Secret Service needs a D-Bus session and an unlocked keyring; headless CI needs a set-up step; Windows and macOS CI behaviour must be tested | **Yes**: a second credential source beside `credential_env_var` | Yes: `keyring-core` plus one store crate per platform (Linux store crates pull D-Bus) |
 | M3 | Credential broker: a separate long-running process holds the credential and hands it to `ruletrace-ai` over a local socket or named pipe | Yes | No: the Laboratory can connect to the same socket | Yes | Yes | Yes | Needs per-platform IPC | Yes | Possibly; and a fourth long-running process, or a new `ruletrace-ai` command (changes 27.2) |
-| M4 | Credential file with owner-only permissions, path in the configuration, read only by `ruletrace-ai` | Yes | No | Yes | Yes | Yes | Yes | Yes. UD-18 rejected a credential file path earlier | No |
-| M5 | User-run live step: for a live provider the Laboratory shows the exact `ruletrace-ai propose` argument vector; the user runs it in a terminal where the variable is set; the Laboratory then imports the resulting batch as an untrusted, hash-bound Hand_Off_Artifact | Yes | Yes for the Laboratory process (the credential is never in any process the Laboratory starts) | Yes | Yes | Yes | Yes, no platform API | No | No |
+| M4 | Credential file with owner-only permissions, path in the configuration, read only by `ruletrace-ai` | Yes | No | Yes | Yes | Yes | Yes | Yes. The earlier decision for an environment-variable name only (UD-18 in the requirements register; `consistency-analysis.md` line 23) rejected a credential file path | No |
+| M5 | User-run live step: for a live provider the Laboratory shows the exact `ruletrace-ai propose` argument vector; the user runs it in a terminal where the variable is set; the Laboratory then imports the resulting batch as an untrusted, hash-bound Hand_Off_Artifact | Yes | No: the credential is in a terminal and a process of the same OS user, readable by that user; M5 shortens the exposure (the credential is in no process the Laboratory starts) but does not isolate | Yes | Yes | Yes | Yes, no platform API | No | No |
 | M6 | `ruletrace-ai` runs as a different OS user that alone can read the credential | Yes | **Yes** | Yes | Yes | Yes | Needs administrator set-up per platform; not reproducible for judges | Possibly | No |
 | M7 | `ruletrace-ai` prompts for the credential on the controlling terminal | Yes | No (shared terminal) | Yes, but per run | Yes | Yes | Terminal handling differs per platform; no terminal under the test harness | Yes | No |
+| M8 | Launcher that is not the Laboratory: a small separate program starts `ruletrace-lab` without the variable and serves `ruletrace-ai` starts with it (UD-38 item 1) | Yes | No: the launcher and the Laboratory run as the same user, and the Laboratory must ask the launcher to start `ruletrace-ai`, which is the broker problem of M3 | Yes | Yes | Yes | Needs per-platform IPC between Laboratory and launcher | Yes (new runtime executable, changes 27.1) | Possibly |
 
-M1 is rejected (D2 of UD-38: a mechanism that makes the credential reachable by
+M8 reduces to M3 plus a fourth runtime executable and is rejected for that reason (Req 27.1 fixes three). M1 is rejected (D2 of UD-38: a mechanism that makes the credential reachable by
 the Laboratory is rejected). M6 is rejected for the demonstration because it
 needs privileged set-up, and recorded as the only option with P1-os. M7 is
 rejected because it cannot run in the automated canary test of 37.20.
 
-M5 does not satisfy the user's statement that the Laboratory "must orchestrate
+M5 gives P1-code and a shorter exposure, not P1-os. M5 does not satisfy the user's statement that the Laboratory "must orchestrate
 `ruletrace-ai` as a subprocess when AI-assisted interpretation is requested"
 for live runs. It does satisfy it for demo mode (mock-replay needs no
 credential) and it needs no change to Req 28.
 
 ### 6.3 Recommendation (OPEN, LT-1 and LT-2)
 
-1. **Now (L2 and L3):** demo mode starts `ruletrace-ai` with `mock-replay` as a
+1. **If LT-1 selects M5 (recommended):** demo mode starts `ruletrace-ai` with `mock-replay` as a
    subprocess. No credential exists anywhere in the Laboratory's process tree.
    Live provider runs use M5: the Laboratory never starts a credentialed
    `ruletrace-ai`. This needs no requirement change and no new dependency.
@@ -286,11 +295,13 @@ not depend on an AI crate. Options (**OPEN, LT-3**):
 - (b) `ruletrace-ai propose --dry-run` reports the variable name; the
   Laboratory parses that output. It needs a stable machine-readable dry-run
   output (an option change of `ruletrace-ai`).
-- (c) Under M5 for live runs the Laboratory never receives a live
-  configuration and the check is applied to mock configurations only, which
-  name no variable.
+- (c) Under M5 the Laboratory receives the path of the live configuration
+  only to show the command, and reads from it nothing but the variable name
+  by option (a). Without (a) or (b) the 37.21 refusal would apply to mock
+  configurations only and would have no live test. So (c) is not a separate
+  option: M5 still needs (a) or (b).
 
-Recommendation: (c) while M5 is the live mechanism; (a) if M2 is chosen.
+Recommendation: (a) under both M5 and M2.
 
 ## 7. Session design summary
 
@@ -300,16 +311,19 @@ Details are in design §11.5. In short:
   starting terminal, exchanged once by POST from the start page form.
 - One Laboratory_Session at a time. Several tabs that send the same cookie are
   the same session. A second exchange is refused because the secret is
-  consumed. When the session ends (explicit end, 30 minutes idle), the
-  Laboratory prints a new Launch_Secret to the terminal (**OPEN, LT-5**; the
-  alternative is that a restart is needed).
+  consumed, so a second exchange gets 401 (37.6) also while a step runs.
+  When the session ends (explicit end, 30 minutes idle), a restart of
+  `ruletrace-lab` is needed (recommended; **OPEN, LT-5**; printing a new
+  secret instead needs RN-47).
 - Cookie `rt_lab_session`: HttpOnly, SameSite=Strict, Path=/, no Domain, no
   Secure (plain http on loopback).
 - CSRF token: one per session, in a hidden form field or a request header,
   compared in constant time.
-- State-changing requests are serialized per session. A request that arrives
-  while another runs gets 409. Each state-changing form carries the session's
-  state version; a stale version gets 409 and a fresh page.
+- Workflow and review requests are serialized per session. A request that
+  arrives while another runs gets 409. Each such form carries the session's
+  state version; a stale version gets 409 and a fresh page. `POST
+  /session/end` is not serialized: it pre-empts a running step, kills and
+  reaps its child and ends the session (37.17, RN-45).
 
 ## 8. Residual risks
 
@@ -321,6 +335,7 @@ Details are in design §11.5. In short:
 | R-L4 | Reviewer identity is not authenticated (T32, R-8) | First-version limit, stated |
 | R-L5 | Symlink swap by a same-user process (T23) | Same as R-L1 |
 | R-L6 | The in-memory credential in `ruletrace-ai` is not zeroized | Existing behaviour; the process is short-lived; a zeroizing type is a separate change |
+| R-L7 | An unconsumed Launch_Secret has no expiry, and LT-5 would print further secrets | 128 bits make guessing impossible; the residual is a reader of the scrollback before the user's first exchange; LT-5 conflicts with 37.5 ("print it once", RN-47) |
 
 ## 9. Decisions needed before L2
 
@@ -328,9 +343,9 @@ Details are in design §11.5. In short:
 | --- | --- | --- | --- |
 | LT-1 | Live credential mechanism for orchestrated runs | M5 now; M2 after a passing spike (L1b) and a Req 28 amendment | **OPEN** |
 | LT-2 | Whether to amend Req 28 for an OS credential store | Only after L1b passes | **OPEN** |
-| LT-3 | How 37.21 learns the variable name | (c) under M5; (a) under M2 | **OPEN** |
+| LT-3 | How 37.21 learns the variable name | (a), a one-field TOML read pinned against `rt-ai-tool` | **OPEN** |
 | LT-4 | HTTP server implementation | Standard library only, a strict HTTP/1.1 subset (design §11.4) | **OPEN** |
-| LT-5 | New Launch_Secret after a session ends, or restart required | Print a new secret | **OPEN** |
+| LT-5 | New Launch_Secret after a session ends, or restart required | Restart required (keeps 37.5 "once"; no requirement change); printing a new secret needs RN-47 | **OPEN** |
 | LT-6 | Second origin-scoped secret against cross-port cookie leakage | Not in L2; revisit if the Laboratory ever targets shared machines | **OPEN** |
 | LT-7 | Kill children on Laboratory crash | Accept the bounded residual; no `unsafe` | **OPEN** |
 | LT-8 | Upload limits | 16 MiB per file at most (lower per-kind limits apply), 64 MiB per session; re-check when task 11.1 commits the real snapshots | **OPEN** |
