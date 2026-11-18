@@ -63,7 +63,7 @@ use rt_trace::{
 use std::collections::BTreeSet;
 
 pub use crate::compare::{Comparison, Computed, Difference, DifferenceKind};
-pub use rt_trace::{DecisionTrace, Outcome, Reason};
+pub use rt_trace::{DecisionTrace, Outcome, Reason, TraceValue};
 
 /// The result of one evaluation. `outcomes[i]` and `traces[i]` answer
 /// `questions[i]`.
