@@ -42,7 +42,7 @@ Section numbers (`§n.m`) are used by the traceability table in §10.
 | 13 | Demonstration-first phase plan: Demo Slice 0 (hand-authored rules), Slice 1 (mock AI and human approval), Slice 2 (real provider, two applications, published checks, mutation checks) | Designed | §7.5 |
 | 14 | UD-37: the first real provider is the Meta Model API over the Responses protocol; one crate `rt-ai-responses` (renamed from `rt-ai-openai`) with provider profiles as data in `rt-ai-tool`; flat provider-neutral Proposal schema (task 10.4 required); Proposal_Store format version 2; AI_Configuration version 2 with official-host restriction; capability negotiation; `ruletrace-ai models`; Contributor models refused; Modal deferred. Open: OD-37-1 (HTTP 504 and Req 29.2) | Applied, Confirmed | §3.2, §3.4.5, §3.7.3, §3.7.5, §3.9.2, §9.2 |
 | Open | UD-34 (which public documents: Confirmed, see `tools/decisions/UD-34.md`), UD-35 (real or synthetic data, Open). The harness is document-agnostic and names no document. UD-32: Confirmed, Rank_Reference | UD-34 Confirmed; UD-35 Open | §8.11.1, §9.2 |
-| 15 | UD-38 (2026-11-18): category Frankenstein; one local RuleTrace Laboratory `ruletrace-lab` (loopback web interface) that orchestrates `ruletrace` and `ruletrace-ai` as subprocesses; `prize-check` and `bracket-check` as library Workflow_Modules; three runtime executables. Supersedes item 8's Demonstration_Executables. Threat model `docs/security/laboratory-threat-model.md` (draft; LT-1 to LT-8 open) | Confirmed by the user; design drafted | §11 |
+| 15 | UD-38 (2026-11-18): category Frankenstein; one local RuleTrace Laboratory `ruletrace-lab` (loopback web interface) that orchestrates `ruletrace` and `ruletrace-ai` as subprocesses; `prize-check` and `bracket-check` as library Workflow_Modules; three runtime executables. Supersedes item 8's Demonstration_Executables. Threat model `docs/security/laboratory-threat-model.md` (draft; LT-1 to LT-9 open) | Confirmed by the user; design drafted | §11 |
 
 ## Architecture
 
@@ -3084,7 +3084,7 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 | UD-35 | Demonstration Competition_Data and Published_Results | **Open**; recommendation: real published values where they exist and are licensed, otherwise synthetic and labelled, with one equal and one seeded-difference Published_Result | §8.11.10; the manifest `nature` field supports both | User |
 | UD-36 | Capture of the recorded provider response | **Recommended-applied**: option 1, the Proposal_Store retains the accepted response and `rt-xtask export-script` writes the script (§8.11.7) | §3.7.5, §8.11.7; affects Req 27.3 (unchanged under option 1) and Req 30.1 (RN-27) | User confirms |
 | UD-37 | First real provider (Meta Model API over the Responses protocol), crate rename to `rt-ai-responses`, flat schema, store version 2, configuration version 2 with host restrictions, capabilities, `models` command | **Confirmed by the user** (`tools/decisions/UD-37.md`; Req 23.39, 35; OD-37-1 open) | §3.2, §3.4.5, §3.7.3, §3.7.5, §3.9.2 | none |
-| UD-38 | RuleTrace Laboratory, category Frankenstein, three runtime executables, library Workflow_Modules | **Confirmed by the user** 2026-11-18 (`tools/decisions/UD-38.md`). Supersedes UD-33 option B. Its open items are LT-1 to LT-8 of the threat model and RN-31 to RN-48 | §11 | User for LT-1 to LT-8 and the RNs |
+| UD-38 | RuleTrace Laboratory, category Frankenstein, three runtime executables, library Workflow_Modules | **Confirmed by the user** 2026-11-18 (`tools/decisions/UD-38.md`). Supersedes UD-33 option B. Its open items are LT-1 to LT-9 of the threat model and RN-31 to RN-48 | §11 | User for LT-1 to LT-9 and the RNs |
 
 (Amended by UD-38, 2026-11-18.) The UD-33 row above is superseded by UD-38: the packages are library-only. UD-33 keeps `status: Confirmed` in `tools/decisions/UD-33.md` because `tools/decision-gates.v1` reads it.
 
@@ -3143,7 +3143,7 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 | RN-30 | 14.15 to 14.25 | The first-version Competition_Data and `inputs` declaration carry typed scalar values and no per-value authority, edition or provenance. The criteria are written independent of the carrying form. The form (companion declared text inputs or a metadata record) is a format change not made here | Record a user decision on the carrying form before any format or Rust change. Until then 14.25 applies |
 | RN-31 | 36.21, 36.14, 34.9, 16.11, 13.18 | 36.21 makes every nonzero exit "no success state" and stops the workflow. `evaluate` exit 4 is an executed evaluation with complete results (`rt-cli/src/evaluate.rs`, `tests_pipeline.rs`), and exit 2 after a provenance failure also writes complete results marked not verified (13.18). Read literally, 36.21 hides correct results and contradicts 36.14 | User decision. Proposed direction (not applied): 36.21 excludes `evaluate` exit 4 and exit 2 with a written results file, which §11.8 classifies; 36.14 adds the exit-2-with-results case |
 | RN-32 | 37.14 | "Follows an explicit end-of-options marker or is part of an option of the form name=value": neither CLI supports `--` or `--name=value` (§3.9; `rt-cli/src/args.rs`, `rt-ai-tool/src/cli.rs`). The design places each value immediately after its option name and refuses values that start with `-` (§11.6) | User decision: reword 37.14 to the positional rule, or add `--` support to both CLIs (a core change) |
-| RN-33 | 36.4 | The Laboratory must not change committed files, so it copies the starting Rulebook and Approval_Ledger byte for byte into the session directory before any review (§11.7). Literally that writes both files from its own process | User decision: allow a byte-identical, hash-recorded copy before any review, and nothing else |
+| RN-33 | 36.4 | The Laboratory must not change committed files, so it copies the starting Rulebook and Approval_Ledger byte for byte into the session directory before any review (§11.7). Literally that writes both files from its own process | User decision: allow a byte-identical, hash-recorded copy before any review, and nothing else. Second question (§11.7): decisions recorded in the session copy are deleted at session end; choose a workspace ledger written directly by `ruletrace review`, or an export |
 | RN-34 | 34.9 | "Every Proposal shown is untrusted AI output" is inaccurate: Manual-origin Proposed revisions are listed by `review list`; the offline demonstration's script entries are authored; approval ends the untrusted state (34.2) | User decision on the wording; the evidence is in §11.14 |
 | RN-35 | 34.10, 36.20, 33.8 | "Replays recorded provider output" is false for the committed offline demonstration, which replays `authored-script.json` ("not provider output"); real recordings exist but are outside the runbook and goldens. "Recorded Reviewer decisions" are re-run `review` commands with fixed arguments | User decision: which script demo mode uses, and the wording |
 | RN-36 | 34.10 | "Eligibility does not filter rankings" holds for IR version 1 because no filter construct exists, and only while Questions name no participant set derived from eligibility. §11.3 adds that constraint and a test | Confirm, or state the condition in the criterion |
@@ -3155,10 +3155,10 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 | RN-42 | 31.2, 31.5, 36.18 | 31.2 has the Application_Layer call the engine; 36.18 has the Laboratory obtain every Outcome from `ruletrace evaluate` | Design §11.3: Prepare, Present and Evaluate groups; the Laboratory never calls Evaluate. Confirm |
 | RN-43 | 37.6 (checkpoint), 37.25 | Several tabs with one cookie are one session; state changes are serialized; stale forms are refused | Added as clarifications at the checkpoint (traceability.md). No further change |
 | RN-44 | 24.13 | 24.13 limits the edges of `ruletrace-lab` to the two Application_Layer crates, the shared Diagnostic, Location and Exact_Number crates, and one HTTP server library. §11.3 lists seven further direct edges: `rt-hash` (Hand_Off_Artifact hashes), `rt-json` (parsing results, Validation_Result and `review list --format json`), `rt-data` (canonical serialization of mapped inputs), `rt-compiled` (reading the Compiled_Rulebook schema for mapping), `rt-trace` (Outcome and trace types of the parsed results), `rt-explain` (report rendering and the results-file parser), `rt-srcmodel` (Source_Model types for display). Each is also reachable through the Workflow_Modules. Under LT-4 option A no HTTP server library is used | User decision: widen 24.13 to these crates (all core, none with I/O, ledger, review, validation or AI code), or reduce the edges by routing them through Workflow_Module re-exports |
-| RN-45 | 37.25, 37.17 | 37.25 serializes "at most one state-changing request"; `POST /session/end` is state-changing (37.9) and 37.17 requires it to kill running subprocesses, so during a step both cannot hold | User decision: exempt the session end from 37.25 (design §11.5) |
+| RN-45 | 37.25, 37.17 | 37.25 serializes "at most one state-changing request"; `POST /session/end` is state-changing (37.9) and 37.17 requires it to kill running subprocesses, so during a step both cannot hold | User decision: exempt the session end from 37.25, and state that a Launch_Secret exchange during a step gets 401 under 37.6, not 409 under 37.25 (design §11.5) |
 | RN-46 | 36.2, 37.14, 37.20, 29.1 | Under M5 live proposal generation is not started by the Laboratory, so 36.2 is not met for live runs and the 37.20 canary test cannot run "a complete proposal workflow" through the Laboratory. Under M2 a live run with several Provider_Requests can exceed 300 s (29.1 allows up to 300 s per request) | Decided together with LT-1 |
 | RN-47 | 37.5 | LT-5 option "print a new Launch_Secret after a session ends" contradicts "print it once" at each start | Only if LT-5 chooses it |
-| RN-48 | 37.10, 37.23 | 37.10 lists no `Cache-Control: no-store`; 37.23 requires mutants for 3, 4, 7, 9, 13, 14, 19, 20 only, while 6, 21, 24, 25, 26 are the controls the checkpoint added; 37.25 "state of the session" is defined only in §11.5 | User decision: add `no-store` to 37.10, extend the mutant list of 37.23, reference the state-version definition |
+| RN-48 | 37.10, 37.23 | 37.10 lists no `Cache-Control: no-store`; 37.23 requires mutants for 3, 4, 7, 9, 13, 14, 19, 20 only, while 6, 21, 24, 25, 26 are the controls the checkpoint added; 37.25 "state of the session" is defined only in §11.5 | User decision: add `no-store` to 37.10, extend the mutant list of 37.23 (also 36.4, 36.6, 36.9), reference the state-version definition |
 
 ## Requirements Traceability
 
@@ -3211,7 +3211,7 @@ Possible later features (not needed by any phase): sibling-aware checking of pro
 
 ### 11.1 Status, scope and what this section changes
 
-Added on 2026-11-18 for UD-38 (`tools/decisions/UD-38.md`) and Requirements 36 and 37, with the clarifications of the requirements checkpoint of the same day (traceability.md, "Requirements checkpoint clarifications"). The threat model that Req 37.21 requires is `docs/security/laboratory-threat-model.md` (task L1). It is a draft until an independent review and the user's decisions LT-1 to LT-8 close it. **No Laboratory code is written before that** (UD-38 sequence).
+Added on 2026-11-18 for UD-38 (`tools/decisions/UD-38.md`) and Requirements 36 and 37, with the clarifications of the requirements checkpoint of the same day (traceability.md, "Requirements checkpoint clarifications"). The threat model that Req 37.21 requires is `docs/security/laboratory-threat-model.md` (task L1). It is a draft until an independent review and the user's decisions LT-1 to LT-9 close it. **No Laboratory code is written before that** (UD-38 sequence).
 
 This section supersedes, and does not delete:
 
@@ -3398,9 +3398,9 @@ The state of a stage is derived from the files and exit codes of its own subproc
 | --- | --- | --- |
 | Control request body | 1 MiB (1,048,576 bytes); 413 above | Req 37.14, approved at the checkpoint |
 | Request line and headers | 16 KiB; 431 above | §11.4 |
-| Header read deadline | 10 s from accept; connection closed | threat model T12 |
-| Body read deadline | 30 s; connection closed | threat model T12 |
-| Concurrent connections | 16; further connections closed without a response | threat model T12 |
+| Header read deadline | 10 s from accept; connection closed | design value, LT-9 |
+| Body read deadline | 30 s; connection closed | design value, LT-9 |
+| Concurrent connections | 16; further connections closed without a response | design value, LT-9 |
 | Upload, Source_Document | 16 MiB | Req 1.9, `MAX_SOURCE_DOCUMENT_BYTES` |
 | Upload, Rule_IR | 8 MiB | `MAX_RULEBOOK_BYTES` |
 | Upload, Approval_Ledger | 8 MiB | `MAX_LEDGER_BYTES` |
@@ -3508,7 +3508,7 @@ The criteria are **not** rewritten here. RN-34 to RN-38 state each mismatch and 
 
 | Id | Item | Status |
 | --- | --- | --- |
-| LT-1 to LT-8 | Threat model decisions (credential mechanism, Req 28 change, variable name source, HTTP server, new secret after session end, cross-port cookie hardening, crash orphans, upload limits) | **OPEN**, user |
+| LT-1 to LT-9 | Threat model decisions (credential mechanism, Req 28 change, variable name source, HTTP server, new secret after session end, cross-port cookie hardening, crash orphans, upload limits, connection limits) | **OPEN**, user |
 | L1-R | Independent review of the threat model and this section | Pending |
 | L1b | Credential-store feasibility spike on three platforms | Only if LT-1 selects M2 |
 | RN-31 to RN-48 | Requirements notes in §9.4 | User decision each |
