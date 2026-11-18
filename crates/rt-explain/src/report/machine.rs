@@ -2,8 +2,9 @@
 //! fixed key order, no float (design §8.5).
 
 use crate::report::common::{
-    ascending, location_text, missing_text, provenance_status, value_parts, APP_REPORT_FORMAT,
-    APP_REPORT_VERSION, NO_SOURCES_TEXT, RANKING_SCOPE_LABEL, TIE_ORDER_NOTE,
+    ascending, location_text, missing_text, provenance_status, some_without_sources_text,
+    value_parts, APP_REPORT_FORMAT, APP_REPORT_VERSION, BRACKET_RANKING_SCOPE_LABEL,
+    NO_SOURCES_TEXT, RANKING_SCOPE_LABEL, TIE_ORDER_NOTE,
 };
 use crate::report::model::{
     count, Comparison, EligibilityEntry, Evidence, Missing, ProvenanceSummary, PublishedDifference,
@@ -12,7 +13,6 @@ use crate::report::model::{
 };
 use crate::results::{obj, opt_text, severity_name, text};
 use crate::verify::SpanResolution;
-use rt_foundation::Code;
 use rt_json::Value;
 use rt_numeric::to_canonical;
 use rt_trace::CriterionResult;
@@ -234,8 +234,8 @@ fn difference(d: &PublishedDifference) -> Json {
         ("computed", opt_text(d.computed.as_deref())),
         ("trace", int(d.trace)),
         ("entry", d.entry.map_or_else(Value::null, Value::integer)),
-        ("kind", text(d.kind)),
-        ("code", text(d.code.id())),
+        ("kind", text(d.kind.name())),
+        ("code", text(d.kind.code().id())),
         ("non_terminating", Value::boolean(d.non_terminating)),
         ("group", strings(&ascending(&d.group))),
     ])
@@ -292,30 +292,42 @@ fn diagnostic(d: &rt_foundation::Diagnostic) -> Json {
 }
 
 fn provenance(p: &ProvenanceSummary) -> Json {
-    let (detail, verified, total, codes): (&str, Option<u32>, Option<u32>, Vec<&str>) = match p {
+    let (detail, verified, total, codes): (String, Option<u32>, Option<u32>, Vec<&str>) = match p {
         ProvenanceSummary::Verified { traces } => {
-            ("verified", Some(*traces), Some(*traces), vec![])
+            ("verified".to_owned(), Some(*traces), Some(*traces), vec![])
         }
         ProvenanceSummary::NotVerified {
             codes,
             verified,
             total,
         } => (
-            "not verified",
+            "not verified".to_owned(),
             Some(*verified),
             Some(*total),
             codes.iter().map(|c| c.id()).collect(),
         ),
-        ProvenanceSummary::NotVerifiedNoSources => (
-            NO_SOURCES_TEXT,
-            None,
-            None,
-            vec![Code::ProvNotVerifiedNoSources.id()],
-        ),
+        ProvenanceSummary::NotVerifiedNoSources {
+            codes,
+            without_sources,
+            verified,
+            total,
+        } => {
+            let ids = codes.iter().map(|c| c.id()).collect();
+            if without_sources == total {
+                (NO_SOURCES_TEXT.to_owned(), None, None, ids)
+            } else {
+                (
+                    some_without_sources_text(*without_sources, *total),
+                    Some(*verified),
+                    Some(*total),
+                    ids,
+                )
+            }
+        }
     };
     obj(vec![
         ("status", text(provenance_status(p))),
-        ("text", text(detail)),
+        ("text", text(&detail)),
         (
             "verified_traces",
             verified.map_or_else(Value::null, Value::integer),
@@ -345,15 +357,17 @@ fn header(doc: &ReportDoc) -> Json {
         ),
         ("rulebook_hash", text(h.rulebook_hash.as_str())),
         ("inputs", Value::array(inputs)),
-        ("provenance", provenance(&h.provenance)),
+        ("provenance", provenance(doc.provenance())),
         (
             "synthetic_data",
             h.synthetic_data.map_or_else(Value::null, Value::boolean),
         ),
     ];
-    if h.application == ReportApplication::PrizeCheck {
-        m.push(("ranking_scope", text(RANKING_SCOPE_LABEL)));
-    }
+    let scope = match h.application {
+        ReportApplication::PrizeCheck => RANKING_SCOPE_LABEL,
+        ReportApplication::BracketCheck => BRACKET_RANKING_SCOPE_LABEL,
+    };
+    m.push(("ranking_scope", text(scope)));
     obj(m)
 }
 

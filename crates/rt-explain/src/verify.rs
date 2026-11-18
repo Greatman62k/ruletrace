@@ -31,7 +31,33 @@ pub enum SpanResolution {
 }
 
 /// One span of the trace with its resolution.
+///
+/// Only [`verify_trace`] produces a verdict. The struct is `non_exhaustive`,
+/// so no other crate can build one, and the report model takes verdicts only
+/// from a [`Verification`].
+///
+/// ```compile_fail
+/// use rt_explain::{SpanResolution, SpanVerdict};
+/// use rt_foundation::{DocumentId, RuleId};
+/// use rt_trace::{DocumentHash, TraceSpan};
+///
+/// let span = TraceSpan {
+///     document: DocumentId::new("rules.md").unwrap(),
+///     sha256: DocumentHash::new(&"a".repeat(64)).unwrap(),
+///     start: 0,
+///     end: 5,
+///     line: 1,
+///     column: 1,
+/// };
+/// let _forged = SpanVerdict {
+///     rule: RuleId::new("r1").unwrap(),
+///     revision: None,
+///     span,
+///     resolution: SpanResolution::Resolved("invented".to_owned()),
+/// };
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct SpanVerdict {
     /// The rule that references the span.
     pub rule: RuleId,
@@ -44,6 +70,30 @@ pub struct SpanVerdict {
 }
 
 impl SpanVerdict {
+    /// The rule that references the span.
+    #[must_use]
+    pub fn rule(&self) -> &RuleId {
+        &self.rule
+    }
+
+    /// Its revision, when the trace records one for this reference.
+    #[must_use]
+    pub fn revision(&self) -> Option<RevisionNumber> {
+        self.revision
+    }
+
+    /// The span as recorded in the trace.
+    #[must_use]
+    pub fn span(&self) -> &TraceSpan {
+        &self.span
+    }
+
+    /// The result.
+    #[must_use]
+    pub fn resolution(&self) -> &SpanResolution {
+        &self.resolution
+    }
+
     /// The exact source text, only when the span resolved.
     #[must_use]
     pub fn text(&self) -> Option<&str> {
@@ -73,6 +123,19 @@ impl Verification {
     #[must_use]
     pub fn diagnostics(&self) -> &DiagnosticState {
         &self.diagnostics
+    }
+
+    /// True when the verdicts are those of `trace`: one per span reference, in
+    /// order, with the same rule, revision and recorded span.
+    pub(crate) fn is_for(&self, trace: &DecisionTrace) -> bool {
+        let refs = references(trace);
+        refs.len() == self.spans.len()
+            && refs
+                .iter()
+                .zip(&self.spans)
+                .all(|((rule, revision, span), v)| {
+                    **rule == v.rule && *revision == v.revision && **span == v.span
+                })
     }
 
     /// Derived from the verdicts and the diagnostics only (Req 13.17).

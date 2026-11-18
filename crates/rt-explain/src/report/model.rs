@@ -9,8 +9,9 @@
 //! The Bracket_Check tie-straddle notes belong to the deferred rank_reference
 //! task 9.3 and are not modelled.
 
+use crate::report::difference::{difference_kind, DifferenceKindInfo};
 use crate::verify::{SpanVerdict, Verification, VerificationStatus};
-use rt_foundation::{Code, Diagnostic, RevisionNumber, RuleId};
+use rt_foundation::{escape_controls, Code, Diagnostic, RevisionNumber, RuleId};
 use rt_numeric::ExactNumber;
 use rt_trace::{
     CompareEntry, DecisionTrace, Entry, Outcome, Place, QuestionKind, Reason, TraceValue,
@@ -60,16 +61,36 @@ impl StatementId {
     }
 }
 
-/// The provenance status of the whole report. It is derived from the
-/// Explainer's output and never chosen by the caller.
+/// The provenance status of the whole report. Only
+/// [`ProvenanceSummary::from_verifications`] and [`ReportDoc::new`] produce
+/// one, so no caller can state a status the Explainer did not give (Req 31.14).
+///
+/// Every variant is `non_exhaustive`: no other crate can build one.
+///
+/// ```compile_fail
+/// use rt_explain::report::ProvenanceSummary;
+/// let _forged = ProvenanceSummary::Verified { traces: 1 };
+/// ```
+///
+/// ```compile_fail
+/// use rt_explain::report::ProvenanceSummary;
+/// let _forged = ProvenanceSummary::NotVerifiedNoSources {
+///     codes: Vec::new(),
+///     without_sources: 0,
+///     verified: 0,
+///     total: 0,
+/// };
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ProvenanceSummary {
     /// The Explainer verified every trace.
+    #[non_exhaustive]
     Verified {
         /// Number of traces, all verified.
         traces: u32,
     },
     /// At least one trace is not verified, or there is no trace.
+    #[non_exhaustive]
     NotVerified {
         /// Codes of the verification Diagnostics, ascending and without
         /// repeats.
@@ -79,23 +100,29 @@ pub enum ProvenanceSummary {
         /// Number of traces.
         total: u32,
     },
-    /// No Source_Model was supplied (Req 31.14).
-    NotVerifiedNoSources,
+    /// At least one trace had no Source_Model supplied (Req 31.14). The
+    /// summary is not verified even when other traces were.
+    #[non_exhaustive]
+    NotVerifiedNoSources {
+        /// Codes of the verification Diagnostics, ascending and without
+        /// repeats.
+        codes: Vec<Code>,
+        /// Number of traces that carry RT-PRV-0006.
+        without_sources: u32,
+        /// Number of traces the Explainer verified.
+        verified: u32,
+        /// Number of traces.
+        total: u32,
+    },
 }
 
 impl ProvenanceSummary {
     /// Derives the summary from the Explainer's verifications.
+    ///
+    /// It is `Verified` only when there is at least one trace and the
+    /// Explainer verified every one.
     #[must_use]
     pub fn from_verifications(verifications: &[Verification]) -> Self {
-        let no_sources = verifications.iter().any(|v| {
-            v.diagnostics()
-                .as_slice()
-                .iter()
-                .any(|d| d.code() == Code::ProvNotVerifiedNoSources)
-        });
-        if no_sources {
-            return Self::NotVerifiedNoSources;
-        }
         let total = count(verifications.len());
         let verified = count(
             verifications
@@ -103,15 +130,34 @@ impl ProvenanceSummary {
                 .filter(|v| v.status() == VerificationStatus::Verified)
                 .count(),
         );
-        if total > 0 && verified == total {
-            return Self::Verified { traces: total };
-        }
+        let without_sources = count(
+            verifications
+                .iter()
+                .filter(|v| {
+                    v.diagnostics()
+                        .as_slice()
+                        .iter()
+                        .any(|d| d.code() == Code::ProvNotVerifiedNoSources)
+                })
+                .count(),
+        );
         let ids: BTreeSet<&'static str> = verifications
             .iter()
             .flat_map(|v| v.diagnostics().as_slice())
             .map(|d| d.code().id())
             .collect();
         let codes = ids.into_iter().filter_map(Code::from_id).collect();
+        if without_sources > 0 {
+            return Self::NotVerifiedNoSources {
+                codes,
+                without_sources,
+                verified,
+                total,
+            };
+        }
+        if total > 0 && verified == total {
+            return Self::Verified { traces: total };
+        }
         Self::NotVerified {
             codes,
             verified,
@@ -124,8 +170,23 @@ pub(crate) fn count(n: usize) -> u32 {
     u32::try_from(n).unwrap_or(u32::MAX)
 }
 
-/// The report header (design §8.5). The format identifier and version are the
-/// constants of the writer.
+/// What the caller states in the report header (design §8.5). The format
+/// identifier and version are the constants of the writer. The provenance
+/// status is not here: [`ReportDoc::new`] derives it from the Explainer's
+/// verifications.
+///
+/// ```compile_fail
+/// use rt_explain::report::{ProvenanceSummary, ReportApplication, ReportHeader, Sha256Hex};
+/// let h = Sha256Hex::new(&"a".repeat(64)).unwrap();
+/// let _header = ReportHeader {
+///     application: ReportApplication::PrizeCheck,
+///     statements: Vec::new(),
+///     rulebook_hash: h,
+///     input_hashes: Vec::new(),
+///     provenance: ProvenanceSummary::from_verifications(&[]),
+///     synthetic_data: None,
+/// };
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReportHeader {
     /// The application.
@@ -136,8 +197,6 @@ pub struct ReportHeader {
     pub rulebook_hash: Sha256Hex,
     /// SHA-256 of the bytes of each input, named by role and never by path.
     pub input_hashes: Vec<(&'static str, Sha256Hex)>,
-    /// Provenance status.
-    pub provenance: ProvenanceSummary,
     /// Whether the Competition_Data is synthetic, as the caller states it. A
     /// label only.
     pub synthetic_data: Option<bool>,
@@ -171,10 +230,20 @@ pub enum ReportError {
     },
     /// A Prize_Check standings table carries comparisons.
     ComparisonsNotAllowed,
-    /// A difference names a kind and a code that do not belong together.
-    DifferenceKindCode {
+    /// A difference names a kind that is not in the table of kinds.
+    UnknownDifferenceKind {
         /// The kind name given.
-        kind: &'static str,
+        kind: String,
+    },
+    /// The Verification was not produced for this trace.
+    VerificationNotForTrace {
+        /// Index of the trace.
+        trace: usize,
+    },
+    /// An entry's evidence does not match the Verification at its trace index.
+    EvidenceNotFromVerification {
+        /// Index of the trace the evidence names.
+        trace: usize,
     },
 }
 
@@ -192,8 +261,21 @@ impl fmt::Display for ReportError {
             Self::ComparisonsNotAllowed => {
                 f.write_str("a Prize_Check standings table has no comparisons")
             }
-            Self::DifferenceKindCode { kind } => {
-                write!(f, "difference kind {kind} does not match its code")
+            Self::UnknownDifferenceKind { kind } => {
+                write!(
+                    f,
+                    "difference kind {} is not supported",
+                    escape_controls(kind)
+                )
+            }
+            Self::VerificationNotForTrace { trace } => {
+                write!(f, "the verification was not produced for trace {trace}")
+            }
+            Self::EvidenceNotFromVerification { trace } => {
+                write!(
+                    f,
+                    "the evidence of trace {trace} does not match its verification"
+                )
             }
         }
     }
@@ -202,28 +284,79 @@ impl fmt::Display for ReportError {
 impl std::error::Error for ReportError {}
 
 /// One trace with its Explainer output and its index in the results file.
+///
+/// The fields are private. [`TraceRef::new`] refuses a Verification that was
+/// not produced for the trace.
+///
+/// ```compile_fail
+/// use rt_explain::report::TraceRef;
+/// use rt_explain::verify_trace;
+/// use rt_srcmodel::SourceModels;
+/// use rt_trace::DecisionTrace;
+/// fn forge(trace: &DecisionTrace) {
+///     let v = verify_trace(trace, &SourceModels::new());
+///     let _ = TraceRef { index: 0, trace, verification: &v };
+/// }
+/// ```
 #[derive(Clone, Copy, Debug)]
 pub struct TraceRef<'a> {
+    index: usize,
+    trace: &'a DecisionTrace,
+    verification: &'a Verification,
+}
+
+impl<'a> TraceRef<'a> {
+    /// Pairs the trace at `index` of the results file with the Explainer's
+    /// output for it.
+    ///
+    /// # Errors
+    /// [`ReportError::VerificationNotForTrace`] when `verification` does not
+    /// hold one verdict per span reference of `trace`, with the same rule,
+    /// revision and recorded span.
+    pub fn new(
+        index: usize,
+        trace: &'a DecisionTrace,
+        verification: &'a Verification,
+    ) -> Result<Self, ReportError> {
+        if !verification.is_for(trace) {
+            return Err(ReportError::VerificationNotForTrace { trace: index });
+        }
+        Ok(Self {
+            index,
+            trace,
+            verification,
+        })
+    }
+
     /// Zero-based index of the Question in the results file.
-    pub index: usize,
-    /// The Decision_Trace.
-    pub trace: &'a DecisionTrace,
-    /// The Explainer's output for it.
-    pub verification: &'a Verification,
+    #[must_use]
+    pub fn index(&self) -> usize {
+        self.index
+    }
 }
 
 /// What every entry carries: the trace reference, the Explainer's verdict, the
 /// rules and the sources (Req 31.14).
+///
+/// The fields are private and the only constructor takes a [`TraceRef`], so
+/// `verified` is true only when the Explainer's status is verified, and the
+/// source text is the text [`verify_trace`](crate::verify_trace) resolved.
+///
+/// ```compile_fail
+/// use rt_explain::report::Evidence;
+/// let _forged = Evidence {
+///     trace: 0,
+///     verified: true,
+///     rules: Vec::new(),
+///     sources: Vec::new(),
+/// };
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Evidence {
-    /// Index of the trace in the results file.
-    pub trace: usize,
-    /// True only when the Explainer's status is verified.
-    pub verified: bool,
-    /// Applied rules: identifier and Revision_Number.
-    pub rules: Vec<(RuleId, RevisionNumber)>,
-    /// Every span with the text the Explainer resolved.
-    pub sources: Vec<SpanVerdict>,
+    pub(crate) trace: usize,
+    pub(crate) verified: bool,
+    pub(crate) rules: Vec<(RuleId, RevisionNumber)>,
+    pub(crate) sources: Vec<SpanVerdict>,
 }
 
 impl Evidence {
@@ -241,6 +374,30 @@ impl Evidence {
                 .collect(),
             sources: r.verification.spans().to_vec(),
         }
+    }
+
+    /// Index of the trace in the results file.
+    #[must_use]
+    pub fn trace(&self) -> usize {
+        self.trace
+    }
+
+    /// True only when the Explainer's status is verified.
+    #[must_use]
+    pub fn verified(&self) -> bool {
+        self.verified
+    }
+
+    /// Applied rules: identifier and Revision_Number.
+    #[must_use]
+    pub fn rules(&self) -> &[(RuleId, RevisionNumber)] {
+        &self.rules
+    }
+
+    /// Every span with the text the Explainer resolved.
+    #[must_use]
+    pub fn sources(&self) -> &[SpanVerdict] {
+        &self.sources
     }
 }
 
@@ -320,19 +477,65 @@ fn truth_of(r: &TraceRef<'_>) -> Result<Truth, ReportError> {
 }
 
 /// The eligibility Outcome of one participant for one Target.
+///
+/// The fields are private. The only constructor is [`EligibilityEntry::from_trace`],
+/// so the evidence of an entry always comes from a [`TraceRef`].
+///
+/// ```compile_fail
+/// use rt_explain::report::{EligibilityEntry, Evidence, Truth};
+/// fn forge(evidence: Evidence) {
+///     let _ = EligibilityEntry {
+///         participant: "p1".to_owned(),
+///         target: "eligible".to_owned(),
+///         result: Truth::True,
+///         evidence,
+///     };
+/// }
+/// ```
+///
+/// ```compile_fail
+/// use rt_explain::report::{EligibilityEntry, Truth};
+/// fn flip(entry: &mut EligibilityEntry) {
+///     entry.result = Truth::True;
+/// }
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EligibilityEntry {
     /// Participant identifier.
-    pub participant: String,
+    pub(crate) participant: String,
     /// Eligibility Target.
-    pub target: String,
+    pub(crate) target: String,
     /// The Outcome.
-    pub result: Truth,
+    pub(crate) result: Truth,
     /// Trace reference, verdict, rules and sources.
-    pub evidence: Evidence,
+    pub(crate) evidence: Evidence,
 }
 
 impl EligibilityEntry {
+    /// Participant identifier.
+    #[must_use]
+    pub fn participant(&self) -> &str {
+        &self.participant
+    }
+
+    /// Eligibility Target.
+    #[must_use]
+    pub fn target(&self) -> &str {
+        &self.target
+    }
+
+    /// The Outcome.
+    #[must_use]
+    pub fn result(&self) -> &Truth {
+        &self.result
+    }
+
+    /// Trace reference, verdict, rules and sources.
+    #[must_use]
+    pub fn evidence(&self) -> &Evidence {
+        &self.evidence
+    }
+
     /// Copies the entry from a value trace whose Outcome is a Boolean or
     /// Indeterminate.
     ///
@@ -362,16 +565,40 @@ pub enum Score {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScoreEntry {
     /// Participant identifier.
-    pub participant: String,
+    pub(crate) participant: String,
     /// Score or derived Target.
-    pub target: String,
+    pub(crate) target: String,
     /// The Outcome.
-    pub result: Score,
+    pub(crate) result: Score,
     /// Trace reference, verdict, rules and sources.
-    pub evidence: Evidence,
+    pub(crate) evidence: Evidence,
 }
 
 impl ScoreEntry {
+    /// Participant identifier.
+    #[must_use]
+    pub fn participant(&self) -> &str {
+        &self.participant
+    }
+
+    /// Score or derived Target.
+    #[must_use]
+    pub fn target(&self) -> &str {
+        &self.target
+    }
+
+    /// The Outcome.
+    #[must_use]
+    pub fn result(&self) -> &Score {
+        &self.result
+    }
+
+    /// Trace reference, verdict, rules and sources.
+    #[must_use]
+    pub fn evidence(&self) -> &Evidence {
+        &self.evidence
+    }
+
     /// Copies the entry from a value trace whose Outcome is a number or
     /// Indeterminate.
     ///
@@ -435,17 +662,41 @@ pub struct Comparison(pub CompareEntry);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StandingsTable {
     /// The ranking Target.
-    pub target: String,
+    pub(crate) target: String,
     /// The Outcome.
-    pub result: StandingsResult,
+    pub(crate) result: StandingsResult,
     /// The comparisons of adjacent entries, in trace order. Written only in a
     /// Bracket_Check report.
-    pub comparisons: Vec<Comparison>,
+    pub(crate) comparisons: Vec<Comparison>,
     /// Trace reference, verdict, rules and sources.
-    pub evidence: Evidence,
+    pub(crate) evidence: Evidence,
 }
 
 impl StandingsTable {
+    /// The ranking Target.
+    #[must_use]
+    pub fn target(&self) -> &str {
+        &self.target
+    }
+
+    /// The Outcome.
+    #[must_use]
+    pub fn result(&self) -> &StandingsResult {
+        &self.result
+    }
+
+    /// The comparisons of adjacent entries, in trace order.
+    #[must_use]
+    pub fn comparisons(&self) -> &[Comparison] {
+        &self.comparisons
+    }
+
+    /// Trace reference, verdict, rules and sources.
+    #[must_use]
+    pub fn evidence(&self) -> &Evidence {
+        &self.evidence
+    }
+
     /// Copies the table from a rank trace whose Outcome is Standings or
     /// Indeterminate. The comparisons are copied only when `comparisons` is
     /// true.
@@ -510,18 +761,48 @@ pub struct InputRead {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct QualificationEntry {
     /// Participant identifier.
-    pub participant: String,
+    pub(crate) participant: String,
     /// The eligibility Target that is the predicate.
-    pub target: String,
+    pub(crate) target: String,
     /// The Outcome.
-    pub result: Truth,
+    pub(crate) result: Truth,
     /// The inputs the trace read, in trace order.
-    pub inputs_read: Vec<InputRead>,
+    pub(crate) inputs_read: Vec<InputRead>,
     /// Trace reference, verdict, rules and sources.
-    pub evidence: Evidence,
+    pub(crate) evidence: Evidence,
 }
 
 impl QualificationEntry {
+    /// Participant identifier.
+    #[must_use]
+    pub fn participant(&self) -> &str {
+        &self.participant
+    }
+
+    /// The eligibility Target that is the predicate.
+    #[must_use]
+    pub fn target(&self) -> &str {
+        &self.target
+    }
+
+    /// The Outcome.
+    #[must_use]
+    pub fn result(&self) -> &Truth {
+        &self.result
+    }
+
+    /// The inputs the trace read, in trace order.
+    #[must_use]
+    pub fn inputs_read(&self) -> &[InputRead] {
+        &self.inputs_read
+    }
+
+    /// Trace reference, verdict, rules and sources.
+    #[must_use]
+    pub fn evidence(&self) -> &Evidence {
+        &self.evidence
+    }
+
     /// Copies the entry from a value trace whose Outcome is a Boolean or
     /// Indeterminate.
     ///
@@ -552,10 +833,11 @@ impl QualificationEntry {
     }
 }
 
-/// One published value that differs from the computed one. All fields are
-/// copied from the engine's `Difference`; the catalogue code follows the kind.
+/// The values of one published difference, copied from the engine's
+/// `Difference`. The kind and its catalogue code are not here: they come from
+/// [`PublishedDifference::new`] and the table of kinds.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PublishedDifference {
+pub struct DifferenceFacts {
     /// Participant identifier.
     pub participant: String,
     /// Target.
@@ -568,11 +850,6 @@ pub struct PublishedDifference {
     pub trace: usize,
     /// Sequence number of the trace entry, when the trace has one.
     pub entry: Option<u32>,
-    /// The difference kind name: `value_differs`,
-    /// `tie_broken_without_declared_criterion` or `tie_not_in_computed_result`.
-    pub kind: &'static str,
-    /// The catalogue code of the kind.
-    pub code: Code,
     /// Whether the computed number has a non-terminating expansion.
     pub non_terminating: bool,
     /// The participants of the tie the kind refers to, empty for
@@ -580,15 +857,106 @@ pub struct PublishedDifference {
     pub group: Vec<String>,
 }
 
-/// The kind names with their catalogue codes (Req 13.12).
-pub(crate) const DIFFERENCE_KINDS: [(&str, Code); 3] = [
-    ("value_differs", Code::PublishedResultDiffers),
-    (
-        "tie_broken_without_declared_criterion",
-        Code::PublishedTieGroupSplit,
-    ),
-    ("tie_not_in_computed_result", Code::PublishedTieNotComputed),
-];
+/// One published value that differs from the computed one. The catalogue code
+/// follows the kind through the table of kinds, and a caller cannot choose it.
+///
+/// ```compile_fail
+/// use rt_explain::report::PublishedDifference;
+/// use rt_foundation::Code;
+/// fn forge(d: &mut PublishedDifference) {
+///     d.code = Code::PublishedTieGroupSplit;
+/// }
+/// ```
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PublishedDifference {
+    pub(crate) participant: String,
+    pub(crate) target: String,
+    pub(crate) published: String,
+    pub(crate) computed: Option<String>,
+    pub(crate) trace: usize,
+    pub(crate) entry: Option<u32>,
+    pub(crate) kind: &'static DifferenceKindInfo,
+    pub(crate) non_terminating: bool,
+    pub(crate) group: Vec<String>,
+}
+
+impl PublishedDifference {
+    /// Builds a difference of the kind named `kind`.
+    ///
+    /// # Errors
+    /// [`ReportError::UnknownDifferenceKind`] when the name is not in the
+    /// table of kinds.
+    pub fn new(kind: &str, facts: DifferenceFacts) -> Result<Self, ReportError> {
+        let kind = difference_kind(kind).ok_or_else(|| ReportError::UnknownDifferenceKind {
+            kind: kind.to_owned(),
+        })?;
+        Ok(Self {
+            participant: facts.participant,
+            target: facts.target,
+            published: facts.published,
+            computed: facts.computed,
+            trace: facts.trace,
+            entry: facts.entry,
+            kind,
+            non_terminating: facts.non_terminating,
+            group: facts.group,
+        })
+    }
+
+    /// Participant identifier.
+    #[must_use]
+    pub fn participant(&self) -> &str {
+        &self.participant
+    }
+
+    /// Target.
+    #[must_use]
+    pub fn target(&self) -> &str {
+        &self.target
+    }
+
+    /// The published value, canonical text.
+    #[must_use]
+    pub fn published(&self) -> &str {
+        &self.published
+    }
+
+    /// The computed value, canonical text, or `None` when Indeterminate.
+    #[must_use]
+    pub fn computed(&self) -> Option<&str> {
+        self.computed.as_deref()
+    }
+
+    /// Index of the trace that produced the computed value.
+    #[must_use]
+    pub fn trace(&self) -> usize {
+        self.trace
+    }
+
+    /// Sequence number of the trace entry, when the trace has one.
+    #[must_use]
+    pub fn entry(&self) -> Option<u32> {
+        self.entry
+    }
+
+    /// The kind with its catalogue code and description.
+    #[must_use]
+    pub fn kind(&self) -> &'static DifferenceKindInfo {
+        self.kind
+    }
+
+    /// Whether the computed number has a non-terminating expansion.
+    #[must_use]
+    pub fn non_terminating(&self) -> bool {
+        self.non_terminating
+    }
+
+    /// The participants of the tie the kind refers to.
+    #[must_use]
+    pub fn group(&self) -> &[String] {
+        &self.group
+    }
+}
 
 /// A published entry that no Question answers.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -669,23 +1037,62 @@ impl ReportSection {
     }
 }
 
-/// A report: a header and sections in the fixed order of the writers.
+impl ReportSection {
+    fn evidences(&self) -> Vec<&Evidence> {
+        match self {
+            Self::Eligibility(es) => es.iter().map(|e| &e.evidence).collect(),
+            Self::Scores(es) => es.iter().map(|e| &e.evidence).collect(),
+            Self::Standings(ts) => ts.iter().map(|t| &t.evidence).collect(),
+            Self::Qualification(es) => es.iter().map(|e| &e.evidence).collect(),
+            Self::Published(_) | Self::Diagnostics(_) => Vec::new(),
+        }
+    }
+}
+
+/// A report: a header, the provenance summary and sections in the fixed order
+/// of the writers.
+///
+/// The provenance summary is derived in [`ReportDoc::new`] from the same
+/// verifications that every entry's evidence is checked against, so header
+/// and entries cannot disagree. There is no parser: a report is built from
+/// verifications and traces and never read back.
+///
+/// ```compile_fail
+/// use rt_explain::report::ReportDoc;
+/// fn needs_from_str<T: std::str::FromStr>() {}
+/// needs_from_str::<ReportDoc>();
+/// ```
+///
+/// ```compile_fail
+/// use rt_explain::report::ReportDoc;
+/// fn needs_try_from_bytes<'a, T: TryFrom<&'a [u8]>>() {}
+/// needs_try_from_bytes::<ReportDoc>();
+/// ```
+///
+/// ```compile_fail
+/// use rt_explain::report::ReportDoc;
+/// fn needs_default<T: Default>() {}
+/// needs_default::<ReportDoc>();
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReportDoc {
     header: ReportHeader,
+    provenance: ProvenanceSummary,
     sections: Vec<ReportSection>,
 }
 
 impl ReportDoc {
     /// Assembles a report. Sections are kept in the fixed order of the
-    /// writers whatever order they are given in.
+    /// writers whatever order they are given in. `verifications` are the
+    /// Explainer's outputs indexed like the results file.
     ///
     /// # Errors
     /// [`ReportError`] when a section is not in the application's field set,
-    /// occurs twice, when a Prize_Check table carries comparisons or when a
-    /// difference names a kind and a code that do not belong together.
+    /// occurs twice, when a Prize_Check table carries comparisons, or when an
+    /// entry's evidence does not match the verification at its trace index.
     pub fn new(
         header: ReportHeader,
+        verifications: &[Verification],
         mut sections: Vec<ReportSection>,
     ) -> Result<Self, ReportError> {
         sections.sort_by_key(ReportSection::rank);
@@ -696,30 +1103,40 @@ impl ReportDoc {
             if sections.get(i + 1).is_some_and(|n| n.rank() == s.rank()) {
                 return Err(ReportError::DuplicateSection { section: s.name() });
             }
-            match s {
-                ReportSection::Standings(tables)
-                    if header.application == ReportApplication::PrizeCheck
-                        && tables.iter().any(|t| !t.comparisons.is_empty()) =>
+            if let ReportSection::Standings(tables) = s {
+                if header.application == ReportApplication::PrizeCheck
+                    && tables.iter().any(|t| !t.comparisons.is_empty())
                 {
                     return Err(ReportError::ComparisonsNotAllowed);
                 }
-                ReportSection::Published(PublishedSection::Compared { differences, .. }) => {
-                    for d in differences {
-                        if !DIFFERENCE_KINDS.contains(&(d.kind, d.code)) {
-                            return Err(ReportError::DifferenceKindCode { kind: d.kind });
-                        }
-                    }
+            }
+            for e in s.evidences() {
+                let matches = verifications.get(e.trace).is_some_and(|v| {
+                    e.sources == v.spans()
+                        && e.verified == (v.status() == VerificationStatus::Verified)
+                });
+                if !matches {
+                    return Err(ReportError::EvidenceNotFromVerification { trace: e.trace });
                 }
-                _ => {}
             }
         }
-        Ok(Self { header, sections })
+        Ok(Self {
+            header,
+            provenance: ProvenanceSummary::from_verifications(verifications),
+            sections,
+        })
     }
 
-    /// The header.
+    /// The header as the caller stated it.
     #[must_use]
     pub fn header(&self) -> &ReportHeader {
         &self.header
+    }
+
+    /// The provenance status, derived from the Explainer's verifications.
+    #[must_use]
+    pub fn provenance(&self) -> &ProvenanceSummary {
+        &self.provenance
     }
 
     /// The sections in writer order.

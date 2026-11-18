@@ -2,6 +2,7 @@
 //! task 9.4 provides the application report model and writers of design §8.5.
 
 mod common;
+mod difference;
 mod fields;
 mod human;
 mod machine;
@@ -9,11 +10,12 @@ pub mod model;
 pub mod proof;
 
 pub use common::{APP_REPORT_FORMAT, APP_REPORT_VERSION};
+pub use difference::{difference_kind, DifferenceKindInfo, DIFFERENCE_KINDS};
 pub use fields::{FIELD_SET_BRACKET, FIELD_SET_PRIZE};
 pub use human::render_human;
 pub use machine::render_json;
 pub use model::{
-    Comparison, EligibilityEntry, Evidence, InputRead, Missing, ProvenanceSummary,
+    Comparison, DifferenceFacts, EligibilityEntry, Evidence, InputRead, Missing, ProvenanceSummary,
     PublishedDifference, PublishedSection, PublishedUnused, QualificationEntry, ReportApplication,
     ReportDoc, ReportError, ReportHeader, ReportSection, Score, ScoreEntry, Sha256Hex,
     StandingsPlace, StandingsResult, StandingsTable, StatementId, TraceRef, Truth,

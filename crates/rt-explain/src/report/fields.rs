@@ -124,6 +124,7 @@ pub const FIELD_SET_BRACKET: &[&str] = &[
     "header.provenance.text",
     "header.provenance.total_traces",
     "header.provenance.verified_traces",
+    "header.ranking_scope",
     "header.rulebook_hash",
     "header.statements[]",
     "header.synthetic_data",

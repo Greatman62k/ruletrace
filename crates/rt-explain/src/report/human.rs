@@ -1,8 +1,9 @@
 //! The human form of the application report (design §8.5).
 
 use crate::report::common::{
-    ascending, esc, location_text, missing_text, value_parts, APP_REPORT_FORMAT,
-    APP_REPORT_VERSION, NO_SOURCES_TEXT, RANKING_SCOPE_LABEL, TIE_ORDER_NOTE,
+    ascending, esc, location_text, missing_text, some_without_sources_text, value_parts,
+    APP_REPORT_FORMAT, APP_REPORT_VERSION, BRACKET_RANKING_SCOPE_LABEL, NO_SOURCES_TEXT,
+    RANKING_SCOPE_LABEL, TIE_ORDER_NOTE,
 };
 use crate::report::model::{
     Comparison, EligibilityEntry, Evidence, Missing, ProvenanceSummary, PublishedDifference,
@@ -26,7 +27,7 @@ fn header_lines(out: &mut String, doc: &ReportDoc) {
     for (role, hash) in &h.input_hashes {
         let _ = writeln!(out, "input {} sha256:{}", esc(role), hash.as_str());
     }
-    let _ = writeln!(out, "provenance: {}", provenance_text(&h.provenance));
+    let _ = writeln!(out, "provenance: {}", provenance_text(doc.provenance()));
     let ids: Vec<String> = h.statements.iter().map(|s| esc(s.as_str())).collect();
     let _ = writeln!(out, "statements: {}", ids.join(" "));
     let synthetic = match h.synthetic_data {
@@ -35,9 +36,11 @@ fn header_lines(out: &mut String, doc: &ReportDoc) {
         None => "not stated",
     };
     let _ = writeln!(out, "data: {synthetic}");
-    if h.application == ReportApplication::PrizeCheck {
-        let _ = writeln!(out, "ranking: {RANKING_SCOPE_LABEL}");
-    }
+    let scope = match h.application {
+        ReportApplication::PrizeCheck => RANKING_SCOPE_LABEL,
+        ReportApplication::BracketCheck => BRACKET_RANKING_SCOPE_LABEL,
+    };
+    let _ = writeln!(out, "ranking: {scope}");
 }
 
 fn codes_text(codes: &[Code]) -> String {
@@ -61,10 +64,26 @@ fn provenance_text(p: &ProvenanceSummary) -> String {
                 codes_text(codes)
             }
         ),
-        ProvenanceSummary::NotVerifiedNoSources => format!(
-            "{NO_SOURCES_TEXT} (warning {})",
-            Code::ProvNotVerifiedNoSources.id()
-        ),
+        ProvenanceSummary::NotVerifiedNoSources {
+            codes,
+            without_sources,
+            verified,
+            total,
+        } => {
+            let label = if codes == &[Code::ProvNotVerifiedNoSources] {
+                format!("warning {}", Code::ProvNotVerifiedNoSources.id())
+            } else {
+                format!("codes {}", codes_text(codes))
+            };
+            if without_sources == total {
+                format!("{NO_SOURCES_TEXT} ({label})")
+            } else {
+                format!(
+                    "{} ({verified} verified; {label})",
+                    some_without_sources_text(*without_sources, *total)
+                )
+            }
+        }
     }
 }
 
@@ -273,10 +292,11 @@ fn difference(out: &mut String, d: &PublishedDifference) {
         esc(&d.participant),
         esc(&d.target),
         esc(&d.published),
-        d.kind,
-        d.code.id(),
+        d.kind.name(),
+        d.kind.code().id(),
         d.trace
     );
+    let _ = writeln!(out, "      meaning: {}", d.kind.description());
     if let Some(entry) = d.entry {
         let _ = writeln!(out, "      trace entry {entry}");
     }

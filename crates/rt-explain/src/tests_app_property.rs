@@ -3,20 +3,20 @@
 //! least 256 generated documents.
 
 use crate::report::{
-    render_human, render_json, ProvenanceSummary, PublishedSection, ReportDoc, ReportSection,
-    StandingsResult, FIELD_SET_BRACKET, FIELD_SET_PRIZE,
+    render_human, render_json, PublishedSection, ReportDoc, ReportSection, StandingsResult,
+    FIELD_SET_BRACKET, FIELD_SET_PRIZE,
 };
 use crate::tests_app_fixtures::*;
 use crate::tests_app_report::key_paths;
+use crate::Verification;
 use proptest::prelude::*;
-use rt_foundation::Code;
 use std::collections::BTreeSet;
 
 const CASES: u32 = 256;
 
 /// Fixture sections with the participants, targets and group members replaced
 /// by the generated names, which may hold any character.
-fn renamed(doc: &ReportDoc, names: &[String]) -> ReportDoc {
+fn renamed(doc: &ReportDoc, vs: &[Verification], names: &[String]) -> ReportDoc {
     let pick = |i: usize| names[i % names.len()].clone();
     let mut sections = doc.sections().to_vec();
     for s in &mut sections {
@@ -66,23 +66,26 @@ fn renamed(doc: &ReportDoc, names: &[String]) -> ReportDoc {
             _ => {}
         }
     }
-    let mut header = doc.header().clone();
-    header.provenance = ProvenanceSummary::NotVerified {
-        codes: vec![Code::ProvHashMismatch],
-        verified: 0,
-        total: 1,
-    };
-    ReportDoc::new(header, sections).unwrap()
+    ReportDoc::new(doc.header().clone(), vs, sections).unwrap()
 }
 
-fn base(bracket: bool) -> ReportDoc {
+/// A document whose traces all fail with a hash mismatch, so that the
+/// provenance summary carries a code and the report holds every field.
+fn base(bracket: bool) -> (ReportDoc, Vec<Verification>) {
     if bracket {
         let t = bracket_traces();
-        bracket_doc(&t, &verified(&t))
+        let vs = mismatched(&t);
+        (bracket_doc(&t, &vs), vs)
     } else {
         let t = prize_traces();
-        prize_doc(&t, &verified(&t))
+        let vs = mismatched(&t);
+        (prize_doc(&t, &vs), vs)
     }
+}
+
+fn renamed_base(bracket: bool, names: &[String]) -> ReportDoc {
+    let (doc, vs) = base(bracket);
+    renamed(&doc, &vs, names)
 }
 
 fn names() -> impl Strategy<Value = Vec<String>> {
@@ -103,7 +106,7 @@ proptest! {
 
     #[test]
     fn key_paths_equal_the_field_set_for_any_names(names in names(), bracket in any::<bool>()) {
-        let doc = renamed(&base(bracket), &names);
+        let doc = renamed_base(bracket, &names);
         let paths = key_paths(&render_json(&doc));
         prop_assert_eq!(paths, expected(bracket));
     }
@@ -114,7 +117,8 @@ proptest! {
         bracket in any::<bool>(),
         keep in prop::collection::vec(any::<bool>(), 6),
     ) {
-        let full = renamed(&base(bracket), &names);
+        let (b, vs) = base(bracket);
+        let full = renamed(&b, &vs, &names);
         let sections: Vec<ReportSection> = full
             .sections()
             .iter()
@@ -122,7 +126,7 @@ proptest! {
             .filter(|(i, _)| keep[i % keep.len()])
             .map(|(_, s)| s.clone())
             .collect();
-        let doc = ReportDoc::new(full.header().clone(), sections).unwrap();
+        let doc = ReportDoc::new(full.header().clone(), &vs, sections).unwrap();
         let paths = key_paths(&render_json(&doc));
         let allowed = expected(bracket);
         prop_assert!(paths.is_subset(&allowed), "extra: {:?}", paths.difference(&allowed).collect::<Vec<_>>());
@@ -133,8 +137,8 @@ proptest! {
         names in names(),
         bracket in any::<bool>(),
     ) {
-        let doc = renamed(&base(bracket), &names);
-        let again = renamed(&base(bracket), &names);
+        let doc = renamed_base(bracket, &names);
+        let again = renamed_base(bracket, &names);
         prop_assert_eq!(render_json(&doc), render_json(&again));
         prop_assert_eq!(render_human(&doc), render_human(&again));
         let mut sections = doc.sections().to_vec();
@@ -158,14 +162,14 @@ proptest! {
                 _ => {}
             }
         }
-        let shuffled = ReportDoc::new(doc.header().clone(), sections).unwrap();
+        let shuffled = ReportDoc::new(doc.header().clone(), &base(bracket).1, sections).unwrap();
         prop_assert_eq!(render_json(&doc), render_json(&shuffled));
         prop_assert_eq!(render_human(&doc), render_human(&shuffled));
     }
 
     #[test]
     fn human_output_never_holds_a_raw_control_character(names in names(), bracket in any::<bool>()) {
-        let doc = renamed(&base(bracket), &names);
+        let doc = renamed_base(bracket, &names);
         for c in render_human(&doc).chars() {
             prop_assert!(c == '\n' || !c.is_control(), "raw control {:?}", c);
         }

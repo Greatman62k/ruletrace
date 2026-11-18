@@ -1,7 +1,7 @@
 //! Fixtures for the application report tests (task 9.4).
 
 use crate::report::{
-    EligibilityEntry, ProvenanceSummary, PublishedDifference, PublishedSection, PublishedUnused,
+    DifferenceFacts, EligibilityEntry, PublishedDifference, PublishedSection, PublishedUnused,
     QualificationEntry, ReportApplication, ReportDoc, ReportHeader, ReportSection, ScoreEntry,
     Sha256Hex, StandingsTable, StatementId, TraceRef,
 };
@@ -232,14 +232,10 @@ pub(crate) fn tref<'a>(
     traces: &'a [DecisionTrace],
     vs: &'a [Verification],
 ) -> TraceRef<'a> {
-    TraceRef {
-        index,
-        trace: &traces[index],
-        verification: &vs[index],
-    }
+    TraceRef::new(index, &traces[index], &vs[index]).unwrap()
 }
 
-pub(crate) fn header(app: ReportApplication, vs: &[Verification]) -> ReportHeader {
+pub(crate) fn header(app: ReportApplication) -> ReportHeader {
     ReportHeader {
         application: app,
         statements: vec![
@@ -248,40 +244,41 @@ pub(crate) fn header(app: ReportApplication, vs: &[Verification]) -> ReportHeade
         ],
         rulebook_hash: hash('1'),
         input_hashes: vec![("data", hash('2')), ("published", hash('3'))],
-        provenance: ProvenanceSummary::from_verifications(vs),
         synthetic_data: Some(true),
     }
 }
 
-pub(crate) fn difference(kind: &'static str, code: Code, group: &[&str]) -> PublishedDifference {
-    PublishedDifference {
+pub(crate) fn facts(group: &[&str]) -> DifferenceFacts {
+    DifferenceFacts {
         participant: "p1".to_owned(),
         target: "rank.total".to_owned(),
         published: "3".to_owned(),
         computed: Some("2".to_owned()),
         trace: 3,
         entry: Some(5),
-        kind,
-        code,
         non_terminating: false,
         group: group.iter().map(|s| (*s).to_owned()).collect(),
     }
 }
 
+pub(crate) fn difference(kind: &str, group: &[&str]) -> PublishedDifference {
+    PublishedDifference::new(kind, facts(group)).unwrap()
+}
+
 pub(crate) fn published_differs() -> PublishedSection {
     PublishedSection::Compared {
         differences: vec![
-            difference("value_differs", Code::PublishedResultDiffers, &[]),
-            PublishedDifference {
-                participant: "p2".to_owned(),
-                computed: Some("2/3".to_owned()),
-                non_terminating: true,
-                ..difference(
-                    "tie_broken_without_declared_criterion",
-                    Code::PublishedTieGroupSplit,
-                    &["p2", "p1"],
-                )
-            },
+            difference("value_differs", &[]),
+            PublishedDifference::new(
+                "tie_broken_without_declared_criterion",
+                DifferenceFacts {
+                    participant: "p2".to_owned(),
+                    computed: Some("2/3".to_owned()),
+                    non_terminating: true,
+                    ..facts(&["p2", "p1"])
+                },
+            )
+            .unwrap(),
         ],
         unused: vec![PublishedUnused {
             participant: "p9".to_owned(),
@@ -326,7 +323,8 @@ pub(crate) fn prize_traces() -> Vec<DecisionTrace> {
 pub(crate) fn prize_doc(traces: &[DecisionTrace], vs: &[Verification]) -> ReportDoc {
     let r = |i: usize| tref(i, traces, vs);
     ReportDoc::new(
-        header(ReportApplication::PrizeCheck, vs),
+        header(ReportApplication::PrizeCheck),
+        vs,
         vec![
             ReportSection::Eligibility(vec![
                 EligibilityEntry::from_trace(&r(0)).unwrap(),
@@ -361,7 +359,8 @@ pub(crate) fn bracket_traces() -> Vec<DecisionTrace> {
 pub(crate) fn bracket_doc(traces: &[DecisionTrace], vs: &[Verification]) -> ReportDoc {
     let r = |i: usize| tref(i, traces, vs);
     ReportDoc::new(
-        header(ReportApplication::BracketCheck, vs),
+        header(ReportApplication::BracketCheck),
+        vs,
         vec![
             ReportSection::Standings(vec![
                 StandingsTable::from_trace(&r(0), true).unwrap(),
@@ -376,4 +375,38 @@ pub(crate) fn bracket_doc(traces: &[DecisionTrace], vs: &[Verification]) -> Repo
         ],
     )
     .unwrap()
+}
+
+/// A model of `rules.md` whose hash differs from the one the fixture spans
+/// record, so that every span fails with RT-PRV-0002.
+pub(crate) fn other_models() -> SourceModels {
+    let mut m = SourceModels::new();
+    m.insert(
+        SourceModel::new(
+            DocumentId::new("rules.md").unwrap(),
+            DocumentKind::Markdown,
+            "Different text entirely.".to_owned(),
+            vec![Element {
+                id: 0,
+                kind: ElementKind::Paragraph,
+                level: None,
+                label: None,
+                start: 0,
+                end: 24,
+                line: 1,
+                column: 1,
+                parent: None,
+            }],
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    m
+}
+
+pub(crate) fn mismatched(traces: &[DecisionTrace]) -> Vec<Verification> {
+    traces
+        .iter()
+        .map(|t| verify_trace(t, &other_models()))
+        .collect()
 }

@@ -35,3 +35,6 @@ mod tests_app_report;
 
 #[cfg(test)]
 mod tests_app_property;
+
+#[cfg(test)]
+mod tests_app_gaps;

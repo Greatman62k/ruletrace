@@ -3,9 +3,9 @@
 //! from the design layout, not produced by the writers.
 
 use crate::report::{
-    render_human, render_json, EligibilityEntry, Evidence, Missing, ProvenanceSummary,
-    PublishedDifference, PublishedSection, ReportApplication, ReportDoc, ReportError,
-    ReportSection, Score, ScoreEntry, StandingsPlace, StandingsResult, StandingsTable,
+    render_human, render_json, DifferenceFacts, EligibilityEntry, Evidence, Missing,
+    ProvenanceSummary, PublishedDifference, PublishedSection, ReportApplication, ReportDoc,
+    ReportError, ReportSection, Score, ScoreEntry, StandingsPlace, StandingsResult, StandingsTable,
     FIELD_SET_BRACKET, FIELD_SET_PRIZE,
 };
 use crate::tests_app_fixtures::*;
@@ -14,7 +14,13 @@ use rt_json::{Kind, ParseLimits, Value};
 use rt_trace::{Outcome, QuestionKind, TraceValue};
 use std::collections::BTreeSet;
 
-const SCOPE: &str = "Score ranking \u{2014} all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.";
+pub(crate) const SCOPE: &str = "Score ranking \u{2014} all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.";
+pub(crate) const BRACKET_SCOPE: &str = "Standings are calculated from the declared ranking rules; eligibility is evaluated independently and is not applied as a ranking filter.";
+pub(crate) const MEANING_VALUE: &str = "the published value is not the computed value";
+pub(crate) const MEANING_TIE_SPLIT: &str =
+    "the published result gives members of one computed tie group different positions";
+pub(crate) const MEANING_TIE_MERGED: &str =
+    "the published result gives one position to participants that the computed result separates";
 const TIE_NOTE: &str =
     "members are listed in ascending identifier order, which has no ranking meaning";
 
@@ -52,15 +58,16 @@ fn walk<P>(v: &Value<P>, prefix: &str, out: &mut BTreeSet<String>) {
     }
 }
 
-/// The document with a not-verified header, so that `codes` has an element.
-fn with_codes(doc: &ReportDoc) -> ReportDoc {
-    let mut header = doc.header().clone();
-    header.provenance = ProvenanceSummary::NotVerified {
-        codes: vec![Code::ProvHashMismatch],
-        verified: 0,
-        total: 1,
-    };
-    ReportDoc::new(header, doc.sections().to_vec()).unwrap()
+/// Documents whose traces all fail with a hash mismatch, so that the
+/// provenance summary carries a code.
+fn prize_with_codes() -> ReportDoc {
+    let t = prize_traces();
+    prize_doc(&t, &mismatched(&t))
+}
+
+fn bracket_with_codes() -> ReportDoc {
+    let t = bracket_traces();
+    bracket_doc(&t, &mismatched(&t))
 }
 
 fn h(d: char) -> String {
@@ -122,8 +129,10 @@ fn prize_human_matches_the_hand_written_layout() {
     e.push_str(&src("rank.late", 1));
     e.push_str("\nPUBLISHED CONSISTENCY\n");
     e.push_str("  differs: p1 rank.total published 3, computed 2   kind value_differs (RT-EXE-0011)   trace #3\n");
+    e.push_str(&format!("      meaning: {MEANING_VALUE}\n"));
     e.push_str("      trace entry 5\n");
     e.push_str("  differs: p2 rank.total published 3, computed 2/3   kind tie_broken_without_declared_criterion (RT-EXE-0012)   trace #3\n");
+    e.push_str(&format!("      meaning: {MEANING_TIE_SPLIT}\n"));
     e.push_str("      trace entry 5\n");
     e.push_str("      computed value has a non-terminating expansion\n");
     e.push_str("      group {p1, p2}\n");
@@ -198,6 +207,7 @@ fn bracket_human_matches_the_hand_written_layout() {
     e.push_str("provenance: verified (4 of 4 traces)\n");
     e.push_str("statements: ST-BOUNDARY ST-VERIFIED-MEANING\n");
     e.push_str("data: synthetic\n");
+    e.push_str(&format!("ranking: {BRACKET_SCOPE}\n"));
     e.push_str("\nSTANDINGS rank.total\n");
     e.push_str("  1  p3\n");
     e.push_str(&format!(
@@ -224,8 +234,10 @@ fn bracket_human_matches_the_hand_written_layout() {
     e.push_str(&src("qual.q", 3));
     e.push_str("\nPUBLISHED CONSISTENCY\n");
     e.push_str("  differs: p1 rank.total published 3, computed 2   kind value_differs (RT-EXE-0011)   trace #3\n");
+    e.push_str(&format!("      meaning: {MEANING_VALUE}\n"));
     e.push_str("      trace entry 5\n");
     e.push_str("  differs: p2 rank.total published 3, computed 2/3   kind tie_broken_without_declared_criterion (RT-EXE-0012)   trace #3\n");
+    e.push_str(&format!("      meaning: {MEANING_TIE_SPLIT}\n"));
     e.push_str("      trace entry 5\n");
     e.push_str("      computed value has a non-terminating expansion\n");
     e.push_str("      group {p1, p2}\n");
@@ -239,7 +251,7 @@ fn bracket_human_matches_the_hand_written_layout() {
 fn bracket_json_matches_the_hand_written_document() {
     let doc = bracket();
     let header = format!(
-        "\"header\":{{\"format\":\"ruletrace-app-report\",\"version\":1,\"application\":\"bracket-check\",\"statements\":[\"ST-BOUNDARY\",\"ST-VERIFIED-MEANING\"],\"rulebook_hash\":\"{}\",\"inputs\":[{{\"role\":\"data\",\"sha256\":\"{}\"}},{{\"role\":\"published\",\"sha256\":\"{}\"}}],\"provenance\":{{\"status\":\"verified\",\"text\":\"verified\",\"verified_traces\":4,\"total_traces\":4,\"codes\":[]}},\"synthetic_data\":true}}",
+        "\"header\":{{\"format\":\"ruletrace-app-report\",\"version\":1,\"application\":\"bracket-check\",\"statements\":[\"ST-BOUNDARY\",\"ST-VERIFIED-MEANING\"],\"rulebook_hash\":\"{}\",\"inputs\":[{{\"role\":\"data\",\"sha256\":\"{}\"}},{{\"role\":\"published\",\"sha256\":\"{}\"}}],\"provenance\":{{\"status\":\"verified\",\"text\":\"verified\",\"verified_traces\":4,\"total_traces\":4,\"codes\":[]}},\"synthetic_data\":true,\"ranking_scope\":\"{BRACKET_SCOPE}\"}}",
         h('1'),
         h('2'),
         h('3')
@@ -278,8 +290,7 @@ fn bracket_json_matches_the_hand_written_document() {
 
 #[test]
 fn key_paths_equal_the_exported_field_sets_exactly() {
-    let (p, _) = prize();
-    let got = key_paths(&render_json(&with_codes(&p)));
+    let got = key_paths(&render_json(&prize_with_codes()));
     let want: BTreeSet<String> = FIELD_SET_PRIZE.iter().map(|s| (*s).to_owned()).collect();
     assert_eq!(
         got.difference(&want).collect::<Vec<_>>(),
@@ -289,7 +300,7 @@ fn key_paths_equal_the_exported_field_sets_exactly() {
         want.difference(&got).collect::<Vec<_>>(),
         Vec::<&String>::new()
     );
-    let got = key_paths(&render_json(&with_codes(&bracket())));
+    let got = key_paths(&render_json(&bracket_with_codes()));
     let want: BTreeSet<String> = FIELD_SET_BRACKET.iter().map(|s| (*s).to_owned()).collect();
     assert_eq!(
         got.difference(&want).collect::<Vec<_>>(),
@@ -381,7 +392,7 @@ fn sections_are_written_in_the_fixed_order_whatever_the_construction_order() {
     let doc = prize_doc(&t, &vs);
     let mut sections = doc.sections().to_vec();
     sections.reverse();
-    let reversed = ReportDoc::new(doc.header().clone(), sections).unwrap();
+    let reversed = ReportDoc::new(doc.header().clone(), &vs, sections).unwrap();
     assert_eq!(render_json(&doc), render_json(&reversed));
     assert_eq!(render_human(&doc), render_human(&reversed));
     let names: Vec<&str> = reversed
@@ -413,7 +424,8 @@ fn entries_keep_the_order_of_the_outcomes() {
         EligibilityEntry::from_trace(&tref(1, &t, &vs)).unwrap(),
     ];
     let doc = ReportDoc::new(
-        header(ReportApplication::PrizeCheck, &vs),
+        header(ReportApplication::PrizeCheck),
+        &vs,
         vec![ReportSection::Eligibility(entries)],
     )
     .unwrap();
@@ -425,7 +437,8 @@ fn entries_keep_the_order_of_the_outcomes() {
 
 #[test]
 fn tie_group_members_are_written_ascending_whatever_the_model_order() {
-    let (doc, _) = prize();
+    let (doc, t) = prize();
+    let vs = verified(&t);
     let mut sections = doc.sections().to_vec();
     for s in &mut sections {
         if let ReportSection::Standings(tables) = s {
@@ -434,7 +447,7 @@ fn tie_group_members_are_written_ascending_whatever_the_model_order() {
             }
         }
     }
-    let shuffled = ReportDoc::new(doc.header().clone(), sections).unwrap();
+    let shuffled = ReportDoc::new(doc.header().clone(), &vs, sections).unwrap();
     assert_eq!(render_json(&doc), render_json(&shuffled));
     let json = String::from_utf8(render_json(&shuffled)).unwrap();
     assert!(json.contains("\"members\":[\"p1\",\"p2\"]"));
@@ -470,7 +483,8 @@ fn an_indeterminate_entry_names_its_missing_inputs() {
     let vs = verified(&t);
     let e = EligibilityEntry::from_trace(&tref(0, &t, &vs)).unwrap();
     let doc = ReportDoc::new(
-        header(ReportApplication::PrizeCheck, &vs),
+        header(ReportApplication::PrizeCheck),
+        &vs,
         vec![ReportSection::Eligibility(vec![e])],
     )
     .unwrap();
@@ -489,7 +503,12 @@ fn without_source_models_the_header_says_so_and_carries_rt_prv_0006() {
     let vs = unverified(&t);
     assert_eq!(
         ProvenanceSummary::from_verifications(&vs),
-        ProvenanceSummary::NotVerifiedNoSources
+        ProvenanceSummary::NotVerifiedNoSources {
+            codes: vec![Code::ProvNotVerifiedNoSources],
+            without_sources: 6,
+            verified: 0,
+            total: 6
+        }
     );
     let doc = prize_doc(&t, &vs);
     let human = render_human(&doc);
@@ -510,25 +529,72 @@ fn without_source_models_the_header_says_so_and_carries_rt_prv_0006() {
 }
 
 #[test]
-fn a_partly_verified_run_is_not_shown_as_verified() {
+fn a_run_where_some_traces_lack_sources_states_the_counts() {
     let t = prize_traces();
     let mut vs = verified(&t);
     vs[1] = unverified(&t[1..2]).remove(0);
-    let s = ProvenanceSummary::from_verifications(&vs);
+    let expected = ProvenanceSummary::NotVerifiedNoSources {
+        codes: vec![Code::ProvNotVerifiedNoSources],
+        without_sources: 1,
+        verified: 5,
+        total: 6,
+    };
+    assert_eq!(ProvenanceSummary::from_verifications(&vs), expected);
+    let doc = prize_doc(&t, &vs);
+    assert_eq!(doc.provenance(), &expected);
+    let human = render_human(&doc);
+    assert!(human.contains(
+        "provenance: not verified: 1 of 6 traces had no source models (5 verified; warning RT-PRV-0006)\n"
+    ));
+    assert!(!human.contains("no source models were supplied"));
+    assert!(!human.contains("provenance: verified"));
+    let json = String::from_utf8(render_json(&doc)).unwrap();
+    assert!(json.contains(
+        "\"provenance\":{\"status\":\"not_verified_no_sources\",\"text\":\"not verified: 1 of 6 traces had no source models\",\"verified_traces\":5,\"total_traces\":6,\"codes\":[\"RT-PRV-0006\"]}"
+    ));
     assert_eq!(
-        s,
-        ProvenanceSummary::NotVerifiedNoSources,
-        "a trace without sources is reported as no sources"
-    );
-    let empty = ProvenanceSummary::from_verifications(&[]);
-    assert_eq!(
-        empty,
+        ProvenanceSummary::from_verifications(&[]),
         ProvenanceSummary::NotVerified {
             codes: Vec::new(),
             verified: 0,
             total: 0
         }
     );
+}
+
+#[test]
+fn one_verified_and_one_hash_mismatch_trace_are_never_summarised_as_verified() {
+    let t = vec![
+        elig_trace("p1", Outcome::Decided(TraceValue::Bool(true))),
+        elig_trace("p2", Outcome::Decided(TraceValue::Bool(true))),
+    ];
+    let vs = vec![
+        crate::verify_trace(&t[0], &models()),
+        crate::verify_trace(&t[1], &other_models()),
+    ];
+    let expected = ProvenanceSummary::NotVerified {
+        codes: vec![Code::ProvHashMismatch],
+        verified: 1,
+        total: 2,
+    };
+    assert_eq!(ProvenanceSummary::from_verifications(&vs), expected);
+    let doc = ReportDoc::new(
+        header(ReportApplication::PrizeCheck),
+        &vs,
+        vec![ReportSection::Eligibility(vec![
+            EligibilityEntry::from_trace(&tref(0, &t, &vs)).unwrap(),
+            EligibilityEntry::from_trace(&tref(1, &t, &vs)).unwrap(),
+        ])],
+    )
+    .unwrap();
+    assert_eq!(doc.provenance(), &expected);
+    let human = render_human(&doc);
+    assert!(human.contains("provenance: not verified (1 of 2 traces verified; RT-PRV-0002)\n"));
+    assert!(human.contains("      trace #0  verified  rules elig.age@1\n"));
+    assert!(human.contains("      trace #1  not verified  rules elig.age@1\n"));
+    let json = String::from_utf8(render_json(&doc)).unwrap();
+    assert!(json.contains("\"status\":\"not_verified\""));
+    assert!(!json.contains("\"status\":\"verified\""));
 }
 
 #[test]
@@ -593,7 +659,8 @@ fn control_characters_in_every_dynamic_field_are_escaped_in_human_output() {
         rt_foundation::Location::None(Code::PublishedResultDiffers),
     );
     let doc = ReportDoc::new(
-        header(ReportApplication::PrizeCheck, &vs),
+        header(ReportApplication::PrizeCheck),
+        &vs,
         vec![
             ReportSection::Eligibility(vec![
                 EligibilityEntry::from_trace(&tref(0, &t2, &vs)).unwrap(),
@@ -623,7 +690,8 @@ fn published_section_states_not_supplied_equal_or_differs() {
     let vs = verified(&t);
     let render = |p: PublishedSection| {
         let doc = ReportDoc::new(
-            header(ReportApplication::PrizeCheck, &vs),
+            header(ReportApplication::PrizeCheck),
+            &vs,
             vec![ReportSection::Published(p)],
         )
         .unwrap();
@@ -642,10 +710,11 @@ fn published_section_states_not_supplied_equal_or_differs() {
     let (human, json) = render(equal);
     assert!(human.ends_with("PUBLISHED CONSISTENCY\n  equal\n"));
     assert!(json.contains("\"published\":{\"state\":\"equal\",\"differences\":[],\"unused\":[]}"));
-    let indeterminate = PublishedDifference {
+    let indeterminate_facts = DifferenceFacts {
         computed: None,
-        ..difference("value_differs", Code::PublishedResultDiffers, &[])
+        ..facts(&[])
     };
+    let indeterminate = PublishedDifference::new("value_differs", indeterminate_facts).unwrap();
     let (human, json) = render(PublishedSection::Compared {
         differences: vec![indeterminate],
         unused: Vec::new(),
@@ -656,25 +725,26 @@ fn published_section_states_not_supplied_equal_or_differs() {
 
 #[test]
 fn each_difference_kind_is_written_with_its_catalogue_code() {
-    for (kind, code, id) in [
-        ("value_differs", Code::PublishedResultDiffers, "RT-EXE-0011"),
+    for (kind, id, meaning) in [
+        ("value_differs", "RT-EXE-0011", MEANING_VALUE),
         (
             "tie_broken_without_declared_criterion",
-            Code::PublishedTieGroupSplit,
             "RT-EXE-0012",
+            MEANING_TIE_SPLIT,
         ),
         (
             "tie_not_in_computed_result",
-            Code::PublishedTieNotComputed,
             "RT-EXE-0013",
+            MEANING_TIE_MERGED,
         ),
     ] {
         let t = prize_traces();
         let vs = verified(&t);
         let doc = ReportDoc::new(
-            header(ReportApplication::BracketCheck, &vs),
+            header(ReportApplication::BracketCheck),
+            &vs,
             vec![ReportSection::Published(PublishedSection::Compared {
-                differences: vec![difference(kind, code, &["p4", "p3"])],
+                differences: vec![difference(kind, &["p4", "p3"])],
                 unused: Vec::new(),
             })],
         )
@@ -682,7 +752,9 @@ fn each_difference_kind_is_written_with_its_catalogue_code() {
         let json = String::from_utf8(render_json(&doc)).unwrap();
         assert!(json.contains(&format!("\"kind\":\"{kind}\",\"code\":\"{id}\"")));
         assert!(json.contains("\"group\":[\"p3\",\"p4\"]"));
-        assert!(render_human(&doc).contains(&format!("kind {kind} ({id})")));
+        let human = render_human(&doc);
+        assert!(human.contains(&format!("kind {kind} ({id})")));
+        assert!(human.contains(&format!("      meaning: {meaning}\n")));
     }
 }
 
@@ -690,16 +762,21 @@ fn each_difference_kind_is_written_with_its_catalogue_code() {
 fn assembly_refuses_a_foreign_duplicate_or_mismatched_part() {
     let t = prize_traces();
     let vs = verified(&t);
-    let prize_header = || header(ReportApplication::PrizeCheck, &vs);
+    let prize_header = || header(ReportApplication::PrizeCheck);
     assert_eq!(
-        ReportDoc::new(prize_header(), vec![ReportSection::Qualification(vec![])]),
+        ReportDoc::new(
+            prize_header(),
+            &vs,
+            vec![ReportSection::Qualification(vec![])]
+        ),
         Err(ReportError::SectionNotAllowed {
             section: "qualification"
         })
     );
     assert_eq!(
         ReportDoc::new(
-            header(ReportApplication::BracketCheck, &vs),
+            header(ReportApplication::BracketCheck),
+            &vs,
             vec![ReportSection::Scores(vec![])]
         ),
         Err(ReportError::SectionNotAllowed { section: "scores" })
@@ -707,6 +784,7 @@ fn assembly_refuses_a_foreign_duplicate_or_mismatched_part() {
     assert_eq!(
         ReportDoc::new(
             prize_header(),
+            &vs,
             vec![ReportSection::Scores(vec![]), ReportSection::Scores(vec![])]
         ),
         Err(ReportError::DuplicateSection { section: "scores" })
@@ -715,22 +793,10 @@ fn assembly_refuses_a_foreign_duplicate_or_mismatched_part() {
     assert_eq!(
         ReportDoc::new(
             prize_header(),
+            &vs,
             vec![ReportSection::Standings(vec![with_comparisons])]
         ),
         Err(ReportError::ComparisonsNotAllowed)
-    );
-    let bad = difference("value_differs", Code::PublishedTieGroupSplit, &[]);
-    assert_eq!(
-        ReportDoc::new(
-            prize_header(),
-            vec![ReportSection::Published(PublishedSection::Compared {
-                differences: vec![bad],
-                unused: Vec::new()
-            })]
-        ),
-        Err(ReportError::DifferenceKindCode {
-            kind: "value_differs"
-        })
     );
 }
 

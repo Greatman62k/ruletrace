@@ -17,6 +17,15 @@ pub(crate) const TIE_ORDER_NOTE: &str =
 /// The header text when no Source_Model was supplied (Req 31.14).
 pub(crate) const NO_SOURCES_TEXT: &str = "not verified: no source models were supplied";
 
+/// The header text when only some traces had no Source_Model.
+pub(crate) fn some_without_sources_text(without: u32, total: u32) -> String {
+    format!("not verified: {without} of {total} traces had no source models")
+}
+
+/// The ranking-scope statement of the Bracket_Check header (RN-23). It ends
+/// with the clause of the Prize_Check sentence.
+pub(crate) const BRACKET_RANKING_SCOPE_LABEL: &str = "Standings are calculated from the declared ranking rules; eligibility is evaluated independently and is not applied as a ranking filter.";
+
 /// The ranking-scope statement of the Prize_Check header (RN-23). It is the
 /// sentence of the Proof_Report.
 pub(crate) use crate::report::proof::RANKING_SCOPE_LABEL;
@@ -111,6 +120,6 @@ pub(crate) fn provenance_status(p: &ProvenanceSummary) -> &'static str {
     match p {
         ProvenanceSummary::Verified { .. } => "verified",
         ProvenanceSummary::NotVerified { .. } => "not_verified",
-        ProvenanceSummary::NotVerifiedNoSources => "not_verified_no_sources",
+        ProvenanceSummary::NotVerifiedNoSources { .. } => "not_verified_no_sources",
     }
 }
