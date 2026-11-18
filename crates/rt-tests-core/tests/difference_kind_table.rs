@@ -98,3 +98,14 @@ fn the_catalogue_describes_each_code_with_its_kind() {
         );
     }
 }
+
+#[test]
+fn the_evaluate_command_and_the_report_table_agree_on_every_code() {
+    for kind in ALL {
+        let (name, expected_code) = expected(kind);
+        let row = difference_kind(kind.as_str())
+            .unwrap_or_else(|| panic!("no row for the engine kind {name}"));
+        assert_eq!(rt_cli::difference_code(kind), expected_code, "{name}");
+        assert_eq!(rt_cli::difference_code(kind), row.code(), "{name}");
+    }
+}

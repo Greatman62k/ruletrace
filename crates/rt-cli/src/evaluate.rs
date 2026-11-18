@@ -379,7 +379,10 @@ fn published_facts(
 }
 
 /// The catalogue code of one difference kind (one failure mode, one code).
-fn difference_code(kind: DifferenceKind) -> Code {
+///
+/// Public so that a cross-crate test can compare it with the Explainer's
+/// table of kinds.
+pub fn difference_code(kind: DifferenceKind) -> Code {
     match kind {
         DifferenceKind::ValueDiffers => Code::PublishedResultDiffers,
         DifferenceKind::TieBrokenWithoutDeclaredCriterion => Code::PublishedTieGroupSplit,

@@ -22,9 +22,9 @@ pub(crate) fn some_without_sources_text(without: u32, total: u32) -> String {
     format!("not verified: {without} of {total} traces had no source models")
 }
 
-/// The ranking-scope statement of the Bracket_Check header (RN-23). It ends
-/// with the clause of the Prize_Check sentence.
-pub(crate) const BRACKET_RANKING_SCOPE_LABEL: &str = "Standings are calculated from the declared ranking rules; eligibility is evaluated independently and is not applied as a ranking filter.";
+/// The ranking-scope statement of the Bracket_Check header (RN-23). It does
+/// not say that the report evaluates eligibility.
+pub(crate) const BRACKET_RANKING_SCOPE_LABEL: &str = "Standings are calculated solely from the declared ranking rules; this report does not apply eligibility filtering.";
 
 /// The ranking-scope statement of the Prize_Check header (RN-23). It is the
 /// sentence of the Proof_Report.

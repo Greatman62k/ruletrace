@@ -15,7 +15,7 @@ use rt_trace::{Outcome, QuestionKind, TraceValue};
 use std::collections::BTreeSet;
 
 pub(crate) const SCOPE: &str = "Score ranking \u{2014} all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.";
-pub(crate) const BRACKET_SCOPE: &str = "Standings are calculated from the declared ranking rules; eligibility is evaluated independently and is not applied as a ranking filter.";
+pub(crate) const BRACKET_SCOPE: &str = "Standings are calculated solely from the declared ranking rules; this report does not apply eligibility filtering.";
 pub(crate) const MEANING_VALUE: &str = "the published value is not the computed value";
 pub(crate) const MEANING_TIE_SPLIT: &str =
     "the published result gives members of one computed tie group different positions";

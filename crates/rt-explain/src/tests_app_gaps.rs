@@ -263,18 +263,19 @@ fn an_unstated_synthetic_label_is_not_written_as_synthetic() {
 }
 
 #[test]
-fn the_bracket_header_states_that_eligibility_does_not_filter_the_standings() {
+fn the_bracket_header_states_that_it_applies_no_eligibility_filtering() {
     let t = bracket_traces();
     let doc = bracket_doc(&t, &verified(&t));
     let human = render_human(&doc);
+    assert_eq!(
+        BRACKET_SCOPE,
+        "Standings are calculated solely from the declared ranking rules; this report does not apply eligibility filtering."
+    );
+    assert_ne!(BRACKET_SCOPE, SCOPE);
     assert!(human.contains(&format!("\nranking: {BRACKET_SCOPE}\n")));
     let json = String::from_utf8(render_json(&doc)).unwrap();
     assert!(json.contains(&format!("\"ranking_scope\":\"{BRACKET_SCOPE}\"")));
     assert!(crate::report::FIELD_SET_BRACKET.contains(&"header.ranking_scope"));
-    let tail = "eligibility is evaluated independently and is not applied as a ranking filter.";
-    assert!(BRACKET_SCOPE.ends_with(tail));
-    assert!(SCOPE.ends_with(tail));
-    assert!(BRACKET_SCOPE.starts_with("Standings are calculated from the declared ranking rules;"));
     let pt = prize_traces();
     let prize = render_human(&prize_doc(&pt, &verified(&pt)));
     assert!(prize.contains(&format!("\nranking: {SCOPE}\n")));
