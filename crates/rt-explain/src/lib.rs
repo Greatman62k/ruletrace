@@ -13,16 +13,21 @@
 //! ([`report`]).
 #![forbid(unsafe_code)]
 
+mod classify;
 mod render;
 pub mod report;
 pub mod results;
 mod verify;
 
+pub use classify::{classify_evaluation, has_question_fault, EvaluationClass};
 pub use render::render_trace;
 pub use verify::{verify_trace, SpanResolution, SpanVerdict, Verification, VerificationStatus};
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod tests_classify;
 
 #[cfg(test)]
 mod tests_report;

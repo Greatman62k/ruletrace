@@ -1,13 +1,16 @@
 //! The result classification of Req 31.12.
 //!
-//! `ruletrace-lab` maps the four classes to the exit codes 0, 4, 2 and 70.
-//! The derivation follows the order of `ruletrace evaluate`: a Question the
-//! inputs cannot answer, then an Indeterminate Outcome or an engine Error,
-//! then a provenance Error. A Warning decides nothing.
+//! The class exists for the Evaluate group and its tests, which compare it
+//! with the exit code of `ruletrace evaluate` (0, 4, 2 and 70). The
+//! Laboratory does not use it: it takes the class from the exit code of its
+//! `ruletrace evaluate` subprocess (design §11.18.7).
+//!
+//! The derivation is `rt_explain::classify_evaluation`, the one function that
+//! `ruletrace evaluate` also calls. This crate adds only `Internal`.
 
 use rt_engine::Outcome;
-use rt_explain::Verification;
-use rt_foundation::{Code, DiagnosticState};
+use rt_explain::{classify_evaluation, has_question_fault, EvaluationClass, Verification};
+use rt_foundation::DiagnosticState;
 
 /// How a run ended. It has no stored validity flag: it is derived from the
 /// Outcomes and Diagnostics.
@@ -24,14 +27,6 @@ pub enum ResultClass {
     Internal,
 }
 
-/// Whether the evaluation reports a Question that the inputs cannot answer.
-pub(crate) fn has_question_fault(diagnostics: &DiagnosticState) -> bool {
-    diagnostics
-        .as_slice()
-        .iter()
-        .any(|d| d.code() == Code::QuestionInvalid)
-}
-
 impl ResultClass {
     /// Classifies an evaluation from its Outcomes, its own Diagnostics and
     /// the Explainer's verifications. Never `Internal`: that class comes from
@@ -42,19 +37,10 @@ impl ResultClass {
         diagnostics: &DiagnosticState,
         verifications: &[Verification],
     ) -> Self {
-        let indeterminate = diagnostics.has_errors()
-            || outcomes
-                .iter()
-                .any(|o| matches!(o, Outcome::Indeterminate(_)));
-        let provenance = verifications.iter().any(|v| v.diagnostics().has_errors());
-        if has_question_fault(diagnostics) {
-            Self::InvalidInput
-        } else if indeterminate {
-            Self::Indeterminate
-        } else if provenance {
-            Self::InvalidInput
-        } else {
-            Self::Complete
+        match classify_evaluation(outcomes, diagnostics, verifications) {
+            EvaluationClass::Success => Self::Complete,
+            EvaluationClass::Indeterminate => Self::Indeterminate,
+            EvaluationClass::InvalidInput => Self::InvalidInput,
         }
     }
 }

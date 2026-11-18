@@ -39,7 +39,7 @@ use rt_explain::report::{
     ProofInputs, PublishedFact,
 };
 use rt_explain::results::{serialize_results, ResultsInput};
-use rt_explain::{render_trace, verify_trace, Verification};
+use rt_explain::{classify_evaluation, render_trace, verify_trace, EvaluationClass, Verification};
 use rt_foundation::{
     Code, Diagnostic, DiagnosticState, ExitCode, InputId, InputLocation, Location,
     MAX_COMPETITION_DATA_BYTES, MAX_CONTAINER_DEPTH,
@@ -48,7 +48,7 @@ use rt_ir::Rulebook;
 use rt_ledger::{derive_statuses, effective_revisions, ApprovalLedger, RecordKind};
 use rt_numeric::to_canonical;
 use rt_srcmodel::SourceModels;
-use rt_trace::{Outcome, TraceValue};
+use rt_trace::TraceValue;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -550,25 +550,11 @@ fn classify(
         state.push(d);
     }
     let state = state.sorted();
-    let invalid_question = evaluation
-        .diagnostics
-        .as_slice()
-        .iter()
-        .any(is_question_fault);
-    let indeterminate = evaluation.diagnostics.has_errors()
-        || evaluation
-            .outcomes
-            .iter()
-            .any(|o| matches!(o, Outcome::Indeterminate(_)));
-    let provenance = verifications.iter().any(|v| v.diagnostics().has_errors());
-    let code = if invalid_question {
-        ExitCode::InvalidInput
-    } else if indeterminate {
-        ExitCode::Indeterminate
-    } else if provenance {
-        ExitCode::InvalidInput
-    } else {
-        ExitCode::Success
-    };
+    let code =
+        match classify_evaluation(&evaluation.outcomes, &evaluation.diagnostics, verifications) {
+            EvaluationClass::InvalidInput => ExitCode::InvalidInput,
+            EvaluationClass::Indeterminate => ExitCode::Indeterminate,
+            EvaluationClass::Success => ExitCode::Success,
+        };
     (state, code)
 }

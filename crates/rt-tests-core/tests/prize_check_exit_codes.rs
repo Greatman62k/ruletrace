@@ -383,3 +383,65 @@ fn a_question_the_data_cannot_answer_classifies_like_the_exit_code_2_of_ruletrac
     assert_eq!(results, None);
     assert_eq!(exit_code(class), 2);
 }
+
+const CSV_MISSING_JUDGES: &str = "participant,age,licence,judges,technical\np1,17,true,8,7\np2,20,true,,9\np3,15,true,6,6\np4,30,false,9,6\n";
+
+/// RN-38 (design §9.4): an engine Error Diagnostic with every Outcome
+/// decided is not reachable with Rule_IR version 1. Every Error the engine
+/// builds for an Outcome (RT-EXE-0010, RT-DGN-0004, RT-DGN-0005,
+/// RT-EXE-0006, a dependency cycle and a fault) is created in the same
+/// answer as an Indeterminate Outcome (`rt-engine/src/lib.rs`, `rank.rs`).
+/// This test pins the implication over the data of this file and the exit
+/// code of `ruletrace evaluate` for each case.
+#[test]
+fn an_engine_error_always_comes_with_an_indeterminate_outcome_and_exit_4() {
+    let compiled = parse_compiled(
+        &fixture("expected/compiled.json"),
+        &input("compiled.json"),
+        64 * 1024 * 1024,
+        MAX_CONTAINER_DEPTH,
+    )
+    .unwrap();
+    let none = SourceModels::new();
+    let (pid, options) = (input("participants.csv"), MappingOptions::default());
+    let request = full_request();
+    let mut errors_seen = 0;
+    for csv in [CSV_FULL, CSV_MISSING_AGE, CSV_MISSING_JUDGES] {
+        let run = evaluate(&PrizeInputs {
+            compiled: &compiled,
+            request: &request,
+            files: FileInputs {
+                participants: NamedFile {
+                    bytes: csv.as_bytes(),
+                    name: &pid,
+                },
+                collections: None,
+                published: None,
+                options: &options,
+            },
+            sources: &none,
+            statements: &[],
+            synthetic_data: None,
+        })
+        .unwrap();
+        let evaluation = run.evaluation();
+        let indeterminate = evaluation
+            .outcomes
+            .iter()
+            .any(|o| matches!(o, rt_trace::Outcome::Indeterminate(_)));
+        let prepared = run.prepared();
+        let (cli_code, _) = ruletrace_evaluate(
+            &prepared.data_bytes(),
+            &prepared.questions_bytes(),
+            None,
+            None,
+        );
+        if evaluation.diagnostics.has_errors() {
+            errors_seen += 1;
+            assert!(indeterminate, "an Error without an Indeterminate Outcome");
+            assert_eq!(cli_code, 4);
+        }
+        assert_eq!(indeterminate, cli_code == 4, "{csv}");
+    }
+    assert_eq!(errors_seen, 2, "the missing-value cases must report Errors");
+}
