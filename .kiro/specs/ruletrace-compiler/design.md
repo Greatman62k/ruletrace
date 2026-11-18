@@ -285,7 +285,7 @@ Rationale for the splits that matter:
 
 - `rt-ledger` (read) versus `rt-review` (write). AI crates may validate content, which needs ledger types, but must never reach an append function. The append function exists only in `rt-review` and is reached only from `rt-cli`.
 - `rt-compiled` separate from `rt-compile`. The engine needs the compiled types but must not depend on compiler logic.
-- `rt-trace` separate from `rt-engine`. The Explainer needs trace types and must not depend on the engine (Req 15.9).
+- `rt-trace` separate from `rt-engine`. The Explainer needs trace types and must not depend on the engine. This is a design rule of this section, enforced by `tools/allowed-edges.v1` (no `rt-explain → rt-engine` edge). (Corrected 2026-11-18, UD-41: the earlier citation "Req 15.9" was wrong; Req 15.9 states the converse rule, that the Rules_Engine crate has no dependency on the Explainer crate.)
 - `rt-proposals` in core. `review` (core) must read the store; the AI tool writes it through the same model.
 - `rt-numeric` has no dependencies so the differential tests can wrap it freely.
 - `rt-srcmodel` separate from `rt-source`. Req 24.12 allows applications the Source_Model crate and forbids the Ingestor and Extractor, so the types and the verification helpers cannot live next to the ingest code.
