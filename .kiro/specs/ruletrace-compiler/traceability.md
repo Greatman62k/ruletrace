@@ -981,3 +981,28 @@ OPEN POINTS for the user:
 - (b) Requirement 37 criterion 11 forbids inline styles, which constrains the front end (no style attributes).
 - (c) Requirement 37 criterion 3 refuses the Host value `localhost` (only `127.0.0.1:<port>` or `[::1]:<port>`), so the user opens the literal address.
 - (d) Requirement 37 criterion 21 leaves open for L1 whether the credential mechanism changes Requirement 28.
+
+### Requirements checkpoint clarifications (2026-11-18)
+
+The user reviewed Requirements 36 and 37 and chose "Continue to the design phase". The requirements phase was not restarted. Decisions on the open points above:
+
+| Point | Decision | Effect on requirements.md |
+| --- | --- | --- |
+| (a) 37.6 single session | Approved: at most one active session. Several tabs with the same cookie are the same session and are allowed. No second independent session. State-changing requests are serialized or guarded against stale revisions. Approval always rechecks the exact revision and hash, whichever tab sent it. Tests: two tabs, concurrent state changes, stale hashes, a second session attempt | 37.6 clarified; new 37.25 |
+| (b) 37.11 no inline styles | Approved. Locally served style sheets, restrictive CSP, no remote assets, no `unsafe-inline` | none |
+| (c) 37.3 Host | Approved: only the exact Host of the bound address and port (`127.0.0.1:<port>`, `[::1]:<port>`); `localhost`, wildcard, non-loopback and non-matching values refused; binding only to loopback | none (37.1, 37.3, 37.4 already state it) |
+| (d) 37.21 credential | **Not closed.** The design and the L1 threat model must reconcile "the Laboratory must not inherit, read, expose, persist or log the credential" with "the Laboratory orchestrates `ruletrace-ai` as a subprocess", examine an OS credential store and a credential broker, and show five properties (Laboratory cannot read; AI process can obtain; not in the approval process; not recoverable from logs, artifacts or the browser session; works on the supported platforms). Process separation alone is not proof | none; design §11.10 and the threat model §6 |
+| 34.10 honest claims | **Kept open** pending a source-backed review that quotes the criterion and compares each statement with the engine and its tests, with attention to evaluate exit 4 (executed with Indeterminate Outcomes). No rewrite on assumptions | none; design §11.14, RN-31 and RN-34 to RN-38 |
+| Limits | Approved: 30-minute idle timeout, 1 MiB control request, 16 MiB combined subprocess output, 300 s per subprocess. Added: a separate explicit upload maximum, chosen after checking the planned snapshots and fixtures; no unbounded bodies; output overflow terminates with a Diagnostic and no silent truncation; a timed-out subprocess is terminated, reaped and cleaned up | 37.14 clarified; new 37.26; 37.23 now covers 24 to 26 |
+
+Old and new text of the changed criteria:
+
+**37.6.** Old (last sentence): "THE ruletrace-lab executable SHALL hold at most one Laboratory_Session at a time." New: "THE ruletrace-lab executable SHALL hold at most one Laboratory_Session at a time. Several browser tabs that carry the same valid session cookie belong to that one Laboratory_Session and SHALL be served, and THE ruletrace-lab executable SHALL create no second, independent Laboratory_Session while one exists. (Clarified at the requirements checkpoint, 2026-11-18.)"
+
+**37.14.** Old: ends with "(a value with a NUL byte is refused before any subprocess starts)." New: the same text, followed by: "WHEN a subprocess exceeds the output limit or the run-time limit, THE ruletrace-lab executable SHALL terminate it, SHALL wait for its exit so that no child process remains, SHALL display a Diagnostic that names the limit and the workflow step, SHALL display none of the captured output as if it were complete (no silent truncation), SHALL use no output file of that step, and SHALL leave no temporary file of that step in the session directory after the session ends. The 1 MiB limit applies to ordinary control requests; file uploads have the separate limits of criterion 26. (Clarified at the requirements checkpoint, 2026-11-18.)"
+
+**37.23.** Old: "tests of criteria 1 to 22 and 24". New: "tests of criteria 1 to 22 and 24 to 26".
+
+**37.25** (new) and **37.26** (new): see requirements.md. Old: (none).
+
+The upload values themselves are in design §11.9 with status Recommended-pending (LT-8), because the real document snapshots of task 11.1 do not exist yet.
