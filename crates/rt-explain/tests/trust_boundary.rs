@@ -306,3 +306,151 @@ fn header_and_entries_agree_in_a_mixed_run() {
     assert!(human.contains("provenance: not verified (1 of 2 traces verified; RT-PRV-0002)\n"));
     assert!(!human.contains("provenance: verified"));
 }
+
+/// A rule id, a revision and spans, each a `start..end` range of `RULES`.
+type RuleSpec<'a> = (&'a str, u32, &'a [(u32, u32)]);
+
+fn multi(rules: &[RuleSpec<'_>]) -> DecisionTrace {
+    let hash = DocumentHash::new(model(RULES).sha256().as_str()).unwrap();
+    let rules = rules
+        .iter()
+        .map(|(id, rev, spans)| TraceRule {
+            rule: RuleId::new(*id).unwrap(),
+            revision: RevisionNumber::new(*rev).unwrap(),
+            spans: spans
+                .iter()
+                .map(|&(start, end)| TraceSpan {
+                    document: DocumentId::new("rules.md").unwrap(),
+                    sha256: hash.clone(),
+                    start,
+                    end,
+                    line: 1,
+                    column: 1,
+                })
+                .collect(),
+        })
+        .collect();
+    DecisionTrace::new(TraceParts {
+        question: TraceQuestion {
+            kind: QuestionKind::Value,
+            target: "elig.age".to_owned(),
+            participant: Some("p1".to_owned()),
+        },
+        outcome: Outcome::Decided(TraceValue::Bool(true)),
+        rules,
+        entries: Vec::new(),
+        not_applied: Vec::new(),
+        missing: Vec::new(),
+        diagnostics: DiagnosticState::empty(),
+    })
+    .unwrap()
+}
+
+fn verified(t: &DecisionTrace) -> Verification {
+    let v = verify_trace(t, &models(RULES));
+    assert!(v.status() == rt_explain::VerificationStatus::Verified);
+    v
+}
+
+#[test]
+fn a_verification_with_fewer_spans_is_refused_for_a_longer_trace() {
+    let one = multi(&[("r1", 1, &[(0, 20)])]);
+    let two = multi(&[("r1", 1, &[(0, 20), (0, 10)])]);
+    assert_eq!(
+        TraceRef::new(4, &two, &verified(&one)).unwrap_err(),
+        ReportError::VerificationNotForTrace { trace: 4 }
+    );
+}
+
+#[test]
+fn a_verification_with_more_spans_is_refused_for_a_shorter_trace() {
+    let one = multi(&[("r1", 1, &[(0, 20)])]);
+    let two = multi(&[("r1", 1, &[(0, 20), (0, 10)])]);
+    assert_eq!(
+        TraceRef::new(5, &one, &verified(&two)).unwrap_err(),
+        ReportError::VerificationNotForTrace { trace: 5 }
+    );
+}
+
+#[test]
+fn a_verification_of_another_rule_is_refused() {
+    let r1 = multi(&[("r1", 1, &[(0, 20)])]);
+    let r2 = multi(&[("r2", 1, &[(0, 20)])]);
+    assert_eq!(
+        TraceRef::new(1, &r2, &verified(&r1)).unwrap_err(),
+        ReportError::VerificationNotForTrace { trace: 1 }
+    );
+}
+
+#[test]
+fn a_verification_of_another_revision_is_refused() {
+    let v1 = multi(&[("r1", 1, &[(0, 20)])]);
+    let v2 = multi(&[("r1", 2, &[(0, 20)])]);
+    assert_eq!(
+        TraceRef::new(2, &v2, &verified(&v1)).unwrap_err(),
+        ReportError::VerificationNotForTrace { trace: 2 }
+    );
+}
+
+#[test]
+fn a_verification_with_the_same_spans_in_another_order_is_refused() {
+    let ab = multi(&[("r1", 1, &[(0, 20), (0, 10)])]);
+    let ba = multi(&[("r1", 1, &[(0, 10), (0, 20)])]);
+    assert_eq!(
+        TraceRef::new(6, &ba, &verified(&ab)).unwrap_err(),
+        ReportError::VerificationNotForTrace { trace: 6 }
+    );
+    assert!(TraceRef::new(6, &ab, &verified(&ab)).is_ok());
+}
+
+#[test]
+fn an_entry_whose_sources_differ_from_the_verification_is_refused() {
+    let wide = trace("p1", 0, 20);
+    let narrow = trace("p1", 0, 10);
+    let v_wide = verified(&wide);
+    let v_narrow = verified(&narrow);
+    let entries = eligibility(&[wide], &[v_wide]);
+    assert_eq!(
+        ReportDoc::new(
+            header(),
+            &[v_narrow],
+            vec![ReportSection::Eligibility(entries)]
+        ),
+        Err(ReportError::EvidenceNotFromVerification { trace: 0 })
+    );
+}
+
+#[test]
+fn entries_paired_with_swapped_verifications_are_refused() {
+    let t = [trace("p1", 0, 20), trace("p2", 0, 10)];
+    let vs = [verified(&t[0]), verified(&t[1])];
+    let entries = eligibility(&t, &vs);
+    let swapped = [vs[1].clone(), vs[0].clone()];
+    assert_eq!(
+        ReportDoc::new(
+            header(),
+            &swapped,
+            vec![ReportSection::Eligibility(entries)]
+        ),
+        Err(ReportError::EvidenceNotFromVerification { trace: 0 })
+    );
+}
+
+#[test]
+fn an_entry_at_a_valid_index_with_other_spans_and_the_same_flag_is_refused() {
+    let t0 = trace("p1", 0, 20);
+    let t1 = trace("p2", 0, 20);
+    let other = trace("p2", 0, 10);
+    let v0 = verified(&t0);
+    let v1 = verified(&t1);
+    let v_other = verified(&other);
+    let entries = eligibility(&[t0, t1], &[v0.clone(), v1]);
+    assert_eq!(
+        ReportDoc::new(
+            header(),
+            &[v0, v_other],
+            vec![ReportSection::Eligibility(entries)]
+        ),
+        Err(ReportError::EvidenceNotFromVerification { trace: 1 })
+    );
+}

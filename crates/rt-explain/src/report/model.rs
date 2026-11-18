@@ -6,6 +6,10 @@
 //! has no field for validity, a pairing, round, bracket position, seed, slot,
 //! advancement, elimination, prize, award or amount.
 //!
+//! An entry is bound to the verification at its trace index by equal span
+//! verdicts and an equal verified flag. The trace itself (question,
+//! participant) is not compared beyond its spans.
+//!
 //! The Bracket_Check tie-straddle notes belong to the deferred rank_reference
 //! task 9.3 and are not modelled.
 
@@ -862,9 +866,8 @@ pub struct DifferenceFacts {
 ///
 /// ```compile_fail
 /// use rt_explain::report::PublishedDifference;
-/// use rt_foundation::Code;
-/// fn forge(d: &mut PublishedDifference) {
-///     d.code = Code::PublishedTieGroupSplit;
+/// fn forge(d: &PublishedDifference) {
+///     let _kind = d.kind;
 /// }
 /// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
