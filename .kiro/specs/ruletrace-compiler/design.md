@@ -3141,25 +3141,25 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 | RN-28 | 34.1, 34.7 | "Every demonstration document" is read as the demonstration's own documents (README, runbook, reports, goldens, boundary document). The committed Source_Documents are excluded from the phrase scan because 33.4 forbids altering them and their text can use any word | Confirm |
 | RN-29 | 17.4, 16.9, 9.2, 33.17 | Req 33.17 requires `compile` to exit 3 after `validate` found APPROVAL_UNRESOLVED, and 9.2 has `compile` return blocking Diagnostics unchanged. Both need a Validation_Result that carries blocking Diagnostics, but 17.4 says a failed command creates no file at its output location. The design lets `validate` write the Validation_Result artifact also when blocking Diagnostics exist (it is not an executable artifact; `compile` refuses it with exit 3) | Amend the exception list of 17.4 and 16.9, or change 33.17 to expect exit 2 from `compile` when no artifact exists |
 | RN-30 | 14.15 to 14.25 | The first-version Competition_Data and `inputs` declaration carry typed scalar values and no per-value authority, edition or provenance. The criteria are written independent of the carrying form. The form (companion declared text inputs or a metadata record) is a format change not made here | Record a user decision on the carrying form before any format or Rust change. Until then 14.25 applies |
-| RN-31 | 36.21, 36.14, 34.9, 16.11, 13.18 | 36.21 makes every nonzero exit "no success state" and stops the workflow. `evaluate` exit 4 is an executed evaluation with complete results (`rt-cli/src/evaluate.rs`, `tests_pipeline.rs`), and exit 2 after a provenance failure also writes complete results marked not verified (13.18). Read literally, 36.21 hides correct results and contradicts 36.14 | User decision. Proposed direction (not applied): 36.21 excludes `evaluate` exit 4 and exit 2 with a written results file, which §11.8 classifies; 36.14 adds the exit-2-with-results case |
-| RN-32 | 37.14 | "Follows an explicit end-of-options marker or is part of an option of the form name=value": neither CLI supports `--` or `--name=value` (§3.9; `rt-cli/src/args.rs`, `rt-ai-tool/src/cli.rs`). The design places each value immediately after its option name and refuses values that start with `-` (§11.6) | User decision: reword 37.14 to the positional rule, or add `--` support to both CLIs (a core change) |
-| RN-33 | 36.4 | The Laboratory must not change committed files, so it copies the starting Rulebook and Approval_Ledger byte for byte into the session directory before any review (§11.7). Literally that writes both files from its own process | User decision: allow a byte-identical, hash-recorded copy before any review, and nothing else. Second question (§11.7): decisions recorded in the session copy are deleted at session end; choose a workspace ledger written directly by `ruletrace review`, or an export |
-| RN-34 | 34.9 | "Every Proposal shown is untrusted AI output" is inaccurate: Manual-origin Proposed revisions are listed by `review list`; the offline demonstration's script entries are authored; approval ends the untrusted state (34.2) | User decision on the wording; the evidence is in §11.14 |
-| RN-35 | 34.10, 36.20, 33.8 | "Replays recorded provider output" is false for the committed offline demonstration, which replays `authored-script.json` ("not provider output"); real recordings exist but are outside the runbook and goldens. "Recorded Reviewer decisions" are re-run `review` commands with fixed arguments | User decision: which script demo mode uses, and the wording |
+| RN-31 | 36.21, 36.14, 34.9, 16.11, 13.18 | 36.21 makes every nonzero exit "no success state" and stops the workflow. `evaluate` exit 4 is an executed evaluation with complete results (`rt-cli/src/evaluate.rs`, `tests_pipeline.rs`), and exit 2 after a provenance failure also writes complete results marked not verified (13.18). Read literally, 36.21 hides correct results and contradicts 36.14 | User decision. Proposed direction (not applied): 36.21 excludes `evaluate` exit 4 and exit 2 with a written results file, which §11.8 classifies; 36.14 adds the exit-2-with-results case Status 2026-11-18: **Decided (UD-39):** 36.21 amended (five-way classification, results inspected, exit 4 not a failure); 36.14 refers to it. Design §11.18.7 |
+| RN-32 | 37.14 | "Follows an explicit end-of-options marker or is part of an option of the form name=value": neither CLI supports `--` or `--name=value` (§3.9; `rt-cli/src/args.rs`, `rt-ai-tool/src/cli.rs`). The design places each value immediately after its option name and refuses values that start with `-` (§11.6) | User decision: reword 37.14 to the positional rule, or add `--` support to both CLIs (a core change) Status 2026-11-18: **Decided (UD-39):** 37.14 amended to the actual grammar |
+| RN-33 | 36.4 | The Laboratory must not change committed files, so it copies the starting Rulebook and Approval_Ledger byte for byte into the session directory before any review (§11.7). Literally that writes both files from its own process | User decision: allow a byte-identical, hash-recorded copy before any review, and nothing else. Second question (§11.7): decisions recorded in the session copy are deleted at session end; choose a workspace ledger written directly by `ruletrace review`, or an export Status 2026-11-18: **Decided (UD-39):** durable workspace; no session copy of the ledger; 36.4 amended. Design §11.18.3 supersedes the input-copy bullet of §11.7 |
+| RN-34 | 34.9 | "Every Proposal shown is untrusted AI output" is inaccurate: Manual-origin Proposed revisions are listed by `review list`; the offline demonstration's script entries are authored; approval ends the untrusted state (34.2) | User decision on the wording; the evidence is in §11.14 Status 2026-11-18: **Decided (UD-39):** 34.9 and 36.11 amended (origin labels) |
+| RN-35 | 34.10, 36.20, 33.8 | "Replays recorded provider output" is false for the committed offline demonstration, which replays `authored-script.json` ("not provider output"); real recordings exist but are outside the runbook and goldens. "Recorded Reviewer decisions" are re-run `review` commands with fixed arguments | User decision: which script demo mode uses, and the wording Status 2026-11-18: **Decided (UD-39):** 34.10 and 36.20 amended (authored script, not provider output) |
 | RN-36 | 34.10 | "Eligibility does not filter rankings" holds for IR version 1 because no filter construct exists, and only while Questions name no participant set derived from eligibility. §11.3 adds that constraint and a test | Confirm, or state the condition in the criterion |
 | RN-37 | 34.7, 34.10, task 11.8 | The required-statement and prohibited-phrase lists do not exist (task 11.8 deferred), and 34.7 gives identifiers to criteria 2 to 6 only, while 34.10 adds statements of 9 and 10 | User decision: extend 34.7 to criteria 9 and 10 and schedule 11.8 before the Laboratory's documentation scan |
 | RN-38 | 16.11 | `evaluate` returns 4 when any Outcome is Indeterminate **or** the engine Diagnostic list has an Error (`evaluate.rs` `classify`); 16.11 says "at least one Indeterminate Outcome". Whether an engine Error without an Indeterminate Outcome is reachable is not verified | Verify with a test; then either confirm the wider rule in 16.11 or narrow the code (with a regression test) |
-| RN-39 | 37.21 | The start refusal needs the variable name from the AI_Configuration, and `rt-lab` may not depend on an AI crate | LT-3 of the threat model |
+| RN-39 | 37.21 | The start refusal needs the variable name from the AI_Configuration, and `rt-lab` may not depend on an AI crate | LT-3 of the threat model Status 2026-11-18: Moot (UD-39 A): the Laboratory reads no AI_Configuration; 37.21 now uses the credential-name registry |
 | RN-40 | 36.6, 5.11 | 36.6 names four arguments (Reviewer, rule, revision, hash); `review approve` also requires `--time`, stored verbatim. The source of the time is unspecified | User decision. Design (§11.13): an editable time field pre-filled from the Laboratory's clock, labelled as not verified |
 | RN-41 | 36.12 | "Exactly as `ruletrace review list` reports" needs a machine-readable listing for the approval form | §11.15 adds `review list --format json` as an option (RN-24 rule) |
 | RN-42 | 31.2, 31.5, 36.18 | 31.2 has the Application_Layer call the engine; 36.18 has the Laboratory obtain every Outcome from `ruletrace evaluate` | Design §11.3: Prepare, Present and Evaluate groups; the Laboratory never calls Evaluate. Confirm |
 | RN-43 | 37.6 (checkpoint), 37.25 | Several tabs with one cookie are one session; state changes are serialized; stale forms are refused | Added as clarifications at the checkpoint (traceability.md). No further change |
-| RN-44 | 24.13 | 24.13 limits the edges of `ruletrace-lab` to the two Application_Layer crates, the shared Diagnostic, Location and Exact_Number crates, and one HTTP server library. §11.3 lists seven further direct edges: `rt-hash` (Hand_Off_Artifact hashes), `rt-json` (parsing results, Validation_Result and `review list --format json`), `rt-data` (canonical serialization of mapped inputs), `rt-compiled` (reading the Compiled_Rulebook schema for mapping), `rt-trace` (Outcome and trace types of the parsed results), `rt-explain` (report rendering and the results-file parser), `rt-srcmodel` (Source_Model types for display). Each is also reachable through the Workflow_Modules. Under LT-4 option A no HTTP server library is used | User decision: widen 24.13 to these crates (all core, none with I/O, ledger, review, validation or AI code), or reduce the edges by routing them through Workflow_Module re-exports |
+| RN-44 | 24.13 | 24.13 limits the edges of `ruletrace-lab` to the two Application_Layer crates, the shared Diagnostic, Location and Exact_Number crates, and one HTTP server library. §11.3 lists seven further direct edges: `rt-hash` (Hand_Off_Artifact hashes), `rt-json` (parsing results, Validation_Result and `review list --format json`), `rt-data` (canonical serialization of mapped inputs), `rt-compiled` (reading the Compiled_Rulebook schema for mapping), `rt-trace` (Outcome and trace types of the parsed results), `rt-explain` (report rendering and the results-file parser), `rt-srcmodel` (Source_Model types for display). Each is also reachable through the Workflow_Modules. Under LT-4 option A no HTTP server library is used | User decision: widen 24.13 to these crates (all core, none with I/O, ledger, review, validation or AI code), or reduce the edges by routing them through Workflow_Module re-exports Status 2026-11-18: **Decided (UD-39):** 24.13 amended with the enumerated edges |
 | RN-45 | 37.25, 37.17 | 37.25 serializes "at most one state-changing request"; `POST /session/end` is state-changing (37.9) and 37.17 requires it to kill running subprocesses, so during a step both cannot hold | User decision: exempt the session end from 37.25, and state that a Launch_Secret exchange during a step gets 401 under 37.6, not 409 under 37.25 (design §11.5) |
-| RN-46 | 36.2, 37.14, 37.20, 29.1 | Under M5 live proposal generation is not started by the Laboratory, so 36.2 is not met for live runs and the 37.20 canary test cannot run "a complete proposal workflow" through the Laboratory. Under M2 a live run with several Provider_Requests can exceed 300 s (29.1 allows up to 300 s per request) | Decided together with LT-1 |
-| RN-47 | 37.5 | LT-5 option "print a new Launch_Secret after a session ends" contradicts "print it once" at each start | Only if LT-5 chooses it |
-| RN-48 | 37.10, 37.23 | 37.10 lists no `Cache-Control: no-store`; 37.23 requires mutants for 3, 4, 7, 9, 13, 14, 19, 20 only, while 6, 21, 24, 25, 26 are the controls the checkpoint added; 37.25 "state of the session" is defined only in §11.5 | User decision: add `no-store` to 37.10, extend the mutant list of 37.23 (also 36.4, 36.6, 36.9), reference the state-version definition |
-| RN-49 | 7.16, 7.17 | 7.16 allows the families RT-DGN, RT-PRV, RT-APR, RT-AI and the families the design assigns to Requirements 1 to 14, 19 and 21. The Laboratory's own Diagnostics (Req 36, 37) need a family, proposed `RT-LAB`, which that list does not cover | User decision: add Requirements 36 and 37 to 7.16, or place the Laboratory codes in an existing family |
+| RN-46 | 36.2, 37.14, 37.20, 29.1 | Under M5 live proposal generation is not started by the Laboratory, so 36.2 is not met for live runs and the 37.20 canary test cannot run "a complete proposal workflow" through the Laboratory. Under M2 a live run with several Provider_Requests can exceed 300 s (29.1 allows up to 300 s per request) | Decided together with LT-1 Status 2026-11-18: Moot (UD-39 A): 36.2 and 37.20 amended (live generation external, import integrated) |
+| RN-47 | 37.5 | LT-5 option "print a new Launch_Secret after a session ends" contradicts "print it once" at each start | Only if LT-5 chooses it Status 2026-11-18: Moot (UD-39 LT-5: restart) |
+| RN-48 | 37.10, 37.23 | 37.10 lists no `Cache-Control: no-store`; criterion 37.23 requires mutants for 3, 4, 7, 9, 13, 14, 19, 20 only, while 6, 21, 24, 25, 26 are the controls the checkpoint added; 37.25 "state of the session" is defined only in §11.5 | User decision: add `no-store` to 37.10, extend the mutant list of 37.23 (also 36.4, 36.6, 36.9), reference the state-version definition |
+| RN-49 | 7.16, 7.17 | 7.16 allows the families RT-DGN, RT-PRV, RT-APR, RT-AI and the families the design assigns to Requirements 1 to 14, 19 and 21. The Laboratory's own Diagnostics (Req 36, 37) need a family, proposed `RT-LAB`, which that list does not cover | User decision: add Requirements 36 and 37 to 7.16, or place the Laboratory codes in an existing family Status 2026-11-18: **Decided (UD-39):** 7.16 amended; `RT-LAB` family |
 
 ## Requirements Traceability
 
@@ -3303,7 +3303,7 @@ So the Laboratory path is: Prepare in-process, write the three canonical files t
 
 Constraint from the 34.10 review (§11.14): the Prepare group builds ranking Questions over all participants of the Competition_Data and never derives a participant set from an Outcome. A test asserts that the ranking Questions name no participant set.
 
-### 11.4 HTTP server (LT-4, OPEN)
+### 11.4 HTTP server (LT-4, decided by UD-39: option A)
 
 Options:
 
@@ -3366,7 +3366,7 @@ Tests (checkpoint clarification, task L4): two tabs with one cookie both see the
 
 - The session directory is created under the OS temporary directory. At start the Laboratory deletes only directories that carry the marker and whose `.lock` it can take; the lock of a live Laboratory prevents deleting its directory (two-instance case).
 - Every file a subprocess writes is hashed when the subprocess exits with a code that the step accepts, and checked again immediately before it is passed to the next subprocess. A mismatch stops the workflow and shows the file and both hashes; no further subprocess starts and the ledger is not touched.
-- **Input copies (RN-33).** The Rulebook and the Approval_Ledger that a workflow starts from are copied byte for byte from the workspace into `inputs/` and hashed, so that `review approve` never changes a committed file. Req 36.4 says the Laboratory writes neither file from its own process; a byte-identical copy made before any review is a write in the literal sense. The design does it only for the initial copy, never edits the bytes, and asks for the wording of RN-33. Consequence: decisions recorded in the Laboratory live in the session copy, which Req 37.17 deletes at the end of the session. Keeping them needs either a workspace ledger that `ruletrace review` writes directly (the Laboratory then passes the workspace paths, and the 36.4 test hashes those files), or an export, which would be a Laboratory write of the ledger. RN-33 asks the user to choose. The 36.4 test hashes whichever ledger and Rulebook paths the Laboratory passes to `ruletrace review`.
+- (Superseded by UD-39, §11.18.3: no copy of the ledger or Rulebook is made.) **Input copies (RN-33).** The Rulebook and the Approval_Ledger that a workflow starts from are copied byte for byte from the workspace into `inputs/` and hashed, so that `review approve` never changes a committed file. Req 36.4 says the Laboratory writes neither file from its own process; a byte-identical copy made before any review is a write in the literal sense. The design does it only for the initial copy, never edits the bytes, and asks for the wording of RN-33. Consequence: decisions recorded in the Laboratory live in the session copy, which Req 37.17 deletes at the end of the session. Keeping them needs either a workspace ledger that `ruletrace review` writes directly (the Laboratory then passes the workspace paths, and the 36.4 test hashes those files), or an export, which would be a Laboratory write of the ledger. RN-33 asks the user to choose. The 36.4 test hashes whichever ledger and Rulebook paths the Laboratory passes to `ruletrace review`.
 - **Fresh output paths.** Every step writes into a new, empty directory `work/<step>-<state version>/`. `ruletrace` keeps an existing output file on exit 2 (`tests_pipeline.rs` `invalid_input_exits_2_and_keeps_an_existing_output`), so reusing a path could show a stale file as the result of a failed run.
 - A valid hash proves that the bytes did not change. It never makes AI output trusted (Req 36.10).
 
@@ -3393,7 +3393,7 @@ Req 36.21 as written treats every nonzero exit as "no success state" and "no fur
 
 The state of a stage is derived from the files and exit codes of its own subprocess only. Lightning is active only after `evaluate` exited 0 or 4, or 2 with a results file, for the displayed Compiled_Rulebook (Req 36.14; the exit-2 case is part of RN-31).
 
-### 11.9 Request and upload limits (Req 37.14, 37.26; LT-8, OPEN)
+### 11.9 Request, upload and connection limits (Req 37.14, 37.26, 37.27; LT-8 and LT-9 decided by UD-39)
 
 | Limit | Value | Basis |
 | --- | --- | --- |
@@ -3417,7 +3417,7 @@ Evidence for the upload values (read on 2026-11-18): the largest committed file 
 
 A request is refused from its `Content-Length` before the body is read when the length exceeds the limit, and the reader stops at the limit when the length is false (a body without `Content-Length` is refused, §11.4). The test of Req 37.26 uses an instrumented reader that counts the bytes read. A refused upload does not count toward the session total. Every response that carries session data or a CSRF token has `Cache-Control: no-store` (threat model T12b; adding it to 37.10 is part of RN-48). A body is never buffered beyond its limit. A file at exactly the limit is accepted (Req 19.9 rule).
 
-### 11.10 Credential isolation (Req 37.20, 37.21; LT-1 to LT-3, OPEN)
+### 11.10 Credential isolation (Req 37.20, 37.21; LT-1 to LT-3 decided by UD-39, see §11.18.1)
 
 The analysis is section 6 of the threat model. Summary:
 
@@ -3498,7 +3498,7 @@ The criteria are **not** rewritten here. RN-34 to RN-38 state each mismatch and 
 
 ### 11.16 Testing (task L4)
 
-- Every criterion of Req 37 has tests that assert the exact status, header values, exit code and the byte state of the ledger and the workspace (37.23). Criteria 3, 4, 7, 9, 13, 14, 19, 20 each get a mutant that removes the check and is shown to fail (37.23). The design adds mutants for 6, 21, 24, 25 and 26 (one session, start refusal, double cookie, mutex and state version, upload limit); extending 37.23 to them is RN-48.
+- Every criterion of Req 37 has tests that assert the exact status, header values, exit code and the byte state of the ledger and the workspace (37.23). Criteria 3, 4, 7, 9, 13, 14, 19, 20 each get a mutant that removes the check and is shown to fail (37.23). The design adds mutants for 37.6, 37.21, 37.24, 37.25, 37.26 and 37.27 (one session, start refusal, double cookie, mutex and state version, upload limit, connection limits) and for 36.4, 36.6 and 36.9 (ledger written only by review, confirmation equality, hand-off hash check); extending the mutant list of Req 37 criterion 23 to them is RN-48.
 - The HTTP parser, the cookie parser and the multipart parser get property tests over generated bytes (at least 256 cases each) and boundary tests at each limit.
 - Recording stand-ins for `ruletrace` and `ruletrace-ai` (written by a child process, the ETXTBSY lesson of 9.4) record argument vectors, environment and working directory, and can sleep, flood output, exit with any code and write malformed files.
 - The canary test of 37.20 under the mechanism that LT-1 selects; under M5 the test runs `ruletrace-ai` from the harness with the canary, imports the batch through the Laboratory, and scans every Laboratory surface and every `ruletrace` child environment. Under M5 the Laboratory's environment never holds the canary by construction, so this test shows less than 37.20 describes (a proposal workflow run through the Laboratory); that gap is part of RN-46.
@@ -3507,12 +3507,151 @@ The criteria are **not** rewritten here. RN-34 to RN-38 state each mismatch and 
 
 ### 11.17 Open items of this section
 
+(Amended by UD-39, 2026-11-18.)
+
 | Id | Item | Status |
 | --- | --- | --- |
-| LT-1 to LT-9 | Threat model decisions (credential mechanism, Req 28 change, variable name source, HTTP server, new secret after session end, cross-port cookie hardening, crash orphans, upload limits, connection limits) | **OPEN**, user |
-| L1-R | Independent review of the threat model and this section | Pending |
-| L1b | Credential-store feasibility spike on three platforms | Only if LT-1 selects M2 |
-| RN-31 to RN-49 | Requirements notes in §9.4 | User decision each |
-| V-1 | Kill during a store write leaves no file that a later run rejects (§11.6) | To verify in L4 |
-| V-2 | Safe signal handling on three platforms (§11.11) | To decide in L2 |
-| V-3 | Windows environment allow-list for `ruletrace-ai` live mode (§11.6) | To verify in L1b or L4 |
+| LT-1, LT-2, LT-3 | Credential mechanism, Req 28 change, variable-name source | **Decided (UD-39 A):** user-run live step and import; Req 28 unchanged; credential-name registry (§11.18.1) |
+| LT-4 | HTTP server | **Decided:** standard library, server-rendered forms (§11.4) |
+| LT-5 | After a session ends | **Decided:** restart required; no Launch_Secret reused (Req 37.8) |
+| LT-6 | Cross-port cookie exposure | **OPEN.** Deferral rejected by the user. Candidate mitigation in §11.18.5; needs an independent reviewer's acceptance, browser verification and a user decision on Req 37.5 and 37.6 |
+| LT-7 | Child processes after a Laboratory crash | **OPEN.** Containment designed in §11.18.6; must be demonstrated by crash tests on each platform before it is claimed |
+| LT-8 | Upload limits | **Decided:** 16 MiB per file, 64 MiB per session, streamed enforcement (Req 37.26) |
+| LT-9 | Connection limits | **Decided:** 16 connections, 4 concurrent requests, finite timeouts, 503 on overload (Req 37.27, §11.18.4) |
+| L1-R | Independent review of the threat model and this section | Reviewed three times on 2026-11-18; a review of the UD-39 changes is pending; L1 is approved only after LT-6 and LT-7 are accepted |
+| L1b | Credential-store spike | **Dropped** (UD-39: no OS credential store in this release) |
+| RN-36 to RN-38, RN-40 to RN-43, RN-45, RN-48 | Requirements notes not decided by UD-39 | User decision each |
+| V-1 | Kill during a store write leaves no file that a later run rejects (§11.6) | To verify in 13.3 (it matters for the containment of §11.18.6 too) |
+| V-2 | Safe signal handling on three platforms (§11.11) | To decide with LT-7 |
+| V-3 | Windows environment allow-list (§11.6) | Only `ruletrace` and mock-replay `ruletrace-ai` are started, which need no network; to verify in 13.4 |
+
+### 11.18 Decisions of UD-39 (2026-11-18)
+
+This section is authoritative where it differs from §11.2 to §11.16. The user's decisions are in `tools/decisions/UD-39.md`.
+
+#### 11.18.1 Credential architecture and environment isolation
+
+- **Live generation is external.** The Laboratory starts `ruletrace-ai` only with a `mock-replay` configuration of the demonstration corpus (and `--dry-run`, which reads no credential). It holds no AI_Configuration of a live provider and starts no `ruletrace-ai` that can reach a provider (Req 36.2 as amended). Req 28 and the credential path of `ruletrace-ai` are unchanged.
+- **Import.** The Laboratory shows the command the user runs in their own terminal, with `--store <workspace>/proposals`, `--rulebook`, `--source-model`, `--candidates`, `--created-at` and one `--consent` per document filled with absolute workspace paths, and `--config <your live configuration>` as a placeholder that the Laboratory never fills or reads. After the user confirms, the Laboratory lists the new batch files, hashes each as a Hand_Off_Artifact, runs `ruletrace review list` over the store, and shows each batch's Request_Identifier, hash and recorded provider metadata (Req 36.25). The Laboratory never copies a batch into the store: that would make it a writer of the Proposal_Store, which Req 27.1 reserves for `ruletrace-ai` and `ruletrace review`. A batch kept elsewhere is imported by the user running the command again with the workspace store, not by an upload.
+- **Credential-name registry.** `tools/credential-variables.v1`: one name per line, a header line, no value. Initial content: `MODEL_API_KEY` (Meta example), `OPENAI_API_KEY` (OpenAI example), `RULETRACE_OPENAI_API_KEY` (CI live job). Test-only canary names (`RT_CANARY_KEY`, `RULETRACE_AI_KEY`) are listed in a separate section marked test. A test reads every committed `*.toml` configuration, every example configuration and `.github/workflows/*.yml`, extracts each `credential_env_var` value, and fails with file and line when the registry lacks it.
+- **Launch scripts.** `scripts/ruletrace-lab.sh` (Linux, macOS) runs `env -i` with an explicit allow-list (`HOME`, `TMPDIR` if set, `LANG=C.UTF-8`) and `exec`s `ruletrace-lab` with the given arguments. `scripts/ruletrace-lab.ps1` (Windows) starts the process through `System.Diagnostics.ProcessStartInfo` with `Environment.Clear()` and the allow-list `SystemRoot`, `TEMP`, `TMP`, `USERPROFILE`. Neither script reads the registry's variables or prints any environment value. A test per platform sets every registered name (and the test canaries) to canary values, starts the script with a recording stand-in in place of `ruletrace-lab`, and asserts that the stand-in's environment equals the allow-list exactly. The macOS case runs only when a macOS runner is available; until then it is reported as not run.
+- **Start refusal.** At start `ruletrace-lab` checks with `std::env::var_os(name).is_some()` whether any registered name is present. If so it writes an Error Diagnostic naming the variable, starts nothing and exits 2 (Req 37.21). The value is dropped at once and never formatted. This is defence in depth: a user who starts `ruletrace-lab` without the script and with an unregistered credential name is protected only by the child allow-lists, and the documentation says so.
+- **Children.** Every `ruletrace` and `ruletrace-ai` child is started with `env_clear()` and the allow-list of §11.6 (Req 37.14 as amended).
+- **Boundary statement** (for the Laboratory documentation): no code path of `ruletrace-lab` receives a provider credential, and the Laboratory starts no process that holds one. Another process running as the same operating-system user can still read that user's files, the terminal where the user ran `ruletrace-ai`, and process memory; RuleTrace gives no protection against it.
+
+#### 11.18.2 HTTP server and request handling (LT-4)
+
+As §11.4 option A. One acceptor thread; a fixed pool of 4 worker threads; a bounded hand-off queue (§11.18.4).
+
+#### 11.18.3 Durable workspace (RN-33)
+
+- `ruletrace-lab --workspace <dir>` names the durable workspace. It is required, must exist, is canonicalized at start, and is printed with the Launch_Secret and shown on every page.
+- Layout: `rulebook.json`, `ledger.jsonl`, `proposals/` (the Proposal_Store), `sources/` (Source_Documents and Source_Models), `data/` (Competition_Data, Questions, published files), `artifacts/` (Validation_Result, Compiled_Rulebook, results, proof reports of the latest runs). `ruletrace review approve` and `reject` are given the workspace `rulebook.json` and `ledger.jsonl` directly; their lock, journal and recovery (§3.8.3) protect them. The Laboratory writes neither file (Req 36.4).
+- The session directory holds only temporaries: upload staging (`.partial` files), step output directories before they are promoted, and the hash record. Deleting it loses no decision.
+- Step outputs: each step writes into a new directory `<session>/work/<step>-<n>/`; after a completed step its files are hashed and moved by rename into `<workspace>/artifacts/<step>/` (same file system: the session directory for a workspace is created as `<workspace>/.ruletrace-lab/session-<random>/`, which also gives it the workspace's permissions on Windows; the OS temporary directory is not used).
+- Uploads are streamed into `<session>/upload/<n>.partial` and, when complete and within limits, hashed and renamed to `<workspace>/sources/<sha256>.<ext>` or `<workspace>/data/<sha256>.<ext>`. A refused or interrupted upload's partial file is deleted at once, and any left by a crash is deleted at the next start with the session directory.
+- **Demonstration workspace.** The committed corpus under `demo/` is never a workspace. `scripts/ruletrace-lab-demo.sh` and `.ps1` copy the corpus into a new directory the user names (refusing an existing non-empty directory), outside the Laboratory process, and then start the Laboratory on it. The copy includes the corpus's committed Rulebook and Approval_Ledger, whose records the Laboratory presents as the demonstration Reviewer's recorded decisions (Req 34.10, 36.20). Later approvals in the Laboratory append to that workspace ledger through `ruletrace review` and persist.
+- The workspace path is fixed for the process's life. Paths in requests are resolved inside it (Req 37.13).
+
+#### 11.18.4 Limits and overload (LT-8, LT-9)
+
+| Limit | Value | Behaviour beyond it |
+| --- | --- | --- |
+| Open connections | 16 | The 17th connection gets `503 Service Unavailable` with `Retry-After: 1` and `Connection: close`, written with a 1 s write timeout, then closed |
+| Concurrently processed requests | 4 (worker pool) | A connection waits in a queue of at most 12; a connection that waits more than 5 s gets 503 as above |
+| Request line and headers | 16 KiB, 10 s from accept | 431, or close on timeout |
+| Body, control request | 1 MiB, 30 s | 413, or close on timeout |
+| Body, upload | 16 MiB or the lower kind limit; 64 MiB accepted per session; 30 s without progress | 413 before more than the limit is read or written; partial file deleted |
+| Response write | 30 s | close |
+
+Every closed, refused or timed-out connection releases its thread back to the pool, its buffers and its partial upload. Tests: at each limit (accepted) and at limit plus one (refused) for each row; a slow client at each timeout; 17 and 21 simultaneous connections; a resource-release test that opens and abandons many connections and uploads and asserts afterwards that the open-connection count is 0, the worker pool is idle and no `.partial` file remains.
+
+#### 11.18.5 LT-6: cross-port cookie exposure (OPEN)
+
+The problem (threat model T7): browsers scope cookies by host, not by port, so the `rt_lab_session` cookie is sent to every server on `127.0.0.1` that the browser visits, whatever the port. A server on another port run by another OS user, or by a page that made the user start one, receives the cookie. With it, that server can send requests with the correct Host and Origin headers, because it is not a browser. SameSite=Strict does not help (another port of `127.0.0.1` is the same site), and Host and Origin checks do not help (the attacker sets them). Cookies are not port-isolated, and the design does not claim they are.
+
+Options:
+
+| Option | Mechanism | Origin-scoped? | Needs | Assessment |
+| --- | --- | --- | --- | --- |
+| A | HTTP Basic authentication (RFC 7617) with the Launch_Secret as the password; no session cookie. Browsers keep HTTP authentication credentials per protection space, whose canonical root includes scheme, host **and port** (RFC 9110 §11.5), and send them only there | Yes, by the HTTP specification; browser conformance must be verified | Change of Req 37.5 and 37.6 (the secret is presented on each request instead of exchanged once for a cookie); the browser's own credential prompt; logout means restart (consistent with LT-5) | **Candidate.** No JavaScript. CSRF token and Origin checks stay, because the browser also attaches these credentials to cross-site requests to the Laboratory's origin |
+| B | Origin-scoped token in `sessionStorage`, attached by a served script as a header to `fetch` requests; pages rendered by script | Yes (Web Storage is per origin, port included) | JavaScript in L2 and L3 (D-17 reversed); every page fetched by script, because a top-level navigation cannot carry a header | Larger surface (script sinks); fallback if A fails verification |
+| C | Bind to a random address in `127.0.0.0/8` | Only by obscurity; a server bound to all loopback addresses still receives the cookie when the browser is sent there | Conflicts with the Host rule of Req 37.3 (checkpoint decision); macOS configures only `127.0.0.1` by default | Rejected |
+| D | HTTPS with a self-signed certificate and a `Secure` cookie | No: `Secure` cookies are not port-scoped either | Certificate handling | Rejected |
+| E | Cookie plus a second per-session secret in each form | No: an attacker holding the cookie reads the form with a GET | — | Rejected |
+
+Proposed selection, for review: option A, with the session identifier dropped and these checks on every request: Basic credentials equal (constant time) to the current secret; Host, Origin and CSRF as now. Evidence required before LT-6 can close:
+
+1. Server-side tests: a request with a valid former cookie and no Authorization is 401; with wrong credentials 401; with the right credentials and a wrong Host or Origin 403.
+2. Browser verification on the current Firefox and Chromium (and Safari when a macOS machine is available): a page served from `http://127.0.0.1:<other port>` that the browser visits after logging in to the Laboratory receives no Authorization header, recorded by a raw listener; a cross-origin form post to the Laboratory from that page is refused by the Origin and CSRF checks. This is a manual, recorded protocol (the toolchain has no browser automation); its record is committed under `docs/security/`.
+3. Independent review of the threat-model update and the evidence.
+4. A user decision on the amendment of Req 37.5 and 37.6.
+
+If A fails item 2 on a supported browser, B is designed in the same way. Until then LT-6 stays open and no Laboratory code starts.
+
+#### 11.18.6 LT-7: process containment (OPEN)
+
+Requirement (37.17 as amended): every child terminates and is reaped when the Laboratory exits or crashes, demonstrated by crash tests per platform.
+
+Constraint: `#![forbid(unsafe_code)]` everywhere unless a documented and reviewed exception exists (Req 19.7).
+
+| Mechanism | Platforms | Needs | Assessment |
+| --- | --- | --- | --- |
+| L. Lifeline pipe: the Laboratory gives each child a fresh pipe as standard input and keeps the write end; each child, when started with a new option `--lifeline-stdin`, runs one watcher thread that blocks reading standard input and calls `std::process::exit(70)` on end of file. When the Laboratory dies for any reason, the OS closes the write end and the child exits | Linux, macOS, Windows (standard library only) | A new option in `ruletrace` and `ruletrace-ai` (a core change, task 13.3); no `unsafe`; crash safety of an abrupt exit, which the journaled review commit (§3.8.3) and the store's temp-and-link write already require | **Candidate** |
+| P. Linux `PR_SET_PDEATHSIG` | Linux | `prctl` in the child before `exec`, which needs `Command::pre_exec` (unsafe) | Rejected without an unsafe exception |
+| J. Windows Job Object with kill-on-close | Windows | FFI to `windows-sys` (unsafe) | Rejected without an unsafe exception; reconsidered if L fails on Windows |
+| G. Process group and kill on orderly exit | Unix | Nothing new | Covers orderly exit only (already designed), not a crash |
+
+Known risks of L, to be shown by tests and not assumed:
+
+- A child keeps the write end alive if a handle leaks into another process. On Unix the standard library creates pipes close-on-exec. On Windows, handles of children started at the same moment can be inherited by each other (a known behaviour of `CreateProcess` with handle inheritance); the Laboratory therefore starts at most one child at a time (the step mutex of §11.5 already serializes steps) and the Windows crash test runs two steps back to back.
+- A child that exits in the middle of `review approve` leaves a journal; the next review command recovers it (existing behaviour and tests). A child that exits in the middle of a store write must leave no file that a later run rejects (V-1, task 13.3).
+- The bounded time of the crash test is 5 s from the kill of the Laboratory to the absence of every child, checked by the test harness polling the child PIDs it recorded.
+
+Crash tests (each platform): start the Laboratory through the harness, start a long-running stand-in child, kill the Laboratory with SIGKILL (Unix) or `TerminateProcess` (Windows, through `Child::kill` of the harness), and assert that the stand-in and every real child are gone within 5 s and that no workspace file changed except as the step's own atomic protocol allows. Mutant: the child option without the watcher thread must make the test fail. If L cannot be demonstrated on a platform (macOS CI capacity is the known risk), the result is reported as not demonstrated for that platform, the protection is not claimed there, and the architecture is revised before release on it.
+
+#### 11.18.7 Result classification (RN-31)
+
+§11.8 is replaced by the five classes of Req 36.21 as amended:
+
+| Class | Detected by | Shown as |
+| --- | --- | --- |
+| Launch failure | `Command::spawn` error | "could not start <executable>", with the OS error kind |
+| Timeout or abnormal termination | limit exceeded (kill and reap), or `ExitStatus::code()` is `None` | the limit or the signal; outputs discarded |
+| Exit code outside the set | code not in Req 27.10 for the executable | internal error |
+| Missing or invalid output | a required file absent from the fresh step directory, or not well formed (strict `rt-json` parse) | the file and the parse Diagnostic |
+| Completed | an exit code of the set | for `evaluate` with a results file: **executed evaluation**, with counts read from the file: Indeterminate Outcomes, Error Diagnostics of the evaluation, traces not verified. For `evaluate` without a results file: not executed. For other commands: success state only for exit 0 |
+
+The Laboratory never maps exit 4 to "Indeterminate only": the engine also returns 4 for an engine Error Diagnostic (`evaluate.rs` `classify`; RN-38 asks whether this is reachable without an Indeterminate Outcome). Lightning is active for an executed evaluation of the displayed Compiled_Rulebook (Req 36.14).
+
+#### 11.18.8 Origin labels (RN-34, RN-35)
+
+| Origin of an unapproved item | Label | Source of the fact |
+| --- | --- | --- |
+| A batch of a live provider imported under Req 36.25 | "AI-generated — untrusted", with provider, protocol, model, reported model, usage, adapter version | the batch's members |
+| A `mock-replay` batch whose script entry has `origin: authored` | "Authored offline demonstration entry — not provider output" | the script entry and the batch's adapter version |
+| A `mock-replay` batch whose script entry has `origin: recorded` | "Recorded provider output (replayed) — untrusted" | the script entry |
+| A Rule_Revision with Origin Manual | "Manually authored — not approved" | the Rulebook |
+
+Every unapproved item is shown as non-authoritative. The demonstration corpus that demo mode uses is `demo/stand-in-ai` (authored script).
+
+#### 11.18.9 RT-LAB codes (RN-49)
+
+The Laboratory's Diagnostics get codes in the central `catalogue/diagnostics.v1.json`, family `RT-LAB`, executable column `ruletrace-lab`, added through the catalogue-change procedure with only the codes the implementation needs (a provisional list: listener address refused; registered credential variable present; launch secret invalid; session invalid; CSRF refused; Host or Origin refused; request malformed; limit exceeded; overload; path outside the roots; subprocess launch failure; subprocess timeout or abnormal end; subprocess exit code outside its set; step output missing or invalid; hand-off hash mismatch). `rt-xtask check-catalogue` gains three checks: every identifier appears once (uniqueness); every code's executable column names an existing runtime executable and every `RT-LAB` code names `ruletrace-lab` (ownership); every `Code` variant used in a crate's sources is in the catalogue and every catalogue code is used by the crate of its executable (completeness). There is no second catalogue.
+
+#### 11.18.10 `rt-lab` direct edges (RN-44, Req 24.13 as amended)
+
+| Edge | Reason |
+| --- | --- |
+| `prize-check`, `bracket-check` | Prepare and Present groups (§11.3) |
+| `rt-foundation` | Diagnostic, Location, codes, limits, control-character escaping |
+| `rt-numeric` | Exact_Number type names for display (no arithmetic; the Req 31.10 scan applies) |
+| `rt-hash` | Hand_Off_Artifact hashes |
+| `rt-json` | strict parsing of the files that `ruletrace` writes and of `review list --format json` |
+| `rt-data` | canonical serialization of the mapped inputs |
+| `rt-compiled` | the input schema of the Compiled_Rulebook for mapping |
+| `rt-trace` | Outcome and Decision_Trace types of the parsed results |
+| `rt-explain` | report rendering and the results-file parser |
+| `rt-srcmodel` | Source_Model types for showing source text |
+
+`tools/allowed-edges.v1` lists exactly these; no wildcard. `rt-lab` has no direct edge to `rt-engine`; it reaches it only through the Workflow_Modules, and the source scan of Req 24.13 fails on any call of an evaluation function or of a Workflow_Module Evaluate function. The `forbid-transitive` line of §11.3 stays.

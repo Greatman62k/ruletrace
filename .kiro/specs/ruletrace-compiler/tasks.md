@@ -1086,6 +1086,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - _Requirements: 32.1, 32.2, 32.3, 32.4, 32.5, 32.6, 31.1, 31.2, 31.8, 24.12_
     - Design §8.7, §8.9
     - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): library Workflow_Module with the Prepare, Present and Evaluate groups of design §11.3, as for 9.5. The user's message of 2026-11-18 ordered "9.5, 9.6" after the documentation review while keeping 9.3 deferred (UD-38 D4). This task therefore proceeds without 9.3 for every part except the Rank_Reference sentence (Tie_Group at the threshold); its `Blocked by: 9.3` applies to that sentence only. That sentence, Req 32.3 and the threshold fixture of Req 32.7 stay unsatisfied. End state: 9.6 stays `[-]` with this disclosure unless the user explicitly accepts closing it with that sentence unsatisfied. **Needs the user's confirmation of this reading.** The Laboratory names the workflow "Tournament standings" (Req 32.1, 36.18).
+    - Decided by the user (UD-39, 2026-11-18; text above unchanged): partial progression approved. Implement every part independent of 9.3. The Rank_Reference sentence, Req 32.3 and the qualification-threshold Tie_Group fixture of Req 32.7 stay unsatisfied, and 9.6 is not marked fully complete while they remain unsatisfied (it stays `[-]`).
 
   - [ ] 9.7 Implement the two Demonstration_Executables
     - In each package add `src/main.rs` (argument parsing) and `src/io.rs` (read the named files, write the named report files by temp file and rename). Only `io.rs` and `main.rs` may open files, read arguments, exit or write standard streams. Options: `--compiled`, `--input`, the Targets, `[--published]`, `[--source-model...]`, `--report-human`, `--report-json`, and `--emit-data`, `--emit-questions`, `--emit-published`, `--emit-results` (the canonical data and results, for the byte-identity comparison). Exit codes: 0 when the report is complete and no Outcome is Indeterminate, 4 when at least one is, 2 for invalid input (including a Source_Model that is missing or whose hash differs), 70 for an internal error, equal to the code of `ruletrace evaluate` for the same inputs, and no partial report on failure. Read no environment variable, no AI_Configuration and no credential, open no network connection and start no subprocess. Extend Property 30 to both executables.
@@ -1564,7 +1565,8 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Observable: `docs/security/laboratory-threat-model.md` is reviewed, every review finding is resolved, and the user has decided LT-1 to LT-3 (the credential mechanism, any Req 28 change and the variable-name source; these cannot be deferred, UD-38 D2) and decided LT-4 to LT-9 or recorded each as deferred with its consequence.
     - _Requirements: 37.21, 37.20, 37 (all), 36.2 to 36.10_
     - Design §11, `docs/security/laboratory-threat-model.md`
-    - Status note (2026-11-18): draft in `d0c821c`; review `docs/reviews/2026-11-18-review-L1-threat-model-d0c821c.md` (CHANGES REQUIRED, B1 to B3); fixes `6f7e851`; review `docs/reviews/2026-11-18-review-L1-fix-6f7e851.md` (APPROVED WITH FINDINGS, F1 to F7 low); fixes `66ef6ec`. Open: LT-1 to LT-9 and RN-31 to RN-48 (user). Not complete until the user decides them.
+    - Status note (2026-11-18): draft in `d0c821c`; review `docs/reviews/2026-11-18-review-L1-threat-model-d0c821c.md` (CHANGES REQUIRED, B1 to B3); fixes `6f7e851`; review `docs/reviews/2026-11-18-review-L1-fix-6f7e851.md` (APPROVED WITH FINDINGS, F1 to F7 low); fixes `66ef6ec`. Open: LT-1 to LT-9 and RN-31 to RN-49 (user). Not complete until the user decides them.
+    - Amended (UD-39, 2026-11-18; text above unchanged): LT-1 to LT-5, LT-8 and LT-9 are decided (UD-39). LT-6 (cross-port cookie exposure) and LT-7 (process containment on crash) stay OPEN: the user rejected both deferrals. Observable now: the threat model and design §11.18.5 and §11.18.6 select a mitigation for each, the evidence of 13.9 exists, and an independent reviewer accepts both; only then is 13.1 complete.
 
   - [ ] 13.2 Credential-store feasibility spike (only if LT-1 selects M2)
     - On a scratch branch with no production code, store and read a canary with the candidate store crates on Linux (desktop Secret Service and headless keyutils), macOS and Windows, in CI and on the user's machine; record the dependency tree, the set-up each platform needs, and whether the Laboratory process can read the entry. Write the result into the threat model and propose the Req 28 amendment text for the user.
@@ -1572,6 +1574,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 13.1 (LT-1 = M2).
     - _Requirements: 37.21, 28.2, 28.5, 28.13_
     - Design §11.10
+    - Superseded (UD-39, 2026-11-18; text above unchanged): no OS credential store in this release (UD-39 A). Not scheduled.
 
   - [ ] 13.3 Core changes the Laboratory needs
     - `ruletrace review list --format json` (same facts as the text output, canonical RT-JSON, Rule_Content_Hash included); the results-file parser in `rt-explain::results` with a round-trip property test of at least 256 cases; a source scan that `rt-ai-tool` starts no subprocess; the `RT-LAB-*` catalogue codes through the catalogue-change procedure; the test of RN-38 (whether an engine Error without an Indeterminate Outcome reaches exit 4). Each change gets its own review. No existing output changes byte for byte.
@@ -1579,6 +1582,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 13.1.
     - _Requirements: 36.6, 36.12, 36.5, 37.14, 7.2, 7.16, 7.17, 7.19, 16.11_ (an `RT-LAB` family needs RN-49 first)
     - Design §11.15
+    - Amended (UD-39, 2026-11-18; text above unchanged): also the credential-name registry `tools/credential-variables.v1` and its test (Req 37.21); the `check-catalogue` uniqueness, ownership and completeness checks and the `RT-LAB` family (Req 7.16, design §11.18.9); V-1; and, if LT-7 accepts the lifeline pipe, the `--lifeline-stdin` option of `ruletrace` and `ruletrace-ai` with its tests (design §11.18.6). The `ruletrace review list --format json` change stays. Blocked by: 13.1 for the lifeline part only.
 
   - [ ] 13.4 (L2) `ruletrace-lab` skeleton and session security
     - Create `crates/rt-lab` (binary `ruletrace-lab`), class `lab` in `tools/allowed-edges.v1` and `edges.rs`, the edge and forbid rules of design §11.3 (as the user decides RN-44), `ruletrace-lab` in `tools/executables.v1`, `SHIPPED_BINARIES` and the graph roots. Implement the loopback listener, the HTTP subset and its limits, Host and Origin checks, Launch_Secret exchange, session cookie, CSRF, the per-session mutex and state version, the headers and CSP, embedded assets, the session directory with marker and lock, start refusal of 37.21, and shutdown. No workflow step yet. Add the Laboratory source scans (no `rt_engine` path, no Workflow_Module Evaluate call, no shell, no float, Req 31.10 scan).
@@ -1586,6 +1590,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 13.1, 9.8; and 13.2 when LT-1 selects M2.
     - _Requirements: 36.1, 36.3, 36.22, 37.1 to 37.12, 37.15 to 37.18, 37.21, 37.22, 37.24 to 37.26, 24.13, 27.1, 27.15_
     - Design §11.3 to §11.5, §11.9, §11.11
+    - Amended (UD-39, 2026-11-18; text above unchanged): also the launch scripts with their per-platform environment tests and the start refusal (Req 37.21, design §11.18.1), the limits and overload behaviour of Req 37.27 (design §11.18.4), streamed upload limits (Req 37.26), the authentication mechanism that LT-6 selects in place of or beside the cookie, and the containment of LT-7 with its crash tests. Blocked by: 13.1 (LT-6 and LT-7 accepted), 13.3, 13.9, 9.8.
 
   - [ ] 13.5 (L3) Workflow screens and orchestration
     - Subprocess invocation with argument vectors, environment allow-lists, limits, kill and reap; Hand_Off_Artifacts and fresh step directories; the steps ingest, propose (demo mode; live by the LT-1 mechanism), review list, approve, reject, validate, compile, evaluate; the six stages bound to their subprocess results; the Prize and Tournament standings workflows through the Prepare and Present groups; the result classification of design §11.8 as the user decides RN-31; demo mode with both review paths of design §11.13.
@@ -1593,6 +1598,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 13.3, 13.4, 9.5, 9.6.
     - _Requirements: 36.2, 36.4 to 36.21, 37.13, 37.14, 37.16, 37.19, 37.20, 33.18_
     - Design §11.2, §11.6 to §11.8, §11.12, §11.13
+    - Amended (UD-39, 2026-11-18; text above unchanged): the durable workspace and the demonstration-workspace scripts (design §11.18.3), proposal import (Req 36.25, design §11.18.1), origin labels (design §11.18.8), the result classification of Req 36.21 as amended (design §11.18.7). The Laboratory starts `ruletrace-ai` only with mock-replay (Req 36.2 as amended).
 
   - [ ] 13.6 (L4) Laboratory tests
     - Every criterion of Req 36 and 37 with the evidence of design §11.16: exact status, headers, exit code and byte state; recording stand-ins; property tests of the HTTP, cookie and multipart parsers (at least 256 cases each); the mutants of 37.23 and those that RN-48 adds; the two-tab, concurrency, stale-hash and second-session tests of 37.25; the canary test of 37.20 under the LT-1 mechanism; the network-namespace test of 37.12; the acceptance test of 36.24 and 33.19; V-1 (kill during a store write).
@@ -1600,6 +1606,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 13.5.
     - _Requirements: 36.24, 37.23, 33.19, 37.20_
     - Design §11.16
+    - Amended (UD-39, 2026-11-18; text above unchanged): the canary test follows Req 37.20 as amended (ruletrace-ai run outside the Laboratory, then import and the complete workflow); add the tests of Req 36.25, 37.26 and 37.27, the launch-script environment tests and the crash tests of Req 37.17 per platform. A platform where a crash test cannot run is reported as not run, not as passed.
 
   - [ ] 13.7 Reproducible run instructions
     - Commit the build and run instructions of Req 36.23 (pinned toolchain, build command, demo-mode start without a credential, how to obtain the Launch_Secret, the literal loopback address) and a test that executes each command in a clean checkout.
@@ -1607,6 +1614,14 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: 13.5.
     - _Requirements: 36.23, 34.9, 34.10_
     - Design §11.11
+
+  - [ ] 13.9 Evidence for LT-6 and LT-7 (added by UD-39, 2026-11-18)
+    - LT-6: implement the candidate of design §11.18.5 in a scratch program outside the workspace crates (standard library only), run the server-side tests, and carry out and record the browser protocol on current Firefox and Chromium (Safari when a macOS machine is available): no Authorization header reaches a listener on another port of 127.0.0.1, and a cross-origin form post is refused. Record the result under `docs/security/`.
+    - LT-7: prototype the lifeline pipe of design §11.18.6 with stand-in children in a scratch program, and run the crash test (kill the parent, no child after 5 s) on Linux locally and on Windows and macOS in CI. A platform that cannot be run is recorded as not demonstrated. CI reruns of macOS need the user's approval (standing rule).
+    - Observable: dated evidence records for each platform and browser; the threat model updated; an independent review of the evidence. No change to any workspace crate.
+    - Blocked by: the review of the UD-39 documentation.
+    - _Requirements: 37.17, 37.5, 37.6, 37.7_
+    - Design §11.18.5, §11.18.6
 
   - [ ] 13.8 Checkpoint - Laboratory
     - Run the full gate set, the Laboratory tests and the demonstration with the Laboratory; independent review of the whole phase; show the user the workflow in a browser.
@@ -1692,7 +1707,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     {"id": 59, "tasks": ["12.13"]},
     {"id": 60, "tasks": ["12.14"]},
     {"id": 61, "tasks": ["13.1"]},
-    {"id": 62, "tasks": ["13.2", "13.3"]},
+    {"id": 62, "tasks": ["13.9", "13.3"]},
     {"id": 63, "tasks": ["13.4"]},
     {"id": 64, "tasks": ["13.5"]},
     {"id": 65, "tasks": ["13.6", "13.7"]}

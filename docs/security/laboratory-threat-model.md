@@ -1,5 +1,5 @@
 ---
-status: Draft, independently reviewed (APPROVED WITH FINDINGS after fixes); awaiting user decisions LT-1 to LT-9
+status: Draft. LT-1 to LT-5, LT-8, LT-9 decided by the user (UD-39); LT-6 and LT-7 OPEN; not approved until an independent reviewer accepts the LT-6 and LT-7 mitigations
 document: RuleTrace Laboratory threat model (task L1)
 requirements: 36, 37 (37.21 names this record), 27, 28, 34.9, 34.10
 design: design.md §11
@@ -145,14 +145,14 @@ must show it. A test name in quotes is a planned test of task L4.
 | T4 | Cross-origin read of responses | No CORS headers; OPTIONS 405; CORP same-origin; nosniff | 37.10 | Exact header test |
 | T5 | Session theft through the URL (history, referrer, logs) | Launch_Secret never in a URL; exchanged once by POST for a cookie; Referrer-Policy no-referrer; request log without query strings | 37.5, 37.6, 37.22 | Log scan test; URL scan of every served page |
 | T6 | Another OS user (X3) connects to the port | Without the Launch_Secret no session exists; every request without a valid cookie is 401 | 37.5 to 37.7 | Unauthenticated request matrix |
-| T7 | Cookie leakage to another local port. Browsers do not isolate cookies by port, so the session cookie is also sent to any server on `127.0.0.1:<other port>` that the user's browser visits. A server run by another OS user (X3) could capture it and then send forged requests with the right Host and Origin, because it is not a browser | Residual on a shared machine. Mitigations: personal-machine assumption; session idle timeout; one session; explicit end. Optional hardening (OPEN, LT-6): a second per-session secret held in origin-scoped `sessionStorage` and sent in a header, which needs JavaScript | 37.6, 37.8 | Documented residual risk; if LT-6 is chosen, a test that the cookie alone is refused |
+| T7 | Cookie leakage to another local port. Browsers do not isolate cookies by port, so the session cookie is also sent to any server on `127.0.0.1:<other port>` that the user's browser visits. A server run by another OS user (X3) could capture it and then send forged requests with the right Host and Origin, because it is not a browser | Residual on a shared machine. Mitigations: personal-machine assumption; session idle timeout; one session; explicit end. Not accepted as residual by the user (UD-39). Candidate mitigation (LT-6, OPEN): HTTP Basic authentication whose protection space includes the port, replacing the session cookie (design §11.18.5); alternative: an origin-scoped token in `sessionStorage` sent by script | 37.6, 37.8 | Documented residual risk; if LT-6 is chosen, a test that the cookie alone is refused |
 | T8 | Session fixation or cookie tossing: another local port sets `rt_lab_session=<attacker value>` for 127.0.0.1 | The server accepts only the identifier it issued for the single current session; a cookie header with two session cookies, or an unknown identifier, is 401 | 37.6, 37.24 | Cookie matrix test |
 | T9 | Clickjacking of the approval button | `frame-ancestors 'none'`, `X-Frame-Options: DENY` | 37.10, 37.11 | Header test |
 | T10 | Cross-site scripting through document text, Proposal text, file names or Diagnostics | Context escaping of every value; no inline script or style; CSP `default-src 'none'` with `'self'` sources; data responses with a declared content type | 37.11, 37.16 | Payload test per displayed field; HTML asset scan |
 | T11 | Remote assets (fonts, scripts) leak use or allow injection | Assets embedded in the binary; no other origin referenced; no outbound connection | 37.12 | Asset scan; network-namespace test |
 | T12 | Oversized or slow requests exhaust memory or threads | Limits on header bytes, body bytes (1 MiB control requests, upload limits of §5.4), one request per connection; design values, not requirement text (LT-9): a 10 s deadline for the request line and headers and a 30 s deadline for the body; at most 16 concurrent connections (further connections are closed without a response); a fixed pool of worker threads | 37.14, 37.26 | Limit boundary tests (at limit accepted, limit + 1 refused with 413); slow-header and connection-cap tests |
 | T12a | Request smuggling and parser confusion | Exactly one `Content-Length` with only ASCII digits; `Transfer-Encoding` refused; obsolete line folding, bare LF, lone CR, NUL and non-ASCII bytes in the request line or a header name refused with 400; duplicate Host refused (37.3) | 37.3, 37.15 | Property test over generated request bytes; table of each malformed form |
-| T12b | Browser cache, Back button, prefetch | `Cache-Control: no-store` on every response that carries session data or a CSRF token; GET, HEAD and prefetch have no side effect (37.9); every accepted POST answers 303 to a GET (a refused POST answers 4xx); the status page refresh is a GET with no side effect; a resubmitted stale form is refused by the state version (37.25) | 37.9, 37.10, 37.25 | Header test; resubmission test |
+| T12b | Browser cache, Back button, prefetch | `Cache-Control: no-store` on every response that carries session data or a CSRF token; GET, HEAD and prefetch have no side effect (37.9); every accepted POST answers 303 to a GET (a refused POST answers 4xx, or gets no response when the connection is closed by a connection limit or a deadline); the status page refresh is a GET with no side effect; a resubmitted stale form is refused by the state version (37.25) | 37.9, 37.10, 37.25 | Header test; resubmission test |
 | T12c | Multipart abuse (boundary tricks, duplicate parts, oversized part headers) | Exactly one file part and the CSRF field per upload; part headers at most 4 KiB; the boundary from the Content-Type only; anything else 400 | 37.15, 37.26 | Property test over generated multipart bodies |
 | T12d | Launch_Secret in terminal scrollback, terminal logs (tmux, IDE, supervisors capturing standard error) or a shared screen | Printed once to standard error, never as a command argument (so not in shell history); the start page warns; the secret is consumed on first use, so a later read of the scrollback cannot open a session while one exists; no expiry before first use (residual R-L7) | 37.5, 37.6 | Test that the secret appears once in standard error and in no file |
 | T12e | Login CSRF on `POST /session` | Safe only because the secret has at least 128 bits and is unguessable; Host and Origin checks apply (37.9) | 37.4, 37.5 | Exchange matrix test |
@@ -166,7 +166,7 @@ must show it. A test name in quotes is a planned test of task L4.
 | T14 | Argument injection: a request value read as an option | Values appear only immediately after their option name. The Laboratory refuses, before any subprocess starts, a value that starts with `-`, contains a NUL, a control character, or a line break. Paths are built by the Laboratory and are absolute. Because the CLIs support neither `--` nor `name=value` (section 1), the wording of 37.14 cannot be met literally: see RN-32 in design §9.4 | 37.14, 37.15 | Tests with `--create-ledger`, `-x`, `;`, `$(…)`, newline and NUL as Reviewer values |
 | T15 | Environment leaks into a subprocess (credential, proxy, locale) | `env_clear()` and an explicit allow-list per executable and platform (design §11.6). The credential variable is never in the list | 37.14, 37.20 | Test that reads the child environment through a recording stand-in |
 | T16 | Runaway subprocess | 300 s wall clock, 16 MiB combined output; on breach the child is killed and reaped and the step fails with a Laboratory Diagnostic; no truncated output is displayed | 37.14 | Stand-in that sleeps and one that floods output |
-| T17 | Orphaned children after a Laboratory crash | Orderly shutdown kills and reaps every child. After a crash (SIGKILL, power loss) a child runs to its own end: `ruletrace` commands are local and short; `ruletrace-ai` ends within its own deadlines. Automatic kill on parent death needs platform APIs (Linux `PR_SET_PDEATHSIG`, Windows Job Objects) that need `unsafe` or a new dependency: **OPEN, LT-7** | 37.17 | Shutdown test; crash residual documented |
+| T17 | Orphaned children after a Laboratory crash | Orderly shutdown kills and reaps every child. After a crash (SIGKILL, power loss) a child runs to its own end: `ruletrace` commands are local and short; `ruletrace-ai` ends within its own deadlines. Automatic kill on parent death needs platform APIs (Linux `PR_SET_PDEATHSIG`, Windows Job Objects) that need `unsafe` or a new dependency: **rejected as a residual by the user (UD-39)**. Candidate (LT-7, OPEN): a lifeline pipe on standard input that each child watches and exits on when the Laboratory dies (design §11.18.6), with crash tests per platform | 37.17 | Shutdown test; crash residual documented |
 | T18 | Malformed subprocess output misleads the display | Exit code checked against the executable's set; structured files parsed strictly by `rt-json`; any other output shown only as escaped text | 36.21 | Malformed-output stand-in tests |
 | T19 | Evaluate exit 4 or provenance exit 2 shown as a failure, or an Indeterminate Outcome shown as decided | Exit-code classification table of design §11.8: exit 4 is an executed evaluation with complete results; each Outcome is shown with its own status from the results file | 34.9, 36.14, 36.15 | Tests per exit code with a real `ruletrace` |
 
@@ -249,7 +249,9 @@ M5 gives P1-code and a shorter exposure, not P1-os. M5 does not satisfy the user
 for live runs. It does satisfy it for demo mode (mock-replay needs no
 credential) and it needs no change to Req 28.
 
-### 6.3 Recommendation (OPEN, LT-1 and LT-2)
+### 6.3 Recommendation (decided by UD-39: M5 with import; no credential store in this release)
+
+(Amended by UD-39, 2026-11-18.) The user selected M5 with proposal import for this release and ruled out an OS credential store; Req 28 is unchanged. Items 2 and 3 below are kept as the record of the alternative and are not planned. The Laboratory reads no AI_Configuration, so §6.5 is resolved by the credential-name registry and the launch scripts of design §11.18.1 instead of options (a) to (c). Under M5 the Laboratory gives P1-code; it does not give P1-os, and the documentation states that a process of the same OS user is outside the boundary.
 
 1. **If LT-1 selects M5 (recommended):** demo mode starts `ruletrace-ai` with `mock-replay` as a
    subprocess. No credential exists anywhere in the Laboratory's process tree.
@@ -330,8 +332,8 @@ Details are in design §11.5. In short:
 | Id | Risk | Why accepted or open |
 | --- | --- | --- |
 | R-L1 | Same-user malicious process (X5) can read the credential store, the ledger and the session directory | Outside any user-space design; stated in the documentation |
-| R-L2 | Cookie sent to other local ports (T7) | Personal-machine assumption; LT-6 optional hardening |
-| R-L3 | Children survive a Laboratory crash until their own deadlines (T17) | LT-7 |
+| R-L2 | Cookie sent to other local ports (T7) | **Not accepted (UD-39).** Open until LT-6 is resolved |
+| R-L3 | Children survive a Laboratory crash (T17) | **Not accepted (UD-39).** Open until LT-7 is demonstrated per platform |
 | R-L4 | Reviewer identity is not authenticated (T32, R-8) | First-version limit, stated |
 | R-L5 | Symlink swap by a same-user process (T23) | Same as R-L1 |
 | R-L6 | The in-memory credential in `ruletrace-ai` is not zeroized | Existing behaviour; the process is short-lived; a zeroizing type is a separate change |
@@ -341,15 +343,15 @@ Details are in design §11.5. In short:
 
 | Id | Question | Recommendation | Status |
 | --- | --- | --- | --- |
-| LT-1 | Live credential mechanism for orchestrated runs | M5 now; M2 after a passing spike (L1b) and a Req 28 amendment | **OPEN** |
-| LT-2 | Whether to amend Req 28 for an OS credential store | Only after L1b passes | **OPEN** |
-| LT-3 | How 37.21 learns the variable name | (a), a one-field TOML read pinned against `rt-ai-tool` | **OPEN** |
-| LT-4 | HTTP server implementation | Standard library only, a strict HTTP/1.1 subset (design §11.4) | **OPEN** |
-| LT-5 | New Launch_Secret after a session ends, or restart required | Restart required (keeps 37.5 "once"; no requirement change); printing a new secret needs RN-47 | **OPEN** |
-| LT-6 | Second origin-scoped secret against cross-port cookie leakage | Not in L2; revisit if the Laboratory ever targets shared machines | **OPEN** |
-| LT-7 | Kill children on Laboratory crash | Accept the bounded residual; no `unsafe` | **OPEN** |
-| LT-9 | Connection limits: 10 s header deadline, 30 s body deadline, 16 concurrent connections | As stated (design values) | **OPEN** |
-| LT-8 | Upload limits | 16 MiB per file at most (lower per-kind limits apply), 64 MiB per session; re-check when task 11.1 commits the real snapshots | **OPEN** |
+| LT-1 | Live credential mechanism for orchestrated runs | M5 now; M2 after a passing spike (L1b) and a Req 28 amendment | **Decided (UD-39 A):** M5, user-run live step and import; no credential store in this release |
+| LT-2 | Whether to amend Req 28 for an OS credential store | Only after L1b passes | **Decided (UD-39 A):** Req 28 unchanged |
+| LT-3 | How 37.21 learns the variable name | (a), a one-field TOML read pinned against `rt-ai-tool` | **Decided (UD-39 A):** the Laboratory reads no AI_Configuration; a credential-name registry and launch scripts (design §11.18.1) |
+| LT-4 | HTTP server implementation | Standard library only, a strict HTTP/1.1 subset (design §11.4) | **Decided (UD-39):** standard library, server-rendered forms |
+| LT-5 | New Launch_Secret after a session ends, or restart required | Restart required (keeps 37.5 "once"; no requirement change); printing a new secret needs RN-47 | **Decided (UD-39):** restart; no Launch_Secret reused |
+| LT-6 | Second origin-scoped secret against cross-port cookie leakage | Not in L2; revisit if the Laboratory ever targets shared machines | **OPEN.** Deferral rejected by the user. Candidate: HTTP Basic authentication (origin-scoped protection space), design §11.18.5; needs evidence and review |
+| LT-7 | Kill children on Laboratory crash | Accept the bounded residual; no `unsafe` | **OPEN.** Crash orphans rejected by the user. Candidate: lifeline pipe, design §11.18.6; needs crash tests per platform |
+| LT-8 | Upload limits | 16 MiB per file at most (lower per-kind limits apply), 64 MiB per session; re-check when task 11.1 commits the real snapshots | **Decided (UD-39):** 16 MiB per file, 64 MiB per session, 1 MiB control request, streamed enforcement |
+| LT-9 | Connection limits: 10 s header deadline, 30 s body deadline, 16 concurrent connections | As stated (design values) | **Decided (UD-39):** 16 connections, 4 concurrent requests, finite timeouts, 503 on overload (design §11.18.4) |
 
 ## 10. Review record
 
@@ -357,3 +359,6 @@ Details are in design §11.5. In short:
 | --- | --- | --- |
 | 2026-11-18 | independent reviewer, `docs/reviews/2026-11-18-review-L1-threat-model-d0c821c.md` | CHANGES REQUIRED (B1 to B3, N1 to N11) |
 | 2026-11-18 | independent reviewer, `docs/reviews/2026-11-18-review-L1-fix-6f7e851.md` | APPROVED WITH FINDINGS (F1 to F7, low; addressed in `66ef6ec`, which was not separately reviewed) |
+| 2026-11-18 | independent reviewer, `docs/reviews/2026-11-18-review-tasks-a4628bd.md` | APPROVED WITH FINDINGS (task plan) |
+| 2026-11-18 | independent reviewer, `docs/reviews/2026-11-18-review-doc-66ef6ec.md` | APPROVED WITH FINDINGS (R1 to R5, low; addressed in the UD-39 commit) |
+| (pending) | independent reviewer | UD-39 changes, LT-6 and LT-7 |
