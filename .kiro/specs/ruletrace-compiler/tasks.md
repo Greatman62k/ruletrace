@@ -1086,7 +1086,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - _Requirements: 32.1, 32.2, 32.3, 32.4, 32.5, 32.6, 31.1, 31.2, 31.8, 24.12_
     - Design §8.7, §8.9
     - Amended by UD-38 (UD-38 reclassification, 2026-11-18; original text above unchanged): library Workflow_Module with the Prepare, Present and Evaluate groups of design §11.3, as for 9.5. The user's message of 2026-11-18 ordered "9.5, 9.6" after the documentation review while keeping 9.3 deferred (UD-38 D4). This task therefore proceeds without 9.3 for every part except the Rank_Reference sentence (Tie_Group at the threshold); its `Blocked by: 9.3` applies to that sentence only. That sentence, Req 32.3 and the threshold fixture of Req 32.7 stay unsatisfied. End state: 9.6 stays `[-]` with this disclosure unless the user explicitly accepts closing it with that sentence unsatisfied. **Needs the user's confirmation of this reading.** The Laboratory names the workflow "Tournament standings" (Req 32.1, 36.18).
-    - Decided by the user (UD-39, 2026-11-18; text above unchanged): partial progression approved. Implement every part independent of 9.3. The Rank_Reference sentence, Req 32.3 and the qualification-threshold Tie_Group fixture of Req 32.7 stay unsatisfied, and 9.6 is not marked fully complete while they remain unsatisfied (it stays `[-]`).
+    - Decided by the user (UD-39, 2026-11-18; text above unchanged): partial progression approved. Implement every part independent of 9.3. The Rank_Reference sentence, Req 32.3 and the qualification-threshold Tie_Group fixture of Req 32.7 stay unsatisfied, and 9.6 is not marked fully complete while they remain unsatisfied: when the rest is implemented and reviewed it is set to `[-]`, not `[x]`.
 
   - [ ] 9.7 Implement the two Demonstration_Executables
     - In each package add `src/main.rs` (argument parsing) and `src/io.rs` (read the named files, write the named report files by temp file and rename). Only `io.rs` and `main.rs` may open files, read arguments, exit or write standard streams. Options: `--compiled`, `--input`, the Targets, `[--published]`, `[--source-model...]`, `--report-human`, `--report-json`, and `--emit-data`, `--emit-questions`, `--emit-published`, `--emit-results` (the canonical data and results, for the byte-identity comparison). Exit codes: 0 when the report is complete and no Outcome is Indeterminate, 4 when at least one is, 2 for invalid input (including a Source_Model that is missing or whose hash differs), 70 for an internal error, equal to the code of `ruletrace evaluate` for the same inputs, and no partial report on failure. Read no environment variable, no AI_Configuration and no credential, open no network connection and start no subprocess. Extend Property 30 to both executables.
@@ -1706,8 +1706,8 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     {"id": 58, "tasks": ["11.10", "11.11", "11.12", "12.12"]},
     {"id": 59, "tasks": ["12.13"]},
     {"id": 60, "tasks": ["12.14"]},
-    {"id": 61, "tasks": ["13.1"]},
-    {"id": 62, "tasks": ["13.9", "13.3"]},
+    {"id": 61, "tasks": ["13.9"]},
+    {"id": 62, "tasks": ["13.1", "13.3"]},
     {"id": 63, "tasks": ["13.4"]},
     {"id": 64, "tasks": ["13.5"]},
     {"id": 65, "tasks": ["13.6", "13.7"]}
