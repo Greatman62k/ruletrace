@@ -2487,7 +2487,7 @@ Choice: CSV or JSON. Compared on what the applications need:
 
 Decision: **CSV** for the Application_Input_Format, with RT-JSON retained as the canonical form that `--emit-data`, `--emit-questions`, `--emit-published` and `--emit-results` write (§8.10). The JSON alternative is not offered, to keep the mapping surface small (Req 31.2 "contains input mapping only").
 
-**Dialect.** UTF-8; one optional leading byte order mark is skipped (columns are counted after it); LF or CRLF line ends; separator `,`; quote `"` with `""` as the escaped quote; a quoted cell may contain separators and line ends; the first row is the header; blank lines, comments and trailing separators are errors. File limit 32 MiB (`RT-LIM-0001`), at most 100,000 data rows (`RT-LIM-0004`). Cells are never trimmed: leading or trailing space makes a typed cell invalid.
+**Dialect.** UTF-8; one optional leading byte order mark is skipped (columns are counted after it); LF or CRLF line ends; separator `,`; quote `"` with `""` as the escaped quote; a quoted cell may contain separators and line ends; the first row is the header; blank lines and comments are errors. A data row that ends in a separator has an empty final cell (a Missing_Value like every empty cell), so `1,` and `1,""` are the same row; the row must still have exactly the header's cell count, and a header that ends in a separator (an empty column name) is an error (user decision, 2026-11-17). File limit 32 MiB (`RT-LIM-0001`), at most 100,000 data rows (`RT-LIM-0004`). Cells are never trimmed: leading or trailing space makes a typed cell invalid.
 
 **Files.**
 
@@ -2510,7 +2510,7 @@ Decision: **CSV** for the Application_Input_Format, with RT-JSON retained as the
 | A requested or published Target not declared in the Compiled_Rulebook | RT-APP-0005 APP_TARGET_NOT_DECLARED | `Cli_Location` of the argument, or the published cell |
 | A requested Target whose Rule kind the application cannot report | RT-APP-0006 APP_TARGET_KIND_MISMATCH | `Cli_Location` of the argument |
 
-On any of these the application builds no Question, calls the Rules_Engine zero times and exits with code 2. A Published_Result row for a Target that was not requested is not an error: it is listed in the report under `published_unused` with its line, so nothing is silently dropped.
+On any of these the application builds no Question, calls the Rules_Engine zero times and exits with code 2. A Published_Result row for a Target that was not requested is not an error: it is listed in the report under `published_unused` with its line and a reason, so nothing is silently dropped. Requestedness is decided before reportability: an unrequested row of a reportable kind has reason `NotRequested` and its value is still checked; an unrequested row of a kind the application cannot report has reason `NotRequestedKindNotReportable` and its value is not type-checked; a requested Target of such a kind is RT-APP-0006 (user decision, 2026-11-17). Structural checks, the participant check and the repeated-pair check apply to every row.
 
 A column whose header names `has_errors`, `no_errors`, a validation status or a lifecycle flag (Req 22.17) is not an ordinary unknown column. It is rejected under Req 22.22 with exactly one Diagnostic per occurrence, RT-DGN-0001, 0002 or 0003 as Req 22 assigns it to the name, instead of RT-APP-0001, and the exit code is 2, whether or not any cell value agrees with a derived value. The same holds for a `target` named so in a published file and for such a key in a Recorded_Provider_Script or manifest.
 
