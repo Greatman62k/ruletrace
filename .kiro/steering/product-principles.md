@@ -10,7 +10,7 @@ The compiler and deterministic execution engine are the foundation of the produc
 
 RuleTrace must be useful without AI and more convenient to use with AI.
 
-We are not building a generic chatbot, document summarizer, dashboard product or hosted AI wrapper.
+We are not building a generic chatbot, document summarizer, dashboard product or hosted AI wrapper. The one permitted front end is the local RuleTrace Laboratory (section 3.4), a functional interface to the compiler and not a substitute for it.
 
 ## 2. Core Product Principles
 
@@ -75,11 +75,14 @@ When enabled, it may assist with:
 - Identifying ambiguous or incomplete interpretations.
 - Generating candidate test scenarios.
 
-### 3.0 Two executables
+### 3.0 Executables
 
 - `ruletrace` is deterministic. It has the four pipeline commands (ingest, validate, compile, evaluate) and the `review` command group (list, approve, reject). It never touches the network or a provider library.
 - `ruletrace-ai` is separate and optional. It writes only the Proposal_Store and a transmission log. It can never write the Approval_Ledger or call an approval function, enforced by crate dependency.
+- `ruletrace-lab` is the local RuleTrace Laboratory (section 3.4). It starts the two executables above as subprocesses and has no approval, ledger-write, evaluation or credential path of its own.
 - Human approval is an explicit operation of the main workflow (`ruletrace review`).
+
+The product runtime executable set is exactly `ruletrace`, `ruletrace-ai` and `ruletrace-lab`. Development and test utilities such as `rt-xtask` are not part of it.
 
 ### 3.1 AI proposal pipeline
 
@@ -129,9 +132,19 @@ Manual authoring and AI-assisted interpretation feed the same Rule_IR and the sa
 
 The first version contains a real, testable AI proposal workflow: a provider-independent adapter, a real integration for the OpenAI Responses API in its own crate (structured JSON Schema outputs, provider and model set by configuration), and a deterministic mock provider for automated tests. The initial demonstration uses public competition documents.
 
+### 3.4 RuleTrace Laboratory
+
+The Laboratory (`ruletrace-lab`) is one integrated local application: a browser interface served on the loopback interface only, in front of the existing compiler, approval and execution machinery. It may orchestrate the existing processes. It never replaces their authoritative responsibilities, and it is never hosted or remotely accessible.
+
+Process separation is fixed. `ruletrace-ai` holds the provider credential, interprets text and writes untrusted proposals. `ruletrace` reviews and approves, appends to the ledger, validates, compiles, evaluates and verifies provenance. `ruletrace-lab` displays, orchestrates and invokes the two CLIs as subprocesses with argument vectors. It writes no ledger record, makes no approval or decision, and never holds the AI credential. Process separation alone does not prove credential separation, so the threat model decides the mechanism and a canary test verifies it. Hand-offs between processes are hash-bound, validated files, and AI output stays untrusted even with a valid hash.
+
+An approval in the Laboratory needs an explicit human action, a reviewer identity, and confirmation of the exact rule revision and content hash. The Laboratory never approves automatically.
+
+The Laboratory's visual metaphors must show actual behaviour: Brain is untrusted AI proposals and validation findings, Spine is human approval and the hash-chained ledger, Heart is compilation and exact-arithmetic execution, Lightning is the execution of the approved compiled rulebook (never the AI response), Ghost is missing data and Indeterminate outcomes, and Autopsy is proof reports, calculation traces and verified source provenance. Elements that do not improve comprehension are omitted.
+
 ## 4. One Compiler, Multiple Applications
 
-Prize Check and Bracket Check are separate future applications powered by one shared Rules_Engine.
+The Prize and Tournament (standings) workflows are library Workflow_Modules (`prize-check`, `bracket-check`) powered by one shared Rules_Engine and presented through the Laboratory. The full Prize Check and Bracket Check applications remain future work.
 
 Prize Check will focus on competition eligibility, scoring, rankings and tie-breaking.
 
@@ -163,7 +176,8 @@ A capability not supported by the Rule_IR must be rejected rather than implement
 - Keep unresolved technical decisions documented rather than silently assuming answers.
 - Do not introduce features solely to make the product appear more sophisticated.
 - Prefer a small, correct and auditable implementation over broad but unreliable support.
-- Do not build dashboards, chatbots or hosted services as substitutes for the compiler.
+- Do not build dashboards, chatbots or hosted services as substitutes for the compiler. The only exception is the local RuleTrace Laboratory of section 3.4.
+- Still out of scope: hosted application services, cloud dashboards, user accounts and remote authentication services, hosted databases, a general-purpose workflow SaaS, and replacing the compiler or engine with UI-side logic.
 
 ## 7. Definition of a Successful RuleTrace Decision
 
