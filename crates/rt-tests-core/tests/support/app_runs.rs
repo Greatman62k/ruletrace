@@ -321,22 +321,140 @@ pub fn all_jobs() -> Vec<Job> {
     jobs
 }
 
-/// The bytes a process prints for the environment test: for every job its
-/// class, results, human report and JSON report, each length-prefixed.
+/// The bytes of one job as a process prints them: its class, results, human
+/// report and JSON report, each length-prefixed.
+pub fn render_job(job: &Job, s: &Snapshot) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend(format!("job {} class {:?}\n", job.name, s.class).as_bytes());
+    for (label, bytes) in [
+        ("results", s.results.as_slice()),
+        ("human", s.human.as_bytes()),
+        ("json", s.json.as_slice()),
+    ] {
+        out.extend(format!("{label} {}\n", bytes.len()).as_bytes());
+        out.extend(bytes);
+        out.push(b'\n');
+    }
+    out
+}
+
+/// The bytes a process prints for the environment test: every job of both
+/// modules through `render_job`.
 pub fn render_all() -> Vec<u8> {
     let mut out = Vec::new();
     for job in all_jobs() {
-        let s = job.run();
-        out.extend(format!("job {} class {:?}\n", job.name, s.class).as_bytes());
-        for (label, bytes) in [
-            ("results", s.results.as_slice()),
-            ("human", s.human.as_bytes()),
-            ("json", s.json.as_slice()),
-        ] {
-            out.extend(format!("{label} {}\n", bytes.len()).as_bytes());
-            out.extend(bytes);
-            out.push(b'\n');
-        }
+        out.extend(render_job(&job, &job.run()));
     }
     out
+}
+
+/// The jobs of one module, in the fixed order of `all_jobs`.
+pub fn jobs_of(app: App) -> Vec<Job> {
+    all_jobs().into_iter().filter(|j| j.app == app).collect()
+}
+
+/// Environment variable that tells a self-started child what to do.
+pub const CHILD_MARKER: &str = "RT_WORKFLOW_MODULE_CHILD";
+/// Environment variable that names the module a baseline child runs.
+pub const CHILD_APP: &str = "RT_WORKFLOW_MODULE_APP";
+pub const BEGIN: &str = "<<<RT-CHILD-BEGIN>>>";
+pub const END: &str = "<<<RT-CHILD-END>>>";
+
+/// Starts this test binary again as a fresh process: environment emptied,
+/// then only the marker and `env`, in `cwd`. The child runs the test named
+/// `child_entry`, which each binary defines.
+pub fn spawn_child(
+    mode: &str,
+    cwd: &std::path::Path,
+    env: &[(String, std::ffi::OsString)],
+) -> std::process::Output {
+    let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+    command
+        .args(["--exact", "child_entry", "--nocapture", "--test-threads=1"])
+        .env_clear()
+        .env(CHILD_MARKER, mode)
+        .current_dir(cwd);
+    // The Windows loader needs the system root; it carries no test input.
+    if cfg!(windows) {
+        if let Some(root) = std::env::var_os("SystemRoot") {
+            command.env("SystemRoot", root);
+        }
+    }
+    for (key, value) in env {
+        command.env(key, value);
+    }
+    command.output().unwrap()
+}
+
+pub fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    haystack
+        .windows(needle.len())
+        .position(|window| window == needle)
+}
+
+/// The bytes between the markers of a successful child, and every byte the
+/// child wrote.
+pub fn framed_output(output: &std::process::Output, who: &str) -> (Vec<u8>, Vec<u8>) {
+    let mut everything = output.stdout.clone();
+    everything.extend(&output.stderr);
+    assert!(
+        output.status.success(),
+        "{who}: child failed: {}",
+        String::from_utf8_lossy(&everything)
+    );
+    let begin = format!("{BEGIN}\n");
+    let start = find(&output.stdout, begin.as_bytes())
+        .unwrap_or_else(|| panic!("{who}: no begin marker"))
+        + begin.len();
+    let end = find(&output.stdout, format!("\n{END}\n").as_bytes())
+        .unwrap_or_else(|| panic!("{who}: no end marker"));
+    (output.stdout[start..end].to_vec(), everything)
+}
+
+/// Child side of the baseline: runs only the jobs of the module named by
+/// `CHILD_APP`, each once, and prints `frame <len>` and the job bytes.
+pub fn print_baseline_frames() {
+    use std::io::Write;
+    let app = match std::env::var(CHILD_APP).as_deref() {
+        Ok("prize") => App::Prize,
+        Ok("bracket") => App::Bracket,
+        other => panic!("unknown module {other:?}"),
+    };
+    let mut out = std::io::stdout().lock();
+    writeln!(out, "{BEGIN}").unwrap();
+    for job in jobs_of(app) {
+        let piece = render_job(&job, &job.run());
+        writeln!(out, "frame {}", piece.len()).unwrap();
+        out.write_all(&piece).unwrap();
+        writeln!(out).unwrap();
+    }
+    writeln!(out, "\n{END}").unwrap();
+}
+
+/// The job bytes of a fresh child that ran only the jobs of `app`, by job
+/// name.
+pub fn baseline_child(app: App) -> std::collections::BTreeMap<String, Vec<u8>> {
+    let name = match app {
+        App::Prize => "prize",
+        App::Bracket => "bracket",
+    };
+    let cwd = std::env::temp_dir();
+    let output = spawn_child(
+        "baseline",
+        &cwd,
+        &[(CHILD_APP.to_owned(), std::ffi::OsString::from(name))],
+    );
+    let (body, _) = framed_output(&output, name);
+    let mut rest = body.as_slice();
+    let mut map = std::collections::BTreeMap::new();
+    for job in jobs_of(app) {
+        let eol = rest.iter().position(|b| *b == b'\n').unwrap();
+        let header = std::str::from_utf8(&rest[..eol]).unwrap();
+        let len: usize = header.strip_prefix("frame ").unwrap().parse().unwrap();
+        let piece = rest[eol + 1..eol + 1 + len].to_vec();
+        rest = &rest[eol + 1 + len + 1..];
+        map.insert(job.name, piece);
+    }
+    assert!(rest.is_empty(), "unparsed child bytes");
+    map
 }

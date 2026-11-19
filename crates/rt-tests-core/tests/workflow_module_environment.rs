@@ -9,17 +9,24 @@
 //! report and the JSON report of each between two markers.
 //!
 //! Every variant differs from the baseline in one factor, in at least two
-//! values, and the printed bytes must equal the baseline and the same runs
-//! made in this process:
+//! values. For every variant the child first reports what it sees (working
+//! directory, every variable name, every value except credentials, and for a
+//! credential only whether it equals a canary), and the test requires that
+//! to equal what the variant intended. Then the printed bytes must equal the
+//! baseline and the same runs made in this process:
 //!
 //! - working directory: an empty directory, and a directory that holds an
 //!   AI_Configuration file `ai.toml` (the content of
 //!   `demo/stand-in-ai/ai/mock-replay.toml`) and a file `ruletrace.toml`;
-//! - locale: `LC_ALL` and `LANG` set to `C`, `de_DE.UTF-8` and `tr_TR.UTF-8`;
+//! - locale: `LC_ALL` and `LANG` set to `C`, `de_DE.UTF-8` and `tr_TR.UTF-8`.
+//!   Rust's standard formatting ignores the C locale, so these variants show
+//!   only that the libraries read no locale variable;
 //! - time zone: `TZ` set to `UTC` and `Pacific/Kiritimati`;
 //! - wall clock: two runs at least 1.1 s apart. The test cannot set the
 //!   clock, which needs privilege. It records the wall-clock second of each
-//!   start and requires the two to differ;
+//!   start and requires the two to differ. Limit: a library keyed on, for
+//!   example, the parity of the second could pass one pair of starts with
+//!   probability about 1/10;
 //! - `ruletrace` and `ruletrace-ai` on `PATH`: stand-in files, not the built
 //!   binaries (this package does not build them). On Unix each stand-in is an
 //!   executable script that creates a marker file when started, and the test
@@ -47,14 +54,14 @@
 #[path = "support/app_runs.rs"]
 mod app_runs;
 
+use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-const CHILD_MARKER: &str = "RT_WORKFLOW_MODULE_CHILD";
-const BEGIN: &str = "<<<RT-CHILD-BEGIN>>>";
-const END: &str = "<<<RT-CHILD-END>>>";
+use app_runs::{find, framed_output, spawn_child, BEGIN, CHILD_MARKER, END};
+
 const AI_CONFIGURATION: &str = include_str!("../../../demo/stand-in-ai/ai/mock-replay.toml");
 const CREDENTIAL_VARIABLES: [&str; 3] = [
     "MODEL_API_KEY",
@@ -63,6 +70,17 @@ const CREDENTIAL_VARIABLES: [&str; 3] = [
 ];
 const CANARY_ONE: &str = "RT-CANARY-5c1e7a90-NOT-A-REAL-KEY-ONE";
 const CANARY_TWO: &str = "RT-CANARY-b04d2f68-NOT-A-REAL-KEY-TWO";
+
+/// How a probe shows a value: a canary only as a label, never in full.
+fn shown_value(value: &str) -> String {
+    if value == CANARY_ONE {
+        "<canary one>".to_owned()
+    } else if value == CANARY_TWO {
+        "<canary two>".to_owned()
+    } else {
+        value.to_owned()
+    }
+}
 
 /// The child. Without the marker it only checks that the jobs run and give
 /// the pinned class of the first job. With the marker `run` it prints the
@@ -85,23 +103,19 @@ fn child_entry() {
             writeln!(out, "\n{END}").unwrap();
         }
         Ok("probe") => {
-            let value = |name: &str| std::env::var(name).unwrap_or_else(|_| "(unset)".to_owned());
             let cwd = std::env::current_dir().unwrap();
             let has = |file: &str| cwd.join(file).is_file();
             writeln!(out, "{BEGIN}").unwrap();
-            for name in ["TZ", "LC_ALL", "LANG", "PATH"] {
-                writeln!(out, "{name}={}", value(name)).unwrap();
-            }
             writeln!(out, "cwd={}", cwd.display()).unwrap();
-            writeln!(
-                out,
-                "ai.toml={} ruletrace.toml={}",
-                has("ai.toml"),
-                has("ruletrace.toml")
-            )
-            .unwrap();
-            for name in CREDENTIAL_VARIABLES {
-                writeln!(out, "{name}={}", value(name)).unwrap();
+            writeln!(out, "ai.toml={}", has("ai.toml")).unwrap();
+            writeln!(out, "ruletrace.toml={}", has("ruletrace.toml")).unwrap();
+            for (name, value) in std::env::vars_os() {
+                let name = name.to_string_lossy().into_owned();
+                if name == CHILD_MARKER || (cfg!(windows) && name == "SystemRoot") {
+                    continue;
+                }
+                let shown = shown_value(&value.to_string_lossy());
+                writeln!(out, "env {name}={shown}").unwrap();
             }
             writeln!(out, "\n{END}").unwrap();
         }
@@ -151,48 +165,13 @@ fn variant(name: &str, cwd: &Path, env: &[(&str, &str)]) -> Variant {
 }
 
 fn spawn(mode: &str, v: &Variant) -> Output {
-    let mut command = Command::new(std::env::current_exe().unwrap());
-    command
-        .args(["--exact", "child_entry", "--nocapture", "--test-threads=1"])
-        .env_clear()
-        .env(CHILD_MARKER, mode)
-        .current_dir(&v.cwd);
-    // The Windows loader needs the system root; it carries no test input.
-    if cfg!(windows) {
-        if let Some(root) = std::env::var_os("SystemRoot") {
-            command.env("SystemRoot", root);
-        }
-    }
-    for (key, value) in &v.env {
-        command.env(key, value);
-    }
-    command.output().unwrap()
+    spawn_child(mode, &v.cwd, &v.env)
 }
 
 /// The bytes between the markers of a successful child, and every byte the
 /// child wrote, for the canary check.
 fn framed(output: &Output, v: &Variant) -> (Vec<u8>, Vec<u8>) {
-    let mut everything = output.stdout.clone();
-    everything.extend(&output.stderr);
-    assert!(
-        output.status.success(),
-        "{}: child failed: {}",
-        v.name,
-        String::from_utf8_lossy(&everything)
-    );
-    let begin = format!("{BEGIN}\n");
-    let start = find(&output.stdout, begin.as_bytes())
-        .unwrap_or_else(|| panic!("{}: no begin marker", v.name))
-        + begin.len();
-    let end = find(&output.stdout, format!("\n{END}\n").as_bytes())
-        .unwrap_or_else(|| panic!("{}: no end marker", v.name));
-    (output.stdout[start..end].to_vec(), everything)
-}
-
-fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    haystack
-        .windows(needle.len())
-        .position(|window| window == needle)
+    framed_output(output, &v.name)
 }
 
 fn contains(haystack: &[u8], needle: &str) -> bool {
@@ -208,6 +187,7 @@ fn in_process() -> Vec<u8> {
 /// and to hold no canary.
 fn assert_all_equal(expected: &[u8], variants: &[Variant]) {
     for v in variants {
+        assert_probe_matches(v);
         let output = spawn("run", v);
         let (bytes, everything) = framed(&output, v);
         for canary in [CANARY_ONE, CANARY_TWO] {
@@ -224,6 +204,52 @@ fn assert_all_equal(expected: &[u8], variants: &[Variant]) {
             first_difference(expected, &bytes)
         );
     }
+}
+
+/// What the variant intends the child to see, in the form of the probe.
+fn intended(v: &Variant) -> BTreeMap<String, String> {
+    let mut seen = BTreeMap::new();
+    seen.insert("cwd".to_owned(), canonical(&v.cwd));
+    for file in ["ai.toml", "ruletrace.toml"] {
+        seen.insert(file.to_owned(), v.cwd.join(file).is_file().to_string());
+    }
+    for (name, value) in &v.env {
+        seen.insert(format!("env {name}"), shown_value(&value.to_string_lossy()));
+    }
+    seen
+}
+
+fn canonical(path: &Path) -> String {
+    std::fs::canonicalize(path)
+        .unwrap()
+        .to_string_lossy()
+        .into_owned()
+}
+
+/// Starts the child in probe mode and requires that it saw exactly the
+/// working directory, files and variables of the variant: every variable it
+/// holds is one the variant set, with the set value. A credential value is
+/// shown only as a canary label, and the canary never appears in the probe
+/// output otherwise.
+fn assert_probe_matches(v: &Variant) {
+    let output = spawn("probe", v);
+    let (body, everything) = framed(&output, v);
+    for canary in [CANARY_ONE, CANARY_TWO] {
+        assert!(
+            !contains(&everything, canary),
+            "{}: canary in the probe output",
+            v.name
+        );
+    }
+    let mut got = BTreeMap::new();
+    for line in String::from_utf8(body).unwrap().lines() {
+        let (key, value) = line.split_once('=').unwrap();
+        got.insert(key.to_owned(), value.to_owned());
+    }
+    if let Some(cwd) = got.get_mut("cwd") {
+        *cwd = canonical(Path::new(cwd));
+    }
+    assert_eq!(got, intended(v), "{}: the child saw something else", v.name);
 }
 
 fn first_difference(a: &[u8], b: &[u8]) -> usize {
@@ -295,37 +321,44 @@ fn the_baseline_child_prints_what_this_process_computes() {
 }
 
 #[test]
-fn the_probe_shows_that_each_variant_reaches_the_child() {
+fn the_probe_reports_literal_values_and_never_a_credential() {
+    // Control for the probe itself, with literals instead of the variant
+    // mapping: a probe that printed nothing would otherwise match nothing.
     let w = world("probe");
-    let probe = |v: &Variant| -> String {
-        let output = spawn("probe", v);
-        String::from_utf8(framed(&output, v).0).unwrap()
-    };
-    let plain = probe(&variant("plain", &w.empty, &[]));
-    assert!(plain.contains("TZ=(unset)\n"), "{plain}");
-    assert!(
-        plain.contains("ai.toml=false ruletrace.toml=false"),
-        "{plain}"
-    );
-    let rich = probe(&variant(
+    let v = variant(
         "rich",
         &w.configured,
         &[
             ("TZ", "Pacific/Kiritimati"),
             ("LC_ALL", "de_DE.UTF-8"),
-            ("LANG", "tr_TR.UTF-8"),
-            ("OPENAI_API_KEY", CANARY_ONE),
+            ("PATH", ""),
+            ("MODEL_API_KEY", CANARY_ONE),
+            ("OPENAI_API_KEY", CANARY_TWO),
         ],
-    ));
-    assert!(rich.contains("TZ=Pacific/Kiritimati\n"), "{rich}");
-    assert!(rich.contains("LC_ALL=de_DE.UTF-8\n"), "{rich}");
-    assert!(rich.contains("LANG=tr_TR.UTF-8\n"), "{rich}");
-    assert!(rich.contains("ai.toml=true ruletrace.toml=true"), "{rich}");
-    assert!(
-        rich.contains(&format!("OPENAI_API_KEY={CANARY_ONE}\n")),
-        "{rich}"
     );
-    assert!(rich.contains("MODEL_API_KEY=(unset)\n"), "{rich}");
+    let (body, _) = framed(&spawn("probe", &v), &v);
+    let text = String::from_utf8(body).unwrap();
+    for line in [
+        "ai.toml=true\n",
+        "ruletrace.toml=true\n",
+        "env TZ=Pacific/Kiritimati\n",
+        "env LC_ALL=de_DE.UTF-8\n",
+        "env PATH=\n",
+        "env MODEL_API_KEY=<canary one>\n",
+        "env OPENAI_API_KEY=<canary two>\n",
+    ] {
+        assert!(text.contains(line), "{line:?} missing in {text}");
+    }
+    assert!(!text.contains("RT-CANARY"), "{text}");
+    assert!(!text.contains("env RULETRACE_OPENAI_API_KEY"), "{text}");
+    let plain = variant("plain", &w.empty, &[]);
+    let (body, _) = framed(&spawn("probe", &plain), &plain);
+    let text = String::from_utf8(body).unwrap();
+    assert!(
+        text.contains("ai.toml=false\nruletrace.toml=false\n"),
+        "{text}"
+    );
+    assert!(!text.contains("env "), "{text}");
 }
 
 #[test]

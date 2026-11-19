@@ -27,26 +27,35 @@
 mod app_runs;
 
 use app_runs::{
-    all_jobs, boolean, missing, number, outcomes, record_jobs, run, standings, whole_jobs, App,
-    Job, Sel, Snapshot, CSV_FULL, CSV_MISSING_AGE, CSV_MISSING_JUDGES, CSV_TIE,
+    all_jobs, baseline_child, boolean, missing, number, outcomes, record_jobs, render_job, run,
+    standings, whole_jobs, App, Job, Sel, CSV_FULL, CSV_MISSING_AGE, CSV_MISSING_JUDGES, CSV_TIE,
 };
 use prize_check::ResultClass;
 use std::collections::BTreeMap;
 
-fn solo_runs(jobs: &[Job]) -> BTreeMap<String, Snapshot> {
-    jobs.iter().map(|j| (j.name.clone(), j.run())).collect()
+/// The bytes of every job as a fresh process that ran only that job's module
+/// prints them.
+fn solo_runs(_jobs: &[Job]) -> BTreeMap<String, Vec<u8>> {
+    let mut solo = baseline_child(App::Prize);
+    solo.extend(baseline_child(App::Bracket));
+    solo
 }
 
-/// Runs the jobs in the given order and compares each with its solo run.
-fn assert_sequence_equals_solo(label: &str, sequence: &[&Job], solo: &BTreeMap<String, Snapshot>) {
+/// Runs the jobs in the given order and compares each (class, results, human
+/// and JSON bytes) with its baseline from the fresh child.
+fn assert_sequence_equals_solo(label: &str, sequence: &[&Job], solo: &BTreeMap<String, Vec<u8>>) {
     for (position, job) in sequence.iter().enumerate() {
-        let got = job.run();
+        let got = render_job(job, &job.run());
         let want = &solo[&job.name];
         let at = format!("{label}, step {position}, job {}", job.name);
-        assert_eq!(got.results, want.results, "results bytes: {at}");
-        assert_eq!(got.human, want.human, "human report: {at}");
-        assert_eq!(got.json, want.json, "JSON report: {at}");
-        assert_eq!(got.class, want.class, "class: {at}");
+        assert!(
+            &got == want,
+            "bytes differ from the fresh-process baseline at byte {}: {at}",
+            got.iter()
+                .zip(want)
+                .position(|(a, b)| a != b)
+                .unwrap_or_else(|| got.len().min(want.len()))
+        );
     }
 }
 
@@ -144,6 +153,37 @@ fn solo_runs_have_the_hand_derived_outcomes_and_classes() {
         run(App::Bracket, CSV_MISSING_JUDGES, Sel::All).class,
         ResultClass::Indeterminate
     );
+}
+
+#[test]
+fn the_fresh_process_baseline_reports_name_exactly_their_own_participants() {
+    // Hand-derived: a report cites the participants of its own data file and
+    // no others, and the data sets differ, so no two whole-file reports of a
+    // module may be equal. A baseline that repeated the first report of a
+    // module would fail both checks.
+    let jobs = all_jobs();
+    let solo = solo_runs(&jobs);
+    for job in &jobs {
+        let text = String::from_utf8(solo[&job.name].clone()).unwrap();
+        let rows: Vec<&str> = job
+            .csv
+            .lines()
+            .skip(1)
+            .map(|r| r.split(',').next().unwrap())
+            .collect();
+        for id in ["p1", "p2", "p3", "p4"] {
+            let cited = text.contains(&format!("\"{id}\""));
+            assert_eq!(cited, rows.contains(&id), "{} cites {id}: {text}", job.name);
+        }
+    }
+    for app in [App::Prize, App::Bracket] {
+        let wholes = whole_jobs(app);
+        for (i, a) in wholes.iter().enumerate() {
+            for b in &wholes[i + 1..] {
+                assert_ne!(solo[&a.name], solo[&b.name], "{} equals {}", a.name, b.name);
+            }
+        }
+    }
 }
 
 #[test]
@@ -258,4 +298,13 @@ fn two_threads_running_the_modules_at_once_equal_the_solo_runs() {
             });
         }
     });
+}
+
+/// The child of the fresh-process baseline. Without the marker it does
+/// nothing.
+#[test]
+fn child_entry() {
+    if std::env::var(app_runs::CHILD_MARKER).as_deref() == Ok("baseline") {
+        app_runs::print_baseline_frames();
+    }
 }
