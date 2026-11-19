@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 pub mod api;
+pub mod app_api;
 pub mod app_layers;
 pub mod catalogue;
 pub mod decisions;

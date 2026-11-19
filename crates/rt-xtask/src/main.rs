@@ -99,9 +99,18 @@ fn run(args: &[String]) -> Result<(), String> {
                 };
                 rt_xtask::app_layers::run_sources(&root).and_then(|s| {
                     let layers = rt_xtask::app_layers::run_edges(&root, bytes)?;
+                    let list = rt_xtask::scan::load_edges(&root)?;
+                    let crates = rt_xtask::app_layers::layers(&root, &list);
+                    let workspace = list.crates.keys().cloned().collect();
+                    let api = rt_xtask::app_api::run_api(
+                        &root,
+                        rt_xtask::app_api::LIST_PATH,
+                        &crates,
+                        &workspace,
+                    )?;
                     println!(
-                        "check-app-layers: ok ({} crates, {} files, {} rulebooks, {layers} edge sets)",
-                        s.crates, s.files, s.rulebooks
+                        "check-app-layers: ok ({} crates, {} files, {} rulebooks, {layers} edge sets, app-api {} entries)",
+                        s.crates, s.files, s.rulebooks, api.entries
                     );
                     Ok(())
                 })

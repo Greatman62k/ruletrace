@@ -1,0 +1,119 @@
+# format: ruletrace-app-api v1
+# One entry per line: allow <crate> <path> -- <reason>
+# Read by `rt-xtask check-app-layers` (rule app-api, Req 31.10). An application layer may use only the external
+# items listed for it here. An entry that no source uses fails, so the list stays exact. Entries name concrete
+# items, never crates or globs. Task 13.4 adds an rt-lab section. Req 24.13 is expressed there by NOT listing
+# prize_check::evaluate, bracket_check::evaluate or rt_engine::evaluate.
+
+allow bracket-check rt_compiled::CompiledRulebook -- the compiled rulebook the Question set and the report header refer to; passed to the engine unchanged
+allow bracket-check rt_compiled::sha256_of -- hash of the input bytes for the report header, not a decision
+allow bracket-check rt_data::CompetitionData -- engine input type built from the mapped files
+allow bracket-check rt_data::PublishedResult -- optional published result passed to the engine for comparison
+allow bracket-check rt_data::PublishedValue -- reads published values for display in the comparison section
+allow bracket-check rt_data::Question -- engine input type built by the Question construction
+allow bracket-check rt_data::TargetName -- names a Question target
+allow bracket-check rt_data::tabular::FileInputs -- typed input files handed over by the executable
+allow bracket-check rt_data::tabular::MappedFiles -- result type of the file mapping
+allow bracket-check rt_data::tabular::NamedFile -- one named input file
+allow bracket-check rt_data::tabular::TargetKind -- kind of a rulebook target, used to choose a report section
+allow bracket-check rt_data::tabular::TargetKinds -- collection of target kinds
+allow bracket-check rt_data::tabular::UnusedPublished -- published values the mapping did not use, reported as facts
+allow bracket-check rt_data::tabular::data_bytes -- renders the mapped data as RT-JSON for --emit-data
+allow bracket-check rt_data::tabular::input_schema -- reads the input schema declared by the rulebook
+allow bracket-check rt_data::tabular::map_files -- maps CSV files to typed data (input mapping only)
+allow bracket-check rt_data::tabular::published_bytes -- renders the published result as RT-JSON for --emit-published
+allow bracket-check rt_data::tabular::questions_bytes -- renders the Questions as RT-JSON for --emit-questions
+allow bracket-check rt_data::tabular::target_kinds -- reads the target kinds declared by the rulebook
+allow bracket-check rt_data::tabular::target_kinds_by_name -- looks up target kinds by name for presentation
+allow bracket-check rt_engine::Comparison -- engine result of comparing with the published result, copied into the report
+allow bracket-check rt_engine::Computed -- computed value of an Outcome, copied into the report
+allow bracket-check rt_engine::DecisionTrace -- trace of a decision, referenced by the report
+allow bracket-check rt_engine::Difference -- engine-reported difference with the published result, copied into the report
+allow bracket-check rt_engine::Evaluation -- result type of the engine call
+allow bracket-check rt_engine::Outcome -- engine outcome presented by the report
+allow bracket-check rt_engine::TraceValue -- value in a trace, rendered by the report
+allow bracket-check rt_engine::evaluate -- the single call of the shared engine (Req 31.11)
+allow bracket-check rt_explain::ResultClass -- result class of the run, shared with ruletrace evaluate
+allow bracket-check rt_explain::Verification -- provenance verification state of a trace
+allow bracket-check rt_explain::class_of_run -- derives the result class from the run, shared with ruletrace evaluate
+allow bracket-check rt_explain::report::AssembleInputs -- input record of the shared report assembly
+allow bracket-check rt_explain::report::DifferenceFacts -- facts about a difference, copied from the engine
+allow bracket-check rt_explain::report::PresentError -- error type of report presentation
+allow bracket-check rt_explain::report::PublishedSection -- report section for the published comparison
+allow bracket-check rt_explain::report::PublishedUnused -- report entry for unused published values
+allow bracket-check rt_explain::report::QualificationEntry -- report entry for a qualification Outcome
+allow bracket-check rt_explain::report::ReportApplication -- names the application in the report header
+allow bracket-check rt_explain::report::ReportDoc -- shared report document type
+allow bracket-check rt_explain::report::SectionEntry -- generic report section entry
+allow bracket-check rt_explain::report::Sha256Hex -- hash text type for the report header
+allow bracket-check rt_explain::report::StandingsTable -- report table of standings copied from Outcomes
+allow bracket-check rt_explain::report::StatementId -- identifies a validity statement of the report
+allow bracket-check rt_explain::report::TraceRef -- reference from a report entry to its trace
+allow bracket-check rt_explain::report::assemble_report -- shared report serializer (D-12), byte identity with ruletrace evaluate
+allow bracket-check rt_explain::report::compared_section -- shared builder of the published-comparison section
+allow bracket-check rt_explain::verify_trace -- verifies a trace against pre-loaded source models (provenance component)
+allow bracket-check rt_foundation::CliLocation -- location of a command-line input in a Diagnostic
+allow bracket-check rt_foundation::Code -- diagnostic code of the layer own RT-APP findings
+allow bracket-check rt_foundation::Diagnostic -- diagnostic value
+allow bracket-check rt_foundation::DiagnosticState -- derived validity state of the diagnostic list
+allow bracket-check rt_foundation::Location -- diagnostic location
+allow bracket-check rt_foundation::escape_controls -- escapes control characters in message text
+allow bracket-check rt_numeric::to_canonical -- renders an Exact_Number as canonical text, the only rt_numeric use allowed (app-numeric)
+allow bracket-check rt_srcmodel::SourceModels -- pre-loaded source models handed to trace verification
+
+allow prize-check rt_compiled::CompiledRulebook -- the compiled rulebook the Question set and the report header refer to; passed to the engine unchanged
+allow prize-check rt_compiled::sha256_of -- hash of the input bytes for the report header, not a decision
+allow prize-check rt_data::CompetitionData -- engine input type built from the mapped files
+allow prize-check rt_data::PublishedResult -- optional published result passed to the engine for comparison
+allow prize-check rt_data::PublishedValue -- reads published values for display in the comparison section
+allow prize-check rt_data::Question -- engine input type built by the Question construction
+allow prize-check rt_data::TargetName -- names a Question target
+allow prize-check rt_data::tabular::FileInputs -- typed input files handed over by the executable
+allow prize-check rt_data::tabular::MappedFiles -- result type of the file mapping
+allow prize-check rt_data::tabular::NamedFile -- one named input file
+allow prize-check rt_data::tabular::TargetKind -- kind of a rulebook target, used to choose a report section
+allow prize-check rt_data::tabular::TargetKinds -- collection of target kinds
+allow prize-check rt_data::tabular::UnusedPublished -- published values the mapping did not use, reported as facts
+allow prize-check rt_data::tabular::data_bytes -- renders the mapped data as RT-JSON for --emit-data
+allow prize-check rt_data::tabular::input_schema -- reads the input schema declared by the rulebook
+allow prize-check rt_data::tabular::map_files -- maps CSV files to typed data (input mapping only)
+allow prize-check rt_data::tabular::published_bytes -- renders the published result as RT-JSON for --emit-published
+allow prize-check rt_data::tabular::questions_bytes -- renders the Questions as RT-JSON for --emit-questions
+allow prize-check rt_data::tabular::target_kinds -- reads the target kinds declared by the rulebook
+allow prize-check rt_data::tabular::target_kinds_by_name -- looks up target kinds by name for presentation
+allow prize-check rt_engine::Comparison -- engine result of comparing with the published result, copied into the report
+allow prize-check rt_engine::Computed -- computed value of an Outcome, copied into the report
+allow prize-check rt_engine::DecisionTrace -- trace of a decision, referenced by the report
+allow prize-check rt_engine::Difference -- engine-reported difference with the published result, copied into the report
+allow prize-check rt_engine::Evaluation -- result type of the engine call
+allow prize-check rt_engine::Outcome -- engine outcome presented by the report
+allow prize-check rt_engine::TraceValue -- value in a trace, rendered by the report
+allow prize-check rt_engine::evaluate -- the single call of the shared engine (Req 31.11)
+allow prize-check rt_explain::ResultClass -- result class of the run, shared with ruletrace evaluate
+allow prize-check rt_explain::Verification -- provenance verification state of a trace
+allow prize-check rt_explain::class_of_run -- derives the result class from the run, shared with ruletrace evaluate
+allow prize-check rt_explain::report::AssembleInputs -- input record of the shared report assembly
+allow prize-check rt_explain::report::DifferenceFacts -- facts about a difference, copied from the engine
+allow prize-check rt_explain::report::EligibilityEntry -- report entry for an eligibility Outcome
+allow prize-check rt_explain::report::PresentError -- error type of report presentation
+allow prize-check rt_explain::report::PublishedSection -- report section for the published comparison
+allow prize-check rt_explain::report::PublishedUnused -- report entry for unused published values
+allow prize-check rt_explain::report::ReportApplication -- names the application in the report header
+allow prize-check rt_explain::report::ReportDoc -- shared report document type
+allow prize-check rt_explain::report::ScoreEntry -- report entry for a score Outcome
+allow prize-check rt_explain::report::SectionEntry -- generic report section entry
+allow prize-check rt_explain::report::Sha256Hex -- hash text type for the report header
+allow prize-check rt_explain::report::StandingsTable -- report table of standings copied from Outcomes
+allow prize-check rt_explain::report::StatementId -- identifies a validity statement of the report
+allow prize-check rt_explain::report::TraceRef -- reference from a report entry to its trace
+allow prize-check rt_explain::report::assemble_report -- shared report serializer (D-12), byte identity with ruletrace evaluate
+allow prize-check rt_explain::report::compared_section -- shared builder of the published-comparison section
+allow prize-check rt_explain::verify_trace -- verifies a trace against pre-loaded source models (provenance component)
+allow prize-check rt_foundation::CliLocation -- location of a command-line input in a Diagnostic
+allow prize-check rt_foundation::Code -- diagnostic code of the layer own RT-APP findings
+allow prize-check rt_foundation::Diagnostic -- diagnostic value
+allow prize-check rt_foundation::DiagnosticState -- derived validity state of the diagnostic list
+allow prize-check rt_foundation::Location -- diagnostic location
+allow prize-check rt_foundation::escape_controls -- escapes control characters in message text
+allow prize-check rt_numeric::to_canonical -- renders an Exact_Number as canonical text, the only rt_numeric use allowed (app-numeric)
+allow prize-check rt_srcmodel::SourceModels -- pre-loaded source models handed to trace verification

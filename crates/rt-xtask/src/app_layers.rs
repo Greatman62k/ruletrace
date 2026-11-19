@@ -877,7 +877,8 @@ pub fn scan_crate(
     findings
 }
 
-fn layers(root: &Path, list: &EdgeList) -> Vec<String> {
+/// Names of the application-layer crates that have a source directory.
+pub fn layers(root: &Path, list: &EdgeList) -> Vec<String> {
     list.crates
         .iter()
         .filter(|(_, e)| matches!(e.class, Class::App | Class::Lab))
