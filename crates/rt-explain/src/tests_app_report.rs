@@ -139,7 +139,7 @@ fn prize_human_matches_the_hand_written_layout() {
     e.push_str("      group {p1, p2}\n");
     e.push_str("  published_unused: p9 rank.total\n");
     e.push_str(&format!("\n{DIAGNOSTICS_HEADING}\n"));
-    e.push_str("  RT-EXE-0011 warning: published 3 differs from computed 2   at no location (RT-EXE-0011)\n");
+    e.push_str("  RT-EXE-0001 error: rule score.total: required input 'points' of participant 'p2' is a Missing_Value   at no location (RT-EXE-0001)\n");
     assert_eq!(render_human(&doc), e);
 }
 
@@ -156,7 +156,7 @@ fn miss(who: &str, field: &str) -> String {
 }
 
 const PUBLISHED_JSON: &str = "\"published\":{\"state\":\"differs\",\"differences\":[{\"participant\":\"p1\",\"target\":\"rank.total\",\"published\":\"3\",\"computed\":\"2\",\"trace\":3,\"entry\":5,\"kind\":\"value_differs\",\"code\":\"RT-EXE-0011\",\"non_terminating\":false,\"group\":[]},{\"participant\":\"p2\",\"target\":\"rank.total\",\"published\":\"3\",\"computed\":\"2/3\",\"trace\":3,\"entry\":5,\"kind\":\"tie_broken_without_declared_criterion\",\"code\":\"RT-EXE-0012\",\"non_terminating\":true,\"group\":[\"p1\",\"p2\"]}],\"unused\":[{\"participant\":\"p9\",\"target\":\"rank.total\"}]}";
-const DIAG_JSON: &str = "\"diagnostics\":[{\"code\":\"RT-EXE-0011\",\"severity\":\"warning\",\"message\":\"published 3 differs from computed 2\",\"location\":\"no location (RT-EXE-0011)\"}],\"diagnostics_scope\":\"evaluation_and_provenance\"";
+const DIAG_JSON: &str = "\"diagnostics\":[{\"code\":\"RT-EXE-0001\",\"severity\":\"error\",\"message\":\"rule score.total: required input 'points' of participant 'p2' is a Missing_Value\",\"location\":\"no location (RT-EXE-0001)\"}],\"diagnostics_scope\":\"evaluation_and_provenance\"";
 
 fn places_json() -> String {
     format!(
@@ -244,7 +244,7 @@ fn bracket_human_matches_the_hand_written_layout() {
     e.push_str("      group {p1, p2}\n");
     e.push_str("  published_unused: p9 rank.total\n");
     e.push_str(&format!("\n{DIAGNOSTICS_HEADING}\n"));
-    e.push_str("  RT-EXE-0011 warning: published 3 differs from computed 2   at no location (RT-EXE-0011)\n");
+    e.push_str("  RT-EXE-0001 error: rule score.total: required input 'points' of participant 'p2' is a Missing_Value   at no location (RT-EXE-0001)\n");
     assert_eq!(render_human(&doc), e);
 }
 
@@ -655,9 +655,9 @@ fn control_characters_in_every_dynamic_field_are_escaped_in_human_output() {
     );
     vs[2] = crate::verify_trace(&t2[2], &models());
     let diag = rt_foundation::Diagnostic::new(
-        Code::PublishedResultDiffers,
+        Code::ExeMissingValue,
         "line\u{1b}[0m\n".to_owned(),
-        rt_foundation::Location::None(Code::PublishedResultDiffers),
+        rt_foundation::Location::None(Code::ExeMissingValue),
     );
     let doc = ReportDoc::new(
         header(ReportApplication::PrizeCheck),
@@ -875,15 +875,16 @@ fn entries_copy_values_from_the_outcome_and_trace() {
 }
 
 /// A Prize_Check report with one published difference and no Diagnostics.
-fn published_difference_only() -> ReportDoc {
+fn published_difference_only(app: ReportApplication) -> ReportDoc {
     let t = vec![prize_traces().remove(4)];
     let vs = verified(&t);
+    let bracket = app == ReportApplication::BracketCheck;
     ReportDoc::new(
-        header(ReportApplication::PrizeCheck),
+        header(app),
         &vs,
         vec![
             ReportSection::Standings(vec![
-                StandingsTable::from_trace(&tref(0, &t, &vs), false).unwrap()
+                StandingsTable::from_trace(&tref(0, &t, &vs), bracket).unwrap()
             ]),
             ReportSection::Published(PublishedSection::Compared {
                 differences: vec![difference("value_differs", &[])],
@@ -897,26 +898,34 @@ fn published_difference_only() -> ReportDoc {
 
 #[test]
 fn diagnostics_section_states_its_scope_and_published_differences_stay_apart() {
-    let doc = published_difference_only();
-    let human = render_human(&doc);
-    assert!(
-        human.ends_with(&format!("\n{DIAGNOSTICS_HEADING}\n  none\n")),
-        "{human}"
-    );
-    let published = human.split("\nPUBLISHED CONSISTENCY\n").nth(1).unwrap();
-    let published = published.split("\nDIAGNOSTICS").next().unwrap();
-    assert!(
-        published.contains("kind value_differs (RT-EXE-0011)"),
-        "{published}"
-    );
-    let json = String::from_utf8(render_json(&doc)).unwrap();
-    assert!(
-        json.ends_with("\"diagnostics\":[],\"diagnostics_scope\":\"evaluation_and_provenance\"}\n"),
-        "{json}"
-    );
-    assert!(
-        json.contains("\"code\":\"RT-EXE-0011\",\"non_terminating\""),
-        "{json}"
-    );
-    assert_eq!(json.matches("diagnostics_scope").count(), 1);
+    // Req 31.16 names both Application_Layers.
+    for app in [
+        ReportApplication::PrizeCheck,
+        ReportApplication::BracketCheck,
+    ] {
+        let doc = published_difference_only(app);
+        let human = render_human(&doc);
+        assert!(
+            human.ends_with(&format!("\n{DIAGNOSTICS_HEADING}\n  none\n")),
+            "{human}"
+        );
+        let published = human.split("\nPUBLISHED CONSISTENCY\n").nth(1).unwrap();
+        let published = published.split("\nDIAGNOSTICS").next().unwrap();
+        assert!(
+            published.contains("kind value_differs (RT-EXE-0011)"),
+            "{published}"
+        );
+        let json = String::from_utf8(render_json(&doc)).unwrap();
+        assert!(
+            json.ends_with(
+                "\"diagnostics\":[],\"diagnostics_scope\":\"evaluation_and_provenance\"}\n"
+            ),
+            "{json}"
+        );
+        assert!(
+            json.contains("\"code\":\"RT-EXE-0011\",\"non_terminating\""),
+            "{json}"
+        );
+        assert_eq!(json.matches("diagnostics_scope").count(), 1);
+    }
 }

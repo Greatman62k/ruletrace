@@ -287,11 +287,15 @@ pub(crate) fn published_differs() -> PublishedSection {
     }
 }
 
-pub(crate) fn warning() -> Diagnostic {
+/// An evaluation Diagnostic of the kind the engine reports beside the
+/// Indeterminate score of p2 (missing input `points`). A published-result
+/// difference never belongs in the Diagnostics section (Req 31.16).
+pub(crate) fn evaluation_diagnostic() -> Diagnostic {
     Diagnostic::new(
-        Code::PublishedResultDiffers,
-        "published 3 differs from computed 2".to_owned(),
-        Location::None(Code::PublishedResultDiffers),
+        Code::ExeMissingValue,
+        "rule score.total: required input 'points' of participant 'p2' is a Missing_Value"
+            .to_owned(),
+        Location::None(Code::ExeMissingValue),
     )
 }
 
@@ -339,7 +343,7 @@ pub(crate) fn prize_doc(traces: &[DecisionTrace], vs: &[Verification]) -> Report
                 StandingsTable::from_trace(&r(5), false).unwrap(),
             ]),
             ReportSection::Published(published_differs()),
-            ReportSection::Diagnostics(vec![warning()]),
+            ReportSection::Diagnostics(vec![evaluation_diagnostic()]),
         ],
     )
     .unwrap()
@@ -371,7 +375,7 @@ pub(crate) fn bracket_doc(traces: &[DecisionTrace], vs: &[Verification]) -> Repo
                 QualificationEntry::from_trace(&r(3)).unwrap(),
             ]),
             ReportSection::Published(published_differs()),
-            ReportSection::Diagnostics(vec![warning()]),
+            ReportSection::Diagnostics(vec![evaluation_diagnostic()]),
         ],
     )
     .unwrap()
