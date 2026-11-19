@@ -7,8 +7,10 @@
 //! The metamorphic test of Req 31.4 on the Evaluate group of `prize-check`
 //! and of `bracket-check`. The base Rulebook is `tests/fixtures/slice-basic`
 //! plus one new Rule_Revision of `rank.standing` that declares two
-//! tie-breaking criteria (`judges` then `technical`, both descending), so the
-//! order of two criteria can be swapped. Each variant adds exactly one new
+//! tie-breaking criteria (`judges` descending, then `age` ascending). Age is
+//! not a function of the score or of the judges, so the second criterion
+//! decides ties that the first leaves, and the order of the two can be
+//! swapped. Each variant adds exactly one new
 //! Rule_Revision to that base: the `judges` weight 0.6 to 0.7, the age
 //! threshold 16 to 18, or the criteria order swapped.
 //!
@@ -63,6 +65,10 @@ const TIME: &str = "2026-11-19T09:00:00Z";
 /// The fewest generated data sets (Property 43 as a property test).
 const CASES: u32 = 256;
 
+/// The floor of the specification. Lowering `CASES` fails the build.
+const MIN_CASES: u32 = 256;
+const _: () = assert!(CASES >= MIN_CASES);
+
 const MANUAL: &str = r#""origin":{"kind":"manual","author":null}"#;
 const SPAN_ELIG: &str =
     r#""spans":[{"document":"rules.md","start":21,"end":91,"line":3,"column":1}]"#;
@@ -75,7 +81,7 @@ struct Params {
     judges_weight_tenths: i64,
     technical_weight_tenths: i64,
     age_threshold: i64,
-    /// True: `judges` then `technical`. False: `technical` then `judges`.
+    /// True: `judges` desc then `age` asc. False: `age` asc then `judges`.
     judges_first: bool,
 }
 
@@ -109,13 +115,15 @@ struct Revision {
 }
 
 fn rank_revision(number: u32, judges_first: bool) -> Revision {
-    let tb = |name: &str| {
-        format!(r#"{{"expr":{{"node":"field","t":"number","name":"{name}"}},"direction":"desc"}}"#)
+    let tb = |(name, direction): (&str, &str)| {
+        format!(
+            r#"{{"expr":{{"node":"field","t":"number","name":"{name}"}},"direction":"{direction}"}}"#
+        )
     };
     let (first, second) = if judges_first {
-        ("judges", "technical")
+        (("judges", "desc"), ("age", "asc"))
     } else {
-        ("technical", "judges")
+        (("age", "asc"), ("judges", "desc"))
     };
     Revision {
         rule: "rank.standing",
@@ -248,6 +256,7 @@ fn build_compiled(revisions: &[Revision]) -> Vec<u8> {
         ]);
         assert_eq!(code, 0, "approve {} r{number}: {stderr}", revision.rule);
     }
+    assert_ledger_lists_approvals(&session, revisions);
     let (code, stderr) = session.run(&[
         "validate",
         "--rulebook",
@@ -269,6 +278,46 @@ fn build_compiled(revisions: &[Revision]) -> Vec<u8> {
     ]);
     assert_eq!(code, 0, "compile: {stderr}");
     session.get("compiled.json").unwrap()
+}
+
+/// Reads the variant ledger back. `ruletrace review list` must show each new
+/// revision as Approved. It does not print the Reviewer, so the ledger file
+/// must also hold one approval record by the Test Reviewer per new revision.
+fn assert_ledger_lists_approvals(session: &Session, revisions: &[Revision]) {
+    for revision in revisions {
+        let number = revision.number.to_string();
+        let (code, listed) = session.run_stdout(&[
+            "review",
+            "list",
+            "--rulebook",
+            "rulebook.json",
+            "--ledger",
+            "ledger.jsonl",
+            "--source-model",
+            "model.json",
+            "--rule",
+            revision.rule,
+            "--revision",
+            &number,
+        ]);
+        assert_eq!(code, 0, "review list: {listed}");
+        let heading = format!(
+            "rule '{}' revision {} status Approved\n",
+            revision.rule, revision.number
+        );
+        assert_eq!(listed.matches(&heading).count(), 1, "{heading}{listed}");
+    }
+    let ledger = String::from_utf8(session.get("ledger.jsonl").unwrap()).unwrap();
+    let committed = String::from_utf8(read(&format!("{SLICE_BASIC}/ledger.jsonl"))).unwrap();
+    let appended = ledger.strip_prefix(&committed).unwrap();
+    let records: Vec<&str> = appended.lines().collect();
+    assert_eq!(records.len(), revisions.len(), "{appended}");
+    for (record, revision) in records.iter().zip(revisions) {
+        assert!(record.contains(r#""kind":"approval""#), "{record}");
+        assert!(record.contains(&format!(r#""rule":"{}""#, revision.rule)));
+        assert!(record.contains(&format!(r#""revision":{}"#, revision.number)));
+        assert!(record.contains(&format!(r#""reviewer":"{REVIEWER}""#)));
+    }
 }
 
 /// Compiled bytes per pinned variant, built once through the real commands.
@@ -431,9 +480,9 @@ fn standings(places: &[(usize, &[&str])]) -> String {
     )
 }
 
-/// Participants a..e: the five eligibility Outcomes, the five scores, then
+/// Participants a..f: the six eligibility Outcomes, the six scores, then
 /// the standings, the order of the Questions of the Prize request.
-fn prize_outcomes(eligible: [bool; 5], scores: [&str; 5], order: [&str; 5]) -> Vec<String> {
+fn prize_outcomes(eligible: [bool; 6], scores: [&str; 6], order: [&str; 6]) -> Vec<String> {
     let mut list = Vec::new();
     list.extend(eligible.iter().map(|e| boolean(*e)));
     list.extend(scores.iter().map(|s| number(s)));
@@ -455,23 +504,30 @@ fn prize_outcomes(eligible: [bool; 5], scores: [&str; 5], order: [&str; 5]) -> V
 /// c   18  true    6      10
 /// d   17  true    9      5
 /// e   25  false   5      5
+/// f   19  true    8      7
 /// ```
-const PINNED_CSV: &str = "participant,age,licence,judges,technical\na,20,true,8,7\nb,20,true,7,8.5\nc,18,true,6,10\nd,17,true,9,5\ne,25,false,5,5\n";
+///
+/// f equals a on judges and technical, so f and a tie on every score and on
+/// judges, and only age (f 19, a 20) separates them.
+const PINNED_CSV: &str = "participant,age,licence,judges,technical\na,20,true,8,7\nb,20,true,7,8.5\nc,18,true,6,10\nd,17,true,9,5\ne,25,false,5,5\nf,19,true,8,7\n";
 
-// Base (judges 0.6, technical 0.4, age >= 16, tie order judges then
-// technical):
-//   eligible: a, b, c, d true (age >= 16 and licence); e false (no licence)
+// Base (judges 0.6, technical 0.4, age >= 16, ties: judges descending, then
+// age ascending):
+//   eligible: a, b, c, d, f true (age >= 16 and licence); e false (no licence)
 //   score a = 0.6*8 + 0.4*7   = 4.8 + 2.8 = 7.6
 //   score b = 0.6*7 + 0.4*8.5 = 4.2 + 3.4 = 7.6
 //   score c = 0.6*6 + 0.4*10  = 3.6 + 4.0 = 7.6
 //   score d = 0.6*9 + 0.4*5   = 5.4 + 2.0 = 7.4
 //   score e = 0.6*5 + 0.4*5   = 3.0 + 2.0 = 5
-//   a, b, c tie on 7.6. Judges descending: a (8), b (7), c (6). Then d, e.
+//   score f = 0.6*8 + 0.4*7   = 7.6
+//   a, b, c, f tie on 7.6. Judges descending: a and f (8), b (7), c (6).
+//   a and f tie on judges too: age ascending puts f (19) before a (20).
+//   Order f, a, b, c, then d, e.
 fn pinned_base() -> Vec<String> {
     prize_outcomes(
-        [true, true, true, true, false],
-        ["7.6", "7.6", "7.6", "7.4", "5"],
-        ["a", "b", "c", "d", "e"],
+        [true, true, true, true, false, true],
+        ["7.6", "7.6", "7.6", "7.4", "5", "7.6"],
+        ["f", "a", "b", "c", "d", "e"],
     )
 }
 
@@ -481,36 +537,40 @@ fn pinned_base() -> Vec<String> {
 //   score c = 0.7*6 + 4.0 = 4.2 + 4.0 = 8.2
 //   score d = 0.7*9 + 2.0 = 6.3 + 2.0 = 8.3
 //   score e = 0.7*5 + 2.0 = 3.5 + 2.0 = 5.5
-//   Eligibility is unchanged. b and d tie on 8.3. Judges descending puts
-//   d (9) before b (7): a, d, b, c, e.
+//   score f = 0.7*8 + 2.8 = 8.4
+//   Eligibility is unchanged. a and f tie on 8.4 and on judges: f (19)
+//   before a (20). b and d tie on 8.3: judges descending puts d (9) before
+//   b (7). Order f, a, d, b, c, e.
 fn pinned_weight() -> Vec<String> {
     prize_outcomes(
-        [true, true, true, true, false],
-        ["8.4", "8.3", "8.2", "8.3", "5.5"],
-        ["a", "d", "b", "c", "e"],
+        [true, true, true, true, false, true],
+        ["8.4", "8.3", "8.2", "8.3", "5.5", "8.4"],
+        ["f", "a", "d", "b", "c", "e"],
     )
 }
 
 // Threshold variant (age >= 18):
 //   eligible: a (20) true, b (20) true, c (18) true (the boundary is
-//   inclusive), d (17) false (was true), e false (no licence).
+//   inclusive), d (17) false (was true), e false (no licence), f (19) true.
 //   Scores and standings are the base's.
 fn pinned_threshold() -> Vec<String> {
     prize_outcomes(
-        [true, true, true, false, false],
-        ["7.6", "7.6", "7.6", "7.4", "5"],
-        ["a", "b", "c", "d", "e"],
+        [true, true, true, false, false, true],
+        ["7.6", "7.6", "7.6", "7.4", "5", "7.6"],
+        ["f", "a", "b", "c", "d", "e"],
     )
 }
 
-// Order variant (technical then judges): a, b, c still tie on 7.6.
-// Technical descending: c (10), b (8.5), a (7). So c, b, a, then d, e.
-// Eligibility and scores are the base's.
+// Order variant (age ascending, then judges descending): a, b, c, f still
+// tie on 7.6. Age ascending: c (18), f (19), then a and b (both 20), which
+// judges descending separates: a (8) before b (7). Order c, f, a, b, then
+// d, e. Eligibility and scores are the base's. Against the base, c moves
+// from fourth to first and f from first to second.
 fn pinned_order() -> Vec<String> {
     prize_outcomes(
-        [true, true, true, true, false],
-        ["7.6", "7.6", "7.6", "7.4", "5"],
-        ["c", "b", "a", "d", "e"],
+        [true, true, true, true, false, true],
+        ["7.6", "7.6", "7.6", "7.4", "5", "7.6"],
+        ["c", "f", "a", "b", "d", "e"],
     )
 }
 
@@ -539,8 +599,8 @@ fn prize_check_reads_every_parameter_from_the_compiled_rulebook() {
             .map(|(_, o)| o.clone())
             .collect()
     };
-    let is_eligibility = |i: usize| i < 5;
-    let is_score = |i: usize| (5..10).contains(&i);
+    let is_eligibility = |i: usize| i < 6;
+    let is_score = |i: usize| (6..12).contains(&i);
     let weight = outcomes_checked(App::Prize, compiled_of(WEIGHT), PINNED_CSV);
     assert_eq!(
         by_index(&weight, is_eligibility),
@@ -568,7 +628,7 @@ fn prize_check_reads_every_parameter_from_the_compiled_rulebook() {
 
 #[test]
 fn bracket_check_reads_every_parameter_from_the_compiled_rulebook() {
-    let expect = |params: Params, order: [&str; 5]| {
+    let expect = |params: Params, order: [&str; 6]| {
         let got = outcomes_checked(App::Bracket, compiled_of(params), PINNED_CSV);
         let places: Vec<(usize, &[&str])> = order
             .iter()
@@ -578,21 +638,21 @@ fn bracket_check_reads_every_parameter_from_the_compiled_rulebook() {
         assert_eq!(got, vec![standings(&places)], "{params:?}");
         got
     };
-    let base = expect(BASE, ["a", "b", "c", "d", "e"]);
+    let base = expect(BASE, ["f", "a", "b", "c", "d", "e"]);
     // The weight change reorders the standings (see `pinned_weight`).
-    let weight = expect(WEIGHT, ["a", "d", "b", "c", "e"]);
+    let weight = expect(WEIGHT, ["f", "a", "d", "b", "c", "e"]);
     assert_ne!(weight, base);
     // The threshold is not an input of the ranking: the standings stay.
-    let threshold = expect(THRESHOLD, ["a", "b", "c", "d", "e"]);
+    let threshold = expect(THRESHOLD, ["f", "a", "b", "c", "d", "e"]);
     assert_eq!(threshold, base);
-    // The swapped criteria reorder the tied a, b, c (see `pinned_order`).
-    let order = expect(ORDER, ["c", "b", "a", "d", "e"]);
+    // The swapped criteria reorder the tied a, b, c, f (see `pinned_order`).
+    let order = expect(ORDER, ["c", "f", "a", "b", "d", "e"]);
     assert_ne!(order, base);
 }
 
 // Reference model, independent of every production crate. Participant i has
-// integer age, licence, judges and technical in 0..=10; weights are tenths,
-// so a score is an integer number of tenths.
+// integer age, licence, judges and technical; weights are tenths, so a score
+// is an integer number of tenths.
 
 #[derive(Clone, Debug)]
 struct Row {
@@ -628,10 +688,11 @@ fn model_prize(rows: &[Row], p: Params) -> Vec<String> {
 fn model_standings(rows: &[Row], p: Params) -> String {
     let key = |r: &Row| {
         let score = p.judges_weight_tenths * r.judges + p.technical_weight_tenths * r.technical;
+        // Age ascending is descending order of the negated age.
         if p.judges_first {
-            (score, r.judges, r.technical)
+            (score, r.judges, -r.age)
         } else {
-            (score, r.technical, r.judges)
+            (score, -r.age, r.judges)
         }
     };
     let mut named: Vec<(String, (i64, i64, i64))> = rows
@@ -680,8 +741,9 @@ fn rows_csv(rows: &[Row], file_order: &[usize]) -> String {
 }
 
 fn row() -> impl Strategy<Value = Row> {
-    // Ages straddle both thresholds (16 and 18). Small score ranges make
-    // equal scores, and equal tie-breaking values, common.
+    // Ages straddle both thresholds (16 and 18). Small ranges make equal
+    // scores, equal judges and equal ages common, so each tie-breaker
+    // decides some pairs.
     (
         prop_oneof![14i64..=22, Just(16), Just(18), Just(17)],
         any::<bool>(),
@@ -727,25 +789,23 @@ proptest! {
     }
 }
 
-/// Hand check of the reference model on one tie: p01 scores
-/// 0.6*2 + 0.4*3 = 2.4 and p02 scores 0.6*4 + 0.4*0 = 2.4. Judges first puts
-/// p02 (4) before p01 (2); technical first puts p01 (3) before p02 (0).
+/// Hand check of the reference model on two ties.
+///
+/// p01 (age 18) scores 0.6*2 + 0.4*3 = 2.4 and p02 (age 20) scores
+/// 0.6*4 + 0.4*0 = 2.4. Judges first puts p02 (4) before p01 (2). Age first
+/// puts p01 (18) before p02 (20).
+///
+/// p03 and p04 both score 0.6*3 + 0.4*3 = 3 and have judges 3, so only age
+/// separates them: p04 (19) before p03 (20) in both orders.
 #[test]
 fn the_reference_model_matches_a_hand_derived_tie() {
-    let tied = vec![
-        Row {
-            age: 20,
-            licence: true,
-            judges: 2,
-            technical: 3,
-        },
-        Row {
-            age: 20,
-            licence: true,
-            judges: 4,
-            technical: 0,
-        },
-    ];
+    let row = |age, judges, technical| Row {
+        age,
+        licence: true,
+        judges,
+        technical,
+    };
+    let tied = vec![row(18, 2, 3), row(20, 4, 0)];
     assert_eq!(
         model_standings(&tied, BASE),
         standings(&[(1, &["p02"]), (2, &["p01"])])
@@ -754,4 +814,15 @@ fn the_reference_model_matches_a_hand_derived_tie() {
         model_standings(&tied, ORDER),
         standings(&[(1, &["p01"]), (2, &["p02"])])
     );
+    let by_age = vec![row(20, 3, 3), row(19, 3, 3)];
+    let expected = standings(&[(1, &["p02"]), (2, &["p01"])]);
+    assert_eq!(model_standings(&by_age, BASE), expected);
+    assert_eq!(model_standings(&by_age, ORDER), expected);
+}
+
+/// The generated cases are the floor of Property 43, whatever the
+/// environment says.
+#[test]
+fn the_property_runs_at_least_256_cases() {
+    assert!(ProptestConfig::with_cases(CASES).cases >= 256);
 }

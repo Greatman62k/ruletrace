@@ -131,6 +131,16 @@ impl Session {
         let outcome = run(&args, &self.fs);
         (outcome.code.value(), outcome.stderr)
     }
+
+    /// Runs one command line. Returns the exit code and standard output.
+    pub fn run_stdout(&self, args: &[&str]) -> (u8, String) {
+        let args: Vec<OsString> = args.iter().map(OsString::from).collect();
+        let outcome = run(&args, &self.fs);
+        (
+            outcome.code.value(),
+            String::from_utf8(outcome.stdout).unwrap(),
+        )
+    }
 }
 
 /// Runs `ruletrace evaluate` over the given files. Returns the exit code and
