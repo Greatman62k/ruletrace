@@ -672,7 +672,7 @@ Records user-approved deferrals only. No new deferral is introduced, no requirem
 | 9.13 | Deferred | User decision 2 | post-submission hardening | 31.7, 32.6, 13.12, 13.20 | Property 46 |
 | 9.14 | Deferred | User decision 2 | post-submission hardening | 31.13, 31.14, 32.5, 22.1 | Property 47 |
 | 9.15 | Deferred | User decision 2 (also follows from 9.3) | post-submission hardening | 14.12, 14.13, 32.3, 32.4 | Property 45 and the cycle negative test |
-| 9.17 | Deferred | User decision 2 | post-submission hardening | 31.11, 31.15, 20.6, 27.15 | Two-application isolation and process-independence tests |
+| 9.17 | Deferred, then lifted and closed on local scope (2026-11-18) | User decision 2; user instruction 2026-11-18 | closed | 31.11, 31.15, 20.6 (local evidence); 27.15 outstanding, owned by 13.4 and 13.6 | Two-application isolation and process-independence tests |
 | 9.19 | Deferred | User decision 2 | post-submission hardening | 27.1, 27.15, 24.12, 31.10 | Steering updates of design §9.3 items 6 to 8 |
 | 10.4 | Superseded | UD-37 made it required; complete `[x]` | not applicable | 23.39, 23.27, 23.4 | Nothing; the deferral no longer applies |
 | 10.7 | Superseded | User required it on 2026-11-16; implemented, review and CI pending, stays `[ ]` | not applicable | 33.10, 28.21, 28.11, 33.2 | Not complete until the review and CI runs; the deferral no longer applies |
@@ -1194,3 +1194,15 @@ Corrected after review `docs/reviews/2026-11-18-review-f1f2-3ed212c.md` N2: 31.1
 - `tests/fixtures/app-reports/PROVENANCE.md`: required by the existing harness check of Req 28.11; written by an agent edit under the user's approval `d561fc0b3e9f`.
 - Two earlier approvals (`439dfb867f3d`, `913c957b1d36`) were not used: the first carried line breaks that would have split the command, the second used a wrapper form that the shell guard refuses. The guard was then fixed (`74ec3fe`) to recognise `RT_APP_GOLDEN_BLESS` and `RULETRACE_BLESS`.
 - Requirements now evidenced locally: 31.14, 31.15, 31.16 and 20.4 for the 11 cases; 32.7 except the Tie_Group-at-threshold fixture (deferred with 9.3). Three-platform byte identity is not yet evidenced (M3 is not pushed).
+
+### Task 9.17 closure (2026-11-18)
+
+Closed by the user's decision on its locally deliverable, independently reviewed scope, as for 9.10 and 9.11. The original task text and deferral history are kept in `tasks.md`. The deferral-table row above was annotated in place; its old text was: `| 9.17 | Deferred | User decision 2 | post-submission hardening | 31.11, 31.15, 20.6, 27.15 | Two-application isolation and process-independence tests |`.
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| 31.15, 20.6 | `crates/rt-tests-core/tests/workflow_module_isolation.rs` (`bdaefe8`, `5606578`); reviews `2026-11-18-review-9.17-bdaefe8.md`, `2026-11-18-review-9.17-followup-5606578.md` | Local evidence accepted; Windows and macOS outstanding |
+| 31.11 | `crates/rt-tests-core/tests/workflow_module_environment.rs`, `crates/rt-tests-core/tests/support/app_runs.rs`; with the 9.8 source scan | Local evidence accepted, with the clock, locale and PATH limits of the 9.17 closure note; Windows and macOS outstanding |
+| 27.15 | none in 9.17 | **Not satisfied**; owned by 13.4 (executable set with `ruletrace-lab`) and 13.6 (Laboratory process independence, Req 36.22) |
+
+Effect on 9.5: the 31.11 test it awaited is delivered; 9.5 stays open on 9.8 (APP-API) and on Req 15.5, which has no recorded coverage.
