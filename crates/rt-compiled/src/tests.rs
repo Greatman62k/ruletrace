@@ -1,4 +1,5 @@
 use super::*;
+use crate::proptest_floor::property_tests;
 use proptest::prelude::*;
 use rt_foundation::{Code, DocumentId, InputId, RevisionNumber, RuleId};
 use rt_hash::sha256;
@@ -577,7 +578,7 @@ fn arb_text() -> impl Strategy<Value = String> {
     proptest::collection::vec(any::<char>(), 0..12).prop_map(|c| c.into_iter().collect())
 }
 
-proptest! {
+property_tests! {
     /// **Validates: Requirements 9.4, 9.5**
     #[test]
     fn serialize_parse_serialize_is_stable_for_generated_rulebooks(

@@ -1,6 +1,7 @@
 //! Unit and property tests for rt-trace.
 
 use super::*;
+use crate::proptest_floor::property_tests;
 use proptest::prelude::*;
 use rt_foundation::{
     Code, Diagnostic, DiagnosticState, DocumentId, Location, RevisionNumber, RuleId,
@@ -148,7 +149,7 @@ fn tri() -> impl Strategy<Value = Tri> {
     prop_oneof![Just(Tri::True), Just(Tri::False), Just(Tri::Unknown)]
 }
 
-proptest! {
+property_tests! {
     /// **Validates: Requirements 11.4**
     #[test]
     fn kleene_laws(a in tri(), b in tri(), c in tri()) {
@@ -527,7 +528,7 @@ fn small_number() -> impl Strategy<Value = ExactNumber> {
     })
 }
 
-proptest! {
+property_tests! {
     /// **Validates: Requirements 13.11**
     #[test]
     fn replay_of_derived_steps_always_matches(a in small_number(), b in small_number()) {

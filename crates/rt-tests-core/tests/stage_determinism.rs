@@ -17,7 +17,10 @@
     missing_docs
 )]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_data::{CompetitionData, Participant, ParticipantId, Question, TargetName};
 use rt_foundation::{DocumentId, InputId};
 use rt_hash::sha256;
@@ -192,8 +195,8 @@ fn order() -> impl Strategy<Value = Vec<usize>> {
     Just((0..7).collect::<Vec<_>>()).prop_shuffle()
 }
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(24))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(24))]
 
     /// Feature: ruletrace-compiler, Property 2: Stage determinism
     /// **Validates: Requirements 1.7, 4.11, 6.12, 9.4, 10.2, 10.8, 24.6**

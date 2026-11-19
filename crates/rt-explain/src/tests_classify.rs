@@ -8,6 +8,7 @@
 //! 3. otherwise a provenance Error is exit 2;
 //! 4. otherwise exit 0. Warnings never decide.
 
+use crate::proptest_floor::property_tests;
 use crate::{classify_evaluation, has_question_fault, verify_trace, EvaluationClass, Verification};
 use proptest::prelude::*;
 use rt_foundation::{Code, Diagnostic, DiagnosticState, DocumentId, Location};
@@ -199,7 +200,7 @@ fn a_question_fault_is_detected_by_code_only() {
     assert!(!has_question_fault(&DiagnosticState::empty()));
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     #[test]

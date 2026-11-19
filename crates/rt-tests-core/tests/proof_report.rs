@@ -16,7 +16,10 @@
     missing_docs
 )]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_explain::report::{
     build_proof_report, render_proof_human, render_proof_json, ApprovalFacts, ApprovalView,
     ProofInputs,
@@ -217,8 +220,8 @@ const LABELS: [&str; 11] = [
     "",
 ];
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(64))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(64))]
 
     #[test]
     fn report_is_complete_ordered_and_replayable(cases in prop::collection::vec(case(), 1..4)) {

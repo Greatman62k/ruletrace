@@ -6,6 +6,7 @@
 //! expected code and position come from the same choices, never from the
 //! code under test. The expected failure is the earliest check with a fault.
 
+use crate::proptest_floor::property_tests;
 use crate::{load, Consent, EnvReader, ProviderKind};
 use proptest::prelude::*;
 use rt_foundation::{
@@ -684,7 +685,7 @@ fn check_case(case: &Case) -> Result<(), TestCaseError> {
     Ok(())
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     // Only the earliest failing check of Req 28.17 is reported, with its

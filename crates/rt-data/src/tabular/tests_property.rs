@@ -5,6 +5,7 @@
 use super::tests_csv::{input, view};
 use super::tests_map::{base, kinds, requested, row_with, schema};
 use super::*;
+use crate::proptest_floor::property_tests;
 use crate::{
     parse_data, parse_published, CompetitionData, DataLimits, DataValue, Participant,
     ParticipantId, PublishedNumber, PublishedResult, PublishedValue, TargetName,
@@ -37,7 +38,7 @@ fn is_input_location(l: &Location) -> bool {
     matches!(l, Location::Input(_))
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(cases(512))]
 
     #[test]
@@ -168,7 +169,7 @@ fn render(grid: &Grid, crlf: bool, bom: bool, final_eol: bool) -> (Vec<u8>, Expe
     (bytes, expected)
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(cases(512))]
 
     #[test]
@@ -194,7 +195,7 @@ fn scalar_prefix() -> impl Strategy<Value = String> {
     .prop_map(|v| v.into_iter().collect())
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(cases(512))]
 
     #[test]
@@ -267,7 +268,7 @@ fn csv_quote(text: &str) -> String {
     }
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(cases(512))]
 
     #[test]
@@ -366,7 +367,7 @@ fn date_parts() -> impl Strategy<Value = (i64, i64, i64)> {
     prop_oneof![wide, leap_years, centuries, month_ends]
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(cases(1024))]
 
     #[test]
@@ -389,7 +390,7 @@ fn width_model() -> impl Strategy<Value = (usize, Vec<bool>, bool)> {
     )
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(cases(512))]
 
     #[test]
@@ -454,7 +455,7 @@ fn published_model() -> impl Strategy<Value = Vec<(String, u8, String)>> {
     .prop_map(|m| m.into_iter().map(|((p, t), v)| (p, t, v)).collect())
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(cases(512))]
 
     #[test]

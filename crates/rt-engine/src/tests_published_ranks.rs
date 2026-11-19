@@ -2,6 +2,7 @@
 //! 32.6, design §3.6.3). Expected values are computed by hand from the
 //! scores, never by the engine.
 
+use crate::proptest_floor::property_tests;
 use crate::tests::*;
 use crate::tests_rank::{pnum, published, rank_all, ranking, scored, INPUTS};
 use crate::*;
@@ -435,7 +436,7 @@ fn the_order_of_the_published_entries_does_not_change_the_differences() {
     assert_eq!(compare_with(&TIED, &reversed).0, base);
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     #[test]
@@ -514,7 +515,7 @@ fn model(
     out
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     #[test]

@@ -29,3 +29,7 @@ pub use tri::Tri;
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;

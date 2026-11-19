@@ -53,3 +53,7 @@ mod tests_assemble;
 
 #[cfg(test)]
 mod tests_result_class;
+
+#[cfg(test)]
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;

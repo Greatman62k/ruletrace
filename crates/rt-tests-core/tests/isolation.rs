@@ -16,7 +16,10 @@
     missing_docs
 )]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_compiled::{
     CType, CollectionIdx, CompiledBody, CompiledCollection, CompiledDocument, CompiledField,
     CompiledInput, CompiledNode, CompiledParts, CompiledRule, CompiledRulebook, CompiledSpan,
@@ -173,8 +176,8 @@ fn view(r: &rt_engine::Evaluation) -> String {
     format!("{:?}|{:?}", r.outcomes, r.traces)
 }
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(128))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(128))]
 
     /// Feature: ruletrace-compiler, Property 40: Isolation of compiled
     /// rulebooks **Validates: Requirements 9.7, 10.8, 20.6**

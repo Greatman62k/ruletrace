@@ -1,6 +1,7 @@
 //! Ranking, precedence, execution conflicts and published comparison (task
 //! 5.10).
 
+use crate::proptest_floor::property_tests;
 use crate::tests::*;
 use crate::*;
 use proptest::prelude::*;
@@ -600,7 +601,7 @@ fn ranking_is_the_same_for_any_participant_insertion_order() {
 }
 
 // Property 23: the engine equals a simple reference ranking.
-proptest! {
+property_tests! {
     #[test]
     fn ranking_equals_a_reference_model(
         rows in proptest::collection::vec((0u8..5, 0u8..3), 1..9),

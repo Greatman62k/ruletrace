@@ -66,3 +66,7 @@ pub use questions::{default_questions, parse_questions, serialize_questions, Que
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;

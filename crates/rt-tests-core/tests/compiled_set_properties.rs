@@ -14,8 +14,11 @@
 
 #![allow(clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::collection::vec;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_compile::compile;
 use rt_foundation::{Code, DocumentId, InputId};
 use rt_hash::sha256;
@@ -152,8 +155,8 @@ fn oracle(plan: &[Vec<Decision>]) -> (BTreeSet<(String, u32)>, bool) {
     (effective, unresolved)
 }
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(128))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(128))]
 
     /// **Validates: Requirements 5.2, 9.1, 9.2, 9.10, 9.11, 9.12, 25.17, 25.18,
     /// 7.6, 7.7**

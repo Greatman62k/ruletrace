@@ -10,6 +10,7 @@
 //! check order of Req 28.17. A Warning never changes the code, and no code
 //! outside 0, 2, 3, 5, 6 and 70 occurs.
 
+use crate::proptest_floor::property_tests;
 use crate::tests::MapEnv;
 use crate::tests_cli_rig::{Fixture, Ran};
 use crate::tests_gate_rig::{run_providers, Steps, Unlinked};
@@ -263,7 +264,7 @@ fn run_case(case: &Case) -> Ran {
     run_providers(&args, &env, providers, fs)
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     #[test]

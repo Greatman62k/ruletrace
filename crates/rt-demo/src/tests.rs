@@ -1,4 +1,5 @@
 use super::*;
+use crate::proptest_floor::property_tests;
 use rt_hash::sha256;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -394,7 +395,7 @@ mod leak_property {
         })
     }
 
-    proptest! {
+    property_tests! {
         #![proptest_config(ProptestConfig::with_cases(512))]
 
         #[test]

@@ -28,3 +28,7 @@ pub use replay::{Origin, RecordedEntry, RecordedScript, ReplayProvider};
 pub use retry_after::{failure_from_http, parse_retry_after};
 pub use script::{MockScript, ScriptResult, Step};
 pub use support::{ScriptError, ScriptInvalid};
+
+#[cfg(test)]
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;

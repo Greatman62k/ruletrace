@@ -8,7 +8,10 @@
 //! independently equal the recorded values. The extracted clause texts equal
 //! the bytes of their spans.
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_foundation::{DocumentId, MAX_SOURCE_DOCUMENT_BYTES};
 use rt_source::{extract, ingest, ExtractionMode};
 use rt_srcmodel::{default_load_limits, SourceModel};
@@ -107,7 +110,7 @@ fn position(text: &str, offset: usize) -> (u32, u32) {
     (line, column)
 }
 
-proptest! {
+property_tests! {
     /// **Validates: Requirements 1.1, 1.2, 1.3, 1.4**
     #[test]
     fn spans_reproduce_the_document_bytes_in_order(text in gen_document(), markdown in any::<bool>()) {

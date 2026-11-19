@@ -30,3 +30,7 @@ pub use catalog::{CatalogFailure, ModelCatalog};
 pub use identity::{Identity, Protocol, ProviderId, ProviderIdError, Usage, MAX_PROVIDER_ID_LEN};
 pub use request::{ProviderRequest, RequestId, RequestLimits};
 pub use retry::{next_step, AttemptRecord, RetryPolicy, RetryPolicyError, RetryStep, RetryStop};
+
+#[cfg(test)]
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;

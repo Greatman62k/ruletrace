@@ -6,6 +6,7 @@
 //! case uses bytes written by hand and a digest from the external
 //! `sha256sum` tool.
 
+use crate::proptest_floor::property_tests;
 use crate::tests::{MapEnv, BASE};
 use crate::{build_plan, load, AiConfig, Consent, PlanInput, RunPlan, Ud32Option};
 use proptest::prelude::*;
@@ -517,7 +518,7 @@ fn script_for(ids: &[String], payloads: &[String]) -> RecordedScript {
     RecordedScript::parse(&InputId::new("recorded.json").unwrap(), text.as_bytes()).unwrap()
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     // Requests and identifiers equal the independently written bytes and

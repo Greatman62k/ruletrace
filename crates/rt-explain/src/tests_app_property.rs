@@ -2,6 +2,7 @@
 //! construction-order independence and the closed field set, each over at
 //! least 256 generated documents.
 
+use crate::proptest_floor::property_tests;
 use crate::report::{
     render_human, render_json, PublishedSection, ReportDoc, ReportSection, StandingsResult,
     FIELD_SET_BRACKET, FIELD_SET_PRIZE,
@@ -101,7 +102,7 @@ fn expected(bracket: bool) -> BTreeSet<String> {
     list.iter().map(|s| (*s).to_owned()).collect()
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(CASES))]
 
     #[test]

@@ -7,7 +7,10 @@
 //! pins the property they rely on, that one multiset of diagnostics has one
 //! canonical sequence and so one byte string.
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_foundation::{
     CliLocation, Code, Diagnostic, DocumentId, InputId, InputLocation, Location, RevisionNumber,
     RuleId, RuleRef, SourceSpan, SpanSource,
@@ -128,7 +131,7 @@ fn sorted(mut list: Vec<Diagnostic>) -> Vec<Diagnostic> {
     list
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     /// Every permutation of a generated list sorts to the same sequence and the

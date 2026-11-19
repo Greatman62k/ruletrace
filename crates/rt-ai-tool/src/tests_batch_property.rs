@@ -9,6 +9,7 @@
 
 use crate::credential::Credential;
 use crate::out::render_diagnostic;
+use crate::proptest_floor::property_tests;
 use crate::tests::{MapEnv, BASE};
 use crate::tests_memfs::MemFs;
 use crate::tests_provenance::{doc, escaped, model};
@@ -1488,7 +1489,7 @@ fn rich_spec() -> Spec {
     make_spec(&raw, (0, 0, 0))
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(512))]
 
     #[test]

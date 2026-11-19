@@ -24,8 +24,11 @@
 #[path = "support/flags.rs"]
 mod flags;
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use flags::{apply, check, expected, insertions, objects, Edited};
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_cli::{run, Fs};
 use rt_data::{default_parse_limits, parse_data, parse_published, parse_questions, DataLimits};
 use rt_foundation::{Code, DiagnosticState, DocumentId, ExitCode, InputId, RuleId};
@@ -200,7 +203,7 @@ fn edit(base: &str, ins: &[flags::Insertion], which: usize) -> Edited {
     apply(base, &objs[which % objs.len()], ins)
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     #[test]

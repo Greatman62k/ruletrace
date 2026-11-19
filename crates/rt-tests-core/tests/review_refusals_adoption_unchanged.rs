@@ -22,7 +22,10 @@
 
 #![allow(clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_cli::io::LockHeld;
 use rt_cli::{run, Fs, StdFs};
 use rt_foundation::{DocumentId, RuleId};
@@ -590,7 +593,7 @@ fn check_outcome(r: &Refusal, out: &rt_cli::Outcome) -> Result<(), TestCaseError
     Ok(())
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig { cases: 512, ..ProptestConfig::default() })]
 
     #[test]

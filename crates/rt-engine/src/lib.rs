@@ -469,3 +469,7 @@ fn conclude(
     };
     finish(parts, outcome, diagnostics)
 }
+
+#[cfg(test)]
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;

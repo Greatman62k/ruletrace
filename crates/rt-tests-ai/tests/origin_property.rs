@@ -19,7 +19,10 @@
 
 mod support;
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_ai_adapter::Completion;
 use rt_ai_tool::{accept_batch, AcceptInput, AcceptedBatch, ClauseId, Redactor};
 use rt_foundation::{Code, Diagnostic, InputId, Location, RevisionNumber};
@@ -646,7 +649,7 @@ fn case() -> impl Strategy<Value = Case> {
         )
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(512))]
 
     #[test]

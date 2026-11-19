@@ -33,8 +33,11 @@
 #[path = "support/app_eval.rs"]
 mod app_eval;
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use app_eval::{identical, Observed};
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_compiled::{parse_compiled, CompiledRulebook};
 use rt_data::tabular::MappingOptions;
 use rt_data::{parse_data, parse_published, DataLimits, DataValue, PublishedValue, TargetName};
@@ -454,7 +457,7 @@ fn check_generated(app: App, g: &Generated) -> Result<u8, TestCaseError> {
         .map_err(|e| TestCaseError::fail(format!("{app:?}: {e}\ninput:\n{csv}\n{published:?}")))
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(CASES))]
 
     #[test]
