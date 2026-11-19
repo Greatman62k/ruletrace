@@ -2,7 +2,9 @@
 //!
 //! Each case under `tests/fixtures/app-reports/<case>/` holds its inputs
 //! (`request.txt`, `participants.csv`, optional `published.csv`, a
-//! Compiled_Rulebook as `compiled.ref` or `compiled.json`, `source-model.ref`)
+//! Compiled_Rulebook as `compiled.ref` or `compiled.json`, and
+//! `source-model.ref`, or for the cases over the dedicated source
+//! `app-rules.md` its `source-model.json` and the document itself)
 //! and two goldens: `report.json` (machine) and `report.txt` (human).
 //!
 //! The path is the one the Laboratory will use (UD-38): Prepare, then
@@ -40,6 +42,8 @@
 
 #[path = "support/app_eval.rs"]
 mod app_eval;
+#[path = "support/app_source.rs"]
+mod app_source;
 
 use app_eval::{identical, Observed, Session};
 use rt_compiled::{parse_compiled, CompiledRulebook};
@@ -54,7 +58,6 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
-const SLICE_BASIC: &str = "tests/fixtures/slice-basic";
 const COMPILED_REF: &str = "tests/fixtures/slice-basic/expected/compiled.json";
 const MODEL_REF: &str = "tests/fixtures/slice-basic/expected/source-model.json";
 const CASES_DIR: &str = "tests/fixtures/app-reports";
@@ -113,9 +116,11 @@ enum App {
 enum Rulebook {
     /// The committed `slice-basic` Compiled_Rulebook.
     Basic,
-    /// `slice-basic` plus the test-local Qualification_Predicate
-    /// `qualified` (`score >= 7.7`), approved by `ruletrace review approve`.
-    WithQualification,
+    /// The dedicated `app-rules.md` source of `support/app_source.rs`, whose
+    /// clauses 3 and 4 state the ranking and the threshold. Ingested by
+    /// `ruletrace ingest`, every revision approved by `ruletrace review
+    /// approve`, then validated and compiled.
+    AppSource,
 }
 
 struct Case {
@@ -199,7 +204,7 @@ fn cases() -> Vec<Case> {
         Case {
             name: "prize-ranking-tie-group",
             app: App::Prize,
-            rulebook: Rulebook::Basic,
+            rulebook: Rulebook::AppSource,
             request: &[("ranking", "standing")],
             participants: CSV_TIE,
             published: None,
@@ -207,7 +212,7 @@ fn cases() -> Vec<Case> {
             differences: [0; 3],
             // p2 and p4 are equal on score and judges: one Tie_Group at 1.
             outcomes: vec![standings(&[(1, &["p2", "p4"]), (3, &["p1"]), (4, &["p3"])])],
-            readme: "Prize ranking with a Tie_Group: p2 and p4 are equal on the score and on the tie-breaker, so they share position 1. The next positions are 3 and 4. The fixture source has no ranking clause: rank.standing cites clause 2, the score clause, and \"verified\" in the report means the cited span resolves against a source with a matching hash, not that the clause states the rule (Req 34.4).",
+            readme: "Prize ranking with a Tie_Group: p2 and p4 are equal on the score and on the tie-breaker, so they share position 1. The next positions are 3 and 4. In app-rules.md, rank.standing cites clause 3 (ranking) and score.weighted cites clause 2 (score). \"Verified\" in the report means the cited span resolves against a source with a matching hash, not that it proves the interpretation (Req 34.4).",
         },
         Case {
             name: "prize-indeterminate-missing-value",
@@ -262,19 +267,19 @@ fn cases() -> Vec<Case> {
         Case {
             name: "bracket-standings-tie-group",
             app: App::Bracket,
-            rulebook: Rulebook::Basic,
+            rulebook: Rulebook::AppSource,
             request: &[("ranking", "standing")],
             participants: CSV_TIE,
             published: None,
             code: 0,
             differences: [0; 3],
             outcomes: vec![standings(&[(1, &["p2", "p4"]), (3, &["p1"]), (4, &["p3"])])],
-            readme: "Tournament standings with a Tie_Group: p2 and p4 share position 1, then 3 and 4. No tie is broken by the application. The fixture source has no ranking clause: rank.standing cites clause 2, the score clause, and \"verified\" in the report means the cited span resolves against a source with a matching hash, not that the clause states the rule (Req 34.4).",
+            readme: "Tournament standings with a Tie_Group: p2 and p4 share position 1, then 3 and 4. No tie is broken by the application. In app-rules.md, rank.standing cites clause 3 (ranking) and score.weighted cites clause 2 (score). \"Verified\" in the report means the cited span resolves against a source with a matching hash, not that it proves the interpretation (Req 34.4).",
         },
         Case {
             name: "bracket-standings-indeterminate",
             app: App::Bracket,
-            rulebook: Rulebook::Basic,
+            rulebook: Rulebook::AppSource,
             request: &[("ranking", "standing")],
             participants: CSV_MISSING_JUDGES,
             published: None,
@@ -285,12 +290,12 @@ fn cases() -> Vec<Case> {
             // The engine adds its own rank reason after the missing input;
             // it is checked separately below.
             outcomes: vec!["INDETERMINATE-RANK".to_owned()],
-            readme: "Tournament standings with an Indeterminate position: p2 has no judges value, so the ranking key is missing and the standings are Indeterminate. The report names p2 and judges. Exit code 4. The fixture source has no ranking clause: rank.standing cites clause 2, the score clause, and \"verified\" in the report means the cited span resolves against a source with a matching hash, not that the clause states the rule (Req 34.4).",
+            readme: "Tournament standings with an Indeterminate position: p2 has no judges value, so the ranking key is missing and the standings are Indeterminate. The report names p2 and judges. Exit code 4. In app-rules.md, rank.standing cites clause 3 (ranking) and score.weighted cites clause 2 (score). \"Verified\" in the report means the cited span resolves against a source with a matching hash, not that it proves the interpretation (Req 34.4).",
         },
         Case {
             name: "bracket-qualification-weighted-score",
             app: App::Bracket,
-            rulebook: Rulebook::WithQualification,
+            rulebook: Rulebook::AppSource,
             request: &[("qualification", "qualified")],
             participants: CSV_FULL,
             published: None,
@@ -299,12 +304,12 @@ fn cases() -> Vec<Case> {
             // qualified = score >= 7.7: p1 7.6 false, p2 7.8 true,
             // p3 6 false, p4 7.8 true.
             outcomes: vec![boolean(false), boolean(true), boolean(false), boolean(true)],
-            readme: "Qualification_Predicate over a weighted score. The predicate 'qualified' (score >= 7.7) is test-local: it is added to the slice-basic rulebook as a new revision and approved with `ruletrace review approve` (Reviewer 'Test Reviewer'), so compiled.json is a real compiled artefact. p2 and p4 qualify. The fixture source has no 7.7 threshold: elig.qual cites clause 2, the score clause, and \"verified\" in the report means the cited span resolves against a source with a matching hash, not that the clause states the rule (Req 34.4).",
+            readme: "Qualification_Predicate over a weighted score. The predicate 'qualified' (score >= 7.7) is test-local: the rulebook is built over app-rules.md, every revision is approved with `ruletrace review approve` (Reviewer 'Test Reviewer') and compiled, so compiled.json is a real compiled artefact. p2 and p4 qualify. In app-rules.md, elig.qual cites clause 4 (threshold) and score.weighted cites clause 2 (score). \"Verified\" in the report means the cited span resolves against a source with a matching hash, not that it proves the interpretation (Req 34.4).",
         },
         Case {
             name: "bracket-published-equal",
             app: App::Bracket,
-            rulebook: Rulebook::Basic,
+            rulebook: Rulebook::AppSource,
             request: &[("ranking", "standing")],
             participants: CSV_FULL,
             published: Some("participant,target,value\np4,standing,1\np2,standing,2\np1,standing,3\np3,standing,4\n"),
@@ -312,12 +317,12 @@ fn cases() -> Vec<Case> {
             differences: [0; 3],
             // Computed: p4 (7.8, judges 9), p2 (7.8, judges 7), p1, p3.
             outcomes: vec![standings(&[(1, &["p4"]), (2, &["p2"]), (3, &["p1"]), (4, &["p3"])])],
-            readme: "Published standings equal to the computed standings: p4, p2, p1, p3 at 1 to 4. No difference. The fixture source has no ranking clause: rank.standing cites clause 2, the score clause, and \"verified\" in the report means the cited span resolves against a source with a matching hash, not that the clause states the rule (Req 34.4).",
+            readme: "Published standings equal to the computed standings: p4, p2, p1, p3 at 1 to 4. No difference. In app-rules.md, rank.standing cites clause 3 (ranking) and score.weighted cites clause 2 (score). \"Verified\" in the report means the cited span resolves against a source with a matching hash, not that it proves the interpretation (Req 34.4).",
         },
         Case {
             name: "bracket-published-breaks-tie",
             app: App::Bracket,
-            rulebook: Rulebook::Basic,
+            rulebook: Rulebook::AppSource,
             request: &[("ranking", "standing")],
             participants: CSV_TIE,
             published: Some("participant,target,value\np2,standing,1\np4,standing,2\np1,standing,3\np3,standing,4\n"),
@@ -327,7 +332,7 @@ fn cases() -> Vec<Case> {
             // puts p4 at 2: one tie_broken_without_declared_criterion
             // (RT-EXE-0012), a Warning.
             outcomes: vec![standings(&[(1, &["p2", "p4"]), (3, &["p1"]), (4, &["p3"])])],
-            readme: "Published standings that break a computed tie: the file puts p4 at 2, but p2 and p4 are one Tie_Group at 1. One RT-EXE-0012 difference, a Warning, exit code 0. The fixture source has no ranking clause: rank.standing cites clause 2, the score clause, and \"verified\" in the report means the cited span resolves against a source with a matching hash, not that the clause states the rule (Req 34.4).",
+            readme: "Published standings that break a computed tie: the file puts p4 at 2, but p2 and p4 are one Tie_Group at 1. One RT-EXE-0012 difference, a Warning, exit code 0. In app-rules.md, rank.standing cites clause 3 (ranking) and score.weighted cites clause 2 (score). \"Verified\" in the report means the cited span resolves against a source with a matching hash, not that it proves the interpretation (Req 34.4).",
         },
     ]
 }
@@ -348,10 +353,10 @@ fn target(name: &str) -> TargetName {
     TargetName::new(name).unwrap()
 }
 
-fn sources() -> SourceModels {
+fn sources(rulebook: Rulebook) -> SourceModels {
     let model = SourceModel::load(
         &input("model.json"),
-        &read_repo(MODEL_REF),
+        &model_bytes(rulebook),
         default_load_limits(),
     )
     .unwrap();
@@ -370,41 +375,22 @@ fn parse(bytes: &[u8]) -> CompiledRulebook {
     .unwrap()
 }
 
-const QUALIFIED_RULE: &str = r#"{"id":"elig.qual","revision":1,"origin":{"kind":"manual","author":null},"kind":"eligibility","target":"qualified","type":"boolean","expr":{"node":"cmp","t":"boolean","op":"ge","left":{"node":"ref","t":"number","target":"score"},"right":{"node":"num","t":"number","value":"7.7"}},"markers":[],"spans":[{"document":"rules.md","start":92,"end":170,"line":4,"column":1}]}"#;
-
-/// The `slice-basic` rulebook with the test-local rule appended.
-fn variant_rulebook() -> String {
-    let text = String::from_utf8(read_repo(&format!("{SLICE_BASIC}/rulebook.json"))).unwrap();
-    let end = "\n  ],\n  \"precedence\"";
-    assert_eq!(text.matches(end).count(), 1);
-    text.replace(end, &format!(",{QUALIFIED_RULE}{end}"))
+/// Everything the `app-rules.md` cases need, produced by the real commands.
+struct AppBuild {
+    compiled: Vec<u8>,
+    model: Vec<u8>,
 }
 
-/// Approves `elig.qual` with `ruletrace review approve`, then runs
-/// `ruletrace validate` and `ruletrace compile`. No ledger is written by any
-/// other path.
-fn build_variant() -> Vec<u8> {
-    let session = Session::default();
-    session.put(
-        "ledger.jsonl",
-        &read_repo(&format!("{SLICE_BASIC}/ledger.jsonl")),
-    );
-    session.put("model.json", &read_repo(MODEL_REF));
-    let rulebook = variant_rulebook();
-    session.put("rulebook.json", rulebook.as_bytes());
-    let parsed = parse_rulebook(rulebook.as_bytes(), &input("rulebook.json"), 1 << 22, 64)
-        .unwrap_or_else(|_| panic!("rulebook rejected"))
-        .into_parts()
-        .0;
+fn approve(session: &Session, parsed: &rt_ir::Rulebook, rule: &str, first: bool) {
     let revision = parsed
         .revisions
         .iter()
-        .find(|r| r.key.id.as_str() == "elig.qual")
+        .find(|r| r.key.id.as_str() == rule)
         .unwrap();
     let hash = rule_content_hash(&parsed.ir_version, revision, &parsed.documents)
         .unwrap()
         .to_string();
-    let (code, stderr) = session.run(&[
+    let mut args = vec![
         "review",
         "approve",
         "--rulebook",
@@ -414,7 +400,7 @@ fn build_variant() -> Vec<u8> {
         "--source-model",
         "model.json",
         "--rule",
-        "elig.qual",
+        rule,
         "--revision",
         "1",
         "--content-hash",
@@ -423,30 +409,67 @@ fn build_variant() -> Vec<u8> {
         REVIEWER,
         "--time",
         TIME,
-    ]);
-    assert_eq!(code, 0, "approve: {stderr}");
-    let (code, listed) = session.run_stdout(&[
-        "review",
-        "list",
-        "--rulebook",
-        "rulebook.json",
-        "--ledger",
-        "ledger.jsonl",
-        "--source-model",
+    ];
+    if first {
+        args.push("--create-ledger");
+    }
+    let (code, stderr) = session.run(&args);
+    assert_eq!(code, 0, "approve {rule}: {stderr}");
+}
+
+/// Ingests `app-rules.md`, builds the Rulebook over its hash and spans,
+/// approves every revision with `ruletrace review approve`, then runs
+/// `ruletrace validate` and `ruletrace compile`. No ledger is written by any
+/// other path.
+fn build_app() -> AppBuild {
+    let session = Session::default();
+    session.put(app_source::DOCUMENT_ID, app_source::TEXT.as_bytes());
+    let (code, stderr) = session.run(&[
+        "ingest",
+        "--document",
+        app_source::DOCUMENT_ID,
+        "--document-id",
+        app_source::DOCUMENT_ID,
+        "--out",
         "model.json",
-        "--rule",
-        "elig.qual",
-        "--revision",
-        "1",
     ]);
-    assert_eq!(code, 0, "{listed}");
-    assert_eq!(
-        listed
-            .matches("rule 'elig.qual' revision 1 status Approved\n")
-            .count(),
-        1,
-        "{listed}"
-    );
+    assert_eq!(code, 0, "ingest: {stderr}");
+    let model_bytes = session.get("model.json").unwrap();
+    let model =
+        SourceModel::load(&input("model.json"), &model_bytes, default_load_limits()).unwrap();
+    let rulebook = app_source::rulebook_json(&model.sha256().to_string());
+    session.put("rulebook.json", rulebook.as_bytes());
+    let parsed = parse_rulebook(rulebook.as_bytes(), &input("rulebook.json"), 1 << 22, 64)
+        .unwrap_or_else(|_| panic!("rulebook rejected"))
+        .into_parts()
+        .0;
+    for (i, rule) in app_source::RULES.iter().enumerate() {
+        approve(&session, &parsed, rule, i == 0);
+    }
+    for rule in app_source::RULES {
+        let (code, listed) = session.run_stdout(&[
+            "review",
+            "list",
+            "--rulebook",
+            "rulebook.json",
+            "--ledger",
+            "ledger.jsonl",
+            "--source-model",
+            "model.json",
+            "--rule",
+            rule,
+            "--revision",
+            "1",
+        ]);
+        assert_eq!(code, 0, "{listed}");
+        assert_eq!(
+            listed
+                .matches(&format!("rule '{rule}' revision 1 status Approved\n"))
+                .count(),
+            1,
+            "{listed}"
+        );
+    }
     let (code, stderr) = session.run(&[
         "validate",
         "--rulebook",
@@ -467,18 +490,28 @@ fn build_variant() -> Vec<u8> {
         "compiled.json",
     ]);
     assert_eq!(code, 0, "compile: {stderr}");
-    session.get("compiled.json").unwrap()
+    AppBuild {
+        compiled: session.get("compiled.json").unwrap(),
+        model: model_bytes,
+    }
 }
 
-fn variant_compiled() -> &'static Vec<u8> {
-    static CACHE: OnceLock<Vec<u8>> = OnceLock::new();
-    CACHE.get_or_init(build_variant)
+fn app_build() -> &'static AppBuild {
+    static CACHE: OnceLock<AppBuild> = OnceLock::new();
+    CACHE.get_or_init(build_app)
 }
 
 fn compiled_bytes(rulebook: Rulebook) -> Vec<u8> {
     match rulebook {
         Rulebook::Basic => read_repo(COMPILED_REF),
-        Rulebook::WithQualification => variant_compiled().clone(),
+        Rulebook::AppSource => app_build().compiled.clone(),
+    }
+}
+
+fn model_bytes(rulebook: Rulebook) -> Vec<u8> {
+    match rulebook {
+        Rulebook::Basic => read_repo(MODEL_REF),
+        Rulebook::AppSource => app_build().model.clone(),
     }
 }
 
@@ -518,7 +551,7 @@ fn request_lines(case: &Case, option: &str) -> BTreeMap<TargetName, u32> {
 fn produce(case: &Case) -> Produced {
     let compiled_bytes = compiled_bytes(case.rulebook);
     let compiled = parse(&compiled_bytes);
-    let models = sources();
+    let models = sources(case.rulebook);
     let options = MappingOptions::default();
     let (pid, qid) = (input("participants.csv"), input("published.csv"));
     macro_rules! go {
@@ -639,10 +672,19 @@ fn files(case: &Case, produced: &Produced) -> Vec<(&'static str, Vec<u8>)> {
         out.push(("published.csv", published.as_bytes().to_vec()));
     }
     match case.rulebook {
-        Rulebook::Basic => out.push(("compiled.ref", format!("{COMPILED_REF}\n").into_bytes())),
-        Rulebook::WithQualification => out.push(("compiled.json", compiled_bytes(case.rulebook))),
+        Rulebook::Basic => {
+            out.push(("compiled.ref", format!("{COMPILED_REF}\n").into_bytes()));
+            out.push(("source-model.ref", format!("{MODEL_REF}\n").into_bytes()));
+        }
+        Rulebook::AppSource => {
+            out.push(("compiled.json", compiled_bytes(case.rulebook)));
+            out.push((
+                app_source::DOCUMENT_ID,
+                app_source::TEXT.as_bytes().to_vec(),
+            ));
+            out.push(("source-model.json", model_bytes(case.rulebook)));
+        }
     }
-    out.push(("source-model.ref", format!("{MODEL_REF}\n").into_bytes()));
     out.push(("report.json", produced.json.clone()));
     out.push(("report.txt", produced.human.clone().into_bytes()));
     out
@@ -685,10 +727,50 @@ fn check_expectations(case: &Case, produced: &Produced) {
     );
 }
 
+/// Every source citation of an `app-rules.md` case names the clause that
+/// states the rule: clause 1 for `elig.basic`, 2 for `score.weighted`, 3 for
+/// `rank.standing`, 4 for `elig.qual`. Expected citations are written by
+/// hand, independently of the rulebook builder.
+fn check_citations(case: &Case, produced: &Produced) {
+    if !matches!(case.rulebook, Rulebook::AppSource) {
+        return;
+    }
+    let json = String::from_utf8(produced.json.clone()).unwrap();
+    let expected = [
+        (
+            "elig.basic",
+            r#""document":"app-rules.md","start":21,"end":91,"line":3,"column":1,"text":"1. A competitor is eligible"#,
+        ),
+        (
+            "score.weighted",
+            r#""document":"app-rules.md","start":92,"end":170,"line":4,"column":1,"text":"2. The score is 0.6"#,
+        ),
+        (
+            "rank.standing",
+            r#""document":"app-rules.md","start":171,"end":327,"line":5,"column":1,"text":"3. Competitors are ranked by score"#,
+        ),
+        (
+            "elig.qual",
+            r#""document":"app-rules.md","start":328,"end":383,"line":6,"column":1,"text":"4. A competitor qualifies"#,
+        ),
+    ];
+    let mut cited = 0;
+    for (rule, citation) in expected {
+        let marker = format!(r#"{{"rule":"{rule}","revision":1,"document":"#);
+        for part in json.split(&marker).skip(1) {
+            cited += 1;
+            let want = citation.trim_start_matches(r#""document":"#);
+            assert!(part.starts_with(want), "{}: {rule}: {part:.120}", case.name);
+        }
+    }
+    assert!(cited > 0, "{}: no citation found", case.name);
+}
+
 fn run_case(name: &str) {
     let case = cases().into_iter().find(|c| c.name == name).unwrap();
     let produced = produce(&case);
     check_expectations(&case, &produced);
+    check_citations(&case, &produced);
     let files = files(&case, &produced);
     let bless = std::env::var(BLESS_VAR).ok();
     let ci = std::env::var(CI_VAR).ok();
@@ -721,6 +803,22 @@ fn run_case(name: &str) {
         }
     }
     assert!(failures.is_empty(), "{}", failures.join("\n"));
+}
+
+#[test]
+fn app_source_spans_equal_the_hand_written_offsets_and_cover_one_clause_each() {
+    use app_source::{found_spans, SPANS, TEXT};
+    assert_eq!(found_spans(), SPANS.to_vec());
+    for (span, prefix) in SPANS.iter().zip(["1. ", "2. ", "3. ", "4. "]) {
+        assert!(TEXT.is_char_boundary(span.0) && TEXT.is_char_boundary(span.1));
+        let clause = &TEXT[span.0..span.1];
+        assert!(clause.starts_with(prefix), "{clause}");
+        assert!(!clause.contains('\n'), "{clause}");
+    }
+    assert_eq!(TEXT.len(), 384);
+    assert!(TEXT.is_ascii());
+    assert!(TEXT[SPANS[2].0..SPANS[2].1].contains("highest first"));
+    assert!(TEXT[SPANS[3].0..SPANS[3].1].ends_with("at least 7.7."));
 }
 
 macro_rules! golden_case {
