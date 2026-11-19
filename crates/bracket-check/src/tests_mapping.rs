@@ -158,6 +158,12 @@ fn mapping_errors_pass_through_with_the_code_and_location_of_the_cell() {
             Code::AppInputDuplicateParticipant,
             input("participants.csv", 3, 1, "participant"),
         ),
+        // `extra` starts at column 42: the header up to its comma is 41 characters.
+        (
+            "participant,age,licence,judges,technical,extra\np1,17,true,8,7,x\n".to_owned(),
+            Code::AppInputMalformed,
+            input("participants.csv", 1, 42, "extra"),
+        ),
     ];
     for (csv, code, at) in cases {
         let state = rejected(run_with(&csv, None, &full_request(), &sources()));

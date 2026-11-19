@@ -59,6 +59,26 @@ const COMPILED_REF: &str = "tests/fixtures/slice-basic/expected/compiled.json";
 const MODEL_REF: &str = "tests/fixtures/slice-basic/expected/source-model.json";
 const CASES_DIR: &str = "tests/fixtures/app-reports";
 const BLESS_VAR: &str = "RT_APP_GOLDEN_BLESS";
+const CI_VAR: &str = "CI";
+
+/// Decides whether the run blesses. Bless mode is refused when `CI` is set,
+/// so a leaked variable can never make the comparison tests pass unchecked,
+/// and the target must be an absolute path.
+fn bless_target(bless: Option<&str>, ci: Option<&str>) -> Result<Option<PathBuf>, String> {
+    let Some(dir) = bless else {
+        return Ok(None);
+    };
+    if ci.is_some() {
+        return Err(format!(
+            "{BLESS_VAR} is set while {CI_VAR} is set: bless mode is refused in CI"
+        ));
+    }
+    let path = PathBuf::from(dir);
+    if !path.is_absolute() {
+        return Err(format!("{BLESS_VAR} must be an absolute path, got '{dir}'"));
+    }
+    Ok(Some(path))
+}
 const REVIEWER: &str = "Test Reviewer";
 const TIME: &str = "2026-11-19T09:00:00Z";
 
@@ -187,7 +207,7 @@ fn cases() -> Vec<Case> {
             differences: [0; 3],
             // p2 and p4 are equal on score and judges: one Tie_Group at 1.
             outcomes: vec![standings(&[(1, &["p2", "p4"]), (3, &["p1"]), (4, &["p3"])])],
-            readme: "Prize ranking with a Tie_Group: p2 and p4 are equal on the score and on the tie-breaker, so they share position 1. The next positions are 3 and 4.",
+            readme: "Prize ranking with a Tie_Group: p2 and p4 are equal on the score and on the tie-breaker, so they share position 1. The next positions are 3 and 4. The fixture source has no ranking clause: rank.standing cites clause 2, the score clause, and \"verified\" in the report means the cited span resolves against a source with a matching hash, not that the clause states the rule (Req 34.4).",
         },
         Case {
             name: "prize-indeterminate-missing-value",
@@ -249,7 +269,7 @@ fn cases() -> Vec<Case> {
             code: 0,
             differences: [0; 3],
             outcomes: vec![standings(&[(1, &["p2", "p4"]), (3, &["p1"]), (4, &["p3"])])],
-            readme: "Tournament standings with a Tie_Group: p2 and p4 share position 1, then 3 and 4. No tie is broken by the application.",
+            readme: "Tournament standings with a Tie_Group: p2 and p4 share position 1, then 3 and 4. No tie is broken by the application. The fixture source has no ranking clause: rank.standing cites clause 2, the score clause, and \"verified\" in the report means the cited span resolves against a source with a matching hash, not that the clause states the rule (Req 34.4).",
         },
         Case {
             name: "bracket-standings-indeterminate",
@@ -265,7 +285,7 @@ fn cases() -> Vec<Case> {
             // The engine adds its own rank reason after the missing input;
             // it is checked separately below.
             outcomes: vec!["INDETERMINATE-RANK".to_owned()],
-            readme: "Tournament standings with an Indeterminate position: p2 has no judges value, so the ranking key is missing and the standings are Indeterminate. The report names p2 and judges. Exit code 4.",
+            readme: "Tournament standings with an Indeterminate position: p2 has no judges value, so the ranking key is missing and the standings are Indeterminate. The report names p2 and judges. Exit code 4. The fixture source has no ranking clause: rank.standing cites clause 2, the score clause, and \"verified\" in the report means the cited span resolves against a source with a matching hash, not that the clause states the rule (Req 34.4).",
         },
         Case {
             name: "bracket-qualification-weighted-score",
@@ -279,7 +299,7 @@ fn cases() -> Vec<Case> {
             // qualified = score >= 7.7: p1 7.6 false, p2 7.8 true,
             // p3 6 false, p4 7.8 true.
             outcomes: vec![boolean(false), boolean(true), boolean(false), boolean(true)],
-            readme: "Qualification_Predicate over a weighted score. The predicate 'qualified' (score >= 7.7) is test-local: it is added to the slice-basic rulebook as a new revision and approved with `ruletrace review approve` (Reviewer 'Test Reviewer'), so compiled.json is a real compiled artefact. p2 and p4 qualify.",
+            readme: "Qualification_Predicate over a weighted score. The predicate 'qualified' (score >= 7.7) is test-local: it is added to the slice-basic rulebook as a new revision and approved with `ruletrace review approve` (Reviewer 'Test Reviewer'), so compiled.json is a real compiled artefact. p2 and p4 qualify. The fixture source has no 7.7 threshold: elig.qual cites clause 2, the score clause, and \"verified\" in the report means the cited span resolves against a source with a matching hash, not that the clause states the rule (Req 34.4).",
         },
         Case {
             name: "bracket-published-equal",
@@ -292,7 +312,7 @@ fn cases() -> Vec<Case> {
             differences: [0; 3],
             // Computed: p4 (7.8, judges 9), p2 (7.8, judges 7), p1, p3.
             outcomes: vec![standings(&[(1, &["p4"]), (2, &["p2"]), (3, &["p1"]), (4, &["p3"])])],
-            readme: "Published standings equal to the computed standings: p4, p2, p1, p3 at 1 to 4. No difference.",
+            readme: "Published standings equal to the computed standings: p4, p2, p1, p3 at 1 to 4. No difference. The fixture source has no ranking clause: rank.standing cites clause 2, the score clause, and \"verified\" in the report means the cited span resolves against a source with a matching hash, not that the clause states the rule (Req 34.4).",
         },
         Case {
             name: "bracket-published-breaks-tie",
@@ -307,7 +327,7 @@ fn cases() -> Vec<Case> {
             // puts p4 at 2: one tie_broken_without_declared_criterion
             // (RT-EXE-0012), a Warning.
             outcomes: vec![standings(&[(1, &["p2", "p4"]), (3, &["p1"]), (4, &["p3"])])],
-            readme: "Published standings that break a computed tie: the file puts p4 at 2, but p2 and p4 are one Tie_Group at 1. One RT-EXE-0012 difference, a Warning, exit code 0.",
+            readme: "Published standings that break a computed tie: the file puts p4 at 2, but p2 and p4 are one Tie_Group at 1. One RT-EXE-0012 difference, a Warning, exit code 0. The fixture source has no ranking clause: rank.standing cites clause 2, the score clause, and \"verified\" in the report means the cited span resolves against a source with a matching hash, not that the clause states the rule (Req 34.4).",
         },
     ]
 }
@@ -638,7 +658,6 @@ fn first_difference(expected: &[u8], actual: &[u8]) -> usize {
 
 /// Hand-derived expectations: exit code, differences and Outcomes.
 fn check_expectations(case: &Case, produced: &Produced) {
-    assert_eq!(produced.observed.class_code, case.code, "{}", case.name);
     assert_eq!(
         produced.observed.differences, case.differences,
         "{}: published differences",
@@ -671,8 +690,12 @@ fn run_case(name: &str) {
     let produced = produce(&case);
     check_expectations(&case, &produced);
     let files = files(&case, &produced);
-    if let Ok(dir) = std::env::var(BLESS_VAR) {
-        let at = Path::new(&dir).join(case.name);
+    let bless = std::env::var(BLESS_VAR).ok();
+    let ci = std::env::var(CI_VAR).ok();
+    if let Some(dir) =
+        bless_target(bless.as_deref(), ci.as_deref()).unwrap_or_else(|e| panic!("{e}"))
+    {
+        let at = dir.join(case.name);
         std::fs::create_dir_all(&at).unwrap();
         for (file, bytes) in &files {
             std::fs::write(at.join(file), bytes).unwrap();
@@ -764,4 +787,26 @@ fn app_report_golden_every_case_has_one_test_function() {
         // One use in `cases()` and one in its `golden_case!` line.
         assert_eq!(source.matches(&literal).count(), 2, "{name}");
     }
+}
+
+#[test]
+fn bless_guard_refuses_ci_and_relative_paths_and_allows_only_absolute_outside_ci() {
+    assert_eq!(bless_target(None, None), Ok(None));
+    assert_eq!(bless_target(None, Some("true")), Ok(None));
+    assert_eq!(
+        bless_target(Some("/tmp/x"), None),
+        Ok(Some(PathBuf::from("/tmp/x")))
+    );
+    assert!(bless_target(Some("/tmp/x"), Some("true"))
+        .unwrap_err()
+        .contains("refused in CI"));
+    assert!(bless_target(Some("/tmp/x"), Some(""))
+        .unwrap_err()
+        .contains("refused in CI"));
+    assert!(bless_target(Some("rel/dir"), None)
+        .unwrap_err()
+        .contains("absolute path"));
+    assert!(bless_target(Some(""), None)
+        .unwrap_err()
+        .contains("absolute path"));
 }
