@@ -753,3 +753,90 @@ fn evaluate_bracket_with_eligible(
         differences: difference_counts(evaluation),
     })
 }
+
+/// Negative control of Property 42 (review 9.10 F1): each kind of divergence
+/// between the application and `ruletrace evaluate` makes the comparison
+/// fail. The perturbations act on the application side of one run, so the
+/// test fails if the comparison stops checking the exit code, the results
+/// bytes, the canonical data, the Questions, the Published_Result or the
+/// published differences.
+#[test]
+fn the_comparison_detects_each_kind_of_divergence() {
+    let full = "participant,age,licence,judges,technical\np1,17,true,8,7\np2,20,true,7,9\np3,15,true,6,6\np4,30,false,7,9\n";
+    let published = "participant,target,value\np2,standing,1\np4,standing,2\np1,standing,3\n";
+    let real = model_sources(&read(&format!("{SLICE_BASIC}/expected/source-model.json")));
+    for app in [App::Prize, App::Bracket] {
+        let bytes = compiled_bytes_of(app);
+        let compiled = parse(&bytes);
+        let base = evaluate_app(
+            app,
+            &compiled,
+            mask_max(app),
+            full,
+            Some(published),
+            Some(&real),
+        )
+        .unwrap();
+        assert!(
+            identical(&bytes, &base, Some(&real)).is_ok(),
+            "{app:?} baseline"
+        );
+        assert!(
+            base.differences.iter().sum::<usize>() > 0,
+            "{app:?}: the baseline must carry a published difference"
+        );
+        let data_text = String::from_utf8(base.data.clone()).unwrap();
+        assert!(
+            data_text.contains("\"judges\": \"8\""),
+            "{app:?}: {data_text}"
+        );
+        let perturbed: Vec<(&str, Observed)> = vec![
+            (
+                "exit class",
+                Observed {
+                    class_code: 4,
+                    ..base.clone()
+                },
+            ),
+            ("results bytes", {
+                let mut o = base.clone();
+                o.results.push(b' ');
+                o
+            }),
+            (
+                "canonical data",
+                Observed {
+                    data: data_text
+                        .replacen("\"judges\": \"8\"", "\"judges\": \"9\"", 1)
+                        .into_bytes(),
+                    ..base.clone()
+                },
+            ),
+            (
+                "Questions",
+                Observed {
+                    questions: b"[]".to_vec(),
+                    ..base.clone()
+                },
+            ),
+            (
+                "Published_Result",
+                Observed {
+                    published: None,
+                    ..base.clone()
+                },
+            ),
+            ("difference count", {
+                let mut o = base.clone();
+                o.differences[0] += 1;
+                o
+            }),
+        ];
+        for (what, observed) in perturbed {
+            assert!(
+                identical(&bytes, &observed, Some(&real)).is_err(),
+                "{app:?}: a divergence in the {what} was not detected"
+            );
+        }
+    }
+}

@@ -14,6 +14,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 /// What an Evaluate group returned for one run, as bytes and a class code.
+#[derive(Clone)]
 pub struct Observed {
     pub data: Vec<u8>,
     pub questions: Vec<u8>,
