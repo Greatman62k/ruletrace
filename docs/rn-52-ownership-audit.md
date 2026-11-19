@@ -117,3 +117,8 @@ Recommendation: **E1**.
 - **Group D (D3) stays in the apps.** The comparison adapters are in each app's `report.rs` (145 lines in prize-check, 144 in bracket-check, adapters only). The engine owns the comparison.
 - **Group E (E1) stays in the apps.** One `rt_engine::evaluate` call per app. Remaining orchestration: `prepare.rs` 184 lines, `evaluate.rs` 122 lines, `questions.rs` 150 and 145 lines, each app. `mapping.rs` (17 lines, `internal` and the re-exports) and `classify.rs` (13 lines) are still byte-identical.
 - **Drift guard.** `crates/rt-tests-core/tests/workflow_module_copies.rs` is unchanged: `mapping.rs` and `classify.rs` still exist and are identical, so both stay in `COPIED`. The `cfg(test)` check is kept. `prepare.rs`, `report.rs`, `questions.rs` and `evaluate.rs` differ between the apps and are not guarded.
+
+## 6. Notes after review p2-8ce7317 (2026-11-18)
+
+- F2: a three-line `internal()` helper (an `InternalError` Diagnostic with no Location) exists in `rt-data::tabular::compiled` (private) and in each app's `mapping.rs`. It builds a value; it holds no business logic. It stays duplicated: making it public in `rt-data` only for the apps would widen the `rt-data` API for an unrelated concern. The app copies are under the drift guard.
+- F3: with the C1 edge, `rt-data` reaches `rt-ir`, `rt-hash` and `rt-json` transitively through `rt-compiled`. These are types and parsing crates with no evaluation, compilation, validation or I/O. Req 24.12 as amended by UD-41 forbids the engine, compiler, validator, explainer, review, CLI and AI crates; it does not forbid them, and `tools/allowed-edges.v1` forbids the same set by `forbid-transitive rt-data -> ...`.

@@ -16,7 +16,7 @@
 use crate::tests_fixture::{full_request, run_with, sources, CSV_MISSING_JUDGES};
 use crate::ResultClass;
 use rt_engine::Outcome;
-use rt_explain::report::{Missing, QualificationEntry, ReportSection, Truth};
+use rt_explain::report::{Missing, QualificationEntry, ReportSection, StandingsResult, Truth};
 use rt_foundation::{Code, Diagnostic, Severity};
 
 fn errors_of(diagnostics: &[Diagnostic]) -> Vec<&Diagnostic> {
@@ -88,6 +88,34 @@ fn the_report_lists_the_engine_error_beside_the_indeterminate_outcome() {
             participant: "p2".to_owned(),
             field: "judges".to_owned()
         }])
+    );
+    // The ExeRankMissingValue Error comes from rank.standing and sits beside
+    // the Indeterminate Standings entry of the same report (review F1).
+    let rank_error: Vec<&&Diagnostic> = errors
+        .iter()
+        .filter(|d| d.code() == Code::ExeRankMissingValue)
+        .collect();
+    assert_eq!(rank_error.len(), 1);
+    assert_eq!(rank_error[0].rules().len(), 1);
+    assert_eq!(rank_error[0].rules()[0].rule.as_str(), "rank.standing");
+    let Some(ReportSection::Standings(tables)) = doc
+        .sections()
+        .iter()
+        .find(|s| matches!(s, ReportSection::Standings(_)))
+    else {
+        panic!("no Standings section");
+    };
+    assert_eq!(tables.len(), 1);
+    assert_eq!(tables[0].target(), "standing");
+    assert_eq!(
+        tables[0].result(),
+        &StandingsResult::Indeterminate(vec![
+            Missing::Input {
+                participant: "p2".to_owned(),
+                field: "judges".to_owned()
+            },
+            Missing::Diagnosed(Code::ExeRankMissingValue),
+        ])
     );
     assert!(evaluation
         .outcomes
