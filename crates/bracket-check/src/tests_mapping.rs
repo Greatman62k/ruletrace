@@ -325,3 +325,22 @@ fn input_hashes_follow_the_roles_in_a_fixed_order() {
         "f2d15f71f542b4aefe3d0d6f54ae656c4f770faa17609ae8384552f49381d8a8"
     );
 }
+
+#[test]
+fn a_published_row_for_an_undeclared_target_is_reported_at_its_cell() {
+    // `nope` starts at line 2, column 4 (`p1,` is three characters).
+    let published = "participant,target,value\np1,nope,1\n";
+    let state = rejected(run_with(
+        CSV_FULL,
+        Some(published),
+        &full_request(),
+        &sources(),
+    ));
+    assert_eq!(
+        seen(&state),
+        vec![(
+            Code::AppTargetNotDeclared,
+            input("published.csv", 2, 4, "target")
+        )]
+    );
+}
