@@ -17,7 +17,7 @@ fn main() -> ExitCode {
     }
 }
 
-const USAGE: &str = "usage: rt-xtask [--root <dir>] gen-catalogue | check-graph | check-tree | scan-sources | scan-api | check-decisions | check-catalogue | check-justification [--release-tags <git tag --list output>] ... | export-script --store <dir> --provider <kind> [--provider-id <id>] --model <id> --captured \"<text>\" --out <file>";
+const USAGE: &str = "usage: rt-xtask [--root <dir>] gen-catalogue | check-graph | check-tree | scan-sources | scan-api | check-decisions | check-catalogue | check-justification | check-app-layers | check-executables [--release-tags <git tag --list output>] ... | export-script --store <dir> --provider <kind> [--provider-id <id>] --model <id> --captured \"<text>\" --out <file>";
 
 fn run(args: &[String]) -> Result<(), String> {
     let after_root = match args {
@@ -50,7 +50,9 @@ fn run(args: &[String]) -> Result<(), String> {
             | "check-tree"
             | "scan-sources"
             | "scan-api"
-            | "check-decisions" => commands.push(arg),
+            | "check-decisions"
+            | "check-app-layers"
+            | "check-executables" => commands.push(arg),
             other => return Err(format!("unknown argument `{other}`")),
         }
     }
@@ -89,6 +91,30 @@ fn run(args: &[String]) -> Result<(), String> {
                 };
                 rt_xtask::run_check_decisions(&root, bytes)
                     .map(|n| println!("check-decisions: ok ({n} gated crates are members)"))
+            }
+            "check-app-layers" => {
+                let bytes = match &metadata {
+                    Some(bytes) => bytes,
+                    None => metadata.insert(cargo_metadata(&root)?),
+                };
+                rt_xtask::app_layers::run_sources(&root).and_then(|s| {
+                    let layers = rt_xtask::app_layers::run_edges(&root, bytes)?;
+                    println!(
+                        "check-app-layers: ok ({} crates, {} files, {} rulebooks, {layers} edge sets)",
+                        s.crates, s.files, s.rulebooks
+                    );
+                    Ok(())
+                })
+            }
+            "check-executables" => {
+                let bytes = match &metadata {
+                    Some(bytes) => bytes,
+                    None => metadata.insert(cargo_metadata(&root)?),
+                };
+                rt_xtask::scan::load_edges(&root).and_then(|list| {
+                    rt_xtask::executables::run(&root, &list, bytes)
+                        .map(|n| println!("check-executables: ok ({n} executables)"))
+                })
             }
             _ => {
                 let bytes = match &metadata {

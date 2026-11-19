@@ -206,7 +206,7 @@ jobs:
         run: |
           mkdir -p ci-output
           set -o pipefail
-          cargo run -q -p rt-xtask -- check-graph check-tree scan-sources scan-api check-decisions check-catalogue check-justification 2>&1 | tee ci-output/graph.log
+          cargo run -q -p rt-xtask -- check-graph check-tree scan-sources scan-api check-decisions check-catalogue check-justification check-app-layers check-executables 2>&1 | tee ci-output/graph.log
       - name: Keep failed-check output
         if: failure()
         uses: actions/upload-artifact@v6
