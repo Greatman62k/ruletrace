@@ -16,7 +16,7 @@ pub const TEXT: &str = "# Spring Open Rules\n\
 \n\
 1. A competitor is eligible if age is at least 16 and holds a licence.\n\
 2. The score is 0.6 times the judges score plus 0.4 times the technical score.\n\
-3. Competitors are ranked by score, highest first. Equal scores are separated by the higher judges score. Competitors equal on both share the same position.\n\
+3. Competitors are ranked by score, highest first. Equal scores are separated by the higher judges score. Competitors equal on both share the same position, and the next position after a shared position advances by the number of competitors sharing it (for example 1, 1, 3).\n\
 4. A competitor qualifies if the score is at least 7.7.\n";
 
 /// One clause span: start, end (exclusive, without the newline), line and
@@ -27,8 +27,8 @@ pub type Span = (usize, usize, u32, u32);
 pub const SPANS: [Span; 4] = [
     (21, 91, 3, 1),
     (92, 170, 4, 1),
-    (171, 327, 5, 1),
-    (328, 383, 6, 1),
+    (171, 445, 5, 1),
+    (446, 501, 6, 1),
 ];
 
 /// The rule ids in clause order.

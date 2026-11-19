@@ -4,7 +4,7 @@
 use crate::report::common::{
     ascending, location_text, missing_text, provenance_status, some_without_sources_text,
     value_parts, APP_REPORT_FORMAT, APP_REPORT_VERSION, BRACKET_RANKING_SCOPE_LABEL,
-    NO_SOURCES_TEXT, RANKING_SCOPE_LABEL, TIE_ORDER_NOTE,
+    DIAGNOSTICS_SCOPE, NO_SOURCES_TEXT, RANKING_SCOPE_LABEL, TIE_ORDER_NOTE,
 };
 use crate::report::model::{
     count, Comparison, EligibilityEntry, Evidence, Missing, ProvenanceSummary, PublishedDifference,
@@ -390,6 +390,9 @@ pub fn render_json(doc: &ReportDoc) -> Vec<u8> {
             ReportSection::Diagnostics(d) => Value::array(d.iter().map(diagnostic).collect()),
         };
         members.push((s.name(), value));
+        if matches!(s, ReportSection::Diagnostics(_)) {
+            members.push(("diagnostics_scope", text(DIAGNOSTICS_SCOPE)));
+        }
     }
     let mut out = rt_json::write_compact(&obj(members));
     out.push('\n');

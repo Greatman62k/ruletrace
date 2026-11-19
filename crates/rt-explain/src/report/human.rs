@@ -2,8 +2,8 @@
 
 use crate::report::common::{
     ascending, esc, location_text, missing_text, some_without_sources_text, value_parts,
-    APP_REPORT_FORMAT, APP_REPORT_VERSION, BRACKET_RANKING_SCOPE_LABEL, NO_SOURCES_TEXT,
-    RANKING_SCOPE_LABEL, TIE_ORDER_NOTE,
+    APP_REPORT_FORMAT, APP_REPORT_VERSION, BRACKET_RANKING_SCOPE_LABEL, DIAGNOSTICS_HEADING,
+    NO_SOURCES_TEXT, RANKING_SCOPE_LABEL, TIE_ORDER_NOTE,
 };
 use crate::report::model::{
     Comparison, EligibilityEntry, Evidence, Missing, ProvenanceSummary, PublishedDifference,
@@ -338,7 +338,7 @@ fn published(out: &mut String, p: &PublishedSection) {
 }
 
 fn diagnostics(out: &mut String, list: &[rt_foundation::Diagnostic]) {
-    let _ = writeln!(out, "\nDIAGNOSTICS");
+    let _ = writeln!(out, "\n{DIAGNOSTICS_HEADING}");
     if list.is_empty() {
         let _ = writeln!(out, "  none");
     }

@@ -14,6 +14,14 @@ pub const APP_REPORT_VERSION: u32 = 1;
 pub(crate) const TIE_ORDER_NOTE: &str =
     "members are listed in ascending identifier order, which has no ranking meaning";
 
+/// The value of the `diagnostics_scope` member of an application report. It
+/// states that the Diagnostics section holds the evaluation Diagnostics and
+/// the provenance-verification Diagnostics, and nothing else.
+pub(crate) const DIAGNOSTICS_SCOPE: &str = "evaluation_and_provenance";
+
+/// The heading line of the human Diagnostics section.
+pub(crate) const DIAGNOSTICS_HEADING: &str = "DIAGNOSTICS (evaluation and provenance; published-result differences are listed under PUBLISHED CONSISTENCY; warnings that `ruletrace evaluate` writes to standard error are not part of this section)";
+
 /// The header text when no Source_Model was supplied (Req 31.14).
 pub(crate) const NO_SOURCES_TEXT: &str = "not verified: no source models were supplied";
 

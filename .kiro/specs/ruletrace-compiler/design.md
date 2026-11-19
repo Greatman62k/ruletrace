@@ -2630,6 +2630,8 @@ PUBLISHED CONSISTENCY  rank.total
 
 Machine layout: RT-JSON object with the same content in fixed key order; the field-set tests of Req 31.6 and 32.5 compare every key path of the output against `FIELD_SET_PRIZE` or `FIELD_SET_BRACKET` and fail on any extra or missing path.
 
+**Amendment note, 2026-11-18 (task 9.16, Diagnostics scope).** The Diagnostics section of a Prize_Check or Bracket_Check report holds two kinds of Diagnostic: those the evaluation returned, and those of the provenance verification of the report's traces (`run_diagnostics` in `assemble.rs`), de-duplicated and in canonical order. It does not hold published-result differences, which only the Published section lists with their codes, and it does not hold the Warnings that `ruletrace evaluate` writes to standard error. The human heading says so: `DIAGNOSTICS (evaluation and provenance; published-result differences are listed under PUBLISHED CONSISTENCY; warnings that `ruletrace evaluate` writes to standard error are not part of this section)`. The machine form keeps the `diagnostics` array unchanged and adds one top-level member after it, `diagnostics_scope`, a closed enumeration whose only value is the string `evaluation_and_provenance`. The member is always present, its key path `diagnostics_scope` is in `FIELD_SET_PRIZE` and `FIELD_SET_BRACKET`, and no other report kind changes (the Proof_Report has its own writers).
+
 ### 8.6 Prize_Check report content (Req 31.6, 31.7)
 
 | Section | Content, all copied from Outcomes and traces |

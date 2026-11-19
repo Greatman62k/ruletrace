@@ -747,11 +747,11 @@ fn check_citations(case: &Case, produced: &Produced) {
         ),
         (
             "rank.standing",
-            r#""document":"app-rules.md","start":171,"end":327,"line":5,"column":1,"text":"3. Competitors are ranked by score"#,
+            r#""document":"app-rules.md","start":171,"end":445,"line":5,"column":1,"text":"3. Competitors are ranked by score"#,
         ),
         (
             "elig.qual",
-            r#""document":"app-rules.md","start":328,"end":383,"line":6,"column":1,"text":"4. A competitor qualifies"#,
+            r#""document":"app-rules.md","start":446,"end":501,"line":6,"column":1,"text":"4. A competitor qualifies"#,
         ),
     ];
     let mut cited = 0;
@@ -815,10 +815,87 @@ fn app_source_spans_equal_the_hand_written_offsets_and_cover_one_clause_each() {
         assert!(clause.starts_with(prefix), "{clause}");
         assert!(!clause.contains('\n'), "{clause}");
     }
-    assert_eq!(TEXT.len(), 384);
+    assert_eq!(TEXT.len(), 502);
     assert!(TEXT.is_ascii());
     assert!(TEXT[SPANS[2].0..SPANS[2].1].contains("highest first"));
+    assert!(TEXT[SPANS[2].0..SPANS[2].1].ends_with("(for example 1, 1, 3)."));
     assert!(TEXT[SPANS[3].0..SPANS[3].1].ends_with("at least 7.7."));
+}
+
+/// A threshold case outside the golden table: one participant, evaluated
+/// through the same path as the golden cases (Prepare, `ruletrace evaluate`
+/// through `rt_cli::run`, byte comparison with the typed values).
+fn threshold_case(
+    app: App,
+    request: &'static [(&'static str, &'static str)],
+    csv: &'static str,
+) -> Case {
+    Case {
+        name: "threshold",
+        app,
+        rulebook: Rulebook::AppSource,
+        request,
+        participants: csv,
+        published: None,
+        code: 0,
+        differences: [0; 3],
+        outcomes: Vec::new(),
+        readme: "",
+    }
+}
+
+// Exactly on the threshold of clause 4. Derived by hand: 0.6 * 7.5 = 4.5,
+// 0.4 * 8.0 = 3.2, sum 7.7, and 7.7 >= 7.7 is true. Prize questions are
+// answered in the order eligibility, score.
+const CSV_ON_THRESHOLD: &str = "participant,age,licence,judges,technical\np1,17,true,7.5,8.0\n";
+
+// Just below it. 0.6 * 7.5 = 4.5, 0.4 * 7.9 = 3.16, sum 7.66 < 7.7: false.
+const CSV_BELOW_THRESHOLD: &str = "participant,age,licence,judges,technical\np1,17,true,7.5,7.9\n";
+
+#[test]
+fn threshold_exactly_7_7_is_qualified_and_scored_as_the_exact_text_7_7() {
+    let score = produce(&threshold_case(
+        App::Prize,
+        &[("score", "score"), ("eligibility", "eligible")],
+        CSV_ON_THRESHOLD,
+    ));
+    assert_eq!(
+        score.cli_outcomes,
+        [boolean(true), number("7.7")],
+        "ruletrace evaluate results"
+    );
+    let qualification = produce(&threshold_case(
+        App::Bracket,
+        &[("qualification", "qualified")],
+        CSV_ON_THRESHOLD,
+    ));
+    assert_eq!(
+        qualification.cli_outcomes,
+        [boolean(true)],
+        "ruletrace evaluate results"
+    );
+    assert!(
+        String::from_utf8(qualification.json)
+            .unwrap()
+            .contains(r#""result":"true""#),
+        "bracket report"
+    );
+}
+
+#[test]
+fn threshold_below_7_7_is_not_qualified_and_scored_as_the_exact_text_7_66() {
+    let score = produce(&threshold_case(
+        App::Prize,
+        &[("score", "score")],
+        CSV_BELOW_THRESHOLD,
+    ));
+    assert_eq!(score.cli_outcomes, [number("7.66")]);
+    let qualification = produce(&threshold_case(
+        App::Bracket,
+        &[("qualification", "qualified")],
+        CSV_BELOW_THRESHOLD,
+    ));
+    assert_eq!(qualification.cli_outcomes, [boolean(false)]);
 }
 
 macro_rules! golden_case {
