@@ -1,0 +1,49 @@
+RuleTrace prize-check report   format ruletrace-app-report v1
+rulebook sha256:315323aaa60b86e8212d8f82e76f8197467b5923ebe162c19d1399521df0b7d5
+input participants sha256:e06b91376d2adaa32cf71ef4c3be558f4198e6e2ea52a4bde2af3f99afd2b847
+provenance: verified (8 of 8 traces)
+statements: 
+data: synthetic
+ranking: Score ranking — all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.
+
+ELIGIBILITY
+  p1  eligible  true
+      trace #0  verified  rules elig.basic@1
+      source elig.basic@1 rules.md 21..91 line 3:1
+        "1. A competitor is eligible if age is at least 16 and holds a licence."
+  p2  eligible  indeterminate   missing input: age (p2)
+      trace #1  verified  rules elig.basic@1
+      source elig.basic@1 rules.md 21..91 line 3:1
+        "1. A competitor is eligible if age is at least 16 and holds a licence."
+  p3  eligible  false
+      trace #2  verified  rules elig.basic@1
+      source elig.basic@1 rules.md 21..91 line 3:1
+        "1. A competitor is eligible if age is at least 16 and holds a licence."
+  p4  eligible  false
+      trace #3  verified  rules elig.basic@1
+      source elig.basic@1 rules.md 21..91 line 3:1
+        "1. A competitor is eligible if age is at least 16 and holds a licence."
+
+SCORES
+  p1  score  7.6
+      trace #4  verified  rules score.weighted@1
+      source score.weighted@1 rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  p2  score  7.8
+      trace #5  verified  rules score.weighted@1
+      source score.weighted@1 rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  p3  score  6
+      trace #6  verified  rules score.weighted@1
+      source score.weighted@1 rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  p4  score  7.8
+      trace #7  verified  rules score.weighted@1
+      source score.weighted@1 rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+
+PUBLISHED CONSISTENCY
+  not supplied
+
+DIAGNOSTICS (evaluation and provenance; published-result differences are listed under PUBLISHED CONSISTENCY; warnings that `ruletrace evaluate` writes to standard error are not part of this section)
+  RT-EXE-0001 error: rule elig.basic: required input 'age' of participant 'p2' is a Missing_Value   at rules.md bytes 21..91 line 3 column 1

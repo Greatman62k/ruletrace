@@ -1187,3 +1187,10 @@ New: 16. THE machine-readable report that each Application_Layer (Prize_Check an
 
 
 Corrected after review `docs/reviews/2026-11-18-review-f1f2-3ed212c.md` N2: 31.16 applies to the report that an Application_Layer assembles from a run (the report assembler always adds the Diagnostics section); N1: the published-difference-only test now covers both Application_Layers.
+
+### Task 9.16 golden approval (2026-11-18)
+
+- Goldens: `tests/fixtures/app-reports/` (11 case directories, 87 files), written once by the user-approved command `unshare -rn sh -c 'ip link set lo up && exec "$@"' sh env RT_APP_GOLDEN_BLESS=/home/sam/Desktop/ruletrace/tests/fixtures/app-reports CARGO_TARGET_DIR=/home/sam/Desktop/ruletrace/target cargo test -p rt-tests-core --test app_report_goldens` (approval `7aa824933ccc`). Byte-identical to the reviewed candidate set v3 (`diff -r` empty).
+- `tests/fixtures/app-reports/PROVENANCE.md`: required by the existing harness check of Req 28.11; written by an agent edit under the user's approval `d561fc0b3e9f`.
+- Two earlier approvals (`439dfb867f3d`, `913c957b1d36`) were not used: the first carried line breaks that would have split the command, the second used a wrapper form that the shell guard refuses. The guard was then fixed (`74ec3fe`) to recognise `RT_APP_GOLDEN_BLESS` and `RULETRACE_BLESS`.
+- Requirements now evidenced locally: 31.14, 31.15, 31.16 and 20.4 for the 11 cases; 32.7 except the Tie_Group-at-threshold fixture (deferred with 9.3). Three-platform byte identity is not yet evidenced (M3 is not pushed).

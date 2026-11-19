@@ -1,0 +1,5 @@
+participant,age,licence,judges,technical
+p1,17,true,8,7
+p2,20,true,7,9
+p3,15,true,6,6
+p4,30,false,7,9

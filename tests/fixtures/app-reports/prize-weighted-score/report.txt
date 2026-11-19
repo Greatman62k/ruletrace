@@ -1,0 +1,31 @@
+RuleTrace prize-check report   format ruletrace-app-report v1
+rulebook sha256:315323aaa60b86e8212d8f82e76f8197467b5923ebe162c19d1399521df0b7d5
+input participants sha256:faf87de810a2f0727fa557fbe0bddd15d4c22309b7740fd1f6e5a382511f7bcf
+provenance: verified (4 of 4 traces)
+statements: 
+data: synthetic
+ranking: Score ranking — all submitted participants; eligibility is evaluated independently and is not applied as a ranking filter.
+
+SCORES
+  p1  score  7.6
+      trace #0  verified  rules score.weighted@1
+      source score.weighted@1 rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  p2  score  7.8
+      trace #1  verified  rules score.weighted@1
+      source score.weighted@1 rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  p3  score  6
+      trace #2  verified  rules score.weighted@1
+      source score.weighted@1 rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  p4  score  7.8
+      trace #3  verified  rules score.weighted@1
+      source score.weighted@1 rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+
+PUBLISHED CONSISTENCY
+  not supplied
+
+DIAGNOSTICS (evaluation and provenance; published-result differences are listed under PUBLISHED CONSISTENCY; warnings that `ruletrace evaluate` writes to standard error are not part of this section)
+  none
