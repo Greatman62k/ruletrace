@@ -2,7 +2,8 @@
 //! runs) and on a synthetic repository on disk (a negative run that reports
 //! the crate, the file and the line).
 //!
-//! **Validates: Requirements 31.10, 31.11, 24.12, 27.1**
+//! **Validates: Requirements 31.10, 24.12, 27.1** (the source-scan part of
+//! 31.11 only; its clock, working-directory and locale test is task 9.17).
 
 #![forbid(unsafe_code)]
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]

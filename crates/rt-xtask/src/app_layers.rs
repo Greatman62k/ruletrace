@@ -389,6 +389,13 @@ const ORDER_CALLS: &[&str] = &[
     "mul_assign",
     "div_assign",
     "is_zero",
+    "last",
+    "next_back",
+    "nth_back",
+    "first_key_value",
+    "last_key_value",
+    "pop_first",
+    "pop_last",
 ];
 const ORDER_CALL_PREFIXES: &[&str] = &[
     "checked_",
@@ -422,6 +429,20 @@ const IO_IDENTS: &[&str] = &[
     "UdpSocket",
     "rand",
     "getrandom",
+];
+/// Methods of `Path` and `PathBuf` that read the file system. A name is
+/// flagged where it is called as a method.
+const IO_METHODS: &[&str] = &[
+    "exists",
+    "try_exists",
+    "is_file",
+    "is_dir",
+    "is_symlink",
+    "metadata",
+    "symlink_metadata",
+    "read_dir",
+    "read_link",
+    "canonicalize",
 ];
 /// Macros that read the environment or the file system at compile time, or
 /// write a standard stream.
@@ -784,6 +805,14 @@ fn io_use(tokens: &[Token], i: usize, name: &str, push: &mut impl FnMut(AppRule,
         }
     }
     if IO_IDENTS.contains(&name) {
+        flag(name);
+    }
+    let method_call = i
+        .checked_sub(1)
+        .and_then(|p| tokens.get(p))
+        .is_some_and(|p| p.is_punct("."))
+        && tokens.get(i + 1).is_some_and(|n| n.is_punct("("));
+    if method_call && IO_METHODS.contains(&name) {
         flag(name);
     }
     let prev_path = i

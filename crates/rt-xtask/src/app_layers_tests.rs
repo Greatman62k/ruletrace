@@ -645,3 +645,58 @@ fn dependency_outside_the_workspace_fails() {
         && l.contains("bracket-check")
         && l.contains("serde")));
 }
+
+// Review 9.8 F4: selecting the largest or smallest entry of an ordered
+// collection is a selection over participants or scores.
+#[test]
+fn selecting_an_end_of_an_ordered_collection_fails_on_its_line() {
+    for call in [
+        "s.iter().last()",
+        "s.iter().next_back()",
+        "m.first_key_value()",
+        "m.last_key_value()",
+        "s.pop_first()",
+        "s.pop_last()",
+    ] {
+        let body = format!("fn f() {{\n    let _ = {call};\n}}\n");
+        let found = scan(&body);
+        assert!(
+            found
+                .iter()
+                .any(|l| l.starts_with("[app-order] prize-check: src/lib.rs:2:")),
+            "{call}: {found:?}"
+        );
+    }
+}
+
+// Review 9.8 F5: a `Path` method that reads the file system is file access.
+#[test]
+fn a_path_method_that_reads_the_file_system_fails_on_its_line() {
+    for call in [
+        "p.exists()",
+        "p.is_file()",
+        "p.is_dir()",
+        "p.metadata()",
+        "p.read_dir()",
+        "p.canonicalize()",
+    ] {
+        let body = format!("fn f(p: &Path) {{\n    let _ = {call};\n}}\n");
+        let found = scan(&body);
+        assert!(
+            found
+                .iter()
+                .any(|l| l.starts_with("[app-io] prize-check: src/lib.rs:2:")),
+            "{call}: {found:?}"
+        );
+    }
+}
+
+// A field or a free function of the same name is not a `Path` method call.
+#[test]
+fn a_field_named_like_a_path_method_is_not_file_access() {
+    let found = scan("fn f(e: &E) -> bool {\n    e.exists\n}\n");
+    assert!(
+        !found.iter().any(|l| l.starts_with("[app-io]")),
+        "{found:?}"
+    );
+}
