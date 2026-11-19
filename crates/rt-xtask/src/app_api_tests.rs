@@ -347,3 +347,20 @@ fn a_path_after_a_module_prefix_is_a_continuation() {
     let body = "fn f() {\n    let _ = local::rt_engine::evaluate(1);\n}\n";
     assert_eq!(run("prize-check", body, &[]), Vec::<String>::new());
 }
+
+#[test]
+fn a_leading_double_colon_path_after_a_keyword_fails() {
+    let keywords = [
+        "as", "return", "if", "dyn", "impl", "in", "mut", "match", "else", "move", "break", "for",
+        "while", "where", "let", "const", "static", "ref", "unsafe", "async", "await", "yield",
+        "type", "fn", "struct", "enum", "pub", "use", "loop", "continue", "trait", "mod",
+    ];
+    for kw in keywords {
+        let body = format!("fn f() {{\n    {kw} ::rt_engine::evaluate(1);\n}}\n");
+        assert_eq!(
+            run("prize-check", &body, &[]),
+            vec![unlisted("prize-check", 2, "rt_engine::evaluate")],
+            "keyword `{kw}`"
+        );
+    }
+}

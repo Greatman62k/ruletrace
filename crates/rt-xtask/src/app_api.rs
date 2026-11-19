@@ -218,6 +218,18 @@ fn idents(names: &BTreeSet<String>) -> BTreeSet<String> {
     names.iter().map(|n| n.replace('-', "_")).collect()
 }
 
+/// True for a Rust keyword that cannot be a path segment.
+fn is_non_path_keyword(word: &str) -> bool {
+    const KEYWORDS: &[&str] = &[
+        "abstract", "as", "async", "await", "become", "box", "break", "const", "continue", "do",
+        "dyn", "else", "enum", "extern", "final", "fn", "for", "gen", "if", "impl", "in", "let",
+        "loop", "macro", "match", "mod", "move", "mut", "override", "priv", "pub", "ref", "return",
+        "static", "struct", "trait", "try", "type", "typeof", "unsafe", "unsized", "use",
+        "virtual", "where", "while", "yield",
+    ];
+    KEYWORDS.contains(&word)
+}
+
 /// Finds every path into another workspace crate in one token stream.
 fn external_paths(tokens: &[Token], external: &BTreeSet<String>) -> Vec<Found> {
     let mut found = Vec::new();
@@ -252,10 +264,14 @@ fn external_paths(tokens: &[Token], external: &BTreeSet<String>) -> Vec<Found> {
             continue;
         }
         // A `::` continues a path only after a segment; otherwise it is the
-        // leading `::` of a fully qualified crate path.
+        // leading `::` of a fully qualified crate path. Keywords other than
+        // the path keywords are never segments.
         let continues_segment = i >= 2
             && tokens.get(i - 2).is_some_and(|t| {
-                t.ident().is_some() || t.is_punct(">") || t.is_punct(")") || t.is_punct("]")
+                t.ident().is_some_and(|w| !is_non_path_keyword(w))
+                    || t.is_punct(">")
+                    || t.is_punct(")")
+                    || t.is_punct("]")
             });
         let after_path_or_field = i > 0
             && tokens
