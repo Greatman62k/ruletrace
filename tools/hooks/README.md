@@ -138,7 +138,9 @@ cheaply from forms that do.
 
 Rule (f), golden writes, no longer blocks the bare text. It blocks:
 
-- `RT_DEMO_BLESS=...` (also `+=`) as an environment assignment word: before
+- `RT_DEMO_BLESS=...`, `RT_APP_GOLDEN_BLESS=...` (app-report goldens, task
+  9.16) or `RULETRACE_BLESS=...` (slice goldens) (also `+=`) as an
+  environment assignment word: before
   a command, after `env` (with or without options, also when `env` itself
   follows `nice`, `timeout` or `xargs`), as a bare assignment statement,
   after `export`, `declare`, `typeset`, `readonly` or `local`, and inside a
@@ -151,7 +153,8 @@ Rule (f), golden writes, no longer blocks the bare text. It blocks:
 So `grep -rn RT_DEMO_BLESS crates`, `echo RT_DEMO_BLESS`, `rg RT_DEMO_BLESS`
 and `grep -- --bless README.md` are allowed. The approval path
 (`golden_approve.py --command`) is unchanged for the blocked forms. A
-command that cannot be parsed and contains `--bless` or `RT_DEMO_BLESS=` is
+command that cannot be parsed and contains `--bless` or one of the three
+assignments is
 blocked without an approval path, like other unparseable commands.
 
 ## Network-isolation wrapper (validated before enforcing)

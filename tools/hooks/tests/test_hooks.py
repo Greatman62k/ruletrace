@@ -536,6 +536,21 @@ class GuardShellGoldenWrites(RepoCase):
         "xargs --bless",
         "bash --bless",
         "bash -c 'echo x > tests/fixtures/f'",
+        # RT_APP_GOLDEN_BLESS (task 9.16) writes the app-report goldens.
+        "RT_APP_GOLDEN_BLESS=/r/tests/fixtures/app-reports true",
+        "env RT_APP_GOLDEN_BLESS=/x true",
+        "export RT_APP_GOLDEN_BLESS=/x",
+        "sh -c 'RT_APP_GOLDEN_BLESS=/x true'",
+        "env -i RT_APP_GOLDEN_BLESS=/x true",
+        "env FOO=1 RT_APP_GOLDEN_BLESS=/x true",
+        "RT_APP_GOLDEN_BLESS= true",
+        WRAPPER + " env RT_APP_GOLDEN_BLESS=/x cargo test -p rt-tests-core --test app_report_goldens",
+        # RULETRACE_BLESS writes the slice goldens (rt-tests-core golden/slice.rs).
+        "RULETRACE_BLESS=1 true",
+        "env RULETRACE_BLESS=1 true",
+        "export RULETRACE_BLESS=1",
+        "sh -c 'RULETRACE_BLESS=1 true'",
+        WRAPPER + " env RULETRACE_BLESS=1 cargo test -p rt-tests-core",
     ]
 
     def test_blocked_and_explained(self):
@@ -587,6 +602,10 @@ class GuardShellGoldenWrites(RepoCase):
         "cargo build -p x",
         "cat <<'EOF'\nRT_DEMO_BLESS=1 true\nEOF",
         "grep RT_DEMO_BLESS <<'EOF'\nRT_DEMO_BLESS=1 true\nEOF",
+        "grep -rn RT_APP_GOLDEN_BLESS crates",
+        "rg RT_APP_GOLDEN_BLESS=/x",
+        "echo RT_APP_GOLDEN_BLESS=/x",
+        "grep -rn RULETRACE_BLESS crates",
     ]
 
     def test_read_only_mentions_are_allowed(self):
@@ -616,6 +635,21 @@ class GuardShellGoldenWrites(RepoCase):
                 golden_approve.approve_command(self.repo, command)
                 self.assertEqual(run(command), (0, "", ""))
                 self.assertEqual(run(command)[0], 2)
+
+    def test_the_app_report_bless_command_runs_once_after_approval(self):
+        command = (
+            WRAPPER
+            + " env RT_APP_GOLDEN_BLESS=/r/tests/fixtures/app-reports"
+            + " CARGO_TARGET_DIR=/r/target"
+            + " cargo test -p rt-tests-core --test app_report_goldens"
+        )
+        run = lambda c: self.run_script("guard_shell.py", self.shell(c))
+        code, err, _ = run(command)
+        self.assertEqual(code, 2, err)
+        self.assertIn("rule (f) golden-write", err)
+        golden_approve.approve_command(self.repo, command)
+        self.assertEqual(run(command), (0, "", ""))
+        self.assertEqual(run(command)[0], 2)
 
     def test_approval_is_exact_single_use_and_expiring(self):
         command = "RT_DEMO_BLESS=1 true"

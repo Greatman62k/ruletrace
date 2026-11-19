@@ -11,9 +11,10 @@ Only (f) can be approved, for one exact command, with
 `golden_approve.py --command`.
 
 Rule (e) also covers `cargo mutants|llvm-cov|tarpaulin|miri|careful`, which
-run project tests. Rule (f) blocks `RT_DEMO_BLESS` only as an environment
-assignment and `--bless` only as an argument of a command that is not a
-read-only text tool, so searching for the words stays allowed.
+run project tests. Rule (f) blocks `RT_DEMO_BLESS`, `RT_APP_GOLDEN_BLESS` and
+`RULETRACE_BLESS` only as an environment assignment and `--bless` only as an argument of a
+command that is not a read-only text tool, so searching for the words stays
+allowed.
 
 This is best-effort pattern detection on a parsed command line, not a
 sandbox. A python or perl one-liner that writes a file, a script that was
@@ -140,10 +141,10 @@ FALLBACK_WORDS = (
     re.compile(r"ruletrace-ai"),
     re.compile(r"\bunshare\b"),
     re.compile(r"--bless"),
-    re.compile(r"RT_DEMO_BLESS\s*\+?="),
+    re.compile(r"(RT_DEMO_BLESS|RT_APP_GOLDEN_BLESS|RULETRACE_BLESS)\s*\+?="),
 )
 
-BLESS_ASSIGN = re.compile(r"^RT_DEMO_BLESS\+?=")
+BLESS_ASSIGN = re.compile(r"^(RT_DEMO_BLESS|RT_APP_GOLDEN_BLESS|RULETRACE_BLESS)\+?=")
 ASSIGN_BUILTINS = ("export", "declare", "typeset", "readonly", "local")
 BLESS_READERS = (
     "grep",
@@ -689,7 +690,7 @@ def golden_text(path):
     )
 
 
-BLESS_TEXT = "golden-write: RT_DEMO_BLESS regenerates goldens"
+BLESS_TEXT = "golden-write: RT_DEMO_BLESS, RT_APP_GOLDEN_BLESS or RULETRACE_BLESS regenerates goldens"
 BLESS_FLAG_TEXT = "golden-write: `--bless` regenerates goldens"
 
 
