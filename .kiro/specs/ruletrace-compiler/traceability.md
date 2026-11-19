@@ -1206,3 +1206,13 @@ Closed by the user's decision on its locally deliverable, independently reviewed
 | 27.15 | none in 9.17 | **Not satisfied**; owned by 13.4 (executable set with `ruletrace-lab`) and 13.6 (Laboratory process independence, Req 36.22) |
 
 Effect on 9.5: the 31.11 test it awaited is delivered; 9.5 stays open on 9.8 (APP-API) and on Req 15.5, which has no recorded coverage.
+
+### Task 9.8 APP-API (2026-11-18, awaiting the user's closure decision)
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| 31.10 | `crates/rt-xtask/src/app_layers.rs` (nine token rules), `crates/rt-xtask/src/app_api.rs` (`app-api`), `tools/app-api-allow.v1`; tests `app_layers_tests.rs`, `app_api_tests.rs`, `tests/app_api.rs` (`995a16a`, `f4c7299`); reviews `2026-11-18-review-9.8-8353adb.md`, `2026-11-18-review-api-b15264f.md`, `2026-11-18-review-api-f1-995a16a.md`, `2026-11-18-review-api-kw-f4c7299.md` | Local evidence; accepted type-blind limits F3, F6, F7; open limit F2 and no macro expansion; Windows and macOS outstanding |
+| 24.13 | mechanism only: `app-api` allow-list; the `rt-lab` section belongs to 13.4 | **Not satisfied** until 13.4 |
+| 27.15 | `check-executables` with two names | **Not satisfied**; owned by 13.4 and 13.6 |
+
+Effect on 9.5: the 9.8 source scan it awaited is delivered; 9.5 stays open on Req 15.5, which has no recorded coverage.
