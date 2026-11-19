@@ -109,6 +109,30 @@ impl Fs for MemFs {
     }
 }
 
+/// An in-memory file system for running several `ruletrace` commands in
+/// sequence through `rt_cli::run`, for tests that build a Compiled_Rulebook.
+#[derive(Default)]
+pub struct Session {
+    fs: MemFs,
+}
+
+impl Session {
+    pub fn put(&self, name: &str, bytes: &[u8]) {
+        self.fs.put(name, bytes);
+    }
+
+    pub fn get(&self, name: &str) -> Option<Vec<u8>> {
+        self.fs.get(name)
+    }
+
+    /// Runs one command line. Returns the exit code and standard error.
+    pub fn run(&self, args: &[&str]) -> (u8, String) {
+        let args: Vec<OsString> = args.iter().map(OsString::from).collect();
+        let outcome = run(&args, &self.fs);
+        (outcome.code.value(), outcome.stderr)
+    }
+}
+
 /// Runs `ruletrace evaluate` over the given files. Returns the exit code and
 /// the results file, if one was written.
 pub fn ruletrace_evaluate(
