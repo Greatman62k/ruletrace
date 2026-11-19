@@ -765,14 +765,24 @@ fn data_set() -> impl Strategy<Value = (Vec<Row>, Vec<usize>)> {
     })
 }
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(CASES))]
-
-    /// For each generated data set and each variant, both applications
-    /// equal `ruletrace evaluate` on the variant's Compiled_Rulebook and the
-    /// reference model, which takes the parameters from the variant alone.
-    #[test]
-    fn applications_follow_the_variant_compiled_rulebook((rows, order) in data_set()) {
+/// For each generated data set and each variant, both applications equal
+/// `ruletrace evaluate` on the variant's Compiled_Rulebook and the reference
+/// model, which takes the parameters from the variant alone.
+///
+/// The runner is built explicitly, as in `rt-cli`'s adoption property, so the
+/// case count is the one written here and `PROPTEST_CASES` cannot lower it;
+/// the cases that actually ran are counted and checked against the floor.
+#[test]
+fn applications_follow_the_variant_compiled_rulebook() {
+    let config = ProptestConfig {
+        cases: CASES,
+        failure_persistence: None,
+        ..ProptestConfig::default()
+    };
+    let ran = std::cell::Cell::new(0u32);
+    let mut runner = proptest::test_runner::TestRunner::new(config);
+    let result = runner.run(&data_set(), |(rows, order)| {
+        ran.set(ran.get() + 1);
         let csv = rows_csv(&rows, &order);
         for params in [BASE, WEIGHT, THRESHOLD, ORDER] {
             let compiled = compiled_of(params);
@@ -786,7 +796,16 @@ proptest! {
                 params
             );
         }
+        Ok(())
+    });
+    if let Err(failure) = result {
+        panic!("Property 43: {failure}");
     }
+    assert!(
+        ran.get() >= MIN_CASES,
+        "Property 43 ran {} cases, fewer than {MIN_CASES}",
+        ran.get()
+    );
 }
 
 /// Hand check of the reference model on two ties.
@@ -795,8 +814,9 @@ proptest! {
 /// 0.6*4 + 0.4*0 = 2.4. Judges first puts p02 (4) before p01 (2). Age first
 /// puts p01 (18) before p02 (20).
 ///
-/// p03 and p04 both score 0.6*3 + 0.4*3 = 3 and have judges 3, so only age
-/// separates them: p04 (19) before p03 (20) in both orders.
+/// In the second pair p01 and p02 both score 0.6*3 + 0.4*3 = 3 and have
+/// judges 3, so only age separates them: p02 (19) before p01 (20) in both
+/// orders.
 #[test]
 fn the_reference_model_matches_a_hand_derived_tie() {
     let row = |age, judges, technical| Row {
@@ -818,11 +838,4 @@ fn the_reference_model_matches_a_hand_derived_tie() {
     let expected = standings(&[(1, &["p02"]), (2, &["p01"])]);
     assert_eq!(model_standings(&by_age, BASE), expected);
     assert_eq!(model_standings(&by_age, ORDER), expected);
-}
-
-/// The generated cases are the floor of Property 43, whatever the
-/// environment says.
-#[test]
-fn the_property_runs_at_least_256_cases() {
-    assert!(ProptestConfig::with_cases(CASES).cases >= 256);
 }
