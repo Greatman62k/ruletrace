@@ -4,6 +4,7 @@
 # when the case floor was enforced (task 9.11 follow-up). A listed test still cannot be
 # lowered by PROPTEST_CASES. Every entry is a Req 20.2 gap awaiting a user decision;
 # raising the count to 256 means switching the block to proptest_config and deleting the line.
+# Correction (review floor-b319e83 F2): this list holds 21 tests in 13 blocks (15 at 128, 5 at 64, 1 at 24); the commit message of b319e83 said 22.
 below crates/rt-demo/tests/coverage_partition.rs every_clause_is_classified_exactly_once cases 128
 below crates/rt-ir/src/hash_invariance_tests.rs non_content_changes_leave_hashes_unchanged cases 128
 below crates/rt-ir/src/hash_invariance_tests.rs in_memory_origin_and_position_changes_leave_hashes_unchanged cases 128
