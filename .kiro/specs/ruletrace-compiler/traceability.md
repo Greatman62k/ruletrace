@@ -1228,3 +1228,12 @@ Closed by the user's decision on its locally delivered, independently reviewed s
 | 27.15 | `check-executables` with two names | **Not satisfied**; owned by 13.4 and 13.6 |
 
 Effect on 9.5: unchanged; 9.5 stays open on Req 15.5.
+
+### Req 15.5 coverage for task 9.5 (2026-11-18)
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| 15.5 | `tools/allowed-edges.v1` (app crates depend on `rt-engine`; `rt-engine` lists no app crate; `forbid-class core -> app`); `check-graph`; tests `engine_depending_on_application_fails_by_class_and_edge_list` (`0f002f9`) and `committed_list_keeps_engine_independent_of_applications` (`d6673d0`) in `crates/rt-xtask/src/graph.rs`; reviews `2026-11-18-review-r155-0f002f9.md`, `2026-11-18-review-n1-d6673d0.md` | Local evidence; manifest edges rely on `check-graph` over real metadata; Windows and macOS CI outstanding |
+| 31.6 | golden `tests/fixtures/app-reports/prize-ranking-tie-group/` (`42e9e01`), `app_report_goldens.rs` | Local evidence (correction of the 9.5 note that said it was waiting) |
+
+Effect on 9.5: the Req 15.5 coverage question is resolved by evidence; 9.5 stays `[ ]` pending the user's closure decision.
