@@ -1335,6 +1335,13 @@ No requirement, design text or decision record is changed by this evidence. UD-3
 | --- | --- | --- |
 | Req 37.17, second sentence (containment when `ruletrace-lab` terminates abnormally), mechanism L | `efa4a6d` (`crates/rt-cli/src/lifeline.rs`, `crates/rt-ai-tool/src/lifeline.rs`, tests `crates/*/tests/lifeline.rs`), `ci` run `44753380080` on three platforms, record `docs/security/2026-11-20-lt7-lifeline-real-executables.md` | Real-executable checks pass; V-1, V-2, V-4 and the Laboratory's use of the option outstanding; LT-7 OPEN |
 | Req 5.12 (exit 70 writes an Error Diagnostic) for the lifeline exit | `RT-CLI-0007` (catalogue, 155 codes), `catalogue_ud44.rs`, check `closing_the_pipe_stops_the_child_with_70` | Delivered |
-| Req 17.10 (exit-code sets per executable) | code 70 already in both sets; existing test `crates/rt-cli/src/tests_pipeline.rs` unchanged | Unchanged |
+| Req 27.10 (exit-code sets per executable; corrected 2026-11-20, this row first cited it as Req 17.10) | code 70 already in both sets; existing test `crates/rt-cli/src/tests_pipeline.rs` unchanged | Unchanged |
 
 Decision record: `tools/decisions/UD-44.md`. No requirement text changed.
+
+### LT-6 browser evidence and LT-7 V-1/V-4 evidence (2026-11-20)
+
+| Item | Evidence | Status |
+| --- | --- | --- |
+| Req 37.5 to 37.7 (option A of §11.18.5), browser item 2 | `docs/security/2026-11-20-lt6-browser-evidence.md` and `docs/security/lt6-browser-2026-11-20/` | Passed on Firefox and Google Chrome, Linux; requirement wording not yet amended; LT-6 OPEN |
+| Design V-1 and V-4 (Req 37.17 containment; Req 27.8, files unchanged after a failed `ruletrace-ai` run; Req 26.30, the single all-or-nothing review commit) | `crates/rt-cli/tests/kill_review.rs`, `crates/rt-ai-tool/tests/kill_store.rs` (`ce53296`), `ci` run `44772326047`, `docs/security/2026-11-20-v1-v4-kill-evidence.md` | Statistical evidence on three platforms; two Windows refusals by design (§3.8.3 (h)); LT-7 OPEN on V-2 and review acceptance |

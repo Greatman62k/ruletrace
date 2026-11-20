@@ -1,0 +1,60 @@
+2026-11-20T16:27:20.820Z peer=127.0.0.1:59756 BEGIN
+2026-11-20T16:27:20.820Z | GET / HTTP/1.1
+2026-11-20T16:27:20.820Z | Host: 127.0.0.1:18081
+2026-11-20T16:27:20.820Z | User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:153.0) Gecko/20100101 Firefox/153.0
+2026-11-20T16:27:20.820Z | Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+2026-11-20T16:27:20.820Z | Accept-Language: en-US,en;q=0.9
+2026-11-20T16:27:20.820Z | Accept-Encoding: gzip, deflate, br, zstd
+2026-11-20T16:27:20.820Z | Connection: keep-alive
+2026-11-20T16:27:20.820Z | Upgrade-Insecure-Requests: 1
+2026-11-20T16:27:20.820Z | Sec-Fetch-Dest: document
+2026-11-20T16:27:20.820Z | Sec-Fetch-Mode: navigate
+2026-11-20T16:27:20.820Z | Sec-Fetch-Site: none
+2026-11-20T16:27:20.820Z | Sec-Fetch-User: ?1
+2026-11-20T16:27:20.820Z | Priority: u=0, i
+2026-11-20T16:27:20.820Z peer=127.0.0.1:59756 END body_bytes=0
+2026-11-20T16:27:20.951Z peer=127.0.0.1:59770 BEGIN
+2026-11-20T16:27:20.951Z | GET /favicon.ico HTTP/1.1
+2026-11-20T16:27:20.951Z | Host: 127.0.0.1:18081
+2026-11-20T16:27:20.951Z | User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:153.0) Gecko/20100101 Firefox/153.0
+2026-11-20T16:27:20.951Z | Accept: image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5
+2026-11-20T16:27:20.951Z | Accept-Language: en-US,en;q=0.9
+2026-11-20T16:27:20.951Z | Accept-Encoding: gzip, deflate, br, zstd
+2026-11-20T16:27:20.951Z | Connection: keep-alive
+2026-11-20T16:27:20.951Z | Referer: http://127.0.0.1:18081/
+2026-11-20T16:27:20.951Z | Sec-Fetch-Dest: image
+2026-11-20T16:27:20.951Z | Sec-Fetch-Mode: no-cors
+2026-11-20T16:27:20.951Z | Sec-Fetch-Site: same-origin
+2026-11-20T16:27:20.951Z | Priority: u=6
+2026-11-20T16:27:20.951Z peer=127.0.0.1:59770 END body_bytes=0
+2026-11-20T16:28:07.628Z peer=127.0.0.1:48386 BEGIN
+2026-11-20T16:28:07.628Z | GET /other HTTP/1.1
+2026-11-20T16:28:07.628Z | Host: 127.0.0.1:18081
+2026-11-20T16:28:07.628Z | User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:153.0) Gecko/20100101 Firefox/153.0
+2026-11-20T16:28:07.628Z | Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+2026-11-20T16:28:07.628Z | Accept-Language: en-US,en;q=0.9
+2026-11-20T16:28:07.628Z | Accept-Encoding: gzip, deflate, br, zstd
+2026-11-20T16:28:07.628Z | Connection: keep-alive
+2026-11-20T16:28:07.628Z | Upgrade-Insecure-Requests: 1
+2026-11-20T16:28:07.628Z | Sec-Fetch-Dest: document
+2026-11-20T16:28:07.628Z | Sec-Fetch-Mode: navigate
+2026-11-20T16:28:07.628Z | Sec-Fetch-Site: none
+2026-11-20T16:28:07.628Z | Sec-Fetch-User: ?1
+2026-11-20T16:28:07.628Z | Priority: u=0, i
+2026-11-20T16:28:07.628Z peer=127.0.0.1:48386 END body_bytes=0
+2026-11-20T16:29:24.748Z peer=127.0.0.1:36250 BEGIN
+2026-11-20T16:29:24.748Z | GET / HTTP/1.1
+2026-11-20T16:29:24.748Z | Host: 127.0.0.1:18081
+2026-11-20T16:29:24.748Z | User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:153.0) Gecko/20100101 Firefox/153.0
+2026-11-20T16:29:24.748Z | Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+2026-11-20T16:29:24.748Z | Accept-Language: en-US,en;q=0.9
+2026-11-20T16:29:24.748Z | Accept-Encoding: gzip, deflate, br, zstd
+2026-11-20T16:29:24.748Z | Connection: keep-alive
+2026-11-20T16:29:24.748Z | Upgrade-Insecure-Requests: 1
+2026-11-20T16:29:24.748Z | Sec-Fetch-Dest: document
+2026-11-20T16:29:24.748Z | Sec-Fetch-Mode: navigate
+2026-11-20T16:29:24.748Z | Sec-Fetch-Site: none
+2026-11-20T16:29:24.748Z | Priority: u=0, i
+2026-11-20T16:29:24.748Z | Pragma: no-cache
+2026-11-20T16:29:24.748Z | Cache-Control: no-cache
+2026-11-20T16:29:24.748Z peer=127.0.0.1:36250 END body_bytes=0
