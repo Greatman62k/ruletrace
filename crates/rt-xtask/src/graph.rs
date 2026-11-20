@@ -697,6 +697,36 @@ external sha2 allowed-in rt-hash
                 && f.message.contains("rt-json -> rt-ai-adapter")));
     }
 
+    // Req 15.5: the engine must not depend on an application crate. Either
+    // the class rule or the exact edge list alone must catch it.
+    #[test]
+    fn engine_depending_on_application_fails_by_class_and_edge_list() {
+        let (g, _) = run(
+            base(),
+            |m| {
+                m.push(("prize-check", vec![("rt-foundation", "")]));
+                if let Some(e) = m.iter_mut().find(|(n, _)| *n == "rt-engine") {
+                    e.1.push(("prize-check", ""));
+                }
+            },
+            SHA,
+        );
+        assert_eq!(
+            g,
+            vec![
+                Finding::new(
+                    Rule::EdgeNotAllowed,
+                    "edge rt-engine -> prize-check is not in tools/allowed-edges.v1".to_string()
+                ),
+                Finding::new(
+                    Rule::ForbiddenClass,
+                    "edge rt-engine -> prize-check is forbidden: class core must not depend on class app"
+                        .to_string()
+                ),
+            ]
+        );
+    }
+
     #[test]
     fn ai_crate_depending_on_review_is_forbidden_by_name() {
         let (g, _) = run(
