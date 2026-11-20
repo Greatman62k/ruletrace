@@ -3475,6 +3475,8 @@ M5 import path. For a live run the Laboratory shows the complete argument vector
 | SIGINT, SIGTERM (Unix), Ctrl+C (Windows) | Close the listener, kill and reap children, delete the session directory, exit 0. Signal handling without `unsafe`: a dedicated thread blocked on the signal through a safe API is needed. **Verification item for L2:** `std` has no portable signal API; the options are a small dependency (for example `ctrlc`) with a written justification, or treating Ctrl+C as an abrupt exit with cleanup at the next start |
 | Crash or SIGKILL | Children run to their own end (bounded; T17); the next start deletes the marked directory once its lock is free; LT-7 |
 
+**Amendment note, 2026-11-20 (UD-45; the table above is unchanged).** V-2 is decided: signal handling through a small dependency (candidate `ctrlc` with the `termination` feature), added only with `ruletrace-lab` in 13.4 through the dependency procedure, so Req 37.17 stays as written. V-2 is verified by three-platform tests in 13.4/13.6.
+
 ### 11.12 Stages: metaphor to real behaviour (Req 36.11 to 36.17, D5)
 
 | Stage | Caption (Req 36.17) | Bound to | Active when | Never activated by |
@@ -3625,6 +3627,8 @@ Proposed selection, for review: option A, with the session identifier dropped an
 4. A user decision on the amendment of Req 37.5 and 37.6.
 
 If A fails item 2 on a supported browser, B is designed in the same way. Until then LT-6 stays open and no Laboratory code starts.
+
+**Amendment note, 2026-11-20 (UD-45; the text above is unchanged).** The check order of option A is decided: Host; then, for a state-changing request, Origin; then the Basic credentials; then, for a state-changing request, the CSRF token. The amendment of Req 37.5 to 37.7 for option A is drafted in UD-45 section 4 and awaits the user's approval of the wording. LT-6 stays OPEN (browser protocol, wording, review).
 
 #### 11.18.6 LT-7: process containment (OPEN)
 
