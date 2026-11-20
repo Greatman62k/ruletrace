@@ -56,8 +56,9 @@ fn each_reserved_code_is_in_the_catalogue_with_its_severity_and_exit_code() {
 
 #[test]
 fn the_catalogue_holds_exactly_the_147_earlier_codes_and_the_five_new_ones() {
-    // RT-EXE-0012 and RT-EXE-0013 (RN-26, decision of 2026-11-17) follow.
-    assert_eq!(Code::ALL.len(), 147 + RESERVED.len() + 2);
+    // RT-EXE-0012 and RT-EXE-0013 (RN-26, decision of 2026-11-17) and
+    // RT-CLI-0007 (UD-44, decision of 2026-11-20) follow.
+    assert_eq!(Code::ALL.len(), 147 + RESERVED.len() + 2 + 1);
     for (id, _, _) in RESERVED {
         assert_eq!(
             Code::ALL.iter().filter(|c| c.id() == id).count(),

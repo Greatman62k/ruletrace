@@ -11,6 +11,7 @@
 
 pub mod args;
 pub mod io;
+pub mod lifeline;
 pub mod render;
 
 mod commit;
@@ -123,3 +124,5 @@ fn failure(problems: Vec<Diagnostic>) -> Outcome {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_lifeline;

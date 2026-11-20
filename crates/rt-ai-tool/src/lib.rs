@@ -20,6 +20,7 @@ mod endpoint;
 mod fs;
 mod hosted;
 mod inputs;
+pub mod lifeline;
 mod locate;
 mod models;
 mod out;
@@ -95,6 +96,8 @@ mod tests_gate_rig;
 mod tests_host_before_connection;
 #[cfg(test)]
 mod tests_identifier_property;
+#[cfg(test)]
+mod tests_lifeline;
 #[cfg(test)]
 mod tests_live_run1;
 #[cfg(test)]

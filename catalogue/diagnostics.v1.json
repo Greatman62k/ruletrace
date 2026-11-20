@@ -20,6 +20,7 @@
   {"code": "RT-CLI-0004", "mnemonic": "CLI_ARGUMENT_INVALID", "severity": "Error", "meaning": "Invalid, repeated or unknown option or value (including time shape)", "exit": 2, "executable": "rt, ai"},
   {"code": "RT-CLI-0005", "mnemonic": "CLI_OUTPUT_WRITE_FAILED", "severity": "Error", "meaning": "Output could not be written; earlier file unchanged", "exit": 70, "executable": "rt, ai"},
   {"code": "RT-CLI-0006", "mnemonic": "INTERNAL_ERROR", "severity": "Error", "meaning": "Internal invariant violation", "exit": 70, "executable": "rt, ai"},
+  {"code": "RT-CLI-0007", "mnemonic": "CLI_LIFELINE_CLOSED", "severity": "Error", "meaning": "`--lifeline-stdin`: standard input reached end of file or a non-recoverable read error, so the parent is taken as gone and the command stops (UD-44, design §11.18.6)", "exit": 70, "executable": "rt, ai"},
   {"code": "RT-IR-0001", "mnemonic": "IR_SYNTAX_ERROR", "severity": "Error", "meaning": "Rule_IR is not valid RT-JSON", "exit": 2, "executable": "rt"},
   {"code": "RT-IR-0002", "mnemonic": "IR_UNKNOWN_FIELD", "severity": "Unsupported", "meaning": "Structural name not defined by the IR_Version", "exit": 2, "executable": "rt"},
   {"code": "RT-IR-0003", "mnemonic": "IR_VERSION_UNSUPPORTED", "severity": "Unsupported", "meaning": "`ir_version` not supported", "exit": 2, "executable": "rt"},

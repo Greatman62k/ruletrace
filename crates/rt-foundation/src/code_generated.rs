@@ -49,6 +49,8 @@ pub enum Code {
     CliOutputWriteFailed,
     /// `RT-CLI-0006`: Internal invariant violation
     InternalError,
+    /// `RT-CLI-0007`: `--lifeline-stdin`: standard input reached end of file or a non-recoverable read error, so the parent is taken as gone and the command stops (UD-44, design §11.18.6)
+    CliLifelineClosed,
     /// `RT-IR-0001`: Rule_IR is not valid RT-JSON
     IrSyntaxError,
     /// `RT-IR-0002`: Structural name not defined by the IR_Version
@@ -319,7 +321,7 @@ pub enum Code {
 
 impl Code {
     /// Every code, in catalogue order.
-    pub const ALL: [Code; 154] = [
+    pub const ALL: [Code; 155] = [
         Code::DiagnosticStateContradiction,
         Code::DiagnosticStateBothFlags,
         Code::LifecycleFlagContradiction,
@@ -341,6 +343,7 @@ impl Code {
         Code::CliArgumentInvalid,
         Code::CliOutputWriteFailed,
         Code::InternalError,
+        Code::CliLifelineClosed,
         Code::IrSyntaxError,
         Code::IrUnknownField,
         Code::IrVersionUnsupported,
@@ -501,6 +504,7 @@ impl Code {
             Self::CliArgumentInvalid => "RT-CLI-0004",
             Self::CliOutputWriteFailed => "RT-CLI-0005",
             Self::InternalError => "RT-CLI-0006",
+            Self::CliLifelineClosed => "RT-CLI-0007",
             Self::IrSyntaxError => "RT-IR-0001",
             Self::IrUnknownField => "RT-IR-0002",
             Self::IrVersionUnsupported => "RT-IR-0003",
@@ -662,6 +666,7 @@ impl Code {
             Self::CliArgumentInvalid => "CLI_ARGUMENT_INVALID",
             Self::CliOutputWriteFailed => "CLI_OUTPUT_WRITE_FAILED",
             Self::InternalError => "INTERNAL_ERROR",
+            Self::CliLifelineClosed => "CLI_LIFELINE_CLOSED",
             Self::IrSyntaxError => "IR_SYNTAX_ERROR",
             Self::IrUnknownField => "IR_UNKNOWN_FIELD",
             Self::IrVersionUnsupported => "IR_VERSION_UNSUPPORTED",
@@ -823,6 +828,7 @@ impl Code {
             Self::CliArgumentInvalid => Severity::Error,
             Self::CliOutputWriteFailed => Severity::Error,
             Self::InternalError => Severity::Error,
+            Self::CliLifelineClosed => Severity::Error,
             Self::IrSyntaxError => Severity::Error,
             Self::IrUnknownField => Severity::Unsupported,
             Self::IrVersionUnsupported => Severity::Unsupported,
@@ -984,6 +990,7 @@ impl Code {
             Self::CliArgumentInvalid => ExitCode::InvalidInput,
             Self::CliOutputWriteFailed => ExitCode::Internal,
             Self::InternalError => ExitCode::Internal,
+            Self::CliLifelineClosed => ExitCode::Internal,
             Self::IrSyntaxError => ExitCode::InvalidInput,
             Self::IrUnknownField => ExitCode::InvalidInput,
             Self::IrVersionUnsupported => ExitCode::InvalidInput,
@@ -1145,6 +1152,7 @@ impl Code {
             "RT-CLI-0004" => Some(Self::CliArgumentInvalid),
             "RT-CLI-0005" => Some(Self::CliOutputWriteFailed),
             "RT-CLI-0006" => Some(Self::InternalError),
+            "RT-CLI-0007" => Some(Self::CliLifelineClosed),
             "RT-IR-0001" => Some(Self::IrSyntaxError),
             "RT-IR-0002" => Some(Self::IrUnknownField),
             "RT-IR-0003" => Some(Self::IrVersionUnsupported),
@@ -1307,6 +1315,7 @@ impl Code {
             "CLI_ARGUMENT_INVALID" => Some(Self::CliArgumentInvalid),
             "CLI_OUTPUT_WRITE_FAILED" => Some(Self::CliOutputWriteFailed),
             "INTERNAL_ERROR" => Some(Self::InternalError),
+            "CLI_LIFELINE_CLOSED" => Some(Self::CliLifelineClosed),
             "IR_SYNTAX_ERROR" => Some(Self::IrSyntaxError),
             "IR_UNKNOWN_FIELD" => Some(Self::IrUnknownField),
             "IR_VERSION_UNSUPPORTED" => Some(Self::IrVersionUnsupported),
