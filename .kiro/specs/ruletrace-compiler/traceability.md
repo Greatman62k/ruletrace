@@ -1265,3 +1265,7 @@ Retained findings: Part 1 F2 (unreachable error-order difference) and F4 (drift 
 | 31.2 | Prepare and Present groups over the shared owners; RN-38 tests in both apps' `tests_diagnostics.rs` | Local evidence |
 
 9.21 Observable amended by the user (option A, 2026-11-20): `mapping.rs` and `classify.rs` stay identical in both apps under the drift guard; no no-copy test. Windows and macOS CI outstanding.
+
+### Task 9.21 closure (2026-11-20)
+
+Closed by the user's decision (option A) on its locally delivered, independently reviewed scope. The section above is kept as written. Records reviews: `2026-11-20-review-rec921-c61268e.md`, `2026-11-20-review-cor921.md` (both APPROVED). Retained findings: Part 1 F2, F4; Part 2 F2, F3; p2f1 N1, N3. Observable amended (identical `mapping.rs` and `classify.rs` under the drift guard). Requirements 15.6, 24.12 (as amended), 31.2: local evidence as in the section above; Windows and macOS CI outstanding.
