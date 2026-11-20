@@ -727,6 +727,22 @@ external sha2 allowed-in rt-hash
         );
     }
 
+    // Req 15.5 on the committed list: the class rule must stay, and the
+    // engine's own line must name no application crate.
+    #[test]
+    fn committed_list_keeps_engine_independent_of_applications() {
+        let real = edges::parse(include_str!("../../../tools/allowed-edges.v1")).unwrap();
+        assert!(real.forbid_class.contains(&(Class::Core, Class::App)));
+        let engine = real.crates.get("rt-engine").map(|e| e.deps.clone());
+        let apps: Vec<&String> = real.of_class(Class::App).collect();
+        assert_eq!(
+            apps,
+            vec![&"bracket-check".to_string(), &"prize-check".to_string()]
+        );
+        let engine = engine.unwrap_or_default();
+        assert!(apps.iter().all(|a| !engine.contains(a.as_str())));
+    }
+
     #[test]
     fn ai_crate_depending_on_review_is_forbidden_by_name() {
         let (g, _) = run(
