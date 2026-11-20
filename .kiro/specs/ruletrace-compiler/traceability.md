@@ -1269,3 +1269,22 @@ Retained findings: Part 1 F2 (unreachable error-order difference) and F4 (drift 
 ### Task 9.21 closure (2026-11-20)
 
 Closed by the user's decision (option A) on its locally delivered, independently reviewed scope. The section above is kept as written. Records reviews: `2026-11-20-review-rec921-c61268e.md`, `2026-11-20-review-cor921.md` (both APPROVED). Retained findings: Part 1 F2, F4; Part 2 F2, F3; p2f1 N1, N3. Observable amended (identical `mapping.rs` and `classify.rs` under the drift guard). Requirements 15.6, 24.12 (as amended), 31.2: local evidence as in the section above; Windows and macOS CI outstanding.
+
+### Task 9.20 reduced checkpoint (UD-43, 2026-11-20)
+
+Record: `tools/decisions/UD-43.md`. Evidence: `docs/checkpoints/2026-11-20-phase7-277203c.md` (local Linux run at `277203c`). 9.20 is `[-]`. No requirement, design or task text is amended.
+
+| Exit criterion | Status | Evidence |
+| --- | --- | --- |
+| E1 full gate set | Met locally | fmt, clippy, 2456 passed / 0 failed / 0 ignored, nine xtask checks, cargo deny |
+| E2 `check-app-layers`, `check-executables` | Met locally | xtask output in the evidence file |
+| E3 `demo-offline` with extended runbook | Partly met | three tests pass in a network namespace; s08 (9.18) does not exist |
+| E4 Properties 42, 43, 44, 46, 47 (45 under Rank_Reference) | Not met | 42 (9.10) and 43 (9.11) delivered with accepted limits; 44 (9.9), 46 (9.13), 47 (9.14) deferred; 45 (9.15) deferred with 9.3 |
+| E5 scan negative fixtures | Met locally | 9.8 |
+| E6 isolation test | Met locally | 9.17 |
+| E7 process test | Partly met | 9.17 with its limits; Req 36.22 with the Laboratory |
+| E8 byte identity with `ruletrace evaluate` | Met locally for covered cases | Property 42 with its accepted limits |
+| E9 all tests pass | Met locally | as E1 |
+| Three platforms, CI | Not demonstrated | M3 not pushed; no CI result; golden three-platform byte identity not shown |
+
+Requirements whose status is unchanged by UD-43: those of Properties 44 to 47 (31.6, 31.7, 31.8, 31.9, 31.11, 31.13, 32.1, 32.3, 32.5, 32.6, 13.12, 14.12, 14.13, 22.22), Req 32.4, Req 32.7 threshold fixture, Req 36.22.
