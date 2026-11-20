@@ -966,18 +966,28 @@ fn app_report_golden_every_case_has_one_test_function() {
 
 #[test]
 fn bless_guard_refuses_ci_and_relative_paths_and_allows_only_absolute_outside_ci() {
+    // `/tmp/x` is not absolute on Windows (no drive), so each platform uses
+    // one of its own absolute paths (CI run 44716508559, test (windows-2022)).
+    #[cfg(windows)]
+    const ABSOLUTE: &str = r"C:\x";
+    #[cfg(not(windows))]
+    const ABSOLUTE: &str = "/tmp/x";
     assert_eq!(bless_target(None, None), Ok(None));
     assert_eq!(bless_target(None, Some("true")), Ok(None));
     assert_eq!(
-        bless_target(Some("/tmp/x"), None),
-        Ok(Some(PathBuf::from("/tmp/x")))
+        bless_target(Some(ABSOLUTE), None),
+        Ok(Some(PathBuf::from(ABSOLUTE)))
     );
-    assert!(bless_target(Some("/tmp/x"), Some("true"))
+    assert!(bless_target(Some(ABSOLUTE), Some("true"))
         .unwrap_err()
         .contains("refused in CI"));
-    assert!(bless_target(Some("/tmp/x"), Some(""))
+    assert!(bless_target(Some(ABSOLUTE), Some(""))
         .unwrap_err()
         .contains("refused in CI"));
+    #[cfg(windows)]
+    assert!(bless_target(Some("/tmp/x"), None)
+        .unwrap_err()
+        .contains("absolute path"));
     assert!(bless_target(Some("rel/dir"), None)
         .unwrap_err()
         .contains("absolute path"));
