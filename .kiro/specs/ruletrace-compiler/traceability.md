@@ -1249,7 +1249,7 @@ Closed by the user's decision on its locally delivered, independently reviewed s
 
 Outstanding outside 9.5: `RT-APP` executable column (13.3); request with no Target (13.5).
 
-### Task 9.21 RN-52 review status and findings (2026-11-19)
+### Task 9.21 RN-52 review status and findings (2026-11-20)
 
 | Part | Commits | Reviews | Status |
 | --- | --- | --- | --- |
@@ -1264,4 +1264,4 @@ Retained findings: Part 1 F2 (unreachable error-order difference) and F4 (drift 
 | 24.12 (as amended by UD-41) | `tools/allowed-edges.v1` (`rt-data -> rt-compiled`, `forbid-transitive rt-data -> ...`), `check-graph`, `rt-data/src/tabular/tests_map.rs` | Local evidence; transitive `rt-ir`, `rt-hash`, `rt-json` not named (Part 2 F3) |
 | 31.2 | Prepare and Present groups over the shared owners; RN-38 tests in both apps' `tests_diagnostics.rs` | Local evidence |
 
-9.21 Observable amended by the user (option A, 2026-11-19): `mapping.rs` and `classify.rs` stay identical in both apps under the drift guard; no no-copy test. Windows and macOS CI outstanding.
+9.21 Observable amended by the user (option A, 2026-11-20): `mapping.rs` and `classify.rs` stay identical in both apps under the drift guard; no no-copy test. Windows and macOS CI outstanding.
