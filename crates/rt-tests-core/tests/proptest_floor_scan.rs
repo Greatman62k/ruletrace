@@ -60,11 +60,16 @@ fn workspace_sources() -> Vec<Source> {
         .map(|p| Source {
             path: p
                 .strip_prefix(&root)
-                .map(|r| r.to_string_lossy().replace("../", ""))
+                .map(|r| list_path(&r.to_string_lossy()))
                 .unwrap_or_default(),
             text: fs::read_to_string(&p).expect("readable source"),
         })
         .collect()
+}
+
+/// The form of a workspace path that the list and the crate rule use.
+fn list_path(relative: &str) -> String {
+    relative.replace('\\', "/").replace("../", "")
 }
 
 fn is_comment(line: &str) -> bool {
@@ -326,4 +331,22 @@ fn a_source_file_whose_crate_lacks_the_module_is_reported() {
         scan(&[fixture("crates/x/src/t.rs", text), bare_lib], ""),
         ["crates/x/src/t.rs: property_tests! without the proptest_floor module"]
     );
+}
+
+// Regression: on Windows the relative paths of the workspace scan have `\`
+// separators, so neither the crate rule nor the list matched (CI run
+// 44716508559, test (windows-2022)).
+#[test]
+fn windows_separators_match_the_crate_rule_and_the_list() {
+    let text = "property_tests! {\n    #![below_floor_config(ProptestConfig::with_cases(64))]\n    fn a(x in 0u8..1) { }\n}\n";
+    let list = "below crates/x/src/t.rs a cases 64\n";
+    let sources = [
+        fixture(&list_path("crates\\x\\src\\t.rs"), text),
+        fixture(
+            &list_path("crates\\x\\src\\lib.rs"),
+            &format!("#[cfg(test)]\n{MODULE}"),
+        ),
+    ];
+    assert_eq!(scan(&sources, list), Vec::<String>::new());
+    assert_eq!(list_path("crates\\x\\src\\t.rs"), "crates/x/src/t.rs");
 }
