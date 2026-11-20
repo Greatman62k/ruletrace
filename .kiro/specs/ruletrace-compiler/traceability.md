@@ -1345,3 +1345,79 @@ Decision record: `tools/decisions/UD-44.md`. No requirement text changed.
 | --- | --- | --- |
 | Req 37.5 to 37.7 (option A of §11.18.5), browser item 2 | `docs/security/2026-11-20-lt6-browser-evidence.md` and `docs/security/lt6-browser-2026-11-20/` | Passed on Firefox and Google Chrome, Linux; requirement wording not yet amended; LT-6 OPEN |
 | Design V-1 and V-4 (Req 37.17 containment; Req 27.8, files unchanged after a failed `ruletrace-ai` run; Req 26.30, the single all-or-nothing review commit) | `crates/rt-cli/tests/kill_review.rs`, `crates/rt-ai-tool/tests/kill_store.rs` (`ce53296`), `ci` run `44772326047`, `docs/security/2026-11-20-v1-v4-kill-evidence.md` | Statistical evidence on three platforms; two Windows refusals by design (§3.8.3 (h)); LT-7 OPEN on V-2 and review acceptance |
+
+### UD-46 amendments (2026-11-20)
+
+Record: `tools/decisions/UD-46.md` (LT-6 option A, approved wording; draft in `tools/decisions/UD-45.md` section 4 with review findings M2, M4, M6 of `docs/reviews/2026-11-20-review-ud45b-9736c58.md` folded in). Evidence: `docs/security/2026-11-20-lt6-browser-evidence.md`, prototype `spikes/lt6-basic-auth`. Unchanged: 37.23 (the run instructions of 13.7 must name the user name `lab` and the browser prompt).
+
+#### Definition Laboratory_Session
+
+Old: - **Laboratory_Session**: The period between the exchange of a Launch_Secret for a session cookie and the invalidation of that cookie, with its own temporary directory and its own CSRF token (Requirement 37). (Amended by UD-38, 2026-11-18.)
+
+New: - **Laboratory_Session**: The period from the first request that presents the valid Launch_Secret as HTTP Basic credentials until the session is invalidated under Requirement 37 criterion 8 or 17, with its own temporary directory and its own CSRF token (Requirement 37). (Amended by UD-38, 2026-11-18; UD-46, 2026-11-20.)
+
+#### Definition Launch_Secret
+
+Old: - **Launch_Secret**: A random value of at least 128 bits that ruletrace-lab generates at each start and gives to the user only through the terminal, and that the user exchanges once for a session cookie (Requirement 37 criteria 5 and 6). (Amended by UD-38, 2026-11-18.)
+
+New: - **Launch_Secret**: A random value of at least 128 bits that ruletrace-lab generates at each start and gives to the user only through the terminal, and that the browser presents as the password of HTTP Basic authentication for one Laboratory_Session (Requirement 37 criteria 5 to 8). (Amended by UD-38, 2026-11-18; UD-46, 2026-11-20.)
+
+#### 37.5
+
+Old: 5. THE ruletrace-lab executable SHALL generate a Launch_Secret of at least 128 bits from the operating-system source of cryptographic randomness at each start, SHALL print it once to the terminal (standard error or standard output) of the process that started ruletrace-lab, SHALL place it in no URL, query string, fragment, command-line argument, referrer, response body, file, or log, and SHALL accept it once, in the body of a POST request to the exchange endpoint, in exchange for a session cookie. The user SHALL enter the Launch_Secret by copying it from that terminal and pasting it into a form field on the Laboratory start page, which the executable serves without a session and which carries no secret.
+
+New: 5. THE ruletrace-lab executable SHALL generate a Launch_Secret of at least 128 bits from the operating-system source of cryptographic randomness at each start, SHALL print it once, together with the fixed user name `lab`, to the terminal (standard error or standard output) of the process that started ruletrace-lab, and SHALL place it in no URL, query string, fragment, command-line argument, referrer, response body, file, or log. THE ruletrace-lab executable SHALL accept the Launch_Secret only as the password of HTTP Basic authentication (RFC 7617) with the user name `lab`, compared in constant time. The user SHALL enter it in the browser's own credential prompt by copying it from that terminal. (Amended by UD-46, 2026-11-20.)
+
+#### 37.6
+
+Old: 6. WHEN a valid Launch_Secret is exchanged, THE ruletrace-lab executable SHALL consume it, SHALL create a Laboratory_Session with a session identifier of at least 128 bits from the same source, and SHALL set the session identifier in a cookie with the attributes HttpOnly, SameSite=Strict, and Path=/, and with no Domain attribute. The cookie SHALL NOT carry the Secure attribute, because the listener serves plain http on loopback and a browser would not return a Secure cookie. IF the Launch_Secret is presented a second time or is invalid, THEN THE ruletrace-lab executable SHALL refuse with HTTP status 401 and SHALL create no session. THE ruletrace-lab executable SHALL hold at most one Laboratory_Session at a time. Several browser tabs that carry the same valid session cookie belong to that one Laboratory_Session and SHALL be served, and THE ruletrace-lab executable SHALL create no second, independent Laboratory_Session while one exists. (Clarified at the requirements checkpoint, 2026-11-18.)
+
+New: 6. THE ruletrace-lab executable SHALL set no cookie. The first request that presents valid credentials starts the Laboratory_Session. THE ruletrace-lab executable SHALL hold at most one Laboratory_Session at a time; browser tabs that present the same valid credentials belong to that Laboratory_Session. The Launch_Secret is valid for that Laboratory_Session only. (Amended by UD-46, 2026-11-20.)
+
+#### 37.7
+
+Old: 7. IF a request other than the Launch_Secret exchange and the request for the start page of criterion 5 carries no valid session cookie, THEN THE ruletrace-lab executable SHALL refuse the request with HTTP status 401, SHALL start no subprocess, SHALL read no workspace file, and SHALL write no file.
+
+New: 7. IF a request that passes the Host check of criterion 3 and the Origin check of criterion 4 carries no valid HTTP Basic credentials for the current Launch_Secret, or carries more than one Authorization header, THEN THE ruletrace-lab executable SHALL refuse it with HTTP status 401 and a `WWW-Authenticate: Basic` challenge, SHALL start no subprocess, SHALL read no workspace file, and SHALL write no file. The checks are made in this order: Host (criterion 3), Origin (criterion 4), credentials, CSRF token (criterion 9). (Amended by UD-46, 2026-11-20.)
+
+#### 37.8
+
+Old: 8. WHEN a Laboratory_Session has had no request for 30 minutes or the session is ended by the user, THE ruletrace-lab executable SHALL invalidate the session identifier so that every later request that carries it receives HTTP status 401, and SHALL accept no Launch_Secret until it is restarted; a restart generates a new Launch_Secret under criterion 5, and no Launch_Secret is used for more than one Laboratory_Session. A test with a simulated timer SHALL verify the 30-minute boundary (a request at 29 minutes 59 seconds succeeds, a request at 30 minutes 0 seconds receives 401). (Amended by UD-39, 2026-11-18.)
+
+New: 8. WHEN a Laboratory_Session has had no authenticated request for 30 minutes, or the session is ended by the user, THE ruletrace-lab executable SHALL invalidate the Launch_Secret, so that every later request that presents it receives HTTP status 401, and SHALL accept no credentials until it is restarted; a restart generates a new Launch_Secret under criterion 5, and no Launch_Secret is used for more than one Laboratory_Session. A refused request does not reset the 30-minute limit. A test with a simulated timer SHALL verify the 30-minute boundary (a request at 29 minutes 59 seconds succeeds, a request at 30 minutes 0 seconds receives 401). (Amended by UD-39, 2026-11-18; UD-46, 2026-11-20.)
+
+#### 37.9
+
+Old: 9. IF a request that can change state (any request with the method POST, PUT, PATCH, or DELETE, and any request that starts a subprocess or writes a file) lacks a CSRF token bound to its Laboratory_Session, carries a token of another session, or carries the token in the URL, THEN THE ruletrace-lab executable SHALL refuse the request with HTTP status 403, SHALL start no subprocess, and SHALL write no file. THE ruletrace-lab executable SHALL accept a CSRF token only in a request header or in the request body. THE ruletrace-lab executable SHALL start no subprocess and write no file in response to a request with the method GET, HEAD, or OPTIONS. The Launch_Secret exchange of criterion 5 is exempt from the CSRF token because no session exists yet, and remains subject to criteria 3 and 4.
+
+New: 9. IF a request that can change state (any request with the method POST, PUT, PATCH, or DELETE, and any request that starts a subprocess or writes a file) lacks a CSRF token bound to its Laboratory_Session, carries a token of another session, or carries the token in the URL, THEN THE ruletrace-lab executable SHALL refuse the request with HTTP status 403, SHALL start no subprocess, and SHALL write no file. THE ruletrace-lab executable SHALL accept a CSRF token only in a request header or in the request body. THE ruletrace-lab executable SHALL start no subprocess and write no file in response to a request with the method GET, HEAD, or OPTIONS. THE ruletrace-lab executable SHALL issue the CSRF token of a Laboratory_Session only in pages served to authenticated requests, first with the page that answers the request that starts the session. (Amended by UD-46, 2026-11-20.)
+
+#### 37.18
+
+Old: 18. THE ruletrace-lab executable SHALL create the temporary directory of a Laboratory_Session with an unpredictable name of at least 128 bits and with permissions that allow only the owning user (mode 0700 on a POSIX system), SHALL write into it no credential, Launch_Secret, session identifier, or CSRF token, and WHEN it starts, SHALL delete a temporary directory of an earlier Laboratory_Session that a crash left behind and that carries the marker of the Laboratory, and SHALL delete no other directory.
+
+New: 18. THE ruletrace-lab executable SHALL create the temporary directory of a Laboratory_Session with an unpredictable name of at least 128 bits and with permissions that allow only the owning user (mode 0700 on a POSIX system), SHALL write into it no credential, Launch_Secret, or CSRF token, and WHEN it starts, SHALL delete a temporary directory of an earlier Laboratory_Session that a crash left behind and that carries the marker of the Laboratory, and SHALL delete no other directory. (Amended by UD-46, 2026-11-20.)
+
+#### 37.19
+
+Old: 19. IF an approval or rejection request lacks a valid session cookie, lacks a valid CSRF token, fails the Host or Origin check, lacks a Reviewer identity, or lacks the confirmation of the exact Rule identifier, Revision_Number, and Rule_Content_Hash (Requirement 36 criterion 6), THEN THE ruletrace-lab executable SHALL refuse the request, SHALL start no ruletrace review subprocess, and SHALL leave the Approval_Ledger byte-identical, as verified by a test that omits each of these elements in turn.
+
+New: 19. IF an approval or rejection request lacks valid HTTP Basic credentials for the current Launch_Secret, lacks a valid CSRF token, fails the Host or Origin check, lacks a Reviewer identity, or lacks the confirmation of the exact Rule identifier, Revision_Number, and Rule_Content_Hash (Requirement 36 criterion 6), THEN THE ruletrace-lab executable SHALL refuse the request, SHALL start no ruletrace review subprocess, and SHALL leave the Approval_Ledger byte-identical, as verified by a test that omits each of these elements in turn. (Amended by UD-46, 2026-11-20.)
+
+#### 37.22
+
+Old: 22. THE ruletrace-lab executable SHALL log for each request only the method, the path without the query string, the status, and for each subprocess the executable name, the argument names without values that originate from a document, and the exit code, and SHALL log no document text, Proposal text, credential, Launch_Secret, session identifier, or CSRF token.
+
+New: 22. THE ruletrace-lab executable SHALL log for each request only the method, the path without the query string, the status, and for each subprocess the executable name, the argument names without values that originate from a document, and the exit code, and SHALL log no document text, Proposal text, credential, Launch_Secret, Authorization header value, or CSRF token. (Amended by UD-46, 2026-11-20.)
+
+#### 37.24
+
+Old: 24. IF a request carries a Cookie header with more than one session cookie, or a session identifier that does not match the single current Laboratory_Session, THEN THE ruletrace-lab executable SHALL refuse the request with HTTP status 401, SHALL start no subprocess, and SHALL write no file.
+
+New: 24. THE ruletrace-lab executable SHALL ignore every Cookie header for authentication, so that a request that carries a cookie but no valid HTTP Basic credentials is refused under criterion 7. (Amended by UD-46, 2026-11-20.)
+
+#### 37.25
+
+Old: 25. THE ruletrace-lab executable SHALL run at most one state-changing request (criterion 9) of a Laboratory_Session at a time, whichever tab sent it, SHALL refuse a state-changing request that arrives while another runs, or that was prepared from a state of the session older than the current one, without starting a subprocess, and WHEN it starts `ruletrace review approve` or `ruletrace review reject`, SHALL pass the Rule identifier, Revision_Number, and Rule_Content_Hash of the confirmation of Requirement 36 criterion 6, so that `ruletrace review` rechecks the exact revision and hash for every request regardless of the tab. THE RuleTrace SHALL include tests of two tabs that use the same session, of concurrent state-changing requests, of a stale Rule_Content_Hash, of a second decision on an already decided revision, and of an attempt to establish a second independent Laboratory_Session, each asserting the HTTP status, the Diagnostic, and the byte state of the Approval_Ledger. (Added at the requirements checkpoint, 2026-11-18.)
+
+New: 25. THE ruletrace-lab executable SHALL run at most one state-changing request (criterion 9) of a Laboratory_Session at a time, whichever tab sent it, SHALL refuse a state-changing request that arrives while another runs, or that was prepared from a state of the session older than the current one, without starting a subprocess, and WHEN it starts `ruletrace review approve` or `ruletrace review reject`, SHALL pass the Rule identifier, Revision_Number, and Rule_Content_Hash of the confirmation of Requirement 36 criterion 6, so that `ruletrace review` rechecks the exact revision and hash for every request regardless of the tab. THE RuleTrace SHALL include tests of two tabs that use the same session, of concurrent state-changing requests, of a stale Rule_Content_Hash, of a second decision on an already decided revision, of requests that present the valid credentials from a second browser tab, and of requests that present credentials of an earlier Launch_Secret, each asserting the HTTP status, the Diagnostic, and the byte state of the Approval_Ledger. (Added at the requirements checkpoint, 2026-11-18; amended by UD-46, 2026-11-20.)

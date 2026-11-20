@@ -3180,7 +3180,7 @@ Status values: Resolved-by-user, Resolved-at-requirements, Resolved-in-design (r
 | RN-40 | 36.6, 5.11 | 36.6 names four arguments (Reviewer, rule, revision, hash); `review approve` also requires `--time`, stored verbatim. The source of the time is unspecified | User decision. Design (§11.13): an editable time field pre-filled from the Laboratory's clock, labelled as not verified |
 | RN-41 | 36.12 | "Exactly as `ruletrace review list` reports" needs a machine-readable listing for the approval form | §11.15 adds `review list --format json` as an option (RN-24 rule) |
 | RN-42 | 31.2, 31.5, 36.18 | 31.2 has the Application_Layer call the engine; 36.18 has the Laboratory obtain every Outcome from `ruletrace evaluate` | Design §11.3: Prepare, Present and Evaluate groups; the Laboratory never calls Evaluate. Confirm |
-| RN-43 | 37.6 (checkpoint), 37.25 | Several tabs with one cookie are one session; state changes are serialized; stale forms are refused | Added as clarifications at the checkpoint (traceability.md). No further change |
+| RN-43 | 37.6 (checkpoint), 37.25 | Several tabs with one cookie are one session; state changes are serialized; stale forms are refused | Added as clarifications at the checkpoint (traceability.md). No further change Status 2026-11-20: UD-46 replaces the cookie by HTTP Basic credentials; tabs that present the same credentials are one session |
 | RN-44 | 24.13 | 24.13 limits the edges of `ruletrace-lab` to the two Application_Layer crates, the shared Diagnostic, Location and Exact_Number crates, and one HTTP server library. §11.3 lists seven further direct edges: `rt-hash` (Hand_Off_Artifact hashes), `rt-json` (parsing results, Validation_Result and `review list --format json`), `rt-data` (canonical serialization of mapped inputs), `rt-compiled` (reading the Compiled_Rulebook schema for mapping), `rt-trace` (Outcome and trace types of the parsed results), `rt-explain` (report rendering and the results-file parser), `rt-srcmodel` (Source_Model types for display). Each is also reachable through the Workflow_Modules. Under LT-4 option A no HTTP server library is used | User decision: widen 24.13 to these crates (all core, none with I/O, ledger, review, validation or AI code), or reduce the edges by routing them through Workflow_Module re-exports Status 2026-11-18: **Decided (UD-39):** 24.13 amended with the enumerated edges |
 | RN-45 | 37.25, 37.17 | 37.25 serializes "at most one state-changing request"; `POST /session/end` is state-changing (37.9) and 37.17 requires it to kill running subprocesses, so during a step both cannot hold | User decision: exempt the session end from 37.25, and state that a Launch_Secret exchange during a step gets 401 under 37.6, not 409 under 37.25 (design §11.5) |
 | RN-46 | 36.2, 37.14, 37.20, 29.1 | Under M5 live proposal generation is not started by the Laboratory, so 36.2 is not met for live runs and the 37.20 canary test cannot run "a complete proposal workflow" through the Laboratory. Under M2 a live run with several Provider_Requests can exceed 300 s (29.1 allows up to 300 s per request) | Decided together with LT-1 Status 2026-11-18: Moot (UD-39 A): 36.2 and 37.20 amended (live generation external, import integrated) |
@@ -3297,6 +3297,8 @@ sequenceDiagram
 
 The Laboratory is an orchestrator and a viewer. Every authoritative fact on a page comes from a file or an exit code that `ruletrace` or `ruletrace-ai` produced (Req 36.2, 36.5, 36.12).
 
+**Amendment note, 2026-11-20 (UD-46; the text above is unchanged).** Under LT-6 option A (Req 37.5 to 37.7 as amended) the first two diagram lines are replaced: the browser sends every request with `Authorization: Basic` (user name `lab`, password the Launch_Secret, entered in the browser's own prompt), and no `POST /session` and no `Set-Cookie` exist.
+
 ### 11.3 Crates, edges and Workflow_Module boundaries
 
 New package `rt-lab` with one binary target `ruletrace-lab` (the pattern of `rt-cli` / `ruletrace`). New class word `lab` in `tools/allowed-edges.v1` and in `Class` of `crates/rt-xtask/src/edges.rs`.
@@ -3361,6 +3363,8 @@ Routes (all others 404):
 | POST `/session/end` | required | required | End the session (Req 37.17) |
 | OPTIONS any | | | 405 (Req 37.10) |
 
+**Amendment note, 2026-11-20 (UD-46; the text above is unchanged).** The start page that serves the secret form and the exchange endpoint are removed: there is no exchange (Req 37.5, 37.6 as amended). Every request carries HTTP Basic credentials; the checks run in the order Host, Origin, credentials, CSRF token (Req 37.7 as amended).
+
 ### 11.5 Session, CSRF, tabs and concurrency (Req 37.5 to 37.9, 37.24, 37.25)
 
 - **Launch_Secret.** At least 128 bits from the OS random source (`getrandom`, already in `Cargo.lock` through `ring`; or a stable `std` API if the pinned toolchain has one, checked at L2), printed once to standard error with the address to open, never stored. Compared in constant time.
@@ -3373,6 +3377,8 @@ Routes (all others 404):
 - **Approval recheck.** Independent of the tab: the confirmation must equal the rule, revision and Rule_Content_Hash that the Laboratory displayed in that form (Req 36.6), and `ruletrace review approve` recomputes the hash under the ledger lock (RT-APR-0203 for a stale hash, RT-APR-0204 for a second decision). The Laboratory displays the refusal Diagnostic as returned.
 
 Tests (checkpoint clarification, task L4): two tabs with one cookie both see the same session; ending the session while a step runs kills and reaps the child and returns 303 (not 409); two concurrent POSTs give one start and one 409; a form with an old state version gives 409; an approval with a hash that changed after display gives RT-APR-0203 and an unchanged ledger; an approval of an already decided revision from a second tab gives RT-APR-0204; a second Launch_Secret exchange gives 401; a cookie header with two session cookies gives 401.
+
+**Amendment note, 2026-11-20 (UD-46; the text above is unchanged).** Bullets "Launch_Secret" (exchange), "One session", "After the session ends" and "Cookie" are superseded by Req 37.5 to 37.8 and 37.24 as amended: no cookie and no session identifier; the Launch_Secret, presented by HTTP Basic authentication on each request, is valid for one Laboratory_Session and is invalidated when it ends (user end, or 30 minutes without an authenticated request; a refused request does not reset the limit); every Cookie header is ignored for authentication; more than one Authorization header is 401. The CSRF token is issued only in pages served to authenticated requests, first with the page that answers the request that starts the session (Req 37.9 as amended). Test changes: "two tabs with one cookie" becomes two tabs presenting the same credentials; the second-session test becomes credentials of an earlier Launch_Secret (Req 37.25 as amended); the cookie-parser property test of §11.16 becomes an Authorization-header parser property test; plus a test with two Authorization headers, one valid (401), and tests of the full Origin check of Req 37.4.
 
 ### 11.6 Subprocess invocation (Req 36.3, 37.14)
 
@@ -3552,7 +3558,7 @@ The criteria are **not** rewritten here. RN-34 to RN-38 state each mismatch and 
 | LT-1, LT-2, LT-3 | Credential mechanism, Req 28 change, variable-name source | **Decided (UD-39 A):** user-run live step and import; Req 28 unchanged; credential-name registry (§11.18.1) |
 | LT-4 | HTTP server | **Decided:** standard library, server-rendered forms (§11.4) |
 | LT-5 | After a session ends | **Decided:** restart required; no Launch_Secret reused (Req 37.8) |
-| LT-6 | Cross-port cookie exposure | **OPEN.** Deferral rejected by the user. Candidate mitigation in §11.18.5; needs an independent reviewer's acceptance, browser verification and a user decision on Req 37.5 and 37.6 |
+| LT-6 | Cross-port cookie exposure | **OPEN.** Deferral rejected by the user. Candidate mitigation in §11.18.5; needs an independent reviewer's acceptance, browser verification and a user decision on Req 37.5 and 37.6. 2026-11-20: browser verification done, Req 37 amended (UD-46); the reviewer's acceptance remains |
 | LT-7 | Child processes after a Laboratory crash | **OPEN.** Containment designed in §11.18.6; must be demonstrated by crash tests on each platform before it is claimed |
 | LT-8 | Upload limits | **Decided:** 16 MiB per file, 64 MiB per session, streamed enforcement (Req 37.26) |
 | LT-9 | Connection limits | **Decided:** 16 connections, 4 concurrent requests, finite timeouts, 503 on overload (Req 37.27, §11.18.4) |
@@ -3629,6 +3635,8 @@ Proposed selection, for review: option A, with the session identifier dropped an
 If A fails item 2 on a supported browser, B is designed in the same way. Until then LT-6 stays open and no Laboratory code starts.
 
 **Amendment note, 2026-11-20 (UD-45; the text above is unchanged).** The check order of option A is decided: Host; then, for a state-changing request, Origin; then the Basic credentials; then, for a state-changing request, the CSRF token. The amendment of Req 37.5 to 37.7 for option A is drafted in UD-45 section 4 and awaits the user's approval of the wording. LT-6 stays OPEN (browser protocol, wording, review).
+
+**Amendment note, 2026-11-20 (UD-46; the text above is unchanged).** Option A is applied to the requirements (UD-46: definitions, Req 37 criteria 5 to 9, 18, 19, 22, 24, 25). Evidence items: 1, server-side tests, shown by the prototype `spikes/lt6-basic-auth` on three platforms; 2, browser verification, passed on Firefox 153.5.1esr and Google Chrome 158.0.8127.36 on Linux (`docs/security/2026-11-20-lt6-browser-evidence.md`); 4, the user decision, taken. Item 3, the independent review of the threat-model update and the evidence, remains; LT-6 stays OPEN until then.
 
 #### 11.18.6 LT-7: process containment (OPEN)
 
