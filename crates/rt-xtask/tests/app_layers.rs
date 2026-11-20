@@ -8,7 +8,7 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
-use rt_xtask::{app_layers, executables, scan};
+use rt_xtask::{app_layers, edges, executables, graph, scan};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -137,4 +137,27 @@ fn without_a_committed_rulebook_the_check_refuses_to_run() {
     fs::remove_dir_all(repo.0.join("tests")).unwrap();
     let message = app_layers::run_sources(&repo.0).unwrap_err();
     assert!(message.starts_with("[app-names]"), "{message}");
+}
+
+// Req 15.5 on the real manifests: no core crate, the engine included, declares
+// a dependency of any kind on an application crate.
+#[test]
+fn no_core_manifest_depends_on_an_application_crate() {
+    let root = repo_root();
+    let md = rt_xtask::metadata::parse_metadata(&cargo_metadata(&root)).unwrap();
+    let list = scan::load_edges(&root).unwrap();
+    let apps = ["bracket-check", "prize-check"];
+    assert!(md.members.contains_key("rt-engine"));
+    let offending: Vec<String> = md
+        .members
+        .iter()
+        .filter(|(name, _)| list.crates.get(*name).map(|e| e.class) == Some(edges::Class::Core))
+        .flat_map(|(name, deps)| {
+            deps.iter()
+                .filter(|d| apps.contains(&d.name.as_str()))
+                .map(move |d| format!("{name} -> {}", d.name))
+        })
+        .collect();
+    assert_eq!(offending, Vec::<String>::new());
+    assert_eq!(graph::check_graph(&list, &md), vec![]);
 }
