@@ -1288,3 +1288,16 @@ Record: `tools/decisions/UD-43.md`. Evidence: `docs/checkpoints/2026-11-20-phase
 | Three platforms, CI | Not demonstrated | M3 not pushed; no CI result; golden three-platform byte identity not shown |
 
 UD-43 changes the status of no requirement. The requirements that Properties 44 to 47 validate (design "Validates" lines: 31.6, 31.7, 31.8, 31.9, 31.11, 31.13, 32.1, 32.3, 32.5, 32.6, 13.12, 14.12, 14.13, 22.22) get no property evidence from this checkpoint; some have partial evidence from other tasks (for example 31.11 through 9.17 under E7). Req 32.4, the Req 32.7 threshold fixture and Req 36.22 stay outstanding. The requirements of the deferred tasks 9.12 and 9.19 keep their deferral.
+
+### M2 closure: tasks 10.6, 10.7, 10.15, 10.9 (2026-11-20)
+
+Closed by the user's decision. Evidence commit `5644e52` (branch `main`, ancestor of `m3`).
+
+| Task | Reviews | CI and local evidence | Status |
+| --- | --- | --- | --- |
+| 10.6 | waves 6, 7 (APPROVED) | run `43896108442` attempt 5, 23/23 | `[x]` |
+| 10.7 | wave 10 (NEEDS_CHANGES), wave 11 (APPROVED) | run `43896108442` attempt 5, 23/23 | `[x]`; wave 10 issue 7 with 11.1 |
+| 10.15 | wave 9 (APPROVED), wave 11 | run `43896108442` attempt 5, 23/23 | `[x]` |
+| 10.9 | as above; `5644e52` in `2026-11-20-review-r5644-5644e52.md` (APPROVED) | CI as above; local `unshare -rn` run at `5644e52`: 1918 passed, 0 failed, 0 ignored | `[x]` with exit criteria as amended 2026-11-16 |
+
+Still open: 10.5 (`[-]`, credentialed `live-openai` execution deferred, skip evidence only) and 10.8 (`[ ]`, recordings over the real documents deferred to M4). Limits: single macOS pass of `test` and `demo-offline`; unconfirmed root cause of the macOS failure in run `43892679845` (the user's judgement that it is not RuleTrace code is recorded as a judgement); untested build guard of `5644e52`; no CI run of `95b109f`; network-isolation evidence local and Linux only.
