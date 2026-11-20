@@ -1207,7 +1207,7 @@ Closed by the user's decision on its locally deliverable, independently reviewed
 
 Effect on 9.5: the 31.11 test it awaited is delivered; 9.5 stays open on 9.8 (APP-API) and on Req 15.5, which has no recorded coverage.
 
-### Task 9.8 APP-API (2026-11-18, awaiting the user's closure decision)
+### Task 9.8 APP-API (2026-11-18, awaiting the user's closure decision; closed, see below)
 
 | Requirement | Evidence | Status |
 | --- | --- | --- |
@@ -1216,3 +1216,15 @@ Effect on 9.5: the 31.11 test it awaited is delivered; 9.5 stays open on 9.8 (AP
 | 27.15 | `check-executables` with two names | **Not satisfied**; owned by 13.4 and 13.6 |
 
 Effect on 9.5: the 9.8 source scan it awaited is delivered; 9.5 stays open on Req 15.5, which has no recorded coverage.
+
+### Task 9.8 closure (2026-11-18)
+
+Closed by the user's decision on its locally delivered, independently reviewed scope. The section above is kept as written. Records review: `docs/reviews/2026-11-18-review-rec-ab222f0.md` (APPROVED, no blocking finding).
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| 31.10 | as in the section above, through `f4c7299` | Local evidence accepted with limits F2, F3, F6, F7, no macro expansion, untested conservative `r#` handling; Windows and macOS CI outstanding |
+| 24.13 | `app-api` mechanism only | **Not satisfied**; Laboratory section owned by 13.4 |
+| 27.15 | `check-executables` with two names | **Not satisfied**; owned by 13.4 and 13.6 |
+
+Effect on 9.5: unchanged; 9.5 stays open on Req 15.5.
