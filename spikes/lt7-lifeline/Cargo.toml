@@ -1,0 +1,12 @@
+# Scratch spike for LT-7 (design §11.18.6, option L). Not a RuleTrace workspace member:
+# the empty [workspace] table keeps it out of the root workspace. Standard library only.
+[package]
+name = "lt7-lifeline"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "Lifeline-pipe prototype with stand-in children and a crash test harness"
+
+[workspace]
+
+[dependencies]

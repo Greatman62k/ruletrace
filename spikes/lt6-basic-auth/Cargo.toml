@@ -1,0 +1,12 @@
+# Scratch spike for LT-6 (design §11.18.5, option A). Not a RuleTrace workspace member:
+# the empty [workspace] table keeps it out of the root workspace. Standard library only.
+[package]
+name = "lt6-basic-auth"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "Stand-in Laboratory with HTTP Basic authentication and a raw request recorder"
+
+[workspace]
+
+[dependencies]
