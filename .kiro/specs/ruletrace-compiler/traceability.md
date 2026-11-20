@@ -1328,3 +1328,13 @@ Fixes D1 to D4 are in test code only (`7cdbc4d`, `fdc4c8f`, `34f46f2`, `6cc59fc`
 | Req 37.5, 37.6, 37.7 (LT-6, candidate A of §11.18.5) | `spikes/lt6-basic-auth` server tests in the same run | Server side only; browser protocol not run; LT-6 OPEN |
 
 No requirement, design text or decision record is changed by this evidence. UD-39 keeps LT-6 and LT-7 open.
+
+### `--lifeline-stdin` with the real executables (2026-11-20)
+
+| Item | Evidence | Status |
+| --- | --- | --- |
+| Req 37.17, second sentence (containment when `ruletrace-lab` terminates abnormally), mechanism L | `efa4a6d` (`crates/rt-cli/src/lifeline.rs`, `crates/rt-ai-tool/src/lifeline.rs`, tests `crates/*/tests/lifeline.rs`), `ci` run `44753380080` on three platforms, record `docs/security/2026-11-20-lt7-lifeline-real-executables.md` | Real-executable checks pass; V-1, V-2, V-4 and the Laboratory's use of the option outstanding; LT-7 OPEN |
+| Req 5.12 (exit 70 writes an Error Diagnostic) for the lifeline exit | `RT-CLI-0007` (catalogue, 155 codes), `catalogue_ud44.rs`, check `closing_the_pipe_stops_the_child_with_70` | Delivered |
+| Req 17.10 (exit-code sets per executable) | code 70 already in both sets; existing test `crates/rt-cli/src/tests_pipeline.rs` unchanged | Unchanged |
+
+Decision record: `tools/decisions/UD-44.md`. No requirement text changed.
