@@ -1310,3 +1310,12 @@ Still open: 10.5 (`[-]`, credentialed `live-openai` execution deferred, skip evi
 | Three-platform CI with the new test | run `44711229145` on `466de67` (`5644e52` plus the cherry-picked `c6da862`, branch `ci/once-guard`), attempt 1, 23/23 | New test passed on Linux, macOS and Windows |
 
 Limits that remain from the M2 closure: unconfirmed root cause of the macOS failure in run `43892679845`; two clean macOS runs only; no guard across separate test processes; no CI run of `95b109f`; `live-openai` skip only.
+
+### M3 three-platform CI (2026-11-20)
+
+| Run | Head | Result |
+| --- | --- | --- |
+| `44716508559` (`ci/m3-890fa85`) | `890fa85` | failure: `clippy (windows-2022)` (D1), `test (windows-2022)` (D2, D3), `test (macos-15)` (D4) |
+| `44722569635` (`ci/m3-63ca7f2`) | `63ca7f2` | success, 23/23 jobs, attempt 1; `test` 2463 passed on Linux and macOS, 2428 on Windows; `golden` 24 passed on each platform |
+
+Fixes D1 to D4 are in test code only (`7cdbc4d`, `fdc4c8f`, `34f46f2`, `6cc59fc`), reviewed in `docs/reviews/2026-11-20-review-fix4-6cc59fc.md` (APPROVED). Platform evidence is now recorded under 9.5, 9.6, 9.8, 9.10, 9.11, 9.16, 9.17, 9.20 and 9.21. Unchanged by it: 9.6 `[-]` and 9.16 `[ ]` (deferred with 9.3), 9.20 `[-]` (Properties 44 to 47, s08), Req 27.15 and 36.22 (Laboratory), and the Windows exception of `workflow_module_environment` (one `#[cfg(unix)]` test).
