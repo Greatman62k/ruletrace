@@ -10,7 +10,10 @@
 
 #![allow(clippy::expect_used, clippy::indexing_slicing)]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_foundation::{Code, Diagnostic, InputId, Location};
 use rt_hash::sha256;
 use rt_json::ParseLimits;
@@ -138,8 +141,8 @@ fn ledger_strategy(min: usize) -> impl Strategy<Value = Vec<Rec>> {
     proptest::collection::vec(rec(), min..6)
 }
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(128))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(128))]
 
     #[test]
     fn round_trip_and_print_twice(recs in ledger_strategy(0)) {

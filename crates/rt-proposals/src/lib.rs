@@ -43,3 +43,7 @@ mod tests_export;
 mod tests_identifier_property;
 #[cfg(test)]
 mod tests_v2;
+
+#[cfg(test)]
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;

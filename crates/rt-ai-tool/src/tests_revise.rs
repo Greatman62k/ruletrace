@@ -4,6 +4,7 @@
 //! and hashed with `rt_hash::sha256`. One digest comes from the external
 //! `sha256sum` tool. Expected codes come from the catalogue.
 
+use crate::proptest_floor::property_tests;
 use crate::revise::Unknown;
 use crate::tests::MapEnv;
 use crate::tests_cli_rig::{run_std, Fixture, Ran};
@@ -706,7 +707,7 @@ fn feedback() -> impl Strategy<Value = String> {
         .prop_map(|c| c.into_iter().collect())
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     // Property 31 for a revision request: the bytes and the identifier

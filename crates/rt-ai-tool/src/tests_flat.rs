@@ -6,6 +6,7 @@
 use crate::accept::{accept_batch, AcceptInput, AcceptedBatch};
 use crate::plan::ClauseId;
 use crate::proposal_schema::proposal_schema_bytes;
+use crate::proptest_floor::property_tests;
 use crate::redact::Redactor;
 use crate::tests_proposal_schema::tree;
 use crate::tests_provenance::{doc, models, RULES_HASH};
@@ -329,7 +330,7 @@ fn spine(depth: usize) -> impl Strategy<Value = E> {
     })
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     #[test]

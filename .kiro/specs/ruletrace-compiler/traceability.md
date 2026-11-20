@@ -659,3 +659,663 @@ Both changes were approved by the orchestrator under the user's standing instruc
 | Live job runnable but not required | `ci.yml` job `live-openai`, not in `ci-gate` needs; `live_openai_job.rs`. Run 43864502388 job 133289465599: success, steps skipped. Skip, NOT an authenticated request. Credentialed execution DEFERRED and UNVERIFIED by user decision. Final run: `PENDING` | Skip evidence only |
 | Recorded script committed with hashes, or recording deferred | Stand-in: the two recordings above (commits d4f1ca4, 31b3fb3), amended by user decision 2026-11-16. Real-document recordings deferred | Met for stand-in by user decision; real documents deferred |
 | Independent reviews of 10.5, 10.6, 10.7, 10.15 | `PENDING` | PENDING |
+
+## Approved deferrals (recorded 2026-11-16)
+
+Records user-approved deferrals only. No new deferral is introduced, no requirement text is changed, and no deferred task is marked complete. The decisions are quoted in `tasks.md`, section "Approved deferrals (recorded 2026-11-16)". Decision dates: "session handoff before 2026-11-15" for user decisions 1 and 2, 2026-11-16 for the later 10.5 and 10.8 decisions. No criterion in this file or in `tasks.md` marks any requirement below as satisfied through a deferred task. Where an earlier section states what an implemented task covers (for example Req 29.19 under task 8.7), that statement concerns the implemented task and not the deferred one.
+
+| Task | Status | Reason | Milestone | Affected requirements | Remains unsatisfied |
+| --- | --- | --- | --- | --- | --- |
+| 9.3 | Deferred | User decision 1: RN-30 and 9.3 deferred; UD-32 keeps separate ComputedRankReference and ExternalRankReference; computed references only; no external ranking dataset support claimed | post-submission hardening | 14.11 to 14.14, 14.15 to 14.25, 32.3, 32.4, 7.23 | The 9.3 criterion; External_Ranking_Value carrying form (RN-30, Req 14.25 applies); blocks 9.6, 9.15, part of 9.16 and 9.20 |
+| 9.9 | Deferred | User decision 2 (no per-task reason recorded) | post-submission hardening | 31.8, 31.9, 31.15, 11.5 | Property 44 |
+| 9.12 | Deferred | User decision 2 | post-submission hardening | 22.22, 22.12, 22.13, 22.9, 20.25 | Property 5 for application, published, script and manifest inputs |
+| 9.13 | Deferred | User decision 2 | post-submission hardening | 31.7, 32.6, 13.12, 13.20 | Property 46 |
+| 9.14 | Deferred | User decision 2 | post-submission hardening | 31.13, 31.14, 32.5, 22.1 | Property 47 |
+| 9.15 | Deferred | User decision 2 (also follows from 9.3) | post-submission hardening | 14.12, 14.13, 32.3, 32.4 | Property 45 and the cycle negative test |
+| 9.17 | Deferred, then lifted and closed on local scope (2026-11-18) | User decision 2; user instruction 2026-11-18 | closed | 31.11, 31.15, 20.6 (local evidence); 27.15 outstanding, owned by 13.4 and 13.6 | Two-application isolation and process-independence tests |
+| 9.19 | Deferred | User decision 2 | post-submission hardening | 27.1, 27.15, 24.12, 31.10 | Steering updates of design §9.3 items 6 to 8 |
+| 10.4 | Superseded | UD-37 made it required; complete `[x]` | not applicable | 23.39, 23.27, 23.4 | Nothing; the deferral no longer applies |
+| 10.7 | Superseded | User required it on 2026-11-16; implemented, review and CI pending, stays `[ ]` | not applicable | 33.10, 28.21, 28.11, 33.2 | Not complete until the review and CI runs; the deferral no longer applies |
+| 10.5 | Deferred (part) | 2026-11-16: credentialed live execution of the OpenAI job deferred and unverified; the skip-safe job is implemented. Task stays `[-]` | post-submission hardening | 21.14, 35.9 | Any authenticated request from `live-openai` |
+| 10.8 | Deferred (part) | 2026-11-16: real-document (Kiroween, ICC) recordings deferred; stand-in recordings accepted for the recorded-script criterion | M4 | 33.8, 33.10, 28.21, 23.27, 35.22 | Recordings over the UD-34 documents (need 11.1) |
+| 11.7 | Reduced | User decision 2: one smoke run | M4 (full checks post-submission) | 33.17, 13.18, 25.6, 26.12, 9.13 | Full M1 to M3 acceptance checks, Properties 49 and 50 |
+| 11.8 | Deferred | User decision 2 | post-submission hardening | 34.1, 34.7 | Claims lists, `gen-claims`, `scan-claims` |
+| 11.12 | Deferred | User decision 2 | post-submission hardening | 34.7, 33.8 | Remaining steering updates (design §9.3 item 10, item 7 sentence) |
+| 12.1 | Deferred | User decision 2 | post-submission hardening | 19.1 to 19.4, 19.6, 19.9, 19.11 | No-panic parser properties |
+| 12.2 | Deferred | User decision 2 | post-submission hardening | 3.8, 3.15, 3.17, 4.2, 4.3, 4.4, 4.7, 4.8 | Single-fault parse diagnostics property |
+| 12.3 | Deferred | User decision 2 | post-submission hardening | 11.4, 8.5, 8.6 | Property 21 |
+| 12.4 | Deferred | User decision 2 | post-submission hardening | 8.15, 8.29, 8.30, 8.31 | Empty-aggregation property, numeric fixtures |
+| 12.5 | Deferred | User decision 2 | post-submission hardening | 6.7, 6.8, 6.16 to 6.21, 6.23, 12.10, 14.10 | Conflict and precedence property |
+| 12.6 | Deferred | User decision 2 | post-submission hardening | 12.5, 12.11, 12.12, 16.23 | Execution-time conflict property |
+| 12.7 | Deferred | User decision 2 | post-submission hardening | 6.4, 6.5, 6.6, 14.6, 14.7, 10.9 | Unsupported and incomplete constructs property |
+| 12.8 | Deferred | User decision 2 | post-submission hardening | 29.10, 29.11, 29.17, 29.19, 23.20 | Idempotent and concurrent storage property |
+| 12.9 | Deferred | User decision 2 | post-submission hardening | 23.35 to 23.38, 16.24, 27.8 | Run_Summary partition property |
+| 12.10 | Deferred | User decision 2 | post-submission hardening | 20.7, 20.8, 20.9, 23.17, 23.33, 23.38, 29.14 | Full failure matrix, simulated-timer tests |
+| 12.11 | Deferred | User decision 2 | post-submission hardening | 6.1, 6.2, 6.3, 20.3, 20.12, 20.13 | Negative test for every provokable code; 12.12 is blocked by it |
+| 12.13 | Deferred | User decision 2 | post-submission hardening | 14.8, 14.9, 6.22, 26.22, 20.1 | Support-boundary consistency test, `docs/security-limits.md` |
+| 12.14 | Reduced | User decision 2: one final green CI run, no skipped required jobs | M4 | 21.3, 21.4, 21.9, 21.10, 21.12, 24.9, 20.26 | Job list, allowed-edges coverage, decision status listing |
+| 12.15 | Reduced | User decision 2: one final green CI run, no skipped required jobs | M4 | 20.26, 14.8, 34.8 | Release checklist, baseline, boundary documents |
+
+Kept, not deferred: 9.10 and all essential compiler, provenance, approval, AI trust-boundary and credential-safety tests; 10.6 (offline replay, `[-]`, pending CI).
+
+## Task 9.2 evidence (2026-11-17, still `[-]`)
+
+- Requirements 13.12, 13.20, 31.7 and 32.6 (engine part): the engine classifies each ranking difference as `value_differs`, `tie_broken_without_declared_criterion` or `tie_not_in_computed_result`, with published value, computed value, Decision_Trace entry and group members. Tests: `crates/rt-engine/src/tests_published_ranks.rs` (hand-computed cases, a 256-case property against an independent model, a 256-case equal-means-no-difference property). Eight mutants were killed.
+- RN-26 amendment approved by the user on 2026-11-17 (text in `docs/requirements-amendments.md`, applied to Req 13.12). Req 31.7 and 32.6 are met by the engine only; the application reports (9.4 onward) and Property 46 (9.13, deferred) remain open. Independent review and CI: `PENDING`.
+- Review follow-up (2026-11-17), same Requirements: tests only in `crates/rt-engine/src/tests_published_ranks.rs` close the review's gaps (Indeterminate beside Known in a published tie, Boolean beside the number 1, entry-order independence through `parse_published`); mutants M4, M6 and M10 killed, no production change.
+
+
+## Submission sequencing (recorded 2026-11-16)
+
+User decision: finish M2 closure and M3, then M4, then write the submission material; keep engineering documents, decision records, reviews and deferrals current throughout; record Kiro usage factually as it happens (`docs/kiro-usage-log.md`); add no MCP, hook or custom agent for appearance only; do not restructure the workspace before the exact Skeleton Crew folder rule is verified. The ordering, the deferred submission items and the open folder-rule question are in `tasks.md` under "Submission sequencing". No requirement, task or acceptance criterion changed. The tree check at this point: tasks 9.1 (aborted run) left no changes in the working tree, so 9.1 is not started.
+
+
+## Task 9.2 closed (2026-11-17)
+
+Closed by user instruction on two independent reviews (both APPROVED) and the local workspace run (1941 passed). RN-26 was approved and the difference kind naming and catalogue codes were decided by the user on 2026-11-17 (see the next section). Three-platform CI evidence is pending until M3 is pushed and is checked at task 9.20. Non-blocking gaps N3 and O2 are recorded in `docs/reviews/2026-11-17-review-9.2-tests-62b7b83.md`.
+
+
+## RN-26 approved and catalogue codes RT-EXE-0012 and RT-EXE-0013 (user decisions, 2026-11-17)
+
+- Req 13.12 now contains the RN-26 text. Open points 1 and 2 were settled as implemented; point 3 by decision 2: one code per difference kind. `RT-EXE-0011` (`PUBLISHED_RESULT_DIFFERS`, `value_differs`), `RT-EXE-0012` (`PUBLISHED_TIE_GROUP_SPLIT`, `tie_broken_without_declared_criterion`) and `RT-EXE-0013` (`PUBLISHED_TIE_NOT_COMPUTED`, `tie_not_in_computed_result`) are Warnings with exit code 0, so a published difference never changes the evaluation exit code. The `RT-EXE-0011` meaning text now says value difference only.
+- Files: `catalogue/diagnostics.v1.json`, generated `crates/rt-foundation/src/code_generated.rs`, `crates/rt-cli/src/evaluate.rs`, design §3.6.3, §9.4 and the §4.3 catalogue table.
+- Tests: `crates/rt-cli/src/tests_published_kinds.rs` (four evaluate-level tests), `crates/rt-foundation/tests/catalogue_rn26.rs` (four tests). `catalogue_ud37.rs` count assertion raised from 152 to 154 (two new codes).
+
+
+## Tasks 9.1 and 9.4 (2026-11-17)
+
+Implemented and independently reviewed; no blocking finding open (9.1: three reviews, final APPROVED; 9.4: four reviews, final APPROVED). Both stay `[-]` until the user accepts the open items listed in their status notes, and three-platform CI is pending until M3 is pushed (task 9.20). User decisions applied: trailing CSV delimiter, unrequested published rows (design §8.3, `e240d5f`), difference kind as text plus code with one table, Bracket ranking-scope header.
+
+
+## Tasks 9.1 and 9.4 closed (2026-11-17)
+
+Closed by the user's acceptance after the final follow-ups (`715db8c`, `ecf9550`) and the focused check `docs/reviews/2026-11-17-review-final-9.4-ecf9550.md` (APPROVED). The four accepted 9.4 limitations are recorded as invariants in the 9.4 task note; invariant (1) (positional trace-to-verification binding) must be revisited before any change that reorders or filters entries. Three-platform CI evidence is pending until M3 is pushed (task 9.20).
+
+
+## UD-38 amendments (2026-11-18)
+
+Cause: the user decision UD-38 (`tools/decisions/UD-38.md`): category Frankenstein, one integrated local RuleTrace Laboratory, runtime executables `ruletrace`, `ruletrace-ai`, `ruletrace-lab`, `prize-check` and `bracket-check` as library Workflow_Modules. Documentation only. Every amended criterion carries the marker "(Amended by UD-38, 2026-11-18.)" in `requirements.md`. The marker is removed below from the recorded old and new text.
+
+New requirements: Requirement 36 (RuleTrace Laboratory, 24 criteria) and Requirement 37 (Laboratory threat model and local security, 23 criteria). New criteria elsewhere: 24.13, 33.18, 33.19, 34.9, 34.10. No criterion was renumbered. Criteria that were not amended keep their text.
+
+Amended and new text, old wording then new wording:
+
+### 1. Introduction, paragraph 3 (exclusion)
+
+Old: RuleTrace never invents a rule and never treats an ambiguous rule as having a definite interpretation. The compiler is the product. This specification excludes any dashboard, chatbot, or hosted service.
+
+New: RuleTrace never invents a rule and never treats an ambiguous rule as having a definite interpretation. The compiler is the product. This specification excludes any dashboard, chatbot, or hosted service, with the single exception of the local RuleTrace_Laboratory (Requirements 36 and 37; UD-38).
+
+### 2. Introduction, Demonstration applications, first sentence
+
+Old: The first version contains two thin demonstration Application_Layers, Prize_Check and Bracket_Check (Requirements 31 and 32), which prove that one Rules_Engine powers two different applications. Each Application_Layer maps its own input format to Competition_Data, calls the shared Rules_Engine through the library interface, and renders a report. Each Application_Layer contains input mapping and report layout only, and no eligibility, scoring, ranking, or tie-breaking logic (Requirement 15 criteria 5 and 6). Prize_Check demonstrates eligibility, weighted scoring, ranking with Tie_Groups, and a published-result consistency check. Bracket_Check demonstrates standings (ranking with ordered tie-breaking criteria), qualification as defined by the Qualification_Predicate of Requirement 14 criterion 11, Tie_Groups, and a published-standings consistency check.
+
+New: The first version contains two thin demonstration Workflow_Modules (also named Application_Layers), Prize_Check and Bracket_Check (Requirements 31 and 32), which prove that one Rules_Engine powers two different workflows and which the RuleTrace_Laboratory presents as the selectable Prize workflow and Tournament standings workflow (Requirement 36 criterion 18). Each Application_Layer maps its own input format to Competition_Data, calls the shared Rules_Engine through the library interface, and renders a report. Each Application_Layer contains input mapping and report layout only, and no eligibility, scoring, ranking, or tie-breaking logic (Requirement 15 criteria 5 and 6). Prize_Check demonstrates eligibility, weighted scoring, ranking with Tie_Groups, and a published-result consistency check. Bracket_Check demonstrates standings (ranking with ordered tie-breaking criteria), qualification as defined by the Qualification_Predicate of Requirement 14 criterion 11, Tie_Groups, and a published-standings consistency check.
+
+### 3. Scope, in scope: workspace and executables
+
+Old: - A Cargo workspace of Rust crates covering the seven pipeline stages, with two RuleTrace executables: the deterministic ruletrace (the CLI), which has four pipeline commands and the review command group, and the separate optional ruletrace-ai (Requirement 27), plus two thin Demonstration_Executables, prize-check and bracket-check (Requirements 27 and 31; UD-33).
+
+New: - A Cargo workspace of Rust crates covering the seven pipeline stages, with three runtime executables: the deterministic ruletrace (the CLI), which has four pipeline commands and the review command group, the separate optional ruletrace-ai (Requirement 27), and the local RuleTrace_Laboratory ruletrace-lab (Requirements 27, 36, and 37; UD-38), plus the library packages prize-check and bracket-check (Requirement 31), which have no binary target.
+
+### 4. Scope, in scope: Application_Layers
+
+Old: - Two thin demonstration Application_Layers, Prize_Check and Bracket_Check, limited to input mapping and report layout over the shared Rules_Engine (Requirements 15, 31, and 32).
+
+New: - Two thin demonstration Workflow_Modules (Application_Layers), Prize_Check and Bracket_Check, limited to input mapping, Question construction, and report presentation over the shared Rules_Engine (Requirements 15, 31, and 32).
+
+### 5. Scope, in scope: new bullet (Laboratory)
+
+Old: (none)
+
+New: - The local RuleTrace_Laboratory ruletrace-lab: one integrated local application with a loopback browser interface in front of ruletrace and ruletrace-ai, with the Prize workflow and the Tournament standings workflow, an offline demo mode, and the local security requirements of Requirement 37 (UD-38).
+
+### 6. Scope, out of scope: full applications
+
+Old: - The full Prize Check and Bracket Check applications, their user interfaces, and their domain-specific workflows beyond the thin Application_Layers of Requirements 31 and 32; and any prize allocation, slot-based qualification, seeding, bracket generation, progression, or multi-stage competition logic in any crate, including the Application_Layers.
+
+New: - The full Prize Check and Bracket Check applications, their user interfaces (other than the single local RuleTrace_Laboratory of Requirements 36 and 37), and their domain-specific workflows beyond the thin Application_Layers of Requirements 31 and 32; and any prize allocation, slot-based qualification, seeding, bracket generation, progression, or multi-stage competition logic in any crate, including the Application_Layers.
+
+### 7. Scope, out of scope: dashboards
+
+Old: - Dashboards, chatbots, web services operated by RuleTrace, databases, and microservices.
+
+New: - Dashboards, chatbots, web services operated by RuleTrace, hosted application services, cloud dashboards, user accounts and remote authentication services, hosted databases, general-purpose workflow services, databases, microservices, and any replacement of the compiler or the Rules_Engine by user-interface logic. The single local RuleTrace_Laboratory (Requirements 36 and 37) is the only user interface in scope.
+
+### 8. Glossary: Prize_Check
+
+Old: - **Prize_Check**: The first-version thin demonstration Application_Layer of Requirement 31, which demonstrates eligibility, weighted scoring, ranking with Tie_Groups, and a published-result consistency check through the shared Rules_Engine, and performs no prize allocation. The full Prize Check application remains a future application.
+
+New: - **Prize_Check**: The first-version thin demonstration Workflow_Module (Application_Layer) of Requirement 31, presented by the RuleTrace_Laboratory as the Prize workflow, which demonstrates eligibility, weighted scoring, ranking with Tie_Groups, and a published-result consistency check through the shared Rules_Engine, and performs no prize allocation. The full Prize Check application remains a future application.
+
+### 9. Glossary: Bracket_Check
+
+Old: - **Bracket_Check**: The first-version thin demonstration Application_Layer of Requirements 31 and 32, which demonstrates standings, Qualification_Predicates, Tie_Groups, and a published-standings consistency check through the shared Rules_Engine, and performs no seeding, bracket generation, progression, or multi-stage logic. The full Bracket Check application remains a future application.
+
+New: - **Bracket_Check**: The first-version thin demonstration Workflow_Module (Application_Layer) of Requirements 31 and 32, presented by the RuleTrace_Laboratory as the Tournament standings workflow, which demonstrates standings, Qualification_Predicates, Tie_Groups, and a published-standings consistency check through the shared Rules_Engine, and performs no seeding, bracket generation, progression, or multi-stage logic. The full Bracket Check application remains a future application.
+
+### 10. Glossary: Application_Layer
+
+Old: - **Application_Layer**: A crate that contains only the input mapping of its own Application_Input_Format to Competition_Data, the construction of Questions, and report layout, and that calls the shared Rules_Engine through the library interface (Requirement 31). Prize_Check and Bracket_Check are the only Application_Layers of the first version.
+
+New: - **Application_Layer**: A Workflow_Module; the two terms are synonyms and Workflow_Module is preferred. A library crate without a binary target that contains only the input mapping of its own Application_Input_Format to Competition_Data, the construction of Questions, and report layout, and that calls the shared Rules_Engine through the library interface (Requirement 31). Prize_Check and Bracket_Check are the only Application_Layers of the first version.
+
+### 11. Glossary: Demonstration_Executable
+
+Old: - **Demonstration_Executable**: A small executable that wraps one Application_Layer for file input and report output at its binary edge. The Demonstration_Executables are prize-check and bracket-check (UD-33).
+
+New: - **Demonstration_Executable**: A small executable that wraps one Application_Layer for file input and report output at its binary edge. Superseded by UD-38: no executable of the first version is a Demonstration_Executable. The packages prize-check and bracket-check are library-only Workflow_Modules, and the term remains defined only so that the historical text of UD-33 is readable.
+
+### 12. Glossary: new entry
+
+Old: (none)
+
+New: - **Workflow_Module**: A library crate that contains only the input mapping of an Application_Input_Format to Competition_Data, the construction of Questions, and the presentation of a report, with no binary target and no business logic (Requirement 31). The Workflow_Modules are prize-check and bracket-check. The RuleTrace_Laboratory invokes them.
+
+### 13. Glossary: new entry
+
+Old: (none)
+
+New: - **RuleTrace_Laboratory** (also the Laboratory): The one integrated local application of Requirements 36 and 37, served by the executable ruletrace-lab on the loopback interface. It orchestrates ruletrace and ruletrace-ai as subprocesses and displays their results. It holds no AI credential, writes no Approval_Ledger record, and makes no decision, approval, or computation of its own (UD-38).
+
+### 14. Glossary: new entry
+
+Old: (none)
+
+New: - **Laboratory_Session**: The period between the exchange of a Launch_Secret for a session cookie and the invalidation of that cookie, with its own temporary directory and its own CSRF token (Requirement 37).
+
+### 15. Glossary: new entry
+
+Old: (none)
+
+New: - **Launch_Secret**: A random value of at least 128 bits that ruletrace-lab generates at each start and gives to the user only through the terminal, and that the user exchanges once for a session cookie (Requirement 37 criteria 5 and 6).
+
+### 16. Glossary: new entry
+
+Old: (none)
+
+New: - **Hand_Off_Artifact**: A file that one subprocess of the RuleTrace_Laboratory produces and the next subprocess consumes, whose SHA-256 hash the Laboratory records and verifies before use (Requirement 36 criterion 9). A valid hash does not make the content trusted.
+
+### 17. Glossary: new entry
+
+Old: (none)
+
+New: - **Runtime_Executable**: An executable that the RuleTrace delivers to a user: ruletrace, ruletrace-ai, and ruletrace-lab. A development or test utility that the workspace builds (for example rt-xtask) is not a Runtime_Executable (Requirement 27 criterion 1).
+
+### 18. 7.23
+
+Old: 23. THE RuleTrace SHALL list in the Diagnostic_Catalogue the code RANK_REFERENCE_CYCLE (Requirement 14 criterion 12, WHERE the option Rank_Reference of UD-32 is selected) and the Diagnostic codes that Requirement 31 criterion 9 names (APP_INPUT_MALFORMED, APP_INPUT_FIELD_MISSING, APP_INPUT_DUPLICATE_PARTICIPANT, APP_INPUT_VALUE_INVALID, APP_TARGET_NOT_DECLARED, APP_TARGET_KIND_MISMATCH), each with exactly one catalogue identifier, a Severity, a meaning, an exit code, and an executable (the Demonstration_Executable that returns it), and SHALL bind each of these mnemonics to its identifier under criterion 16. The design assigns the family of the application codes (RT-APP is proposed). The checks of Requirement 33 and 34 are test failures and not Diagnostics, and need no catalogue code.
+
+New: 23. THE RuleTrace SHALL list in the Diagnostic_Catalogue the code RANK_REFERENCE_CYCLE (Requirement 14 criterion 12, WHERE the option Rank_Reference of UD-32 is selected) and the Diagnostic codes that Requirement 31 criterion 9 names (APP_INPUT_MALFORMED, APP_INPUT_FIELD_MISSING, APP_INPUT_DUPLICATE_PARTICIPANT, APP_INPUT_VALUE_INVALID, APP_TARGET_NOT_DECLARED, APP_TARGET_KIND_MISMATCH), each with exactly one catalogue identifier, a Severity, a meaning, an exit code, and an executable (ruletrace-lab, which reports the Diagnostic that a Workflow_Module returns), and SHALL bind each of these mnemonics to its identifier under criterion 16. The design assigns the family of the application codes (RT-APP is proposed). The checks of Requirement 33 and 34 are test failures and not Diagnostics, and need no catalogue code.
+
+### 19. 24.12
+
+Old: 12. THE RuleTrace SHALL add to the allowed-dependency list of criterion 5 the edges of each Application_Layer crate and Demonstration_Executable, which are limited to the Rules_Engine crate, the crates for the Compiled_Rulebook and Competition_Data types and their parsers, the Explainer crate, the Source_Model crate, and the shared Diagnostic, Location, and Exact_Number crates, and SHALL fail the automated check of criterion 5, with the offending crate name and edge, WHEN an Application_Layer or Demonstration_Executable depends, directly or transitively, on the ruletrace binary crate, on the review library crate, on a crate that contains the Approval_Ledger append function, on the Validator, Compiler, Ingestor, or Extractor crate, on an Auxiliary_Crate, or on a network client library, or WHEN a Core_Crate or Auxiliary_Crate depends on an Application_Layer crate or a Demonstration_Executable.
+
+New: 12. THE RuleTrace SHALL add to the allowed-dependency list of criterion 5 the edges of each Application_Layer crate, which are limited to the Rules_Engine crate, the crates for the Compiled_Rulebook and Competition_Data types and their parsers, the Explainer crate, the Source_Model crate, and the shared Diagnostic, Location, and Exact_Number crates, and SHALL fail the automated check of criterion 5, with the offending crate name and edge, WHEN an Application_Layer depends, directly or transitively, on the ruletrace binary crate, on the review library crate, on a crate that contains the Approval_Ledger append function, on the Validator, Compiler, Ingestor, or Extractor crate, on an Auxiliary_Crate, or on a network client library, or WHEN a Core_Crate or Auxiliary_Crate depends on an Application_Layer crate.
+
+### 20. 24.13 (new)
+
+Old: (none)
+
+New: 13. THE RuleTrace SHALL add to the allowed-dependency list of criterion 5 the edges of the ruletrace-lab crate, which are limited to the two Application_Layer crates, the shared Diagnostic, Location, and Exact_Number crates, and one HTTP server library with a written justification, and SHALL fail the automated check of criterion 5, with the offending crate name and edge, WHEN ruletrace-lab depends, directly or transitively, on an AI_Crate, an AI provider library, the review library crate, a crate that contains the Approval_Ledger append function, the Validator, Compiler, Ingestor, or Extractor crate, or WHEN a Core_Crate, an Auxiliary_Crate, an Application_Layer crate, ruletrace, or ruletrace-ai depends on ruletrace-lab or on its HTTP server library, and SHALL fail the source scan of Requirement 36 criterion 5 WHEN a source file of ruletrace-lab calls a Rules_Engine evaluation function (UD-38).
+
+### 21. 27 user story
+
+Old: **User Story:** As a maintainer, I want exactly two RuleTrace executables with separated responsibilities, so that no network or AI code can reach the deterministic workflow or the approval ledger.
+
+New: **User Story:** As a maintainer, I want exactly three runtime executables with separated responsibilities, so that no network or AI code can reach the deterministic workflow or the approval ledger, and so that the browser interface can reach neither the AI credential nor the approval ledger directly.
+
+### 22. 27.1
+
+Old: 1. THE RuleTrace SHALL deliver exactly two RuleTrace executables, ruletrace and ruletrace-ai (the AI_Tool), and, in addition, exactly two Demonstration_Executables, prize-check and bracket-check (Requirement 31 criterion 3), and no other executable. The responsibilities of the two RuleTrace executables are those of the following table. This criterion supersedes the earlier statement of exactly two executables and no third (UD-33).
+
+New: 1. THE RuleTrace SHALL deliver exactly three Runtime_Executables, ruletrace, ruletrace-ai (the AI_Tool), and ruletrace-lab (the Laboratory executable of Requirements 36 and 37), and no other Runtime_Executable, and SHALL build prize-check and bracket-check as library packages without a binary target (Requirement 31 criterion 3). A development or test utility that the workspace builds and does not deliver, for example rt-xtask, is not a Runtime_Executable and SHALL appear in a documented allow-list of such utilities. The responsibilities of ruletrace and ruletrace-ai are those of the following table, and those of ruletrace-lab are those of Requirements 36 and 37. This criterion supersedes the earlier statements of exactly two executables (UD-22) and of exactly two Demonstration_Executables (UD-33).
+
+### 23. 27.15
+
+Old: 15. THE RuleTrace SHALL include a test that the set of executables that the workspace builds equals exactly ruletrace, ruletrace-ai, prize-check, and bracket-check, and that fails with the name of any other executable, and criteria 5 to 7 and 9 to 13 SHALL apply to ruletrace and ruletrace-ai unchanged, so that neither Demonstration_Executable is a command of ruletrace, is started by ruletrace or ruletrace-ai, or appears in the dependency tree of ruletrace or ruletrace-ai.
+
+New: 15. THE RuleTrace SHALL include a test that the set of executables that the workspace builds equals exactly ruletrace, ruletrace-ai, and ruletrace-lab, together with the development and test utilities of the allow-list of criterion 1, and that fails with the name of any other executable (including a binary target of prize-check or bracket-check), and criteria 5 to 7 and 9 to 13 SHALL apply to ruletrace and ruletrace-ai unchanged, so that ruletrace-lab is not a command of ruletrace, is not started by ruletrace or ruletrace-ai, and does not appear in the dependency tree of ruletrace or ruletrace-ai.
+
+### 24. 31.3
+
+Old: 3. THE RuleTrace SHALL deliver each Application_Layer with one Demonstration_Executable of the same name as its crate (prize-check and bracket-check), which performs the reading of its named input files and the writing of its named report files at its binary edge and calls the library of its Application_Layer for everything else (UD-33).
+
+New: 3. THE RuleTrace SHALL deliver each Application_Layer as a library crate named prize-check or bracket-check with no binary target, and THE RuleTrace_Laboratory (ruletrace-lab) SHALL perform the reading of its named input files and the writing of its named report files within the roots of Requirement 37 criterion 13 and SHALL call the library of the Application_Layer for input mapping, Question construction, and report presentation (UD-33, UD-38).
+
+### 25. 31.10
+
+Old: 10. THE RuleTrace SHALL include an automated source scan of the Application_Layer crates and the Demonstration_Executables that fails with the crate, file, and line WHEN a source file contains a call or an operator that adds, subtracts, multiplies, divides, rounds, compares, or aggregates Exact_Number values, a sorting, ordering, minimum, maximum, or ranking function applied to participants, scores, or Outcomes, a tie-breaking rule, a literal weight, threshold, or rounding mode, or a field name of a specific competition, and SHALL include a negative test fixture for each of these violations that makes the scan fail with the expected file and line, so that no ranking, scoring, eligibility, or tie-breaking logic exists in an Application_Layer (Requirement 15 criterion 6).
+
+New: 10. THE RuleTrace SHALL include an automated source scan of the Application_Layer crates and of the ruletrace-lab crate that fails with the crate, file, and line WHEN a source file contains a call or an operator that adds, subtracts, multiplies, divides, rounds, compares, or aggregates Exact_Number values, a sorting, ordering, minimum, maximum, or ranking function applied to participants, scores, or Outcomes, a tie-breaking rule, a literal weight, threshold, or rounding mode, or a field name of a specific competition, and SHALL include a negative test fixture for each of these violations that makes the scan fail with the expected file and line, so that no ranking, scoring, eligibility, or tie-breaking logic exists in an Application_Layer (Requirement 15 criterion 6).
+
+### 26. 31.11
+
+Old: 11. THE Application_Layer library crates SHALL perform no file, network, clock, random, or environment access and start no subprocess, THE Demonstration_Executables SHALL open only the input files and the report files that their command-line arguments name, SHALL open no network connection, SHALL read no environment variable, no AI_Configuration, and no credential, SHALL start no subprocess, and SHALL write byte-identical standard output, standard error, report files, and exit code whether or not ruletrace, ruletrace-ai, an AI_Configuration file, or a credential environment variable is present, as verified by the scan of criterion 10, the dependency check of Requirement 24 criterion 12, and a test under at least two values of the clock, the working directory, and the locale.
+
+New: 11. THE Application_Layer library crates SHALL perform no file, network, clock, random, or environment access and start no subprocess, and SHALL return byte-identical reports and the same result classification of criterion 12 whether or not ruletrace, ruletrace-ai, an AI_Configuration file, or a credential environment variable is present, as verified by the scan of criterion 10, the dependency check of Requirement 24 criterion 12, and a test under at least two values of the clock, the working directory, and the locale.
+
+### 27. 31.12
+
+Old: 12. THE Demonstration_Executables SHALL exit with exactly these codes: 0 WHEN the report is complete and no Outcome is Indeterminate, 4 WHEN at least one Outcome is Indeterminate, 2 for invalid input (criterion 9, a contradictory diagnostic or lifecycle state under Requirement 22, a missing or unreadable input file, an unknown argument, a Source_Model that is missing for a document or whose hash differs, as Requirement 16 criterion 8 defines it), and 70 for an internal error, and each Demonstration_Executable SHALL return the same exit code as `ruletrace evaluate` returns for the same Compiled_Rulebook, Competition_Data, Questions, Published_Result, and Source_Models, and SHALL write no partial report as if the run had succeeded (Requirement 16 criteria 9 and 12).
+
+New: 12. THE Application_Layer SHALL return a result classification that ruletrace-lab maps to exactly these exit codes: 0 WHEN the report is complete and no Outcome is Indeterminate, 4 WHEN at least one Outcome is Indeterminate, 2 for invalid input (criterion 9, a contradictory diagnostic or lifecycle state under Requirement 22, a missing or unreadable input file, an unknown argument, a Source_Model that is missing for a document or whose hash differs, as Requirement 16 criterion 8 defines it), and 70 for an internal error, and each result classification SHALL equal the exit code that `ruletrace evaluate` returns for the same Compiled_Rulebook, Competition_Data, Questions, Published_Result, and Source_Models, and THE Application_Layer SHALL write no partial report as if the run had succeeded (Requirement 16 criteria 9 and 12).
+
+### 28. 32.1
+
+Old: 1. THE Bracket_Check Application_Layer SHALL report Standings for each requested ranking Target, listing each participant with its Rank_Position or its Tie_Group, listing each Tie_Group as one entry with its members, listing each Indeterminate position with the missing input, and listing for each ranking comparison the tie-breaking criteria applied in order and the compared values that the Decision_Trace records (Requirement 12 criterion 7).
+
+New: 1. THE Bracket_Check Application_Layer SHALL report Standings for each requested ranking Target, listing each participant with its Rank_Position or its Tie_Group, listing each Tie_Group as one entry with its members, listing each Indeterminate position with the missing input, and listing for each ranking comparison the tie-breaking criteria applied in order and the compared values that the Decision_Trace records (Requirement 12 criterion 7), and THE RuleTrace_Laboratory SHALL name this workflow Tournament standings and SHALL describe it as standings and tie groups only, with no bracket, seeding, or progression (Requirement 36 criterion 18).
+
+### 29. 33.7
+
+Old: 7. THE RuleTrace SHALL document the demonstration flow as these ordered steps, each with its command, its inputs, and its expected exit code: (1) ingest the demonstration Source_Documents with the --candidates option; (2) run ruletrace-ai propose on the Candidate_Clauses; (3) list and review the Proposals with ruletrace review list, approve, and reject using a caller-supplied Reviewer and time; (4) validate the Rulebook with the Approval_Ledger; (5) compile; (6) evaluate on the demonstration Competition_Data with the Source_Models and a Published_Result; (7) render the Decision_Traces and the Proof_Report through the Explainer; (8) run Prize_Check and Bracket_Check on the same Compiled_Rulebook or on the Compiled_Rulebook of each demonstration document (the Demo_Runbook states which), and compare their Outcomes and Decision_Traces with the output of step 6 under Requirement 31 criterion 5.
+
+New: 7. THE RuleTrace SHALL document the demonstration flow as these ordered steps, each with its command, its inputs, and its expected exit code: (1) ingest the demonstration Source_Documents with the --candidates option; (2) run ruletrace-ai propose on the Candidate_Clauses; (3) list and review the Proposals with ruletrace review list, approve, and reject using a caller-supplied Reviewer and time; (4) validate the Rulebook with the Approval_Ledger; (5) compile; (6) evaluate on the demonstration Competition_Data with the Source_Models and a Published_Result; (7) render the Decision_Traces and the Proof_Report through the Explainer; (8) run the Prize workflow and the Tournament standings workflow through the RuleTrace_Laboratory (Requirement 36 criterion 18; the machine-readable block gives the Laboratory command or test-harness command) on the same Compiled_Rulebook or on the Compiled_Rulebook of each demonstration document (the Demo_Runbook states which), and compare their Outcomes and Decision_Traces with the output of step 6 under Requirement 31 criterion 5.
+
+### 30. 34.1
+
+Old: 1. THE RuleTrace SHALL state in every demonstration document, in the Demo_Runbook, in the user-facing documentation, and in the header of the Proof_Report and of each application report only capabilities that lie within the First_Version_Support_Boundary, and SHALL NOT claim support for arbitrary or universal rulebooks, PDF ingestion, prize allocation, slot-based qualification, seeding, bracket generation, tournament progression, or multi-stage competitions, and SHALL NOT describe the Prize_Check and Bracket_Check Application_Layers as the full Prize Check and Bracket Check applications.
+
+New: 1. THE RuleTrace SHALL state in every demonstration document, in the Demo_Runbook, in the user-facing documentation, and in the header of the Proof_Report and of each application report only capabilities that lie within the First_Version_Support_Boundary, and SHALL NOT claim support for arbitrary or universal rulebooks, PDF ingestion, prize allocation, slot-based qualification, seeding, bracket generation, tournament progression, or multi-stage competitions, and SHALL NOT describe the Prize_Check and Bracket_Check Workflow_Modules as the full Prize Check and Bracket Check applications, and SHALL NOT describe the RuleTrace_Laboratory as the source of any decision or approval.
+
+### 31. Requirement 33 new criterion
+
+Old: (none)
+
+New: 18. THE RuleTrace SHALL run the demonstration of criteria 7 and 9 through the RuleTrace_Laboratory in demo mode (Requirement 36 criterion 20) with the Recorded_Provider_Script, so that every artifact that the Laboratory writes equals the golden file of criterion 9, and THE Demo_Runbook SHALL state the commands that build and start the Laboratory, the steps that a user performs in the browser, and which Ledger_Records are replayed recorded decisions.
+
+### 32. Requirement 33 new criterion
+
+Old: (none)
+
+New: 19. THE demonstration acceptance test of criterion 15 SHALL include a run that drives the HTTP interface of ruletrace-lab (Requirement 36 criterion 24) and SHALL compare the artifacts of that run with the same golden files.
+
+### 33. Requirement 34 new criterion
+
+Old: (none)
+
+New: 9. THE RuleTrace SHALL state in the Demo_Runbook, in the user-facing documentation, and on the first screen of the RuleTrace_Laboratory that the Laboratory decides nothing and approves nothing by itself, that every Outcome is the result of `ruletrace evaluate`, that every approval is a recorded human act through `ruletrace review`, and that every Proposal shown is untrusted AI output.
+
+### 34. Requirement 34 new criterion
+
+Old: (none)
+
+New: 10. THE RuleTrace SHALL state in the Demo_Runbook and in the user-facing documentation that the stage names Brain, Spine, Heart, Lightning, Ghost, and Autopsy name the components of Requirement 36 criterion 17, that the Prize workflow reports eligibility and ranking as separate Outcomes of separate Rules and that eligibility does not filter rankings, that Tournament standings are not brackets, seeding, or progression, and that a demo-mode run replays recorded provider output and recorded Reviewer decisions, and THE required-statement list and the prohibited-phrase list of criterion 7 SHALL include these statements and the phrases "AI approved", "AI decided", "automatically approved", and "bracket generator".
+
+### 35. Register UD-22
+
+Old: - **UD-22 Packaging** (Resolved-by-user 2026-11-14; amended by UD-33; affects 5.12, 17.1, 18.13, 24.5, 27.x): Two RuleTrace executables, ruletrace and ruletrace-ai, plus (UD-33, Recommended-pending) two Demonstration_Executables. Human approval is an explicit operation in the main workflow through the Review_Group, which supersedes the earlier separate Review_Tool.
+
+New: - **UD-22 Packaging** (Resolved-by-user 2026-11-14; amended by UD-33; affects 5.12, 17.1, 18.13, 24.5, 27.x): Two RuleTrace executables, ruletrace and ruletrace-ai, plus (UD-33, Recommended-pending) two Demonstration_Executables. Superseded by UD-38: the runtime executable set is ruletrace, ruletrace-ai, and ruletrace-lab. Human approval is an explicit operation in the main workflow through the Review_Group, which supersedes the earlier separate Review_Tool.
+
+### 36. Register UD-33 entry
+
+Old: - **UD-33 Packaging of the Application_Layers** (Recommended-pending; decided by the user; affects 27.1, 27.15, 31.3): Compared options: (A) a third RuleTrace executable with prize-check and bracket-check subcommands; (B) two separate small Demonstration_Executables, prize-check and bracket-check, each a thin binary over its library crate; (C) library crates only, with Cargo example binaries and tests as the only entry points. Option A couples both applications into one binary and one dependency tree, which weakens the demonstration that two different applications use one engine, and adds a third entry point to the RuleTrace executables. Option C leaves 27.1 unchanged but offers no ordinary command for a demonstration and for a reviewer. Option B keeps the applications independent, keeps ruletrace and ruletrace-ai unchanged (their dependency trees contain no Application_Layer, 24.12, 27.15), and costs one amendment of 27.1. Recommendation: Option B, applied in this revision: 27.1 now says exactly two RuleTrace executables plus exactly two Demonstration_Executables. If the user chooses Option C, 27.1 reverts to its earlier wording and 31.3 and 27.15 change accordingly.
+
+New: - **UD-33 Packaging of the Application_Layers** (Recommended-pending; decided by the user; affects 27.1, 27.15, 31.3): Compared options: (A) a third RuleTrace executable with prize-check and bracket-check subcommands; (B) two separate small Demonstration_Executables, prize-check and bracket-check, each a thin binary over its library crate; (C) library crates only, with Cargo example binaries and tests as the only entry points. Option A couples both applications into one binary and one dependency tree, which weakens the demonstration that two different applications use one engine, and adds a third entry point to the RuleTrace executables. Option C leaves 27.1 unchanged but offers no ordinary command for a demonstration and for a reviewer. Option B keeps the applications independent, keeps ruletrace and ruletrace-ai unchanged (their dependency trees contain no Application_Layer, 24.12, 27.15), and costs one amendment of 27.1. Recommendation: Option B, applied in this revision: 27.1 now says exactly two RuleTrace executables plus exactly two Demonstration_Executables. If the user chooses Option C, 27.1 reverts to its earlier wording and 31.3 and 27.15 change accordingly. Superseded by UD-38 (2026-11-18): option B is replaced by library Workflow_Modules and the executable ruletrace-lab; the four binding constraints stay for the libraries.
+
+### 37. Register UD-38 (new)
+
+Old: (none)
+
+New: - **UD-38 RuleTrace Laboratory, category Frankenstein** (Confirmed by the user 2026-11-18, see `tools/decisions/UD-38.md`; affects the Introduction, Scope, Glossary, 7.23, 24.12, 24.13, 27, 31.3, 31.10 to 31.12, 32.1, 33.7, 33.18, 33.19, 34.1, 34.9, 34.10, 36, 37): One integrated local application served by ruletrace-lab; runtime executables ruletrace, ruletrace-ai, ruletrace-lab; prize-check and bracket-check as library Workflow_Modules; process separation, credential isolation, loopback-only local web interface, and metaphors that name real behaviour. The credential mechanism, the session mechanism, and the HTTP server library are decided by the Laboratory threat model (task L1), not by this specification.
+
+### Requirements 36 and 37 detailed (2026-11-18)
+
+The acceptance criteria of Requirements 36 and 37 were refined by a requirement-detailing step. Headings and user stories are unchanged, and criterion numbers are stable.
+
+Criteria changed in Requirement 36: 2, 4, 6, 7, 8, 9, 13, 14, 18, 21.
+
+Criteria changed in Requirement 37: 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18, 21, 23, and new criterion 24 (single current session and single session cookie).
+
+Settled points:
+
+- Requirement 36 criterion 4 keeps "and the Rulebook", because Requirement 27 criterion 12 already lets `ruletrace review approve` write the Rulebook during adoption.
+- Requirement 36 criterion 14 counts `ruletrace evaluate` exit code 4 (Indeterminate) as an executed evaluation.
+
+OPEN POINTS for the user:
+
+- (a) Requirement 37 criterion 6 now limits the Laboratory to one Laboratory_Session at a time. This is an addition and must be confirmed against UD-38 open item 11 (two browser tabs).
+- (b) Requirement 37 criterion 11 forbids inline styles, which constrains the front end (no style attributes).
+- (c) Requirement 37 criterion 3 refuses the Host value `localhost` (only `127.0.0.1:<port>` or `[::1]:<port>`), so the user opens the literal address.
+- (d) Requirement 37 criterion 21 leaves open for L1 whether the credential mechanism changes Requirement 28.
+
+### Requirements checkpoint clarifications (2026-11-18)
+
+The user reviewed Requirements 36 and 37 and chose "Continue to the design phase". The requirements phase was not restarted. Decisions on the open points above:
+
+| Point | Decision | Effect on requirements.md |
+| --- | --- | --- |
+| (a) 37.6 single session | Approved: at most one active session. Several tabs with the same cookie are the same session and are allowed. No second independent session. State-changing requests are serialized or guarded against stale revisions. Approval always rechecks the exact revision and hash, whichever tab sent it. Tests: two tabs, concurrent state changes, stale hashes, a second session attempt | 37.6 clarified; new 37.25 |
+| (b) 37.11 no inline styles | Approved. Locally served style sheets, restrictive CSP, no remote assets, no `unsafe-inline` | none |
+| (c) 37.3 Host | Approved: only the exact Host of the bound address and port (`127.0.0.1:<port>`, `[::1]:<port>`); `localhost`, wildcard, non-loopback and non-matching values refused; binding only to loopback | none (37.1, 37.3, 37.4 already state it) |
+| (d) 37.21 credential | **Not closed.** The design and the L1 threat model must reconcile "the Laboratory must not inherit, read, expose, persist or log the credential" with "the Laboratory orchestrates `ruletrace-ai` as a subprocess", examine an OS credential store and a credential broker, and show five properties (Laboratory cannot read; AI process can obtain; not in the approval process; not recoverable from logs, artifacts or the browser session; works on the supported platforms). Process separation alone is not proof | none; design §11.10 and the threat model §6 |
+| 34.10 honest claims | **Kept open** pending a source-backed review that quotes the criterion and compares each statement with the engine and its tests, with attention to evaluate exit 4 (executed with Indeterminate Outcomes). No rewrite on assumptions | none; design §11.14, RN-31 and RN-34 to RN-38 |
+| Limits | Approved: 30-minute idle timeout, 1 MiB control request, 16 MiB combined subprocess output, 300 s per subprocess. Added: a separate explicit upload maximum, chosen after checking the planned snapshots and fixtures; no unbounded bodies; output overflow terminates with a Diagnostic and no silent truncation; a timed-out subprocess is terminated, reaped and cleaned up | 37.14 clarified; new 37.26; 37.23 now covers 24 to 26 |
+
+Old and new text of the changed criteria:
+
+**37.6.** Old (last sentence): "THE ruletrace-lab executable SHALL hold at most one Laboratory_Session at a time." New: "THE ruletrace-lab executable SHALL hold at most one Laboratory_Session at a time. Several browser tabs that carry the same valid session cookie belong to that one Laboratory_Session and SHALL be served, and THE ruletrace-lab executable SHALL create no second, independent Laboratory_Session while one exists. (Clarified at the requirements checkpoint, 2026-11-18.)"
+
+**37.14.** Old: ends with "(a value with a NUL byte is refused before any subprocess starts)." New: the same text, followed by: "WHEN a subprocess exceeds the output limit or the run-time limit, THE ruletrace-lab executable SHALL terminate it, SHALL wait for its exit so that no child process remains, SHALL display a Diagnostic that names the limit and the workflow step, SHALL display none of the captured output as if it were complete (no silent truncation), SHALL use no output file of that step, and SHALL leave no temporary file of that step in the session directory after the session ends. The 1 MiB limit applies to ordinary control requests; file uploads have the separate limits of criterion 26. (Clarified at the requirements checkpoint, 2026-11-18.)"
+
+**37.23.** Old: "tests of criteria 1 to 22 and 24". New: "tests of criteria 1 to 22 and 24 to 26".
+
+**37.25** (new) and **37.26** (new): see requirements.md. Old: (none).
+
+Note by the design author, not part of the user's decision: the check of the planned snapshots and fixtures found no snapshot and no CSV fixture yet. The upload values themselves are in design §11.9 with status Recommended-pending (LT-8), because the real document snapshots of task 11.1 do not exist yet.
+
+### UD-39 amendments (2026-11-18)
+
+The user's final design decisions are recorded in `tools/decisions/UD-39.md`. Each changed criterion carries the marker "(Amended by UD-39, 2026-11-18.)" or "(Added by UD-39, 2026-11-18.)". Old and new text:
+
+#### 7.16
+
+Old: 16. THE RuleTrace SHALL give every Diagnostic code a catalogue identifier of the form RT-family-number with four digits (families RT-DGN, RT-PRV, RT-APR, and RT-AI, and the families that the design assigns to the Diagnostics of Requirements 1 to 14, 19, and 21) and a mnemonic name, SHALL treat the identifier as the Diagnostic code that tests assert and that the CLI renders, and SHALL bind every mnemonic used in this document to exactly one identifier of the table in criterion 17.
+
+New: 16. THE RuleTrace SHALL give every Diagnostic code a catalogue identifier of the form RT-family-number with four digits (families RT-DGN, RT-PRV, RT-APR, RT-AI, and RT-LAB for the Diagnostics of Requirements 36 and 37, and the families that the design assigns to the Diagnostics of Requirements 1 to 14, 19, and 21) and a mnemonic name, SHALL treat the identifier as the Diagnostic code that tests assert and that the CLI renders, and SHALL bind every mnemonic used in this document to exactly one identifier of the table in criterion 17. (Amended by UD-39, 2026-11-18.)
+
+#### 24.13
+
+Old: 13. THE RuleTrace SHALL add to the allowed-dependency list of criterion 5 the edges of the ruletrace-lab crate, which are limited to the two Application_Layer crates, the shared Diagnostic, Location, and Exact_Number crates, and one HTTP server library with a written justification, and SHALL fail the automated check of criterion 5, with the offending crate name and edge, WHEN ruletrace-lab depends, directly or transitively, on an AI_Crate, an AI provider library, the review library crate, a crate that contains the Approval_Ledger append function, the Validator, Compiler, Ingestor, or Extractor crate, or WHEN a Core_Crate, an Auxiliary_Crate, an Application_Layer crate, ruletrace, or ruletrace-ai depends on ruletrace-lab or on its HTTP server library, and SHALL fail the source scan of Requirement 36 criterion 5 WHEN a source file of ruletrace-lab calls a Rules_Engine evaluation function (UD-38). (Amended by UD-38, 2026-11-18.)
+
+New: 13. THE RuleTrace SHALL add to the allowed-dependency list of criterion 5 the direct edges of the ruletrace-lab crate, which are limited to exactly these crates, each for the reason that the design records for it: the two Application_Layer crates (input mapping, Question construction, and report presentation); the shared Diagnostic and Location crate and the Exact_Number crate (types); the SHA-256 crate (Hand_Off_Artifact hashes); the strict data-format parser crate (reading the files that ruletrace writes); the Competition_Data crate (canonical serialization of mapped inputs); the Compiled_Rulebook types crate (the input schema); the Outcome and Decision_Trace types crate (types of the parsed results); the Explainer crate (report rendering and the results-file parser); and the Source_Model crate (display of source text); and no HTTP server library, because the server uses the standard library (UD-39). A further edge needs a written justification per edge and an amendment of this criterion. THE RuleTrace SHALL fail the automated check of criterion 5, with the offending crate name and edge, WHEN ruletrace-lab has a direct edge outside this list, WHEN ruletrace-lab depends, directly or transitively, on an AI_Crate, an AI provider library, a network client library, the review library crate, a crate that contains the Approval_Ledger append function, the Validator, Compiler, Ingestor, or Extractor crate, the ruletrace binary crate, or a development or test utility, or WHEN a Core_Crate, an Auxiliary_Crate, an Application_Layer crate, ruletrace, or ruletrace-ai depends on ruletrace-lab, and SHALL fail the source scan of Requirement 36 criterion 5 WHEN a source file of ruletrace-lab calls a Rules_Engine evaluation function or a function of an Application_Layer that calls one, so that every displayed Outcome originates from `ruletrace evaluate`. (Amended by UD-39, 2026-11-18.)
+
+#### 34.9
+
+Old: 9. THE RuleTrace SHALL state in the Demo_Runbook, in the user-facing documentation, and on the first screen of the RuleTrace_Laboratory that the Laboratory decides nothing and approves nothing by itself, that every Outcome is the result of `ruletrace evaluate`, that every approval is a recorded human act through `ruletrace review`, and that every Proposal shown is untrusted AI output. (Amended by UD-38, 2026-11-18.)
+
+New: 9. THE RuleTrace SHALL state in the Demo_Runbook, in the user-facing documentation, and on the first screen of the RuleTrace_Laboratory that the Laboratory decides nothing and approves nothing by itself, that every Outcome is the result of `ruletrace evaluate`, that every approval is a recorded human act through `ruletrace review` under a Reviewer identity that RuleTrace records and does not authenticate (R-8), and that every unapproved Proposal or Rule_Revision is non-authoritative and is shown with its origin as AI-generated (labelled untrusted), manually authored, or an authored offline demonstration entry. (Amended by UD-38, 2026-11-18.) (Amended by UD-39, 2026-11-18.)
+
+#### 34.10
+
+Old: 10. THE RuleTrace SHALL state in the Demo_Runbook and in the user-facing documentation that the stage names Brain, Spine, Heart, Lightning, Ghost, and Autopsy name the components of Requirement 36 criterion 17, that the Prize workflow reports eligibility and ranking as separate Outcomes of separate Rules and that eligibility does not filter rankings, that Tournament standings are not brackets, seeding, or progression, and that a demo-mode run replays recorded provider output and recorded Reviewer decisions, and THE required-statement list and the prohibited-phrase list of criterion 7 SHALL include these statements and the phrases "AI approved", "AI decided", "automatically approved", and "bracket generator". (Amended by UD-38, 2026-11-18.)
+
+New: 10. THE RuleTrace SHALL state in the Demo_Runbook and in the user-facing documentation that the stage names Brain, Spine, Heart, Lightning, Ghost, and Autopsy name the components of Requirement 36 criterion 17, that the Prize workflow reports eligibility and ranking as separate Outcomes of separate Rules and that eligibility does not filter rankings, that Tournament standings are not brackets, seeding, or progression, that a demo-mode run replays hand-authored scripted responses and not recorded provider output, that the Ledger_Records of the demonstration corpus are decisions that the demonstration Reviewer recorded through `ruletrace review` and not new decisions, and that live provider proposals are generated outside the Laboratory by the user's own `ruletrace-ai` run and imported, and THE required-statement list and the prohibited-phrase list of criterion 7 SHALL include these statements and the phrases "AI approved", "AI decided", "automatically approved", and "bracket generator". (Amended by UD-38, 2026-11-18.) (Amended by UD-39, 2026-11-18.)
+
+#### 36.2
+
+Old: 2. THE RuleTrace_Laboratory SHALL perform every authoritative operation (ingestion, candidate extraction, proposal generation, validation, compilation, evaluation, review listing, review approval, review rejection, and provenance verification) only by starting a ruletrace or ruletrace-ai subprocess, and SHALL perform none of these operations in its own process, as verified by a test that replaces each of the two executables with a recording stand-in and asserts that each such operation requested through the interface reaches exactly one stand-in invocation and no other invocation.
+
+New: 2. THE RuleTrace_Laboratory SHALL perform every authoritative operation that it offers (ingestion, candidate extraction, offline proposal generation in demo mode, validation, compilation, evaluation, review listing, review approval, review rejection, and provenance verification) only by starting a ruletrace or ruletrace-ai subprocess, and SHALL perform none of these operations in its own process, as verified by a test that replaces each of the two executables with a recording stand-in and asserts that each such operation requested through the interface reaches exactly one stand-in invocation and no other invocation. In this version proposal generation by a live AI_Provider is external to the RuleTrace_Laboratory: the user runs ruletrace-ai in a terminal of their own with the credential mechanism of Requirement 28, which is unchanged, and THE RuleTrace_Laboratory SHALL start ruletrace-ai only with an AI_Configuration of the provider kind mock-replay that the demonstration workspace contains or with the --dry-run option, SHALL read and hold no other AI_Configuration, and SHALL integrate the import of the resulting proposals (criterion 25) and every later step (review, approval, validation, compilation, evaluation, and proof). (Amended by UD-39, 2026-11-18.)
+
+#### 36.4
+
+Old: 4. THE RuleTrace_Laboratory SHALL write neither the Approval_Ledger nor the Rulebook from its own process, and SHALL change the bytes of either file only through a ruletrace review approve or ruletrace review reject subprocess, as verified by a test that hashes both files before and after every Laboratory operation and asserts that a change occurs only after an approval or rejection request that passed the checks of criterion 6 and Requirement 37 criterion 19.
+
+New: 4. THE RuleTrace_Laboratory SHALL operate on the Approval_Ledger, the Rulebook, and the Proposal_Store of the durable workspace directory named at start, SHALL display that directory's absolute path on every page, SHALL keep no copy of the Approval_Ledger in the session directory that is its only copy, and SHALL use the session directory only for temporary artifacts that may be deleted, so that every approval, rejection, and adopted Rule_Revision survives the end of the session, the deletion of the session directory, and a restart of ruletrace-lab; THE RuleTrace_Laboratory SHALL write neither the Approval_Ledger nor the Rulebook from its own process, and SHALL change the bytes of either file only through a ruletrace review approve or ruletrace review reject subprocess, as verified by a test that hashes both files before and after every Laboratory operation and asserts that a change occurs only after an approval or rejection request that passed the checks of criterion 6 and Requirement 37 criterion 19. (Amended by UD-39, 2026-11-18.)
+
+#### 36.11
+
+Old: 11. THE RuleTrace_Laboratory SHALL show in the Brain stage each Pending_Proposal with the label untrusted, with its Origin metadata (provider identifier, protocol, model identifier, and token usage where the Proposal_Store records them), and with each validation Diagnostic (code, Severity, message, and Location) exactly as `ruletrace validate` and `ruletrace-ai` returned it, and SHALL show no Rule_Revision as approved in the Brain stage.
+
+New: 11. THE RuleTrace_Laboratory SHALL show in the Brain stage each Pending_Proposal and each unapproved Rule_Revision as non-authoritative with its origin identified as AI-generated (from a live provider, with the label untrusted), an authored offline demonstration entry (an entry whose script origin is authored), or manually authored (Origin Manual), with its Origin metadata (provider identifier, protocol, model identifier, and token usage where the Proposal_Store records them), and with each validation Diagnostic (code, Severity, message, and Location) exactly as `ruletrace validate` and `ruletrace-ai` returned it, and SHALL show no Rule_Revision as approved in the Brain stage. (Amended by UD-39, 2026-11-18.)
+
+#### 36.14
+
+Old: 14. WHILE no `ruletrace evaluate` subprocess has completed with exit code 0 or 4 for the displayed Compiled_Rulebook, THE RuleTrace_Laboratory SHALL show the Lightning stage as inactive, and WHEN such a subprocess completes, THE RuleTrace_Laboratory SHALL show the Lightning stage as active, bound to the identifier of that Compiled_Rulebook and that evaluation's result, and SHALL return it to inactive when a different Compiled_Rulebook is displayed, so that an AI response, a Proposal storage, an approval, a validation, and a compilation never activate the Lightning stage, as verified by a test for each of these events.
+
+New: 14. WHILE no `ruletrace evaluate` subprocess for the displayed Compiled_Rulebook has been classified as an executed evaluation under criterion 21, THE RuleTrace_Laboratory SHALL show the Lightning stage as inactive, and WHEN such a subprocess completes, THE RuleTrace_Laboratory SHALL show the Lightning stage as active, bound to the identifier of that Compiled_Rulebook and that evaluation's result, and SHALL return it to inactive when a different Compiled_Rulebook is displayed, so that an AI response, a Proposal storage, an approval, a validation, and a compilation never activate the Lightning stage, as verified by a test for each of these events. (Amended by UD-39, 2026-11-18.)
+
+#### 36.20
+
+Old: 20. WHERE demo mode is selected, THE RuleTrace_Laboratory SHALL run the proposal step through `ruletrace-ai` with the Mock_Provider that replays the Recorded_Provider_Script, SHALL need no network access, no credential, and no AI_Configuration of a real provider, SHALL label every demo-mode result as a recorded replay with the provider identifier, the protocol, the model identifier, and the capture date of the script, and SHALL present each Ledger_Record loaded from the Demo_Corpus as a replayed recorded Reviewer decision and not as a new human decision (Requirement 33 criterion 11).
+
+New: 20. WHERE demo mode is selected, THE RuleTrace_Laboratory SHALL run the proposal step through `ruletrace-ai` with the Mock_Provider that replays the Recorded_Provider_Script, SHALL need no network access, no credential, and no AI_Configuration of a real provider, SHALL label every demo-mode result as a replay of a hand-authored script, stating for each script entry the origin that the script records and describing no authored entry as provider output, together with the provider identifier, the protocol, the model identifier, and the capture statement of the script, and SHALL present each Ledger_Record loaded from the Demo_Corpus as a replayed recorded Reviewer decision and not as a new human decision (Requirement 33 criterion 11). (Amended by UD-39, 2026-11-18.)
+
+#### 36.21
+
+Old: 21. IF a subprocess exits with a nonzero exit code, exceeds a limit of Requirement 37 criterion 14, or produces output that is not well formed for its documented format, THEN THE RuleTrace_Laboratory SHALL display the exit code and each Diagnostic that the subprocess wrote to standard error, escaped under Requirement 37 criterion 16, SHALL display no success state for the affected stage, SHALL start no further subprocess for the affected workflow step, and SHALL treat an exit code outside the set of the executable (Requirement 27 criterion 10) as an internal error.
+
+New: 21. THE RuleTrace_Laboratory SHALL classify the end of every subprocess as exactly one of: (a) launch failure, when the executable could not be started; (b) timeout or abnormal termination, when a limit of Requirement 37 criterion 14 was exceeded or the process ended by a signal or without an exit code; (c) an exit code outside the set of the executable (Requirement 27 criterion 10), treated as an internal error; (d) missing or invalid output, when an output file that the step requires is absent from the fresh output directory of the step or is not well formed for its documented format; or (e) a completed run with an exit code of its set. FOR `ruletrace evaluate`, THE RuleTrace_Laboratory SHALL classify a completed run that wrote a well-formed results file as an executed evaluation, whatever its exit code (0, 4, or 2 with a written results file, Requirement 16 criteria 9 and 11 and Requirement 13 criterion 18), and SHALL report for it, as read from the Outcomes, Diagnostics, and verification section of that file and not inferred from the exit code, the number of Indeterminate Outcomes, each Error Diagnostic of the evaluation, and each Decision_Trace marked not verified, and SHALL classify a completed run that wrote no results file as not executed. FOR each run in the classes (a) to (d), for each completed run of a command other than `ruletrace evaluate` whose exit code is not 0, and for each completed `ruletrace evaluate` run that is not an executed evaluation, THE RuleTrace_Laboratory SHALL display the classification, the exit code where one exists, and each Diagnostic that the subprocess wrote to standard error, escaped under Requirement 37 criterion 16, SHALL display no success state for the affected stage, and SHALL start no further subprocess for the affected workflow step. THE RuleTrace_Laboratory SHALL NOT describe an executed evaluation with exit code 4 as a failure to execute, SHALL NOT describe an Indeterminate Outcome as decided, and SHALL NOT state that exit code 4 means only Indeterminate Outcomes. (Amended by UD-39, 2026-11-18.)
+
+#### 36.25
+
+Old: (none)
+
+New: 25. WHEN the user requests the import of proposal batches that a ruletrace-ai run outside the RuleTrace_Laboratory wrote into the Proposal_Store of the workspace (the RuleTrace_Laboratory shows the command, with no credential and no environment value), THE RuleTrace_Laboratory SHALL record the SHA-256 hash of each new batch file as a Hand_Off_Artifact, SHALL have the Proposal_Store validated by a `ruletrace review list` subprocess (Requirement 35 criterion 17), SHALL display for each batch its Request_Identifier, its hash, and its provider identifier, protocol, model identifier, adapter version, reported model, and usage exactly as the batch records them, SHALL treat every Proposal of it as untrusted until a human approval under criterion 6, SHALL offer for approval no Proposal of a store that failed validation, and SHALL write no Proposal_Store file of its own. (Added by UD-39, 2026-11-18.)
+
+#### 37.8
+
+Old: 8. WHEN a Laboratory_Session has had no request for 30 minutes or the session is ended by the user, THE ruletrace-lab executable SHALL invalidate the session identifier so that every later request that carries it receives HTTP status 401. A test with a simulated timer SHALL verify the 30-minute boundary (a request at 29 minutes 59 seconds succeeds, a request at 30 minutes 0 seconds receives 401).
+
+New: 8. WHEN a Laboratory_Session has had no request for 30 minutes or the session is ended by the user, THE ruletrace-lab executable SHALL invalidate the session identifier so that every later request that carries it receives HTTP status 401, and SHALL accept no Launch_Secret until it is restarted; a restart generates a new Launch_Secret under criterion 5, and no Launch_Secret is used for more than one Laboratory_Session. A test with a simulated timer SHALL verify the 30-minute boundary (a request at 29 minutes 59 seconds succeeds, a request at 30 minutes 0 seconds receives 401). (Amended by UD-39, 2026-11-18.)
+
+#### 37.14
+
+Old: 14. THE ruletrace-lab executable SHALL start each subprocess through an argument vector with no shell, SHALL pass each value from a request as exactly one argument element that follows an explicit end-of-options marker or that is part of an option of the form name=value, SHALL resolve the ruletrace and ruletrace-ai executable paths only from the directory of the ruletrace-lab executable or from a path named at start (never from the PATH variable or a request), SHALL pass an explicit allow-list of environment variables, SHALL limit the request body to 1 MiB (an oversized request is refused with HTTP status 413), the captured output of a subprocess to 16 MiB, and the run time of a subprocess to 300 seconds, and SHALL terminate the subprocess and display an error WHEN a limit is exceeded, as verified by tests with values that contain shell metacharacters, a leading hyphen, a newline, and a NUL byte (a value with a NUL byte is refused before any subprocess starts). WHEN a subprocess exceeds the output limit or the run-time limit, THE ruletrace-lab executable SHALL terminate it, SHALL wait for its exit so that no child process remains, SHALL display a Diagnostic that names the limit and the workflow step, SHALL display none of the captured output as if it were complete (no silent truncation), SHALL use no output file of that step, and SHALL leave no temporary file of that step in the session directory after the session ends. The 1 MiB limit applies to ordinary control requests; file uploads have the separate limits of criterion 26. (Clarified at the requirements checkpoint, 2026-11-18.)
+
+New: 14. THE ruletrace-lab executable SHALL start each subprocess through an argument vector with no shell, SHALL pass each value from a request as exactly one argument element placed immediately after the option name that takes it, in the grammar that the ruletrace and ruletrace-ai command-line interfaces accept (Requirement 17, design §3.9), SHALL use no end-of-options marker and no option of the form name=value, which neither interface supports, SHALL refuse before any subprocess starts a value that begins with a hyphen or contains a NUL byte, a line break, or another control character, SHALL resolve the ruletrace and ruletrace-ai executable paths only from the directory of the ruletrace-lab executable or from a path named at start (never from the PATH variable or a request), SHALL start every subprocess, ruletrace and ruletrace-ai alike, with an environment built only from an explicit allow-list and forward no inherited variable, SHALL limit the request body to 1 MiB (an oversized request is refused with HTTP status 413), the captured output of a subprocess to 16 MiB, and the run time of a subprocess to 300 seconds, and SHALL terminate the subprocess and display an error WHEN a limit is exceeded, as verified by tests with values that contain shell metacharacters, a leading hyphen, a newline, and a NUL byte (a value with a NUL byte is refused before any subprocess starts). WHEN a subprocess exceeds the output limit or the run-time limit, THE ruletrace-lab executable SHALL terminate it, SHALL wait for its exit so that no child process remains, SHALL display a Diagnostic that names the limit and the workflow step, SHALL display none of the captured output as if it were complete (no silent truncation), SHALL use no output file of that step, and SHALL leave no temporary file of that step in the session directory after the session ends. The 1 MiB limit applies to ordinary control requests; file uploads have the separate limits of criterion 26. (Clarified at the requirements checkpoint, 2026-11-18.) (Amended by UD-39, 2026-11-18.)
+
+#### 37.17
+
+Old: 17. WHEN the user ends the session, WHEN the ruletrace-lab process receives an interrupt or terminate signal, or WHEN the process starts an orderly shutdown, THE ruletrace-lab executable SHALL close the listener, SHALL invalidate every session, SHALL terminate each running subprocess, SHALL delete the temporary directory of the Laboratory_Session, and SHALL exit with code 0.
+
+New: 17. WHEN the user ends the session, WHEN the ruletrace-lab process receives an interrupt or terminate signal, or WHEN the process starts an orderly shutdown, THE ruletrace-lab executable SHALL close the listener, SHALL invalidate every session, SHALL terminate each running subprocess, SHALL delete the temporary directory of the Laboratory_Session, and SHALL exit with code 0. THE RuleTrace SHALL ensure, by a process-containment mechanism that the design selects for each platform of Requirement 21 criterion 10, that every ruletrace and ruletrace-ai subprocess terminates and is reaped also WHEN ruletrace-lab terminates abnormally (a crash or a kill signal that it cannot handle), as verified on each such platform by a test that kills ruletrace-lab while a subprocess runs and asserts that no subprocess of it remains after a bounded time that the design states, and WHERE this cannot be demonstrated on a platform, THE RuleTrace SHALL report the limitation, SHALL NOT claim the protection for that platform, and SHALL revise the architecture before the Laboratory is released on it. (Amended by UD-39, 2026-11-18.)
+
+#### 37.20
+
+Old: 20. THE RuleTrace_Laboratory SHALL NOT contain the AI provider credential in its process environment, in any argument vector, in any file that it writes, in any log line, or in any HTTP response, and THE RuleTrace SHALL include a test that supplies a canary credential through the mechanism of criterion 21, runs a complete proposal workflow against a loopback stub provider that records the Authorization header, and asserts that the stub received the canary from ruletrace-ai and that the canary appears nowhere in the environment of the ruletrace-lab process, the files of the workspace and the session directory, the standard output and standard error of ruletrace-lab, and the bodies and headers of every HTTP response.
+
+New: 20. THE RuleTrace_Laboratory SHALL NOT contain the AI provider credential in its process environment, in any argument vector, in any file that it writes, in any log line, or in any HTTP response, and THE RuleTrace SHALL include a test that supplies a canary credential through the mechanism of criterion 21, runs ruletrace-ai outside the Laboratory against a loopback stub provider that records the Authorization header, imports the resulting batch into the Laboratory under Requirement 36 criterion 25, runs the complete workflow from import through review, validation, compilation, evaluation, and proof, and asserts that the stub received the canary from ruletrace-ai and that the canary appears nowhere in the environment of each ruletrace subprocess or in the environment of the ruletrace-lab process, the files of the workspace and the session directory, the standard output and standard error of ruletrace-lab, and the bodies and headers of every HTTP response. (Amended by UD-39, 2026-11-18.)
+
+#### 37.21
+
+Old: 21. THE RuleTrace SHALL record in a Laboratory threat model, before the implementation of ruletrace-lab starts, the mechanism by which ruletrace-ai receives its credential when the RuleTrace_Laboratory starts it, and SHALL select only a mechanism under which the credential is not reachable by the ruletrace-lab process. Whether that mechanism requires a change to Requirement 28 (credential only from the environment variable named in the AI_Configuration) is OPEN for the L1 threat model and needs an explicit user decision before any change to Requirement 28. IF the AI_Configuration that a user names names a credential environment variable that is present in the environment of the ruletrace-lab process, THEN THE ruletrace-lab executable SHALL start no subprocess, SHALL write an Error Diagnostic that names the variable and not its value, and SHALL exit with code 2.
+
+New: 21. THE RuleTrace SHALL keep one registry file of the names, and never the values, of the provider credential environment variables (each name that a committed AI_Configuration, example configuration, or continuous integration workflow uses, and each name that a Provider_Profile documents), with a test that fails WHEN a committed configuration or workflow names a credential variable that the registry lacks; SHALL deliver launch scripts for the platforms of Requirement 21 criterion 10 that start ruletrace-lab with an environment built only from an explicit allow-list that contains no registered name, with a test per script that sets every registered name to a canary value and asserts that no registered name and no canary reaches the ruletrace-lab process; and IF a registered name is present in the environment of the ruletrace-lab process, THEN THE ruletrace-lab executable SHALL start no subprocess, SHALL write an Error Diagnostic that names the variable and not its value, and SHALL exit with code 2. THE RuleTrace_Laboratory SHALL use a registered variable only to test its presence and SHALL NOT retain, display, transmit, or log its value. The security boundary is that no code path of ruletrace-lab receives a credential; this does not isolate a credential from another process of the same operating-system user, and THE RuleTrace SHALL state this limit in the Laboratory documentation. Requirement 28 is unchanged. (Amended by UD-39, 2026-11-18.)
+
+#### 37.23
+
+Old: 23. THE RuleTrace SHALL include tests of criteria 1 to 22 and 24 to 26 that assert the exact HTTP status, the exact header values, the exit code, and the byte-level state of the Approval_Ledger and of the workspace files, and SHALL include for each of criteria 3, 4, 7, 9, 13, 14, 19, and 20 at least one negative test that fails when the check is removed, demonstrated by a mutant that removes the check.
+
+New: 23. THE RuleTrace SHALL include tests of criteria 1 to 22 and 24 to 27 that assert the exact HTTP status, the exact header values, the exit code, and the byte-level state of the Approval_Ledger and of the workspace files, and SHALL include for each of criteria 3, 4, 7, 9, 13, 14, 19, and 20 at least one negative test that fails when the check is removed, demonstrated by a mutant that removes the check. (Amended by UD-39, 2026-11-18.)
+
+#### 37.26
+
+Old: 26. THE ruletrace-lab executable SHALL accept a file upload only through an upload request that names the kind of the file, SHALL apply to each upload an explicit maximum size for that kind that the design states and that is not greater than the size limit of that kind of input in Requirement 19 and the design limits, SHALL apply an explicit maximum to the total size of the uploads of one Laboratory_Session, SHALL refuse an upload above a maximum with HTTP status 413 before it reads more of the body than the maximum allows, SHALL accept an upload whose size equals the maximum, and SHALL accept no request body, upload or other, without a maximum size. (Added at the requirements checkpoint, 2026-11-18.)
+
+New: 26. THE ruletrace-lab executable SHALL accept a file upload only through an upload request that names the kind of the file, SHALL apply to each upload a maximum of 16 MiB (16,777,216 bytes) or the lower size limit of that kind of input in Requirement 19 and the design limits, SHALL apply a maximum of 64 MiB (67,108,864 bytes) to the total size of the accepted uploads of one Laboratory_Session, SHALL enforce each maximum while the body streams in and before it buffers or writes to disk more than the maximum allows, SHALL refuse an upload above a maximum with HTTP status 413, SHALL delete every partial file of a refused or interrupted upload, SHALL accept an upload whose size equals the maximum, and SHALL accept no request body, upload or other, without a maximum size. (Added at the requirements checkpoint, 2026-11-18.) (Amended by UD-39, 2026-11-18.)
+
+#### 37.27
+
+Old: (none)
+
+New: 27. THE ruletrace-lab executable SHALL hold at most 16 open connections and SHALL process at most 4 requests at the same time, SHALL apply finite timeouts that the design states to reading the request line and headers, to reading the body, and to writing the response, SHALL answer a connection beyond either limit with HTTP status 503 and a Retry-After header WHERE a response can be written and otherwise close it without a response, SHALL release every resource of a closed, refused, or timed-out connection (thread, buffer, partial upload), and THE RuleTrace SHALL include tests for each limit and timeout at and beyond its value and for the release of those resources. (Added by UD-39, 2026-11-18.)
+
+#### register UD-39
+
+Old: (none)
+
+New: - **UD-39 RuleTrace Laboratory final design decisions** (Confirmed by the user 2026-11-18, see `tools/decisions/UD-39.md`; affects 7.16, 24.13, 34.9, 34.10, 36.2, 36.4, 36.11, 36.14, 36.20, 36.21, 36.25, 37.8, 37.14, 37.17, 37.20, 37.21, 37.23, 37.26, 37.27): live provider generation external with proposal import; launch scripts and a credential-name registry; standard-library server; restart after session end; upload and connection limits; durable workspace for approvals; honest origin labels; `RT-LAB` family; 9.6 partial. LT-6 (cross-port cookie exposure) and LT-7 (process containment on crash) stay OPEN.
+
+Not changed by UD-39: Requirement 28 (all criteria), 37.5 and 37.6 (LT-6 is open and may change them later), 37.23's mutant list (RN-48 open).
+
+Corrected after the review `docs/reviews/2026-11-18-review-ud39-6c85779.md` (F4, F5, F13): the New text of 36.2, 36.21 and 37.21 above is the corrected text.
+
+### UD-40 clarifications (2026-11-18)
+
+Record: `tools/decisions/UD-40.md`.
+
+#### 36.25
+
+Old: 25. WHEN the user requests the import of proposal batches that a ruletrace-ai run outside the RuleTrace_Laboratory wrote into the Proposal_Store of the workspace (the RuleTrace_Laboratory shows the command, with no credential and no environment value), THE RuleTrace_Laboratory SHALL record the SHA-256 hash of each new batch file as a Hand_Off_Artifact, SHALL have the Proposal_Store validated by a `ruletrace review list` subprocess (Requirement 35 criterion 17), SHALL display for each batch its Request_Identifier, its hash, and its provider identifier, protocol, model identifier, adapter version, reported model, and usage exactly as the batch records them, SHALL treat every Proposal of it as untrusted until a human approval under criterion 6, SHALL offer for approval no Proposal of a store that failed validation, and SHALL write no Proposal_Store file of its own. (Added by UD-39, 2026-11-18.)
+
+New: 25. WHEN the user requests the import of proposal batches that a ruletrace-ai run outside the RuleTrace_Laboratory wrote into the Proposal_Store of the workspace (the RuleTrace_Laboratory shows the command, with no credential and no environment value), THE RuleTrace_Laboratory SHALL refuse, before reading it, a batch path that is outside `<workspace>/proposals`, contains a parent-directory component, or is or passes through a symbolic link, SHALL record the SHA-256 hash of each new batch file as a Hand_Off_Artifact, SHALL check the structure, the schema, the content hash, and the source metadata of each batch before presenting it, SHALL have the Proposal_Store validated by a `ruletrace review list` subprocess (Requirement 35 criterion 17), SHALL display for each batch its Request_Identifier, its hash, and its provider identifier, protocol, model identifier, adapter version, reported model, and usage exactly as the batch records them, SHALL treat every Proposal of it as untrusted until a human approval under criterion 6 and SHALL NOT present a valid hash as approval or as evidence that the proposed interpretation is correct, SHALL offer for approval no Proposal of a store that failed validation, and SHALL write no Proposal_Store file of its own. (Added by UD-39, 2026-11-18.) (Clarified by UD-40, 2026-11-18.)
+
+#### 36.21
+
+Old: 21. THE RuleTrace_Laboratory SHALL classify the end of every subprocess as exactly one of: (a) launch failure, when the executable could not be started; (b) timeout or abnormal termination, when a limit of Requirement 37 criterion 14 was exceeded or the process ended by a signal or without an exit code; (c) an exit code outside the set of the executable (Requirement 27 criterion 10), treated as an internal error; (d) missing or invalid output, when an output file that the step requires is absent from the fresh output directory of the step or is not well formed for its documented format; or (e) a completed run with an exit code of its set. FOR `ruletrace evaluate`, THE RuleTrace_Laboratory SHALL classify a completed run that wrote a well-formed results file as an executed evaluation, whatever its exit code (0, 4, or 2 with a written results file, Requirement 16 criteria 9 and 11 and Requirement 13 criterion 18), and SHALL report for it, as read from the Outcomes, Diagnostics, and verification section of that file and not inferred from the exit code, the number of Indeterminate Outcomes, each Error Diagnostic of the evaluation, and each Decision_Trace marked not verified, and SHALL classify a completed run that wrote no results file as not executed. FOR each run in the classes (a) to (d), for each completed run of a command other than `ruletrace evaluate` whose exit code is not 0, and for each completed `ruletrace evaluate` run that is not an executed evaluation, THE RuleTrace_Laboratory SHALL display the classification, the exit code where one exists, and each Diagnostic that the subprocess wrote to standard error, escaped under Requirement 37 criterion 16, SHALL display no success state for the affected stage, and SHALL start no further subprocess for the affected workflow step. THE RuleTrace_Laboratory SHALL NOT describe an executed evaluation with exit code 4 as a failure to execute, SHALL NOT describe an Indeterminate Outcome as decided, and SHALL NOT state that exit code 4 means only Indeterminate Outcomes. (Amended by UD-39, 2026-11-18.)
+
+New: 21. THE RuleTrace_Laboratory SHALL classify the end of every subprocess as exactly one of: (a) launch failure, when the executable could not be started; (b) timeout or abnormal termination, when a limit of Requirement 37 criterion 14 was exceeded or the process ended by a signal or without an exit code; (c) an exit code outside the set of the executable (Requirement 27 criterion 10), treated as an internal error; (d) missing or invalid output, when an output file that the step requires is absent from the fresh output directory of the step or is not well formed for its documented format; or (e) a completed run with an exit code of its set. FOR `ruletrace evaluate`, THE RuleTrace_Laboratory SHALL classify a completed run that wrote a well-formed results file as an executed evaluation, whatever its exit code (0, 4, or 2 with a written results file, Requirement 16 criteria 9 and 11 and Requirement 13 criterion 18), and SHALL report for it, as read from the Outcomes, Diagnostics, and verification section of that file and not inferred from the exit code, the number of Indeterminate Outcomes, each Error Diagnostic of the evaluation, and each Decision_Trace marked not verified, and SHALL classify a completed run that wrote no results file as not executed. FOR each run in the classes (a) to (d), for each completed run of a command other than `ruletrace evaluate` whose exit code is not 0, and for each completed `ruletrace evaluate` run that is not an executed evaluation, THE RuleTrace_Laboratory SHALL display the classification, the exit code where one exists, and each Diagnostic that the subprocess wrote to standard error, escaped under Requirement 37 criterion 16, SHALL display no success state for the affected stage, and SHALL start no further subprocess for the affected workflow step. FOR every executed evaluation, THE RuleTrace_Laboratory SHALL show the execution status (executed; results available and validated) separately from the provenance status (verified, or not verified with each Diagnostic), SHALL label no result or proof as verified whose Decision_Trace the Explainer did not verify, SHALL show every Error Diagnostic of the evaluation beside the Outcomes so that no Indeterminate Outcome conceals it, and SHALL NOT state that an executed evaluation means that every decision is decided or trustworthy. THE RuleTrace_Laboratory SHALL NOT describe an executed evaluation with exit code 4 as a failure to execute, SHALL NOT describe an Indeterminate Outcome as decided, and SHALL NOT state that exit code 4 means only Indeterminate Outcomes. (Amended by UD-39, 2026-11-18.) (Clarified by UD-40, 2026-11-18.)
+
+RN-51 accepted (UD-40 section 1); RN-52 decided as an ownership rule with an audit (`docs/rn-52-ownership-audit.md`); RN-38 accepted as a Rule_IR version 1 invariant with regression coverage.
+
+### UD-41 amendment (2026-11-18)
+
+#### 24.12
+
+Old: 12. THE RuleTrace SHALL add to the allowed-dependency list of criterion 5 the edges of each Application_Layer crate, which are limited to the Rules_Engine crate, the crates for the Compiled_Rulebook and Competition_Data types and their parsers, the Explainer crate, the Source_Model crate, and the shared Diagnostic, Location, and Exact_Number crates, and SHALL fail the automated check of criterion 5, with the offending crate name and edge, WHEN an Application_Layer depends, directly or transitively, on the ruletrace binary crate, on the review library crate, on a crate that contains the Approval_Ledger append function, on the Validator, Compiler, Ingestor, or Extractor crate, on an Auxiliary_Crate, or on a network client library, or WHEN a Core_Crate or Auxiliary_Crate depends on an Application_Layer crate. (Amended by UD-38, 2026-11-18.)
+
+New: 12. THE RuleTrace SHALL add to the allowed-dependency list of criterion 5 the edges of each Application_Layer crate, which are limited to the Rules_Engine crate, the crates for the Compiled_Rulebook and Competition_Data types and their parsers, the Explainer crate, the Source_Model crate, and the shared Diagnostic, Location, and Exact_Number crates, and SHALL fail the automated check of criterion 5, with the offending crate name and edge, WHEN an Application_Layer depends, directly or transitively, on the ruletrace binary crate, on the review library crate, on a crate that contains the Approval_Ledger append function, on the Validator, Compiler, Ingestor, or Extractor crate, on an Auxiliary_Crate, or on a network client library, or WHEN a Core_Crate or Auxiliary_Crate depends on an Application_Layer crate. (Amended by UD-38, 2026-11-18.) THE Competition_Data crate MAY depend on the Compiled_Rulebook types crate only to read compiled rulebook declarations (input and collection types, enumeration members, and the rule body kind of each Target) in order to derive the input-mapping schema and the Target kinds, and THE RuleTrace SHALL fail the automated check of criterion 5 WHEN the Competition_Data crate depends, directly or transitively, on the Rules_Engine, the Compiler, the Validator, the Explainer, the review library crate, the ruletrace binary crate, or an Auxiliary_Crate. (Amended by UD-41, 2026-11-18.)
+
+Also: design.md §3.1 citation "Req 15.9" corrected (UD-41).
+
+### UD-42 amendments (2026-11-18)
+
+Record: `tools/decisions/UD-42.md` (review finding F1 of `docs/reviews/2026-11-18-review-corr3-366a80e.md`). Design: §8.5 note of 2026-11-18 (rationale). Implementation: `crates/rt-explain/src/report/{common,human,machine,fields}.rs` (`3ed212c`). Tests: `crates/rt-explain/src/tests_app_report.rs` (`diagnostics_section_states_its_scope_and_published_differences_stay_apart`, the layout and field-set tests), `crates/rt-tests-core/tests/app_report_goldens.rs`.
+
+#### 31.6
+
+Old: 6. THE Prize_Check Application_Layer SHALL report for each participant the eligibility Outcome, the weighted score as an exact value, the Rank_Position or the Tie_Group, and each Indeterminate Outcome with the name of the missing input, and SHALL report the result of the published-result consistency check of Requirement 13 criterion 12 with each differing value, and the Prize_Check report SHALL contain no field other than values that the Outcomes and Decision_Traces provide, so that the Prize_Check report contains no prize, award, amount, or allocation of any prize to a participant.
+
+New: 6. THE Prize_Check Application_Layer SHALL report for each participant the eligibility Outcome, the weighted score as an exact value, the Rank_Position or the Tie_Group, and each Indeterminate Outcome with the name of the missing input, and SHALL report the result of the published-result consistency check of Requirement 13 criterion 12 with each differing value, and the Prize_Check report SHALL contain no field other than values that the Outcomes and Decision_Traces provide and the fixed `diagnostics_scope` member of criterion 16, so that the Prize_Check report contains no prize, award, amount, or allocation of any prize to a participant. (Amended by UD-42, 2026-11-18.)
+
+#### 32.5
+
+Old: 5. THE Bracket_Check Application_Layer SHALL write a report whose set of fields equals exactly the set that criteria 1 and 2 and Requirement 31 criteria 7, 13, and 14 define, and SHALL contain no pairing, round, bracket position, seed, slot, advancement, or elimination field, as verified by a test that compares the field set of every machine-readable report with the documented field set and fails on any additional field.
+
+New: 5. THE Bracket_Check Application_Layer SHALL write a report whose set of fields equals exactly the set that criteria 1 and 2 and Requirement 31 criteria 7, 13, 14, and 16 define, and SHALL contain no pairing, round, bracket position, seed, slot, advancement, or elimination field, as verified by a test that compares the field set of every machine-readable report with the documented field set and fails on any additional field. (Amended by UD-42, 2026-11-18.)
+
+#### 31.16
+
+Old: (none)
+
+New: 16. THE machine-readable report that each Application_Layer (Prize_Check and Bracket_Check) assembles from a run SHALL contain, immediately after its `diagnostics` array and as its last top-level member, the mandatory member `diagnostics_scope`, a JSON string whose only permitted value is `evaluation_and_provenance`, and THE human-readable report SHALL head its Diagnostics section with a heading that states the same scope. The scope means: the `diagnostics` array (and the human Diagnostics section) lists exactly the Diagnostics of the evaluation and of the provenance verification of the Decision_Traces; each difference to a Published_Result is reported only in the published-result section of Requirement 31 criterion 7, with its code, and SHALL NOT appear in the Diagnostics section; and Warnings that `ruletrace evaluate` writes to standard error are outside the report section, so that an empty Diagnostics section states neither that no published-result difference exists nor that no warning was emitted. THE RuleTrace SHALL include tests that assert the exact member, its value, its position, and the exact human heading for both Application_Layers, for a report whose only finding is a published-result difference. (Added by UD-42, 2026-11-18.)
+
+
+Corrected after review `docs/reviews/2026-11-18-review-f1f2-3ed212c.md` N2: 31.16 applies to the report that an Application_Layer assembles from a run (the report assembler always adds the Diagnostics section); N1: the published-difference-only test now covers both Application_Layers.
+
+### Task 9.16 golden approval (2026-11-18)
+
+- Goldens: `tests/fixtures/app-reports/` (11 case directories, 87 files), written once by the user-approved command `unshare -rn sh -c 'ip link set lo up && exec "$@"' sh env RT_APP_GOLDEN_BLESS=/home/sam/Desktop/ruletrace/tests/fixtures/app-reports CARGO_TARGET_DIR=/home/sam/Desktop/ruletrace/target cargo test -p rt-tests-core --test app_report_goldens` (approval `7aa824933ccc`). Byte-identical to the reviewed candidate set v3 (`diff -r` empty).
+- `tests/fixtures/app-reports/PROVENANCE.md`: required by the existing harness check of Req 28.11; written by an agent edit under the user's approval `d561fc0b3e9f`.
+- Two earlier approvals (`439dfb867f3d`, `913c957b1d36`) were not used: the first carried line breaks that would have split the command, the second used a wrapper form that the shell guard refuses. The guard was then fixed (`74ec3fe`) to recognise `RT_APP_GOLDEN_BLESS` and `RULETRACE_BLESS`.
+- Requirements now evidenced locally: 31.14, 31.15, 31.16 and 20.4 for the 11 cases; 32.7 except the Tie_Group-at-threshold fixture (deferred with 9.3). Three-platform byte identity is not yet evidenced (M3 is not pushed).
+
+### Task 9.17 closure (2026-11-18)
+
+Closed by the user's decision on its locally deliverable, independently reviewed scope, as for 9.10 and 9.11. The original task text and deferral history are kept in `tasks.md`. The deferral-table row above was annotated in place; its old text was: `| 9.17 | Deferred | User decision 2 | post-submission hardening | 31.11, 31.15, 20.6, 27.15 | Two-application isolation and process-independence tests |`.
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| 31.15, 20.6 | `crates/rt-tests-core/tests/workflow_module_isolation.rs` (`bdaefe8`, `5606578`); reviews `2026-11-18-review-9.17-bdaefe8.md`, `2026-11-18-review-9.17-followup-5606578.md` | Local evidence accepted; Windows and macOS outstanding |
+| 31.11 | `crates/rt-tests-core/tests/workflow_module_environment.rs`, `crates/rt-tests-core/tests/support/app_runs.rs`; with the 9.8 source scan | Local evidence accepted, with the clock, locale and PATH limits of the 9.17 closure note; Windows and macOS outstanding |
+| 27.15 | none in 9.17 | **Not satisfied**; owned by 13.4 (executable set with `ruletrace-lab`) and 13.6 (Laboratory process independence, Req 36.22) |
+
+Effect on 9.5: the 31.11 test it awaited is delivered; 9.5 stays open on 9.8 (APP-API) and on Req 15.5, which has no recorded coverage.
+
+### Task 9.8 APP-API (2026-11-18, awaiting the user's closure decision; closed, see below)
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| 31.10 | `crates/rt-xtask/src/app_layers.rs` (nine token rules), `crates/rt-xtask/src/app_api.rs` (`app-api`), `tools/app-api-allow.v1`; tests `app_layers_tests.rs`, `app_api_tests.rs`, `tests/app_api.rs` (`995a16a`, `f4c7299`); reviews `2026-11-18-review-9.8-8353adb.md`, `2026-11-18-review-api-b15264f.md`, `2026-11-18-review-api-f1-995a16a.md`, `2026-11-18-review-api-kw-f4c7299.md` | Local evidence; accepted type-blind limits F3, F6, F7; open limit F2 and no macro expansion; Windows and macOS outstanding |
+| 24.13 | mechanism only: `app-api` allow-list; the `rt-lab` section belongs to 13.4 | **Not satisfied** until 13.4 |
+| 27.15 | `check-executables` with two names | **Not satisfied**; owned by 13.4 and 13.6 |
+
+Effect on 9.5: the 9.8 source scan it awaited is delivered; 9.5 stays open on Req 15.5, which has no recorded coverage.
+
+### Task 9.8 closure (2026-11-18)
+
+Closed by the user's decision on its locally delivered, independently reviewed scope. The section above is kept as written. Records review: `docs/reviews/2026-11-18-review-rec-ab222f0.md` (APPROVED, no blocking finding).
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| 31.10 | as in the section above, through `f4c7299` | Local evidence accepted with limits F2, F3, F6, F7, no macro expansion, untested conservative `r#` handling; Windows and macOS CI outstanding |
+| 24.13 | `app-api` mechanism only | **Not satisfied**; Laboratory section owned by 13.4 |
+| 27.15 | `check-executables` with two names | **Not satisfied**; owned by 13.4 and 13.6 |
+
+Effect on 9.5: unchanged; 9.5 stays open on Req 15.5.
+
+### Req 15.5 coverage for task 9.5 (2026-11-18)
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| 15.5 | `tools/allowed-edges.v1` (app crates depend on `rt-engine`; `rt-engine` lists no app crate; `forbid-class core -> app`); `check-graph`; tests `engine_depending_on_application_fails_by_class_and_edge_list` (`0f002f9`) and `committed_list_keeps_engine_independent_of_applications` (`d6673d0`) in `crates/rt-xtask/src/graph.rs`; reviews `2026-11-18-review-r155-0f002f9.md`, `2026-11-18-review-n1-d6673d0.md` | Local evidence; manifest edges rely on `check-graph` over real metadata; Windows and macOS CI outstanding |
+| 31.6 | golden `tests/fixtures/app-reports/prize-ranking-tie-group/` (`42e9e01`), `app_report_goldens.rs` | Local evidence (correction of the 9.5 note that said it was waiting) |
+
+Effect on 9.5: the Req 15.5 coverage question is resolved by evidence; 9.5 stays `[ ]` pending the user's closure decision.
+
+### Task 9.5 closure (2026-11-18)
+
+Closed by the user's decision on its locally delivered, independently reviewed scope. The sections above are kept as written.
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| 15.5 | as above, plus `no_core_manifest_depends_on_an_application_crate` (`8ddb5e9`, `f08b2a9`) over the real manifests; reviews `2026-11-18-review-man-8ddb5e9.md`, `2026-11-18-review-man2-f08b2a9.md` | Local evidence; manifest limit closed; Windows and macOS CI outstanding |
+| 31.1, 31.2, 31.4, 31.6, 31.7, 31.8, 31.9, 31.11, 31.14, 24.12, 15.6 | as recorded in the 9.5 notes of `tasks.md` and the 9.8, 9.11, 9.16 and 9.17 sections | Local evidence; Windows and macOS CI outstanding |
+
+Outstanding outside 9.5: `RT-APP` executable column (13.3); request with no Target (13.5).
+
+### Task 9.21 RN-52 review status and findings (2026-11-20)
+
+| Part | Commits | Reviews | Status |
+| --- | --- | --- | --- |
+| Part 1 (A, B, D3) | `c9674f7`, `f4a0f82` | `2026-11-18-review-9.21-c9674f7.md`, `2026-11-18-review-9.21-followup-f4a0f82.md` | Implemented and reviewed |
+| Part 2 (UD-41: C1, D3, E1) | `77088f7`, `8ce7317`, `663f87a` | `2026-11-18-review-rn52-part2-8ce7317.md`, `2026-11-18-review-p2f1-663f87a.md` | Implemented and reviewed |
+
+Retained findings: Part 1 F2 (unreachable error-order difference) and F4 (drift guard narrower than the remaining duplication); Part 2 F2 (`internal()` duplicated) and F3 (`rt-data` reaches `rt-ir` transitively, not named in the amendment). Part 2 F1 addressed in `663f87a`. Details in the 9.21 notes of `tasks.md`.
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| 15.6 | one `rt_engine::evaluate` call per app (`evaluate.rs`); shared mapping in `rt-data::tabular`, classification and report assembly in `rt-explain` | Local evidence |
+| 24.12 (as amended by UD-41) | `tools/allowed-edges.v1` (`rt-data -> rt-compiled`, `forbid-transitive rt-data -> ...`), `check-graph`, `rt-data/src/tabular/tests_map.rs` | Local evidence; transitive `rt-ir`, `rt-hash`, `rt-json` not named (Part 2 F3) |
+| 31.2 | Prepare and Present groups over the shared owners; RN-38 tests in both apps' `tests_diagnostics.rs` | Local evidence |
+
+9.21 Observable amended by the user (option A, 2026-11-20): `mapping.rs` and `classify.rs` stay identical in both apps under the drift guard; no no-copy test. Windows and macOS CI outstanding.
+
+### Task 9.21 closure (2026-11-20)
+
+Closed by the user's decision (option A) on its locally delivered, independently reviewed scope. The section above is kept as written. Records reviews: `2026-11-20-review-rec921-c61268e.md`, `2026-11-20-review-cor921.md` (both APPROVED). Retained findings: Part 1 F2, F4; Part 2 F2, F3; p2f1 N1, N3. Observable amended (identical `mapping.rs` and `classify.rs` under the drift guard). Requirements 15.6, 24.12 (as amended), 31.2: local evidence as in the section above; Windows and macOS CI outstanding.
+
+### Task 9.20 reduced checkpoint (UD-43, 2026-11-20)
+
+Record: `tools/decisions/UD-43.md`. Evidence: `docs/checkpoints/2026-11-20-phase7-277203c.md` (local Linux run at `277203c`). 9.20 is `[-]`. No requirement, design or task text is amended.
+
+| Exit criterion | Status | Evidence |
+| --- | --- | --- |
+| E1 full gate set | Met locally | fmt, clippy, 2456 passed / 0 failed / 0 ignored, nine xtask checks, cargo deny |
+| E2 `check-app-layers`, `check-executables` | Met locally | xtask output in the evidence file |
+| E3 `demo-offline` with extended runbook | Partly met | three tests pass in a network namespace; s08 (9.18) does not exist |
+| E4 Properties 42, 43, 44, 46, 47 (45 under Rank_Reference) | Not met | 42 (9.10) and 43 (9.11) delivered with accepted limits; 44 (9.9), 46 (9.13), 47 (9.14) deferred; 45 (9.15) deferred with 9.3 |
+| E5 scan negative fixtures | Met locally | 9.8 |
+| E6 isolation test | Met locally | 9.17 |
+| E7 process test | Partly met | 9.17 with its limits; Req 36.22 with the Laboratory |
+| E8 byte identity with `ruletrace evaluate` | Met locally for covered cases | Property 42 with its accepted limits |
+| E9 all tests pass | Met locally | as E1 |
+| Three platforms, CI | Not demonstrated | M3 not pushed; no CI result; golden three-platform byte identity not shown |
+
+UD-43 changes the status of no requirement. The requirements that Properties 44 to 47 validate (design "Validates" lines: 31.6, 31.7, 31.8, 31.9, 31.11, 31.13, 32.1, 32.3, 32.5, 32.6, 13.12, 14.12, 14.13, 22.22) get no property evidence from this checkpoint; some have partial evidence from other tasks (for example 31.11 through 9.17 under E7). Req 32.4, the Req 32.7 threshold fixture and Req 36.22 stay outstanding. The requirements of the deferred tasks 9.12 and 9.19 keep their deferral.
+
+### M2 closure: tasks 10.6, 10.7, 10.15, 10.9 (2026-11-20)
+
+Closed by the user's decision. Evidence commit `5644e52` (branch `main`, ancestor of `m3`).
+
+| Task | Reviews | CI and local evidence | Status |
+| --- | --- | --- | --- |
+| 10.6 | waves 6, 7 (APPROVED) | run `43896108442` attempt 5, 23/23 | `[x]` |
+| 10.7 | wave 10 (NEEDS_CHANGES), wave 11 (APPROVED) | run `43896108442` attempt 5, 23/23 | `[x]`; wave 10 issue 7 with 11.1 |
+| 10.15 | wave 9 (APPROVED), wave 11 | run `43896108442` attempt 5, 23/23 | `[x]` |
+| 10.9 | as above; `5644e52` in `2026-11-20-review-r5644-5644e52.md` (APPROVED) | CI as above; local `unshare -rn` run at `5644e52`: 1918 passed, 0 failed, 0 ignored | `[x]` with exit criteria as amended 2026-11-16 |
+
+Still open: 10.5 (`[-]`, credentialed `live-openai` execution deferred, skip evidence only) and 10.8 (`[ ]`, recordings over the real documents deferred to M4). Limits: single macOS pass of `test` and `demo-offline`; unconfirmed root cause of the macOS failure in run `43892679845` (the user's judgement that it is not RuleTrace code is recorded as a judgement); untested build guard of `5644e52`; no CI run of `95b109f`; network-isolation evidence local and Linux only.
+
+### M2 follow-up evidence (2026-11-20)
+
+| Item | Evidence | Status |
+| --- | --- | --- |
+| Build guard of `5644e52` tested | `c6da862`, test `the_executables_are_built_once_per_test_process` in six `rt-demo` test files; review `2026-11-20-review-once-c6da862.md` (APPROVED) | Limit "untested build guard" resolved |
+| Three-platform CI with the new test | run `44711229145` on `466de67` (`5644e52` plus the cherry-picked `c6da862`, branch `ci/once-guard`), attempt 1, 23/23 | New test passed on Linux, macOS and Windows |
+
+Limits that remain from the M2 closure: unconfirmed root cause of the macOS failure in run `43892679845`; two clean macOS runs only; no guard across separate test processes; no CI run of `95b109f`; `live-openai` skip only.
+
+### M3 three-platform CI (2026-11-20)
+
+| Run | Head | Result |
+| --- | --- | --- |
+| `44716508559` (`ci/m3-890fa85`) | `890fa85` | failure: `clippy (windows-2022)` (D1), `test (windows-2022)` (D2, D3), `test (macos-15)` (D4) |
+| `44722569635` (`ci/m3-63ca7f2`) | `63ca7f2` | success, 23/23 jobs, attempt 1; `test` 2463 passed on Linux and macOS, 2428 on Windows; `golden` 24 passed on each platform |
+
+Fixes D1 to D4 are in test code only (`7cdbc4d`, `fdc4c8f`, `34f46f2`, `6cc59fc`), reviewed in `docs/reviews/2026-11-20-review-fix4-6cc59fc.md` (APPROVED). Platform evidence is now recorded under 9.5, 9.6, 9.8, 9.10, 9.11, 9.16, 9.17, 9.20 and 9.21. Unchanged by it: 9.6 `[-]` and 9.16 `[ ]` (deferred with 9.3), 9.20 `[-]` (Properties 44 to 47, s08), Req 27.15 and 36.22 (Laboratory), and the Windows exception of `workflow_module_environment` (one `#[cfg(unix)]` test).

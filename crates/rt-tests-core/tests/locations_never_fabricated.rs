@@ -19,8 +19,11 @@
     missing_docs
 )]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::collection::vec;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_compile::compile;
 use rt_data::{CompetitionData, Participant, ParticipantId, Question, TargetName};
 use rt_engine::evaluate;
@@ -155,8 +158,8 @@ fn check_sources(diags: &[Diagnostic], allowed: &[Key]) -> Result<(), TestCaseEr
     Ok(())
 }
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(64))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(64))]
 
     /// **Validates: Requirements 7.3, 7.14, 7.15, 7.21, 9.3, 13.2**
     #[test]

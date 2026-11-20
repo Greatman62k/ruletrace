@@ -1,0 +1,16 @@
+# format: ruletrace-app-literals v1
+# One entry per line: literal <crate|*> "<text as written in the source>" reason <why it is layer text>
+# Read by `rt-xtask check-app-layers` (Req 31.10). A string literal in the production code of an application layer
+# passes only when it is listed here for the crate or for `*`. A text that a committed rulebook declares as a
+# name (an input, collection, field, target or rule id) cannot be listed. A tie-breaking name, a rounding-mode name
+# and a number fail even when listed. A reviewer reads every entry: it must be text of the layer itself.
+literal * "participants" reason role name of the participants file in the input-hash list of the report header (prepare.rs)
+literal * "collections" reason role name of the collections file in the input-hash list of the report header (prepare.rs)
+literal * "published" reason role name of the published-result file in the input-hash list of the report header (prepare.rs)
+literal * "a SHA-256 digest is not 64 lowercase hexadecimal digits" reason InternalError message when the hash library returns a malformed digest (prepare.rs)
+literal * "--ranking" reason name of the command-line option that requests ranking Targets, used to locate a Diagnostic (questions.rs)
+literal * "the Target '{shown}' is not declared in the Compiled_Rulebook" reason message of APP_TARGET_NOT_DECLARED (questions.rs)
+literal * "the Target '{shown}' has a Rule kind that {} does not report" reason message of APP_TARGET_KIND_MISMATCH (questions.rs)
+literal prize-check "--eligibility" reason name of the option that requests eligibility Targets (questions.rs)
+literal prize-check "--score" reason name of the option that requests derived and score Targets (questions.rs)
+literal bracket-check "--qualification" reason name of the option that requests Qualification_Predicates (questions.rs)

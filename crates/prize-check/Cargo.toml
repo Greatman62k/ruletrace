@@ -1,0 +1,20 @@
+[package]
+name = "prize-check"
+description = "Prize workflow module: input mapping, Question construction and report presentation over the shared engine (class app, library only)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rt-foundation = { path = "../rt-foundation" }
+rt-numeric = { path = "../rt-numeric" }
+rt-data = { path = "../rt-data" }
+rt-compiled = { path = "../rt-compiled" }
+rt-engine = { path = "../rt-engine" }
+rt-explain = { path = "../rt-explain" }
+rt-srcmodel = { path = "../rt-srcmodel" }

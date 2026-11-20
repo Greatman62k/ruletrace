@@ -30,6 +30,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "bracket-check"
+version = "0.1.0"
+dependencies = [
+ "rt-compiled",
+ "rt-data",
+ "rt-engine",
+ "rt-explain",
+ "rt-foundation",
+ "rt-numeric",
+ "rt-srcmodel",
+]
+
+[[package]]
 name = "bytes"
 version = "1.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -248,6 +261,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
+name = "prize-check"
+version = "0.1.0"
+dependencies = [
+ "rt-compiled",
+ "rt-data",
+ "rt-engine",
+ "rt-explain",
+ "rt-foundation",
+ "rt-numeric",
+ "rt-srcmodel",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -436,6 +462,7 @@ name = "rt-data"
 version = "0.1.0"
 dependencies = [
  "proptest",
+ "rt-compiled",
  "rt-foundation",
  "rt-json",
  "rt-numeric",
@@ -596,7 +623,9 @@ dependencies = [
 name = "rt-tests-core"
 version = "0.1.0"
 dependencies = [
+ "bracket-check",
  "num-bigint",
+ "prize-check",
  "proptest",
  "rt-cli",
  "rt-compile",

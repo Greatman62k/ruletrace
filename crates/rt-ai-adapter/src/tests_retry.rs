@@ -2,6 +2,7 @@
 //! design §3.7.6; the property test compares against an independently
 //! written oracle that works in integer nanoseconds.
 
+use crate::proptest_floor::property_tests;
 use crate::retry::AttemptRecord as R;
 use crate::retry::{RetryStep, RetryStop};
 use crate::{next_step, ProviderFailure as F, RetryPolicy, RetryPolicyError};
@@ -462,7 +463,7 @@ fn drive(policy: &RetryPolicy, script: &[(Option<F>, u64)]) -> Run {
     run
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(1024))]
 
     // Validates: Requirements 29.1, 29.3, 29.5, 29.6, 29.13, 29.15.
@@ -518,7 +519,7 @@ fn default_policy_matches_req_29_1_literals() {
     assert_eq!(p.retries(), r);
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(1024))]
 
     // Validates: Requirements 29.12 (no retry after a complete response).

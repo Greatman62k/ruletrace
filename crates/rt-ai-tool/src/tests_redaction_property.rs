@@ -5,6 +5,7 @@
 //! private-use alphabet that a credential never contains, so the expected
 //! output follows from the construction and not from the redactor.
 
+use crate::proptest_floor::property_tests;
 use crate::tests::{run, MapEnv, BASE};
 use crate::{Credential, LogContext, LogSink, Out, Redactor, TransmissionLog, REDACTED};
 use proptest::prelude::*;
@@ -321,7 +322,7 @@ fn check_debug(value: &str) -> Result<(), TestCaseError> {
     Ok(())
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     // Every rendering of the value is replaced, whatever the value.

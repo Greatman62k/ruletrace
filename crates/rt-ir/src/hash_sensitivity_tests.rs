@@ -20,6 +20,7 @@
 //! 5.15**
 
 use super::*;
+use crate::proptest_floor::property_tests;
 use proptest::collection::vec;
 use proptest::prelude::*;
 use rt_foundation::{DocumentId, RevisionNumber, RuleId};
@@ -259,7 +260,7 @@ fn mutate(b: &mut Built, c: &Case, which: u8, idx: usize) -> bool {
     true
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     /// **Validates: Requirements 20.15, 25.4, 25.5, 25.6, 25.8, 25.22, 26.9,

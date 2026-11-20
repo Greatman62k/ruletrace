@@ -13,7 +13,10 @@
 
 #![allow(clippy::expect_used, clippy::indexing_slicing)]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_cli::{run, Fs};
 use rt_foundation::{DocumentId, InputId};
 use rt_hash::sha256;
@@ -285,8 +288,8 @@ fn codes_of(which: usize) -> [u8; 4] {
     }
 }
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(128))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(128))]
 
     #[test]
     fn exit_code_is_that_of_the_earliest_failing_stage(

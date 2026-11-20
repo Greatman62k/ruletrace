@@ -9,7 +9,10 @@
 
 #![allow(clippy::expect_used, clippy::panic)]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_compile::compile;
 use rt_foundation::{DocumentId, InputId};
 use rt_hash::sha256;
@@ -120,8 +123,8 @@ fn artifact(book: &Rulebook, ledger: &ApprovalLedger) -> (String, String, String
     )
 }
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(64))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(64))]
 
     /// **Validates: Requirements 9.5, 16.18, 18.5**
     #[test]

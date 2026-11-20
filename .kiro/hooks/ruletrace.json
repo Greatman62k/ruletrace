@@ -1,0 +1,59 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "guard-golden",
+      "description": "Block writes to golden files, fixtures and recordings unless the user approved the exact change",
+      "trigger": "PreToolUse",
+      "matcher": "^(fs_write|str_replace|fs_append|delete_file)$",
+      "action": {
+        "type": "command",
+        "command": "python3 -B tools/hooks/guard_golden.py"
+      },
+      "timeout": 30
+    },
+    {
+      "name": "review-integrity",
+      "description": "A review report may be written only while the main worktree is unchanged since the review baseline",
+      "trigger": "PreToolUse",
+      "matcher": "^(fs_write|str_replace|fs_append|delete_file)$",
+      "action": {
+        "type": "command",
+        "command": "python3 -B tools/hooks/guard_review_report.py"
+      },
+      "timeout": 30
+    },
+    {
+      "name": "guard-shell",
+      "description": "Block git push and destructive git, GitHub write operations, credential exposure, provider calls, and project test or run commands outside the approved network-isolation wrapper",
+      "trigger": "PreToolUse",
+      "matcher": "^execute_bash$",
+      "action": {
+        "type": "command",
+        "command": "python3 -B tools/hooks/guard_shell.py"
+      },
+      "timeout": 30
+    },
+    {
+      "name": "fmt-check",
+      "description": "Report rustfmt differences in a Rust file after it is written; never rewrites",
+      "trigger": "PostToolUse",
+      "matcher": "^(fs_write|str_replace|fs_append|delete_file)$",
+      "action": {
+        "type": "command",
+        "command": "python3 -B tools/hooks/fmt_check.py"
+      },
+      "timeout": 60
+    },
+    {
+      "name": "stop-report",
+      "description": "Report working-tree state, flag golden, catalogue and architecture changes, run the relevant architecture checks",
+      "trigger": "Stop",
+      "action": {
+        "type": "command",
+        "command": "python3 -B tools/hooks/stop_report.py"
+      },
+      "timeout": 300
+    }
+  ]
+}

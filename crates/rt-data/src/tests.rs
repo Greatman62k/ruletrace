@@ -1,4 +1,5 @@
 use super::*;
+use crate::proptest_floor::property_tests;
 use proptest::prelude::*;
 use rt_foundation::{Code, InputId, Location};
 use std::collections::{BTreeMap, BTreeSet};
@@ -329,7 +330,7 @@ fn participant_strategy() -> impl Strategy<Value = (Participant, Vec<Element>)> 
         })
 }
 
-proptest! {
+property_tests! {
     #[test]
     fn data_round_trips_and_ignores_input_order(
         ps in proptest::collection::btree_map("[a-z0-9]{1,4}", participant_strategy(), 0..5)

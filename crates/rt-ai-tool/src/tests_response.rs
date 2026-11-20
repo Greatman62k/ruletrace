@@ -2,6 +2,7 @@
 //! 22.16; design 3.7.3 and 3.7.4). Payloads are written by hand. Expected
 //! columns are found by searching the payload text, not by the parser.
 
+use crate::proptest_floor::property_tests;
 use crate::response::{parse_response, ParsedResponse, ProposalKind, FORBIDDEN_FIELDS};
 use proptest::prelude::*;
 use rt_ai_adapter::Completion;
@@ -1087,7 +1088,7 @@ fn mutate(base: &str, op: u8, at: usize, len: usize, token: usize) -> Vec<u8> {
     bytes
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     /// A mutated valid payload never panics. A rejection is exactly one

@@ -1,0 +1,152 @@
+{
+  "name": "ruletrace-implementer",
+  "description": "RuleTrace implementation agent: one assigned task at a time, spec-first, tests with independent expected values, structured evidence report. Never pushes.",
+  "prompt": "file://./prompts/implementer.md",
+  "tools": [
+    "read",
+    "write",
+    "shell"
+  ],
+  "excludedTools": [
+    "web"
+  ],
+  "resources": [
+    "file://../steering/product-principles.md",
+    "file://../steering/technical-architecture.md",
+    "file://../steering/rust-engineering-and-testing.md",
+    "file://../steering/rust-engineering-standards.md",
+    "file://../steering/testing-integrity-and-anti-gaming.md",
+    "skill://.kiro/skills/*/SKILL.md"
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "shell",
+        "match": [
+          "git push*",
+          "git -C * push*",
+          "git reset --hard*",
+          "git clean*",
+          "git checkout -- *",
+          "git restore*",
+          "git branch -D*",
+          "git branch -d*",
+          "git tag -d*",
+          "git rebase*",
+          "git stash drop*",
+          "git stash clear*",
+          "git remote *",
+          "git -C * remote *",
+          "git config *",
+          "git -C * config *",
+          "gh run rerun*",
+          "gh run cancel*",
+          "gh run delete*",
+          "gh workflow *",
+          "gh pr create*",
+          "gh pr merge*",
+          "gh pr close*",
+          "gh pr edit*",
+          "gh pr comment*",
+          "gh pr review*",
+          "gh issue create*",
+          "gh issue edit*",
+          "gh issue close*",
+          "gh issue comment*",
+          "gh release *",
+          "gh repo delete*",
+          "gh repo edit*",
+          "gh repo create*",
+          "gh repo rename*",
+          "gh repo fork*",
+          "gh secret *",
+          "gh variable *",
+          "gh gist *",
+          "gh api *-X *",
+          "gh api *--method*",
+          "gh api *-f *",
+          "gh api *-F *",
+          "gh api *--input*"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "rm -rf *",
+          "*RT_DEMO_BLESS*",
+          "*--bless*"
+        ],
+        "effect": "ask"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "demo/**/golden/**",
+          "tests/fixtures/**",
+          "crates/*/tests/fixtures/**",
+          "catalogue/**",
+          "tools/allowed-edges.v1"
+        ],
+        "effect": "ask"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "git status*",
+          "git diff*",
+          "git log*",
+          "git show*",
+          "git rev-parse*",
+          "git ls-files*",
+          "git blame*",
+          "git grep*",
+          "ls*",
+          "cat *",
+          "head *",
+          "tail *",
+          "grep *",
+          "rg *",
+          "wc *",
+          "find *",
+          "diff *",
+          "sha256sum *",
+          "sort *",
+          "date*",
+          "pwd",
+          "which *",
+          "git add *",
+          "git commit *",
+          "git switch m3",
+          "git stash",
+          "git stash push*",
+          "git stash pop*",
+          "git worktree *",
+          "cargo build*",
+          "cargo check*",
+          "cargo clippy*",
+          "cargo metadata*",
+          "cargo tree*",
+          "cargo deny*",
+          "cargo fmt*",
+          "cargo run*",
+          "cargo test*",
+          "rustfmt *",
+          "unshare -rn *",
+          "CARGO_TARGET_DIR=* unshare -rn *",
+          "python3 *",
+          "sed *",
+          "mkdir *",
+          "cp *",
+          "mv *",
+          "touch *",
+          "gh run view*",
+          "gh run list*",
+          "gh api repos/*",
+          "kiro-cli agent *"
+        ],
+        "effect": "allow"
+      }
+    ]
+  }
+}

@@ -15,7 +15,10 @@
 
 #![allow(clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_cli::{run, Fs};
 use rt_foundation::{DocumentId, InputId};
 use rt_hash::sha256;
@@ -428,7 +431,7 @@ fn refusal(kind: u8, n: u32, text: &str, reject: bool) -> Refusal {
     }
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig { cases: 256, ..ProptestConfig::default() })]
 
     #[test]

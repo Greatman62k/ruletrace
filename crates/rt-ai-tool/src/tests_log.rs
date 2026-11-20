@@ -1,6 +1,7 @@
 //! Transmission_Log, redaction, output and permission tests (Req 28.8,
 //! 28.9, 28.10, 28.16, 28.20; Req 23.19 to 23.23).
 
+use crate::proptest_floor::property_tests;
 use crate::tests::{MapEnv, CANARY};
 use crate::{
     load, permission_warning, render_diagnostic, Consent, Credential, FileLog, LogContext, LogSink,
@@ -466,7 +467,7 @@ fn process_env_reports_an_unset_variable_as_none() {
     );
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     // The credential never survives redaction, in any surrounding text or

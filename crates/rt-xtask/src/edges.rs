@@ -20,6 +20,9 @@ pub enum Class {
     Aux,
     /// Application layer.
     App,
+    /// The Laboratory package (design §11.3). No crate has this class until
+    /// task 13.4 creates `rt-lab`.
+    Lab,
     /// Development tooling.
     Tool,
     /// Test-only crate.
@@ -32,6 +35,7 @@ impl Class {
             "core" => Some(Self::Core),
             "aux" => Some(Self::Aux),
             "app" => Some(Self::App),
+            "lab" => Some(Self::Lab),
             "tool" => Some(Self::Tool),
             "test" => Some(Self::Test),
             _ => None,
@@ -45,6 +49,7 @@ impl Class {
             Self::Core => "core",
             Self::Aux => "aux",
             Self::App => "app",
+            Self::Lab => "lab",
             Self::Tool => "tool",
             Self::Test => "test",
         }
@@ -283,6 +288,14 @@ mod tests {
     fn unknown_dependency_is_malformed() {
         let text = format!("{HEADER}\ncrate a class core deps b\n");
         assert!(parse(&text).unwrap_err().contains("unknown dependency 'b'"));
+    }
+
+    #[test]
+    fn lab_is_a_class_word() {
+        let text = format!("{HEADER}\ncrate a class lab deps -\n");
+        let list = parse(&text).unwrap();
+        assert_eq!(list.crates["a"].class, Class::Lab);
+        assert_eq!(Class::Lab.word(), "lab");
     }
 
     #[test]

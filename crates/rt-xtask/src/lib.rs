@@ -3,9 +3,12 @@
 #![forbid(unsafe_code)]
 
 pub mod api;
+pub mod app_api;
+pub mod app_layers;
 pub mod catalogue;
 pub mod decisions;
 pub mod edges;
+pub mod executables;
 pub mod export;
 pub mod graph;
 pub mod justification;

@@ -1,0 +1,1 @@
+Tournament standings with a Tie_Group: p2 and p4 share position 1, then 3 and 4. No tie is broken by the application. In app-rules.md, rank.standing cites clause 3 (ranking) and score.weighted cites clause 2 (score). "Verified" in the report means the cited span resolves against a source with a matching hash, not that it proves the interpretation (Req 34.4).

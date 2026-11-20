@@ -2,6 +2,7 @@
 //! 35.3). Expected values come from a hand-written table of what one
 //! requirement does with one value, not from the function under test.
 
+use crate::proptest_floor::property_tests;
 use crate::{negotiate, Capabilities, Required, Tri, Unmet};
 use proptest::prelude::*;
 
@@ -108,7 +109,7 @@ fn tri() -> impl Strategy<Value = Tri> {
     prop::sample::select(VALUES.to_vec())
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     #[test]

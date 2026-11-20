@@ -14,8 +14,11 @@
 
 #![allow(clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::collection::vec;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_compile::compile;
 use rt_foundation::{Code, DocumentId, InputId};
 use rt_hash::sha256;
@@ -122,8 +125,8 @@ fn sources() -> SourceModels {
     s
 }
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(64))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(64))]
 
     /// **Validates: Requirements 5.4, 5.5, 5.7, 5.14, 9.13, 25.13, 25.21,
     /// 26.12, 26.13, 26.28, 26.29**

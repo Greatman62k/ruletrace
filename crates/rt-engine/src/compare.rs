@@ -3,8 +3,14 @@
 //!
 //! Equality is exact: numbers are equal when `rt_numeric::cmp` says so,
 //! Booleans when they are the same Boolean. There is no tolerance and nothing
-//! is rounded. Differences are listed in participant then Target order. The two
-//! extra difference kinds for published ties belong to task 9.2.
+//! is rounded. Differences are listed in participant then Target order.
+//!
+//! For a ranking Target the published value is a Rank_Position. A difference
+//! is classified (design §3.6.3) as a plain value difference, as a computed
+//! Tie_Group that the published file splits, or as a published tie that the
+//! computed result separates. Only entries the published file lists are
+//! compared, and an Indeterminate computed position is never used to decide a
+//! tie.
 
 use rt_data::{
     CompetitionData, ParticipantId, PublishedResult, PublishedValue, Question, TargetName,
@@ -12,7 +18,34 @@ use rt_data::{
 use rt_numeric::{cmp, count, to_canonical, ExactNumber};
 use rt_trace::{DecisionTrace, Entry, Outcome, TraceValue};
 use std::cmp::Ordering;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
+
+/// The kind of a difference (design §3.6.3).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DifferenceKind {
+    /// The published value is not the computed value.
+    ValueDiffers,
+    /// The published file gives members of one computed Tie_Group different
+    /// positions, and this member's published position is not the shared
+    /// computed position.
+    TieBrokenWithoutDeclaredCriterion,
+    /// The published file gives one position to participants that the
+    /// computed result separates, and this participant's published position
+    /// is not its computed position.
+    TieNotInComputedResult,
+}
+
+impl DifferenceKind {
+    /// The name of the kind in reports.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ValueDiffers => "value_differs",
+            Self::TieBrokenWithoutDeclaredCriterion => "tie_broken_without_declared_criterion",
+            Self::TieNotInComputedResult => "tie_not_in_computed_result",
+        }
+    }
+}
 
 /// What the engine computed for one published entry.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -44,6 +77,12 @@ pub struct Difference {
     /// Whether the computed number has a non-terminating decimal expansion (Req
     /// 8.26).
     pub non_terminating: bool,
+    /// The kind of the difference.
+    pub kind: DifferenceKind,
+    /// The participants of the group the kind refers to, ascending: the
+    /// computed Tie_Group for a split, the published tie for a published
+    /// tie. Empty for a plain value difference.
+    pub group: Vec<ParticipantId>,
     /// The statement of the difference, with the non-terminating note where it
     /// applies.
     pub message: String,
@@ -74,6 +113,12 @@ struct Found {
     question: usize,
     computed: Computed,
     entry: Option<u32>,
+    /// The members of the computed Tie_Group of a ranking entry, ascending.
+    /// Empty for a value Question, for an Indeterminate position and for a
+    /// participant that is alone at its position.
+    tie_group: Vec<ParticipantId>,
+    /// Whether a ranking Question answered the entry.
+    ranking: bool,
 }
 
 fn seq_of(index: usize) -> Option<u32> {
@@ -128,6 +173,14 @@ fn equal(published: &PublishedValue, computed: &Computed) -> bool {
     }
 }
 
+fn members_text(group: &[ParticipantId]) -> String {
+    group
+        .iter()
+        .map(|m| rt_foundation::escape_controls(m.as_str()))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 /// What each Question computed, by (participant, Target). The first Question
 /// that answers a pair wins, so a repeated Question cannot change the
 /// comparison.
@@ -165,6 +218,8 @@ fn computed_values(
                         question: qi,
                         computed,
                         entry: last,
+                        tie_group: Vec::new(),
+                        ranking: false,
                     });
             }
             Question::Rank {
@@ -179,24 +234,37 @@ fn computed_values(
                     let place = trace.and_then(|t| {
                         t.entries().iter().enumerate().find_map(|(i, e)| match e {
                             Entry::Place(p) if p.members().iter().any(|m| m == id.as_str()) => {
-                                Some((i, p.position()))
+                                let members = p
+                                    .members()
+                                    .iter()
+                                    .filter_map(|m| ParticipantId::new(m.as_str()).ok())
+                                    .collect::<Vec<_>>();
+                                Some((i, p.position(), members))
                             }
                             _ => None,
                         })
                     });
-                    let found = match place.and_then(|(i, pos)| {
+                    let found = match place.and_then(|(i, pos, members)| {
                         let n = count(usize::try_from(pos).ok()?).ok()?;
-                        Some((seq_of(i), n))
+                        Some((seq_of(i), n, members))
                     }) {
-                        Some((entry, n)) => Found {
+                        Some((entry, n, members)) => Found {
                             question: qi,
                             computed: Computed::Value(TraceValue::Number(n)),
                             entry,
+                            tie_group: if members.len() > 1 {
+                                members
+                            } else {
+                                Vec::new()
+                            },
+                            ranking: true,
                         },
                         None => Found {
                             question: qi,
                             computed: Computed::Indeterminate,
                             entry: last,
+                            tie_group: Vec::new(),
+                            ranking: true,
                         },
                     };
                     out.entry((id.clone(), target.clone())).or_insert(found);
@@ -205,6 +273,76 @@ fn computed_values(
         }
     }
     out
+}
+
+/// The canonical text of a published number, or `None` for a Boolean.
+fn published_number(value: &PublishedValue) -> Option<String> {
+    match value {
+        PublishedValue::Number(n) => Some(to_canonical(n.value())),
+        PublishedValue::Bool(_) => None,
+    }
+}
+
+/// The computed position of an entry as canonical text, when it is Known.
+fn known_position(found: &Found) -> Option<String> {
+    match &found.computed {
+        Computed::Value(TraceValue::Number(n)) => Some(to_canonical(n)),
+        _ => None,
+    }
+}
+
+/// Classifies a ranking difference. A split of a computed Tie_Group takes
+/// precedence over a published tie, so each entry has exactly one kind.
+fn classify(
+    participant: &ParticipantId,
+    target: &TargetName,
+    published: &PublishedResult,
+    computed: &BTreeMap<(ParticipantId, TargetName), Found>,
+    found: &Found,
+) -> (DifferenceKind, Vec<ParticipantId>) {
+    let plain = (DifferenceKind::ValueDiffers, Vec::new());
+    if !found.ranking || known_position(found).is_none() {
+        return plain;
+    }
+    if !found.tie_group.is_empty() {
+        let listed: BTreeSet<String> = found
+            .tie_group
+            .iter()
+            .filter_map(|m| published.get(m, target).and_then(published_number))
+            .collect();
+        if listed.len() > 1 {
+            return (
+                DifferenceKind::TieBrokenWithoutDeclaredCriterion,
+                found.tie_group.clone(),
+            );
+        }
+    }
+    let Some(mine) = published
+        .get(participant, target)
+        .and_then(published_number)
+    else {
+        return plain;
+    };
+    let mut tie: Vec<ParticipantId> = Vec::new();
+    let mut separated = false;
+    for ((other, other_target), value) in published.entries() {
+        if other_target != target || published_number(value).as_ref() != Some(&mine) {
+            continue;
+        }
+        tie.push(other.clone());
+        if other != participant {
+            let theirs = computed
+                .get(&(other.clone(), target.clone()))
+                .filter(|f| f.ranking)
+                .and_then(known_position);
+            separated |= theirs.is_some_and(|t| Some(&t) != known_position(found).as_ref());
+        }
+    }
+    if separated {
+        (DifferenceKind::TieNotInComputedResult, tie)
+    } else {
+        plain
+    }
 }
 
 /// Compares `published` with the computed results.
@@ -234,6 +372,7 @@ pub(crate) fn compare(
             }
             _ => false,
         };
+        let (kind, group) = classify(participant, target, published, &computed, found);
         let mut message = format!(
             "participant '{}', target '{}': published {} differs from computed {}",
             rt_foundation::escape_controls(participant.as_str()),
@@ -246,6 +385,17 @@ pub(crate) fn compare(
                 "; the computed value is non-terminating and the Rule declares no rounding, or a rounding that yields another value",
             );
         }
+        match kind {
+            DifferenceKind::ValueDiffers => {}
+            DifferenceKind::TieBrokenWithoutDeclaredCriterion => message.push_str(&format!(
+                "; the published file gives members of the computed Tie_Group [{}] different positions",
+                members_text(&group)
+            )),
+            DifferenceKind::TieNotInComputedResult => message.push_str(&format!(
+                "; the published file ties [{}] and the computed result separates them",
+                members_text(&group)
+            )),
+        }
         result.differences.push(Difference {
             participant: participant.clone(),
             target: target.clone(),
@@ -254,6 +404,8 @@ pub(crate) fn compare(
             question: found.question,
             entry: found.entry,
             non_terminating: fraction,
+            kind,
+            group,
             message,
         });
     }

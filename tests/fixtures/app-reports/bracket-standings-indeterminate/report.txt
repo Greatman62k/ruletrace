@@ -1,0 +1,21 @@
+RuleTrace bracket-check report   format ruletrace-app-report v1
+rulebook sha256:85f40326e2571d22b8b8b027d02e28dd4cb3c3701a33a8dbf657e5785a4f82de
+input participants sha256:019dc72358da580b24ef8429f351022af5e439c4266520543d1a5e96d518f90a
+provenance: verified (1 of 1 traces)
+statements: 
+data: synthetic
+ranking: Standings are calculated solely from the declared ranking rules; this report does not apply eligibility filtering.
+
+STANDINGS standing
+  indeterminate   missing input: judges (p2); diagnostic RT-EXE-0006
+      trace #0  verified  rules rank.standing@1, score.weighted@1
+      source rank.standing@1 app-rules.md 171..445 line 5:1
+        "3. Competitors are ranked by score, highest first. Equal scores are separated by the higher judges score. Competitors equal on both share the same position, and the next position after a shared position advances by the number of competitors sharing it (for example 1, 1, 3)."
+      source score.weighted@1 app-rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+
+PUBLISHED CONSISTENCY
+  not supplied
+
+DIAGNOSTICS (evaluation and provenance; published-result differences are listed under PUBLISHED CONSISTENCY; warnings that `ruletrace evaluate` writes to standard error are not part of this section)
+  RT-EXE-0006 error: rule rank.standing: participant 'p2' has no value for the ranking key of ranking Target 'standing' (missing input 'judges')   at app-rules.md bytes 171..445 line 5 column 1

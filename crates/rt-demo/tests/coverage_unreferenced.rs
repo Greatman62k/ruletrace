@@ -37,7 +37,10 @@ fn binary() -> Result<PathBuf, Box<dyn std::error::Error>> {
         .map_err(Into::into)
 }
 
+static BUILD_CALLS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
 fn build_binary() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    BUILD_CALLS.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
     let status = Command::new(cargo)
         .args(["build", "--quiet", "-p", "rt-cli", "--bin", "ruletrace"])
@@ -234,5 +237,16 @@ fn generator_classes_the_unreferenced_clause_and_fails_without_its_note() -> Tes
     );
     let text = removed.err().ok_or("expected a failure")?.to_string();
     assert!(text.contains("'2.'") && text.contains("byte 72"), "{text}");
+    Ok(())
+}
+
+// However many tests of this binary ask for the executables, the guard
+// keeps the nested build to one call per test process.
+#[test]
+fn the_executables_are_built_once_per_test_process() -> TestResult {
+    let first = binary()?;
+    let second = binary()?;
+    assert_eq!(first, second);
+    assert_eq!(BUILD_CALLS.load(std::sync::atomic::Ordering::SeqCst), 1);
     Ok(())
 }

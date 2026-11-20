@@ -23,6 +23,7 @@ mod validate;
 use rt_foundation::{Diagnostic, DiagnosticState, ExitCode};
 use std::ffi::OsString;
 
+pub use evaluate::difference_code;
 pub use io::{Fs, StdFs};
 
 /// What the process does after a command: bytes for standard output, text for

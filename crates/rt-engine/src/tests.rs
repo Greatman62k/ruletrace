@@ -1,3 +1,4 @@
+use crate::proptest_floor::property_tests;
 use crate::*;
 use proptest::prelude::*;
 use rt_compiled::sha256_of as sha256;
@@ -795,7 +796,7 @@ fn hundredths(n: u32) -> String {
     format!("{}.{:02}", n / 100, n % 100)
 }
 
-proptest! {
+property_tests! {
     /// **Validates: Requirements 8.1, 8.10, 8.12, 10.2, 13.11** A weighted
     /// score of exact decimals is the exact sum of the exact products.
     #[test]

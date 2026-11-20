@@ -16,8 +16,11 @@
 
 #![allow(clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::collection::vec;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_foundation::InputId;
 use rt_hash::sha256;
 use rt_ir::{
@@ -328,8 +331,8 @@ fn derived(book: &Rulebook, ledger: &ApprovalLedger) -> BTreeMap<Key, ApprovalSt
         .collect()
 }
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(128))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(128))]
 
     /// Statuses equal the oracle, deriving twice gives equal results, and the
     /// Effective and unresolved revisions follow from them.

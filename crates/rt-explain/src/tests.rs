@@ -2,6 +2,7 @@
 //! 13.23).
 
 use super::*;
+use crate::proptest_floor::property_tests;
 use proptest::prelude::*;
 use rt_foundation::{
     Code, DiagnosticState, DocumentId, Location, RevisionNumber, RuleId, Severity,
@@ -227,7 +228,7 @@ fn rendering_is_deterministic() {
     assert_eq!(a, b);
 }
 
-proptest! {
+property_tests! {
     /// Text is produced exactly when the span lies on boundaries inside the
     /// document, and then it equals the model bytes. Any other offset pair
     /// gives no text and is not verified.

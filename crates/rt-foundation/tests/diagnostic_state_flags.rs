@@ -13,7 +13,10 @@
 //! covered through `ExitCode::Success` versus a rejection only where the crate
 //! defines it (compilability).
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_foundation::{
     stage_result, CliLocation, Code, Diagnostic, DiagnosticState, DocumentId, InputId,
     InputLocation, Location, Severity, SourceSpan, SpanSource, ValidationOutcome,
@@ -124,7 +127,7 @@ fn catalogue_covers_every_severity() {
     }
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     /// has_errors is exactly "some Error, Ambiguity or Unsupported item";

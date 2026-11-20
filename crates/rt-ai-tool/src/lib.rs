@@ -195,3 +195,7 @@ pub use store_check::check_store;
 pub use summary::RunSummary;
 pub use txlog::{CatalogContext, FileLog, LogContext, LogSink, TransmissionLog};
 pub use vocab::Ud32Option;
+
+#[cfg(test)]
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;

@@ -6,6 +6,7 @@
 //! switches whose earliest switch decides the result (Req 28.17 as amended
 //! by Req 35).
 
+use crate::proptest_floor::property_tests;
 use crate::tests::{at, one, run, MapEnv, CANARY};
 use crate::tests_config_v2::{meta_env, v2, V2};
 use crate::{load, Consent};
@@ -118,7 +119,7 @@ fn url(host: &Host) -> String {
     }
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(512))]
 
     // The credential can reach only the official host or a loopback
@@ -286,7 +287,7 @@ fn faulty_text(on: &[bool]) -> String {
     text
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(512))]
 
     // With any subset of the twelve faults, only the earliest failing

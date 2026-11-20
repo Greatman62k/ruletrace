@@ -16,7 +16,10 @@
     missing_docs
 )]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_explain::{render_trace, verify_trace, SpanResolution, VerificationStatus};
 use rt_foundation::{
     Code, DiagnosticState, DocumentId, Location, RevisionNumber, RuleId, Severity,
@@ -197,7 +200,7 @@ fn build(case: &Case) -> (DecisionTrace, SourceModels) {
     (trace, models)
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(512))]
 
     #[test]

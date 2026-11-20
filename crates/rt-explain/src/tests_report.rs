@@ -1,6 +1,7 @@
 //! Tests for the results serializer and the Proof_Report (Req 33.14, 13.11,
 //! 13.19, 31.5).
 
+use crate::proptest_floor::property_tests;
 use crate::report::{
     build_proof_report, render_proof_human, render_proof_json, ApprovalFacts, ApprovalView,
     ProofError, ProofInputs, PublishedFact,
@@ -468,7 +469,7 @@ fn results_outcomes_and_traces_do_not_depend_on_verification() {
     );
 }
 
-proptest! {
+property_tests! {
     /// Same inputs give identical bytes in both forms and every step replays.
     #[test]
     fn proof_report_is_deterministic_and_replays(a in -1000i64..1000, b in -1000i64..1000) {

@@ -1,0 +1,5 @@
+# format: ruletrace-executables v1
+# The binary targets of packages of class core, aux and lab, exactly. Class app has no binary target. Classes tool and test are excluded by rule (RN-25).
+# Task 13.4 adds `executable ruletrace-lab package rt-lab` in the commit that creates rt-lab.
+executable ruletrace package rt-cli
+executable ruletrace-ai package rt-ai-tool
