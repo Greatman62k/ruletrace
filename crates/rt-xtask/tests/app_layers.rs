@@ -148,6 +148,10 @@ fn no_core_manifest_depends_on_an_application_crate() {
     let list = scan::load_edges(&root).unwrap();
     let apps = ["bracket-check", "prize-check"];
     assert!(md.members.contains_key("rt-engine"));
+    assert_eq!(
+        list.crates.get("rt-engine").map(|e| e.class),
+        Some(edges::Class::Core)
+    );
     let offending: Vec<String> = md
         .members
         .iter()
