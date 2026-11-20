@@ -1301,3 +1301,12 @@ Closed by the user's decision. Evidence commit `5644e52` (branch `main`, ancesto
 | 10.9 | as above; `5644e52` in `2026-11-20-review-r5644-5644e52.md` (APPROVED) | CI as above; local `unshare -rn` run at `5644e52`: 1918 passed, 0 failed, 0 ignored | `[x]` with exit criteria as amended 2026-11-16 |
 
 Still open: 10.5 (`[-]`, credentialed `live-openai` execution deferred, skip evidence only) and 10.8 (`[ ]`, recordings over the real documents deferred to M4). Limits: single macOS pass of `test` and `demo-offline`; unconfirmed root cause of the macOS failure in run `43892679845` (the user's judgement that it is not RuleTrace code is recorded as a judgement); untested build guard of `5644e52`; no CI run of `95b109f`; network-isolation evidence local and Linux only.
+
+### M2 follow-up evidence (2026-11-20)
+
+| Item | Evidence | Status |
+| --- | --- | --- |
+| Build guard of `5644e52` tested | `c6da862`, test `the_executables_are_built_once_per_test_process` in six `rt-demo` test files; review `2026-11-20-review-once-c6da862.md` (APPROVED) | Limit "untested build guard" resolved |
+| Three-platform CI with the new test | run `44711229145` on `466de67` (`5644e52` plus the cherry-picked `c6da862`, branch `ci/once-guard`), attempt 1, 23/23 | New test passed on Linux, macOS and Windows |
+
+Limits that remain from the M2 closure: unconfirmed root cause of the macOS failure in run `43892679845`; two clean macOS runs only; no guard across separate test processes; no CI run of `95b109f`; `live-openai` skip only.
