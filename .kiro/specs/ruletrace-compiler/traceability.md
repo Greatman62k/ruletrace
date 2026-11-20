@@ -1237,3 +1237,14 @@ Effect on 9.5: unchanged; 9.5 stays open on Req 15.5.
 | 31.6 | golden `tests/fixtures/app-reports/prize-ranking-tie-group/` (`42e9e01`), `app_report_goldens.rs` | Local evidence (correction of the 9.5 note that said it was waiting) |
 
 Effect on 9.5: the Req 15.5 coverage question is resolved by evidence; 9.5 stays `[ ]` pending the user's closure decision.
+
+### Task 9.5 closure (2026-11-18)
+
+Closed by the user's decision on its locally delivered, independently reviewed scope. The sections above are kept as written.
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| 15.5 | as above, plus `no_core_manifest_depends_on_an_application_crate` (`8ddb5e9`, `f08b2a9`) over the real manifests; reviews `2026-11-18-review-man-8ddb5e9.md`, `2026-11-18-review-man2-f08b2a9.md` | Local evidence; manifest limit closed; Windows and macOS CI outstanding |
+| 31.1, 31.2, 31.4, 31.6, 31.7, 31.8, 31.9, 31.11, 31.14, 24.12, 15.6 | as recorded in the 9.5 notes of `tasks.md` and the 9.8, 9.11, 9.16 and 9.17 sections | Local evidence; Windows and macOS CI outstanding |
+
+Outstanding outside 9.5: `RT-APP` executable column (13.3); request with no Target (13.5).
