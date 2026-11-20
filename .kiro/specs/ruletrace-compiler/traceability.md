@@ -1248,3 +1248,20 @@ Closed by the user's decision on its locally delivered, independently reviewed s
 | 31.1, 31.2, 31.4, 31.6, 31.7, 31.8, 31.9, 31.11, 31.14, 24.12, 15.6 | as recorded in the 9.5 notes of `tasks.md` and the 9.8, 9.11, 9.16 and 9.17 sections | Local evidence; Windows and macOS CI outstanding |
 
 Outstanding outside 9.5: `RT-APP` executable column (13.3); request with no Target (13.5).
+
+### Task 9.21 RN-52 review status and findings (2026-11-19)
+
+| Part | Commits | Reviews | Status |
+| --- | --- | --- | --- |
+| Part 1 (A, B, D3) | `c9674f7`, `f4a0f82` | `2026-11-18-review-9.21-c9674f7.md`, `2026-11-18-review-9.21-followup-f4a0f82.md` | Implemented and reviewed |
+| Part 2 (UD-41: C1, D3, E1) | `77088f7`, `8ce7317`, `663f87a` | `2026-11-18-review-rn52-part2-8ce7317.md`, `2026-11-18-review-p2f1-663f87a.md` | Implemented and reviewed |
+
+Retained findings: Part 1 F2 (unreachable error-order difference) and F4 (drift guard narrower than the remaining duplication); Part 2 F2 (`internal()` duplicated) and F3 (`rt-data` reaches `rt-ir` transitively, not named in the amendment). Part 2 F1 addressed in `663f87a`. Details in the 9.21 notes of `tasks.md`.
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| 15.6 | one `rt_engine::evaluate` call per app (`evaluate.rs`); shared mapping in `rt-data::tabular`, classification and report assembly in `rt-explain` | Local evidence |
+| 24.12 (as amended by UD-41) | `tools/allowed-edges.v1` (`rt-data -> rt-compiled`, `forbid-transitive rt-data -> ...`), `check-graph`, `rt-data/src/tabular/tests_map.rs` | Local evidence; transitive `rt-ir`, `rt-hash`, `rt-json` not named (Part 2 F3) |
+| 31.2 | Prepare and Present groups over the shared owners; RN-38 tests in both apps' `tests_diagnostics.rs` | Local evidence |
+
+9.21 Observable amended by the user (option A, 2026-11-19): `mapping.rs` and `classify.rs` stay identical in both apps under the drift guard; no no-copy test. Windows and macOS CI outstanding.
