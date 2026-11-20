@@ -57,7 +57,7 @@ mod app_runs;
 use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::Output;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use app_runs::{find, framed_output, spawn_child, BEGIN, CHILD_MARKER, END};
@@ -450,7 +450,9 @@ fn a_stand_in_executable_records_that_it_was_started() {
     for name in ["ruletrace", "ruletrace-ai"] {
         let marker = w.bin.join("STARTED");
         assert!(!marker.exists());
-        let status = Command::new(w.bin.join(name)).status().unwrap();
+        let status = std::process::Command::new(w.bin.join(name))
+            .status()
+            .unwrap();
         assert!(status.success());
         assert!(marker.exists(), "{name} left no marker");
         std::fs::remove_file(marker).unwrap();
