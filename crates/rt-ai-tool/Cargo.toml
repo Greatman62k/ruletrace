@@ -23,6 +23,11 @@ name = "lifeline"
 path = "tests/lifeline.rs"
 harness = false
 
+[[test]]
+name = "kill_store"
+path = "tests/kill_store.rs"
+harness = false
+
 [dependencies]
 rt-ai-adapter = { path = "../rt-ai-adapter" }
 rt-ai-mock = { path = "../rt-ai-mock" }

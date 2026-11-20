@@ -23,6 +23,11 @@ name = "lifeline"
 path = "tests/lifeline.rs"
 harness = false
 
+[[test]]
+name = "kill_review"
+path = "tests/kill_review.rs"
+harness = false
+
 [dependencies]
 rt-foundation = { path = "../rt-foundation" }
 rt-source = { path = "../rt-source" }
