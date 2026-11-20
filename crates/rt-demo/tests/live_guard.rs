@@ -272,7 +272,10 @@ mod fake_install_race {
             for _ in 0..4 {
                 scope.spawn(|| {
                     while !stop.load(Ordering::Relaxed) {
-                        Command::new("/bin/true")
+                        // `/bin/true` does not exist on macOS (CI run
+                        // 44716508559); `/bin/sh` exists on every Unix runner.
+                        Command::new("/bin/sh")
+                            .args(["-c", ":"])
                             .stdout(Stdio::null())
                             .status()
                             .unwrap();
