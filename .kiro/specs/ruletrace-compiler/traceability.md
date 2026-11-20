@@ -1287,4 +1287,4 @@ Record: `tools/decisions/UD-43.md`. Evidence: `docs/checkpoints/2026-11-20-phase
 | E9 all tests pass | Met locally | as E1 |
 | Three platforms, CI | Not demonstrated | M3 not pushed; no CI result; golden three-platform byte identity not shown |
 
-Requirements whose status is unchanged by UD-43: those of Properties 44 to 47 (31.6, 31.7, 31.8, 31.9, 31.11, 31.13, 32.1, 32.3, 32.5, 32.6, 13.12, 14.12, 14.13, 22.22), Req 32.4, Req 32.7 threshold fixture, Req 36.22.
+UD-43 changes the status of no requirement. The requirements that Properties 44 to 47 validate (design "Validates" lines: 31.6, 31.7, 31.8, 31.9, 31.11, 31.13, 32.1, 32.3, 32.5, 32.6, 13.12, 14.12, 14.13, 22.22) get no property evidence from this checkpoint; some have partial evidence from other tasks (for example 31.11 through 9.17 under E7). Req 32.4, the Req 32.7 threshold fixture and Req 36.22 stay outstanding. The requirements of the deferred tasks 9.12 and 9.19 keep their deferral.
