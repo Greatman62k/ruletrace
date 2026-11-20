@@ -333,7 +333,7 @@ Details are in design §11.5. In short:
 | --- | --- | --- |
 | R-L1 | Same-user malicious process (X5) can read the credential store, the ledger and the session directory | Outside any user-space design; stated in the documentation |
 | R-L2 | Cookie sent to other local ports (T7) | **Not accepted (UD-39).** Open until LT-6 is resolved |
-| R-L3 | Children survive a Laboratory crash (T17) | **Not accepted (UD-39).** Open until LT-7 is demonstrated per platform |
+| R-L3 | Children survive a Laboratory crash (T17) | **Not accepted (UD-39).** Open until LT-7 is demonstrated per platform. 2026-11-20: the lifeline prototype with stand-in children is shown on Linux, macOS and Windows (`docs/security/2026-11-20-lt7-lifeline-evidence.md`); real executables, V-1, V-2, V-4 and the LT-7 decision outstanding, so the risk stays open |
 | R-L4 | Reviewer identity is not authenticated (T32, R-8) | First-version limit, stated |
 | R-L5 | Symlink swap by a same-user process (T23) | Same as R-L1 |
 | R-L6 | The in-memory credential in `ruletrace-ai` is not zeroized | Existing behaviour; the process is short-lived; a zeroizing type is a separate change |
@@ -349,7 +349,7 @@ Details are in design §11.5. In short:
 | LT-4 | HTTP server implementation | Standard library only, a strict HTTP/1.1 subset (design §11.4) | **Decided (UD-39):** standard library, server-rendered forms |
 | LT-5 | New Launch_Secret after a session ends, or restart required | Restart required (keeps 37.5 "once"; no requirement change); printing a new secret needs RN-47 | **Decided (UD-39):** restart; no Launch_Secret reused |
 | LT-6 | Second origin-scoped secret against cross-port cookie leakage | Not in L2; revisit if the Laboratory ever targets shared machines | **OPEN.** Deferral rejected by the user. Candidate: HTTP Basic authentication (origin-scoped protection space), design §11.18.5; needs evidence and review |
-| LT-7 | Kill children on Laboratory crash | Accept the bounded residual; no `unsafe` | **OPEN.** Crash orphans rejected by the user. Candidate: lifeline pipe, design §11.18.6; needs crash tests per platform |
+| LT-7 | Kill children on Laboratory crash | Accept the bounded residual; no `unsafe` | **OPEN.** Crash orphans rejected by the user. Candidate: lifeline pipe, design §11.18.6; needs crash tests per platform. 2026-11-20: prototype crash tests pass on Linux, macOS and Windows, run `44733286392`, maximum 109 ms against the 5 s bound (`docs/security/2026-11-20-lt7-lifeline-evidence.md`). Still needed: real `ruletrace`/`ruletrace-ai` children (13.3), V-1, V-2, V-4, RN-50 and the user's LT-7 decision |
 | LT-8 | Upload limits | 16 MiB per file at most (lower per-kind limits apply), 64 MiB per session; re-check when task 11.1 commits the real snapshots | **Decided (UD-39):** 16 MiB per file, 64 MiB per session, 1 MiB control request, streamed enforcement |
 | LT-9 | Connection limits: 10 s header deadline, 30 s body deadline, 16 concurrent connections | As stated (design values) | **Decided (UD-39):** 16 connections, 4 concurrent requests, finite timeouts, 503 on overload (design §11.18.4) |
 
@@ -362,3 +362,4 @@ Details are in design §11.5. In short:
 | 2026-11-18 | independent reviewer, `docs/reviews/2026-11-18-review-tasks-a4628bd.md` | APPROVED WITH FINDINGS (task plan) |
 | 2026-11-18 | independent reviewer, `docs/reviews/2026-11-18-review-doc-66ef6ec.md` | APPROVED WITH FINDINGS (R1 to R5, low; addressed in the UD-39 commit) |
 | (pending) | independent reviewer | UD-39 changes, LT-6 and LT-7 |
+| 2026-11-20 | independent reviewer, `docs/reviews/2026-11-20-review-lt7ev-263a662.md` | LT-7 prototype evidence record and these LT-7 updates (result in that report; it does not accept the LT-7 mitigation, which needs the items above) |

@@ -1699,6 +1699,7 @@ Open item, Skeleton Crew application folders. The user quoted the rule as: "For 
     - Blocked by: the review of the UD-39 documentation.
     - _Requirements: 37.17, 37.5, 37.6, 37.7_
     - Design §11.18.5, §11.18.6
+    - Status note (2026-11-20; task text above unchanged; 13.9 stays `[ ]`): prototypes `spikes/lt6-basic-auth` and `spikes/lt7-lifeline` in `263a662` (outside the workspace; reviews `docs/reviews/2026-11-20-review-spk-19290e1.md` NEEDS_CHANGES, `docs/reviews/2026-11-20-review-spk2-19290e1.md` APPROVED). LT-7 cross-platform prototype evidence: delivered, run `44733286392` (`spike-lt7`, attempt 1, PR #1 merge ref `21cabb3`, tree equal to `263a662`) on ubuntu-24.04, macos-15 and windows-2022; record `docs/security/2026-11-20-lt7-lifeline-evidence.md`, reviewed in `docs/reviews/2026-11-20-review-lt7ev-263a662.md`. Still outstanding for LT-7: real `ruletrace` and `ruletrace-ai` children and `--lifeline-stdin` (13.3); V-1, V-2 and V-4; the bound kept or set from the measurements (proposal: keep 5 s, margin about 45.9 times the 109 ms maximum); RN-50 and the formal LT-7 decision. LT-6: server-side tests pass on the three platforms in the same run; the browser protocol has not been run and the decisions on the check order and on Req 37.5 and 37.6 are pending, so LT-6 stays open. 13.1 stays `[-]`.
 
   - [ ] 13.8 Checkpoint - Laboratory
     - Run the full gate set, the Laboratory tests and the demonstration with the Laboratory; independent review of the whole phase; show the user the workflow in a browser.

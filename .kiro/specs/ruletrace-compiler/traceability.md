@@ -1319,3 +1319,12 @@ Limits that remain from the M2 closure: unconfirmed root cause of the macOS fail
 | `44722569635` (`ci/m3-63ca7f2`) | `63ca7f2` | success, 23/23 jobs, attempt 1; `test` 2463 passed on Linux and macOS, 2428 on Windows; `golden` 24 passed on each platform |
 
 Fixes D1 to D4 are in test code only (`7cdbc4d`, `fdc4c8f`, `34f46f2`, `6cc59fc`), reviewed in `docs/reviews/2026-11-20-review-fix4-6cc59fc.md` (APPROVED). Platform evidence is now recorded under 9.5, 9.6, 9.8, 9.10, 9.11, 9.16, 9.17, 9.20 and 9.21. Unchanged by it: 9.6 `[-]` and 9.16 `[ ]` (deferred with 9.3), 9.20 `[-]` (Properties 44 to 47, s08), Req 27.15 and 36.22 (Laboratory), and the Windows exception of `workflow_module_environment` (one `#[cfg(unix)]` test).
+
+### Task 13.9 LT-7 prototype evidence (2026-11-20)
+
+| Item | Evidence | Status |
+| --- | --- | --- |
+| Req 37.17, second sentence (process containment when `ruletrace-lab` terminates abnormally; the first sentence, orderly shutdown, is not covered here), candidate L of design §11.18.6 | `spikes/lt7-lifeline` (`263a662`), run `44733286392` on three platforms, record `docs/security/2026-11-20-lt7-lifeline-evidence.md` | Prototype with stand-in children shown; real executables (13.3), V-1, V-2, V-4, RN-50 and the LT-7 decision outstanding; LT-7 OPEN |
+| Req 37.5, 37.6, 37.7 (LT-6, candidate A of §11.18.5) | `spikes/lt6-basic-auth` server tests in the same run | Server side only; browser protocol not run; LT-6 OPEN |
+
+No requirement, design text or decision record is changed by this evidence. UD-39 keeps LT-6 and LT-7 open.
