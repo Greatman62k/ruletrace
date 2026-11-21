@@ -1,7 +1,9 @@
 //! Command line of the LT-6 spike.
 //!
 //! `serve [--port P]`: stand-in Laboratory; the launch secret is printed once to stderr.
-//! `listen --port P --lab-port L [--log FILE]`: raw recorder for the browser protocol.
+//! `listen --port P --lab-port L [--log FILE] [--probe-token T]`: raw recorder
+//! for the browser protocol; with a token its page also requests
+//! `/s/<token>/probe` on the recorder's own origin.
 
 #![forbid(unsafe_code)]
 
@@ -23,6 +25,7 @@ fn run(args: &[String]) -> Result<(), String> {
     let mut port: Option<u16> = None;
     let mut lab_port: Option<u16> = None;
     let mut log = PathBuf::from("recorder.log");
+    let mut probe: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
         match args[i].as_str() {
@@ -30,6 +33,13 @@ fn run(args: &[String]) -> Result<(), String> {
             "--lab-port" => lab_port = Some(parse_port(args.get(i + 1), "--lab-port")?),
             "--log" => {
                 log = PathBuf::from(args.get(i + 1).ok_or("--log needs a value")?);
+            }
+            "--probe-token" => {
+                probe = Some(
+                    args.get(i + 1)
+                        .ok_or("--probe-token needs a value")?
+                        .clone(),
+                );
             }
             other => return Err(format!("unknown argument {other}")),
         }
@@ -39,7 +49,7 @@ fn run(args: &[String]) -> Result<(), String> {
         Some("serve") => {
             let (addr, secret) =
                 lab::start_with_fresh_secret(port.unwrap_or(0)).map_err(|e| e.to_string())?;
-            eprintln!("Stand-in Laboratory: http://{addr}/");
+            eprintln!("Open this address in the browser: http://{addr}/");
             eprintln!(
                 "Browser prompt: user `{}`, password (shown once):",
                 lab::USER
@@ -50,11 +60,15 @@ fn run(args: &[String]) -> Result<(), String> {
         Some("listen") => {
             let port = port.ok_or("listen needs --port")?;
             let lab_port = lab_port.ok_or("listen needs --lab-port")?;
-            let addr = recorder::start(port, lab_port, log.clone()).map_err(|e| e.to_string())?;
+            let addr = recorder::start_with_probe(port, lab_port, log.clone(), probe)
+                .map_err(|e| e.to_string())?;
             eprintln!("Recorder: http://{addr}/ (log file {})", log.display());
             Ok(())
         }
-        _ => Err("usage: serve [--port P] | listen --port P --lab-port L [--log FILE]".into()),
+        _ => Err(
+            "usage: serve [--port P] | listen --port P --lab-port L [--log FILE] [--probe-token T]"
+                .into(),
+        ),
     }
 }
 

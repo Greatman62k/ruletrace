@@ -54,6 +54,10 @@ impl Response {
             headers: vec![
                 ("Content-Type".into(), content_type.into()),
                 ("Cache-Control".into(), "no-store".into()),
+                ("Referrer-Policy".into(), "no-referrer".into()),
+                ("X-Frame-Options".into(), "DENY".into()),
+                ("X-Content-Type-Options".into(), "nosniff".into()),
+                ("Cross-Origin-Resource-Policy".into(), "same-origin".into()),
             ],
             body: body.into(),
         }
@@ -71,12 +75,14 @@ impl Response {
     fn reason(&self) -> &'static str {
         match self.status {
             200 => "OK",
+            303 => "See Other",
             400 => "Bad Request",
             401 => "Unauthorized",
             403 => "Forbidden",
             404 => "Not Found",
             405 => "Method Not Allowed",
             413 => "Payload Too Large",
+            500 => "Internal Server Error",
             _ => "Status",
         }
     }
