@@ -1348,7 +1348,7 @@ Decision record: `tools/decisions/UD-44.md`. No requirement text changed.
 
 ### UD-46 amendments (2026-11-20)
 
-Record: `tools/decisions/UD-46.md` (LT-6 option A, approved wording; draft in `tools/decisions/UD-45.md` section 4 with review findings M2, M4, M6 of `docs/reviews/2026-11-20-review-ud45b-9736c58.md` folded in). Evidence: `docs/security/2026-11-20-lt6-browser-evidence.md`, prototype `spikes/lt6-basic-auth`. Unchanged: 37.23 (the run instructions of 13.7 must name the user name `lab` and the browser prompt).
+Record: `tools/decisions/UD-46.md` (LT-6 option A, approved wording; draft in `tools/decisions/UD-45.md` section 4 with review findings M2, M4, M6 of `docs/reviews/2026-11-20-review-ud45b-9736c58.md` folded in). Evidence: `docs/security/2026-11-20-lt6-browser-evidence.md`, prototype `spikes/lt6-basic-auth`. Unchanged: 36.23 (citation corrected 2026-11-20: first written as Requirement 37 criterion 23, which is the test and mutant list) (the run instructions of 13.7 must name the user name `lab` and the browser prompt).
 
 #### Definition Laboratory_Session
 
