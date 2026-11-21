@@ -17,7 +17,10 @@
     missing_docs
 )]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_demo::coverage::{
     classify, CoverageClass, CoverageError, CoverageNote, CoverageNotes, PendingEntry,
     StoreBatches, StoreFinding,
@@ -188,8 +191,8 @@ fn partition_holds(w: &World, picks: &[Pick], approved: bool) -> Result<(), Test
     Ok(())
 }
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(128))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(128))]
 
     #[test]
     fn every_clause_is_classified_exactly_once(

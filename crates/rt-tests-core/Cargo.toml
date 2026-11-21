@@ -31,6 +31,8 @@ rt-proposals = { path = "../rt-proposals" }
 rt-validate = { path = "../rt-validate" }
 rt-compile = { path = "../rt-compile" }
 rt-cli = { path = "../rt-cli" }
+prize-check = { path = "../prize-check" }
+bracket-check = { path = "../bracket-check" }
 proptest = { version = "1", default-features = false, features = ["std"] }
 # Independent arbitrary-precision oracle for the differential numeric test (Req 20.22). Test code only.
 num-bigint = { version = "0.4", default-features = false, features = ["std"] }

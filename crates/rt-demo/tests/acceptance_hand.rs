@@ -54,7 +54,10 @@ fn bin_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
         .map_err(Into::into)
 }
 
+static BUILD_CALLS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
 fn build_bin_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    BUILD_CALLS.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     if let Some(dir) = std::env::var_os("RT_BIN_DIR") {
         return Ok(PathBuf::from(dir));
     }
@@ -887,5 +890,16 @@ fn hand_profile_acceptance() -> TestResult {
     );
 
     println!("\nmutations: M1 source byte, M2 data value, M3 rule literal: all detected");
+    Ok(())
+}
+
+// However many tests of this binary ask for the executables, the guard
+// keeps the nested build to one call per test process.
+#[test]
+fn the_executables_are_built_once_per_test_process() -> TestResult {
+    let first = bin_dir()?;
+    let second = bin_dir()?;
+    assert_eq!(first, second);
+    assert_eq!(BUILD_CALLS.load(std::sync::atomic::Ordering::SeqCst), 1);
     Ok(())
 }

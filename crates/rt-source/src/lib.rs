@@ -166,3 +166,7 @@ fn binary_or_html_prefix(bytes: &[u8]) -> Option<&'static str> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;

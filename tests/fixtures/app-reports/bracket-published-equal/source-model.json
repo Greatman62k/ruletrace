@@ -1,0 +1,66 @@
+{
+  "format": "ruletrace-source-model",
+  "version": 1,
+  "document": "app-rules.md",
+  "kind": "markdown",
+  "sha256": "af117b435d300f2d75965ef72a042da3dc56094bc765f41d58fd79091eba8c58",
+  "bytes": 502,
+  "content": "# Spring Open Rules\n\n1. A competitor is eligible if age is at least 16 and holds a licence.\n2. The score is 0.6 times the judges score plus 0.4 times the technical score.\n3. Competitors are ranked by score, highest first. Equal scores are separated by the higher judges score. Competitors equal on both share the same position, and the next position after a shared position advances by the number of competitors sharing it (for example 1, 1, 3).\n4. A competitor qualifies if the score is at least 7.7.\n",
+  "elements": [
+    {
+      "id": 0,
+      "kind": "heading",
+      "level": 1,
+      "label": null,
+      "start": 0,
+      "end": 19,
+      "line": 1,
+      "column": 1,
+      "parent": null
+    },
+    {
+      "id": 1,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 21,
+      "end": 91,
+      "line": 3,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 2,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 92,
+      "end": 170,
+      "line": 4,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 3,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 171,
+      "end": 445,
+      "line": 5,
+      "column": 1,
+      "parent": 0
+    },
+    {
+      "id": 4,
+      "kind": "list_item",
+      "level": null,
+      "label": null,
+      "start": 446,
+      "end": 501,
+      "line": 6,
+      "column": 1,
+      "parent": 0
+    }
+  ]
+}

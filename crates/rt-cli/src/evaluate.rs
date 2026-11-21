@@ -33,13 +33,13 @@ use rt_data::{
     CompetitionData, DataLimits, ParticipantId, PublishedResult, PublishedValue, Question,
     TargetName,
 };
-use rt_engine::{evaluate, Comparison, Computed, Evaluation};
+use rt_engine::{evaluate, Comparison, Computed, DifferenceKind, Evaluation};
 use rt_explain::report::{
     build_proof_report, render_proof_human, render_proof_json, ApprovalFacts, ApprovalView,
     ProofInputs, PublishedFact,
 };
 use rt_explain::results::{serialize_results, ResultsInput};
-use rt_explain::{render_trace, verify_trace, Verification};
+use rt_explain::{classify_evaluation, render_trace, verify_trace, EvaluationClass, Verification};
 use rt_foundation::{
     Code, Diagnostic, DiagnosticState, ExitCode, InputId, InputLocation, Location,
     MAX_COMPETITION_DATA_BYTES, MAX_CONTAINER_DEPTH,
@@ -48,7 +48,7 @@ use rt_ir::Rulebook;
 use rt_ledger::{derive_statuses, effective_revisions, ApprovalLedger, RecordKind};
 use rt_numeric::to_canonical;
 use rt_srcmodel::SourceModels;
-use rt_trace::{Outcome, TraceValue};
+use rt_trace::TraceValue;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -378,13 +378,26 @@ fn published_facts(
         .collect()
 }
 
-/// One Warning `RT-EXE-0011` for each published value that differs.
+/// The catalogue code of one difference kind (one failure mode, one code).
+///
+/// Public so that a cross-crate test can compare it with the Explainer's
+/// table of kinds.
+pub fn difference_code(kind: DifferenceKind) -> Code {
+    match kind {
+        DifferenceKind::ValueDiffers => Code::PublishedResultDiffers,
+        DifferenceKind::TieBrokenWithoutDeclaredCriterion => Code::PublishedTieGroupSplit,
+        DifferenceKind::TieNotInComputedResult => Code::PublishedTieNotComputed,
+    }
+}
+
+/// One Warning for each published difference, coded by its kind.
 fn published_warnings(comparison: &Comparison, input: Option<&InputId>) -> Vec<Diagnostic> {
     comparison
         .differences
         .iter()
         .map(|d| {
-            let location = input.map_or(Location::None(Code::PublishedResultDiffers), |input| {
+            let code = difference_code(d.kind);
+            let location = input.map_or(Location::None(code), |input| {
                 Location::Input(InputLocation {
                     input: input.clone(),
                     line: None,
@@ -392,7 +405,7 @@ fn published_warnings(comparison: &Comparison, input: Option<&InputId>) -> Vec<D
                     field: Some(format!("entries[{}/{}]", d.participant, d.target)),
                 })
             });
-            Diagnostic::new(Code::PublishedResultDiffers, d.message.clone(), location)
+            Diagnostic::new(code, d.message.clone(), location)
         })
         .collect()
 }
@@ -429,7 +442,7 @@ pub(crate) fn run(args: &EvaluateArgs, fs: &dyn Fs) -> Finished {
         .map(|trace| verify_trace(trace, &loaded.sources))
         .collect();
     let (state, code) = classify(&evaluation, &verifications, &loaded);
-    if code == ExitCode::InvalidInput && state.as_slice().iter().any(is_question_fault) {
+    if code == ExitCode::InvalidInput && rt_explain::has_question_fault(&state) {
         // A Question the inputs cannot answer is invalid input: nothing is
         // written.
         return Finished {
@@ -512,10 +525,6 @@ pub(crate) fn run(args: &EvaluateArgs, fs: &dyn Fs) -> Finished {
     }
 }
 
-fn is_question_fault(d: &Diagnostic) -> bool {
-    d.code() == Code::QuestionInvalid
-}
-
 /// The Diagnostics to report and the exit code (see the module documentation).
 fn classify(
     evaluation: &Evaluation,
@@ -537,25 +546,11 @@ fn classify(
         state.push(d);
     }
     let state = state.sorted();
-    let invalid_question = evaluation
-        .diagnostics
-        .as_slice()
-        .iter()
-        .any(is_question_fault);
-    let indeterminate = evaluation.diagnostics.has_errors()
-        || evaluation
-            .outcomes
-            .iter()
-            .any(|o| matches!(o, Outcome::Indeterminate(_)));
-    let provenance = verifications.iter().any(|v| v.diagnostics().has_errors());
-    let code = if invalid_question {
-        ExitCode::InvalidInput
-    } else if indeterminate {
-        ExitCode::Indeterminate
-    } else if provenance {
-        ExitCode::InvalidInput
-    } else {
-        ExitCode::Success
-    };
+    let code =
+        match classify_evaluation(&evaluation.outcomes, &evaluation.diagnostics, verifications) {
+            EvaluationClass::InvalidInput => ExitCode::InvalidInput,
+            EvaluationClass::Indeterminate => ExitCode::Indeterminate,
+            EvaluationClass::Success => ExitCode::Success,
+        };
     (state, code)
 }

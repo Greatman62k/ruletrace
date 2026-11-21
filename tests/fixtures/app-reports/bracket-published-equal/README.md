@@ -1,0 +1,1 @@
+Published standings equal to the computed standings: p4, p2, p1, p3 at 1 to 4. No difference. In app-rules.md, rank.standing cites clause 3 (ranking) and score.weighted cites clause 2 (score). "Verified" in the report means the cited span resolves against a source with a matching hash, not that it proves the interpretation (Req 34.4).

@@ -1,6 +1,7 @@
 //! Req 29.3: Retry-After parsing and HTTP classification, with expected
 //! values derived by hand from the requirement text.
 
+use crate::proptest_floor::property_tests;
 use crate::{failure_from_http, parse_retry_after};
 use proptest::prelude::*;
 use rt_ai_adapter::{next_step, AttemptRecord, ProviderFailure, RetryPolicy, RetryStep, RetryStop};
@@ -137,7 +138,7 @@ fn parsed_header_value_is_bounded_by_the_deadline() {
     );
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     // Built from a number, so the expected value is not computed by parsing.

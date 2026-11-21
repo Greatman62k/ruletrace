@@ -2,6 +2,7 @@
 //! 28.17, 28.18). Expected codes, positions and exit codes are written by
 //! hand from the requirements.
 
+use crate::proptest_floor::property_tests;
 use crate::{load, Authorized, Consent, EnvReader, ProviderKind};
 use proptest::prelude::*;
 use rt_foundation::{
@@ -798,7 +799,7 @@ fn disabled_without_configuration_is_error_at_the_given_location() {
     assert_eq!(d.primary(), &at_command);
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     // Consent passes exactly when the two sets are equal.

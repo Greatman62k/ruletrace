@@ -53,3 +53,7 @@ pub fn sha256_of(bytes: &[u8]) -> Sha256Hex {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;

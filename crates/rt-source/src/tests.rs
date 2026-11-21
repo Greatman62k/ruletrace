@@ -1,4 +1,5 @@
 use super::*;
+use crate::proptest_floor::property_tests;
 use proptest::prelude::*;
 use rt_foundation::InputId;
 use rt_srcmodel::{default_load_limits, ElementKind};
@@ -301,7 +302,7 @@ fn alphabet() -> impl Strategy<Value = String> {
     .prop_map(|parts| parts.concat())
 }
 
-proptest! {
+property_tests! {
     /// **Validates: Requirements 1.2, 1.4, 1.7**
     #[test]
     fn any_utf8_text_ingests_deterministically_with_exact_spans(text in alphabet(), markdown in any::<bool>()) {

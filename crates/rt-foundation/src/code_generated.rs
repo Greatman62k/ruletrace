@@ -49,6 +49,8 @@ pub enum Code {
     CliOutputWriteFailed,
     /// `RT-CLI-0006`: Internal invariant violation
     InternalError,
+    /// `RT-CLI-0007`: `--lifeline-stdin`: standard input reached end of file or a non-recoverable read error, so the parent is taken as gone and the command stops (UD-44, design §11.18.6)
+    CliLifelineClosed,
     /// `RT-IR-0001`: Rule_IR is not valid RT-JSON
     IrSyntaxError,
     /// `RT-IR-0002`: Structural name not defined by the IR_Version
@@ -141,8 +143,12 @@ pub enum Code {
     DataMalformed,
     /// `RT-EXE-0010`: Question names an unknown target or participant
     QuestionInvalid,
-    /// `RT-EXE-0011`: Published result differs from computed Outcome
+    /// `RT-EXE-0011`: Published value differs from the computed value (kind value_differs)
     PublishedResultDiffers,
+    /// `RT-EXE-0012`: Published result gives members of one computed Tie_Group different positions (kind tie_broken_without_declared_criterion)
+    PublishedTieGroupSplit,
+    /// `RT-EXE-0013`: Published result ties participants that the computed result separates (kind tie_not_in_computed_result)
+    PublishedTieNotComputed,
     /// `RT-PRV-0001`: No Source_Model for the span's document
     ProvDocumentMissing,
     /// `RT-PRV-0002`: Recorded hash differs from Source_Model hash
@@ -315,7 +321,7 @@ pub enum Code {
 
 impl Code {
     /// Every code, in catalogue order.
-    pub const ALL: [Code; 152] = [
+    pub const ALL: [Code; 155] = [
         Code::DiagnosticStateContradiction,
         Code::DiagnosticStateBothFlags,
         Code::LifecycleFlagContradiction,
@@ -337,6 +343,7 @@ impl Code {
         Code::CliArgumentInvalid,
         Code::CliOutputWriteFailed,
         Code::InternalError,
+        Code::CliLifelineClosed,
         Code::IrSyntaxError,
         Code::IrUnknownField,
         Code::IrVersionUnsupported,
@@ -384,6 +391,8 @@ impl Code {
         Code::DataMalformed,
         Code::QuestionInvalid,
         Code::PublishedResultDiffers,
+        Code::PublishedTieGroupSplit,
+        Code::PublishedTieNotComputed,
         Code::ProvDocumentMissing,
         Code::ProvHashMismatch,
         Code::ProvSpanOutOfRange,
@@ -495,6 +504,7 @@ impl Code {
             Self::CliArgumentInvalid => "RT-CLI-0004",
             Self::CliOutputWriteFailed => "RT-CLI-0005",
             Self::InternalError => "RT-CLI-0006",
+            Self::CliLifelineClosed => "RT-CLI-0007",
             Self::IrSyntaxError => "RT-IR-0001",
             Self::IrUnknownField => "RT-IR-0002",
             Self::IrVersionUnsupported => "RT-IR-0003",
@@ -542,6 +552,8 @@ impl Code {
             Self::DataMalformed => "RT-EXE-0009",
             Self::QuestionInvalid => "RT-EXE-0010",
             Self::PublishedResultDiffers => "RT-EXE-0011",
+            Self::PublishedTieGroupSplit => "RT-EXE-0012",
+            Self::PublishedTieNotComputed => "RT-EXE-0013",
             Self::ProvDocumentMissing => "RT-PRV-0001",
             Self::ProvHashMismatch => "RT-PRV-0002",
             Self::ProvSpanOutOfRange => "RT-PRV-0003",
@@ -654,6 +666,7 @@ impl Code {
             Self::CliArgumentInvalid => "CLI_ARGUMENT_INVALID",
             Self::CliOutputWriteFailed => "CLI_OUTPUT_WRITE_FAILED",
             Self::InternalError => "INTERNAL_ERROR",
+            Self::CliLifelineClosed => "CLI_LIFELINE_CLOSED",
             Self::IrSyntaxError => "IR_SYNTAX_ERROR",
             Self::IrUnknownField => "IR_UNKNOWN_FIELD",
             Self::IrVersionUnsupported => "IR_VERSION_UNSUPPORTED",
@@ -701,6 +714,8 @@ impl Code {
             Self::DataMalformed => "DATA_MALFORMED",
             Self::QuestionInvalid => "QUESTION_INVALID",
             Self::PublishedResultDiffers => "PUBLISHED_RESULT_DIFFERS",
+            Self::PublishedTieGroupSplit => "PUBLISHED_TIE_GROUP_SPLIT",
+            Self::PublishedTieNotComputed => "PUBLISHED_TIE_NOT_COMPUTED",
             Self::ProvDocumentMissing => "PROV_DOCUMENT_MISSING",
             Self::ProvHashMismatch => "PROV_HASH_MISMATCH",
             Self::ProvSpanOutOfRange => "PROV_SPAN_OUT_OF_RANGE",
@@ -813,6 +828,7 @@ impl Code {
             Self::CliArgumentInvalid => Severity::Error,
             Self::CliOutputWriteFailed => Severity::Error,
             Self::InternalError => Severity::Error,
+            Self::CliLifelineClosed => Severity::Error,
             Self::IrSyntaxError => Severity::Error,
             Self::IrUnknownField => Severity::Unsupported,
             Self::IrVersionUnsupported => Severity::Unsupported,
@@ -860,6 +876,8 @@ impl Code {
             Self::DataMalformed => Severity::Error,
             Self::QuestionInvalid => Severity::Error,
             Self::PublishedResultDiffers => Severity::Warning,
+            Self::PublishedTieGroupSplit => Severity::Warning,
+            Self::PublishedTieNotComputed => Severity::Warning,
             Self::ProvDocumentMissing => Severity::Error,
             Self::ProvHashMismatch => Severity::Error,
             Self::ProvSpanOutOfRange => Severity::Error,
@@ -972,6 +990,7 @@ impl Code {
             Self::CliArgumentInvalid => ExitCode::InvalidInput,
             Self::CliOutputWriteFailed => ExitCode::Internal,
             Self::InternalError => ExitCode::Internal,
+            Self::CliLifelineClosed => ExitCode::Internal,
             Self::IrSyntaxError => ExitCode::InvalidInput,
             Self::IrUnknownField => ExitCode::InvalidInput,
             Self::IrVersionUnsupported => ExitCode::InvalidInput,
@@ -1019,6 +1038,8 @@ impl Code {
             Self::DataMalformed => ExitCode::InvalidInput,
             Self::QuestionInvalid => ExitCode::InvalidInput,
             Self::PublishedResultDiffers => ExitCode::Success,
+            Self::PublishedTieGroupSplit => ExitCode::Success,
+            Self::PublishedTieNotComputed => ExitCode::Success,
             Self::ProvDocumentMissing => ExitCode::InvalidInput,
             Self::ProvHashMismatch => ExitCode::InvalidInput,
             Self::ProvSpanOutOfRange => ExitCode::InvalidInput,
@@ -1131,6 +1152,7 @@ impl Code {
             "RT-CLI-0004" => Some(Self::CliArgumentInvalid),
             "RT-CLI-0005" => Some(Self::CliOutputWriteFailed),
             "RT-CLI-0006" => Some(Self::InternalError),
+            "RT-CLI-0007" => Some(Self::CliLifelineClosed),
             "RT-IR-0001" => Some(Self::IrSyntaxError),
             "RT-IR-0002" => Some(Self::IrUnknownField),
             "RT-IR-0003" => Some(Self::IrVersionUnsupported),
@@ -1178,6 +1200,8 @@ impl Code {
             "RT-EXE-0009" => Some(Self::DataMalformed),
             "RT-EXE-0010" => Some(Self::QuestionInvalid),
             "RT-EXE-0011" => Some(Self::PublishedResultDiffers),
+            "RT-EXE-0012" => Some(Self::PublishedTieGroupSplit),
+            "RT-EXE-0013" => Some(Self::PublishedTieNotComputed),
             "RT-PRV-0001" => Some(Self::ProvDocumentMissing),
             "RT-PRV-0002" => Some(Self::ProvHashMismatch),
             "RT-PRV-0003" => Some(Self::ProvSpanOutOfRange),
@@ -1291,6 +1315,7 @@ impl Code {
             "CLI_ARGUMENT_INVALID" => Some(Self::CliArgumentInvalid),
             "CLI_OUTPUT_WRITE_FAILED" => Some(Self::CliOutputWriteFailed),
             "INTERNAL_ERROR" => Some(Self::InternalError),
+            "CLI_LIFELINE_CLOSED" => Some(Self::CliLifelineClosed),
             "IR_SYNTAX_ERROR" => Some(Self::IrSyntaxError),
             "IR_UNKNOWN_FIELD" => Some(Self::IrUnknownField),
             "IR_VERSION_UNSUPPORTED" => Some(Self::IrVersionUnsupported),
@@ -1338,6 +1363,8 @@ impl Code {
             "DATA_MALFORMED" => Some(Self::DataMalformed),
             "QUESTION_INVALID" => Some(Self::QuestionInvalid),
             "PUBLISHED_RESULT_DIFFERS" => Some(Self::PublishedResultDiffers),
+            "PUBLISHED_TIE_GROUP_SPLIT" => Some(Self::PublishedTieGroupSplit),
+            "PUBLISHED_TIE_NOT_COMPUTED" => Some(Self::PublishedTieNotComputed),
             "PROV_DOCUMENT_MISSING" => Some(Self::ProvDocumentMissing),
             "PROV_HASH_MISMATCH" => Some(Self::ProvHashMismatch),
             "PROV_SPAN_OUT_OF_RANGE" => Some(Self::ProvSpanOutOfRange),

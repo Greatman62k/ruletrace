@@ -76,7 +76,10 @@ fn bin_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
         .map_err(Into::into)
 }
 
+static BUILD_CALLS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
 fn build_bin_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    BUILD_CALLS.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     if let Some(dir) = std::env::var_os("RT_BIN_DIR") {
         return Ok(PathBuf::from(dir));
     }
@@ -579,5 +582,16 @@ fn a_changed_rule_is_refused_with_the_original_content_hash() -> TestResult {
     let c = run_owned("approve-changed", &words, &bin, work);
     assert_eq!(c.exit, 3, "{}", text(&c));
     assert!(text(&c).contains("RT-APR-0203"), "{}", text(&c));
+    Ok(())
+}
+
+// However many tests of this binary ask for the executables, the guard
+// keeps the nested build to one call per test process.
+#[test]
+fn the_executables_are_built_once_per_test_process() -> TestResult {
+    let first = bin_dir()?;
+    let second = bin_dir()?;
+    assert_eq!(first, second);
+    assert_eq!(BUILD_CALLS.load(std::sync::atomic::Ordering::SeqCst), 1);
     Ok(())
 }

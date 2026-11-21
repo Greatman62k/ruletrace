@@ -1,0 +1,11 @@
+# app-reports provenance
+
+- Purpose: golden Prize_Check and Bracket_Check reports of task 9.16 (Req 31.14, 31.15, 31.16, 32.7), one directory per case, compared byte for byte by `crates/rt-tests-core/tests/app_report_goldens.rs`.
+- Documents:
+  - Five cases (`prize-eligibility`, `prize-weighted-score`, `prize-indeterminate-missing-value`, `prize-published-equal`, `prize-published-differs`) reference the committed `tests/fixtures/slice-basic` rulebook and source model through `compiled.ref` and `source-model.ref`; see `slice-basic/PROVENANCE.md`.
+  - Six cases (`prize-ranking-tie-group`, `bracket-standings-tie-group`, `bracket-standings-indeterminate`, `bracket-published-equal`, `bracket-published-breaks-tie`, `bracket-qualification-weighted-score`) carry their own `app-rules.md` (502 bytes, SHA-256 `af117b435d300f2d75965ef72a042da3dc56094bc765f41d58fd79091eba8c58`), `source-model.json` and `compiled.json`. `app-rules.md` is defined in `crates/rt-tests-core/tests/support/app_source.rs`; clause 3 states the ranking and clause 4 the qualification threshold, so that each cited rule has a clause that states it.
+- Source: original text written for RuleTrace (clauses 1 and 2 as in `slice-basic`, clauses 3 and 4 added for these cases).
+- Permission: authored by the project; free to redistribute under the repository terms. It contains no third-party text.
+- Rulebooks, ledgers, data: hand-authored for this repository. Participants and values are synthetic. Every rule revision of the six `app-rules.md` cases was approved with `ruletrace review approve` (reviewer `Test Reviewer`, fixed time) and compiled with `ruletrace validate` and `ruletrace compile`; no ledger record was written by hand.
+- Expected files: written once by `RT_APP_GOLDEN_BLESS=<this directory> cargo test -p rt-tests-core --test app_report_goldens` under the user's approval `7aa824933ccc` of 2026-11-18, byte-identical to the reviewed candidate set v3 (reviews `docs/reviews/2026-11-18-review-corr3-366a80e.md`, `2026-11-18-review-f1f2-3ed212c.md`, `2026-11-18-review-n1n2-3ed212c.md`).
+- Known interim limits: the `statements:` header is empty until task 11.9, which re-blesses all 11 cases; the Tie_Group-at-threshold case stays deferred with task 9.3.

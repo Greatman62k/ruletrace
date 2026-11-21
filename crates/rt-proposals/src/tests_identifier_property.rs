@@ -5,6 +5,7 @@
 //! `rt_hash::sha256`. Golden digests come from the external `sha256sum`.
 
 use crate::proposal_id;
+use crate::proptest_floor::property_tests;
 use proptest::prelude::*;
 use rt_hash::{sha256, Sha256Hex};
 
@@ -42,7 +43,7 @@ fn index() -> impl Strategy<Value = usize> {
     prop_oneof![0usize..40, 0usize..100_000, Just(usize::MAX)]
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     #[test]

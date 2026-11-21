@@ -1,0 +1,28 @@
+# format: ruletrace-proptest-below-floor v1
+# Property tests whose configured case count is below the 256 of Req 20.2.
+# Each line: below <file> <test> cases <n>. The count is the one that was configured
+# when the case floor was enforced (task 9.11 follow-up). A listed test still cannot be
+# lowered by PROPTEST_CASES. Every entry is a Req 20.2 gap awaiting a user decision;
+# raising the count to 256 means switching the block to proptest_config and deleting the line.
+# Correction (review floor-b319e83 F2): this list holds 21 tests in 13 blocks (15 at 128, 5 at 64, 1 at 24); the commit message of b319e83 said 22.
+below crates/rt-demo/tests/coverage_partition.rs every_clause_is_classified_exactly_once cases 128
+below crates/rt-ir/src/hash_invariance_tests.rs non_content_changes_leave_hashes_unchanged cases 128
+below crates/rt-ir/src/hash_invariance_tests.rs in_memory_origin_and_position_changes_leave_hashes_unchanged cases 128
+below crates/rt-ir/src/roundtrip_tests.rs rulebook_serialization_round_trip cases 128
+below crates/rt-ir/src/roundtrip_tests.rs sorted_rulebook_round_trips_exactly cases 128
+below crates/rt-ledger/tests/ledger_properties.rs round_trip_and_print_twice cases 128
+below crates/rt-ledger/tests/ledger_properties.rs any_one_byte_change_is_detected_at_its_record cases 128
+below crates/rt-ledger/tests/ledger_properties.rs removal_of_a_record_before_the_last_is_a_sequence_error cases 128
+below crates/rt-ledger/tests/ledger_properties.rs reordering_is_a_sequence_error_at_the_first_moved_record cases 128
+below crates/rt-ledger/tests/ledger_properties.rs insertion_of_a_copied_record_is_detected cases 128
+below crates/rt-ledger/tests/status_derivation_properties.rs statuses_effective_and_unresolved_follow_the_oracle cases 128
+below crates/rt-ledger/tests/status_derivation_properties.rs no_other_input_changes_the_statuses cases 128
+below crates/rt-tests-core/tests/artifact_hash_invariance.rs origin_and_ledger_differences_leave_artifact_bytes_equal cases 64
+below crates/rt-tests-core/tests/compiled_set_properties.rs compiled_set_equals_the_effective_set cases 128
+below crates/rt-tests-core/tests/exit_code_stage_order.rs exit_code_is_that_of_the_earliest_failing_stage cases 128
+below crates/rt-tests-core/tests/isolation.rs evaluation_of_two_rulebooks_equals_each_solitary_evaluation cases 128
+below crates/rt-tests-core/tests/locations_never_fabricated.rs locations_come_from_the_rulebook_and_are_preserved cases 64
+below crates/rt-tests-core/tests/proof_report.rs report_is_complete_ordered_and_replayable cases 64
+below crates/rt-tests-core/tests/proof_report.rs removing_or_altering_a_step_fails_the_replay cases 64
+below crates/rt-tests-core/tests/stage_determinism.rs every_stage_output_is_independent_of_order_thread_and_other_rulebooks cases 24
+below crates/rt-tests-core/tests/unresolved_blocks_compile.rs unresolved_or_missing_effective_revisions_block_compilation cases 64

@@ -11,6 +11,7 @@
 //! **Validates: Requirements 3.10, 3.11, 4.5, 4.6**
 
 use super::*;
+use crate::proptest_floor::property_tests;
 use proptest::collection::vec;
 use proptest::prelude::*;
 use rt_foundation::{DocumentId, InputId, RevisionNumber, RuleId};
@@ -487,8 +488,8 @@ fn rulebook() -> impl Strategy<Value = Rulebook> {
 
 // ---- properties ----
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(128))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(128))]
 
     /// **Validates: Requirements 3.10, 3.11, 4.5, 4.6**
     #[test]

@@ -17,7 +17,10 @@
     missing_docs
 )]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_compiled::{
     CType, CompiledBody, CompiledDocument, CompiledInput, CompiledNode, CompiledParts,
     CompiledRule, CompiledRulebook, CompiledSpan, CompiledTieBreaker, InputIdx, NodeIdx, NodeKind,
@@ -245,7 +248,7 @@ fn check(scores: &Scores, key: Direction, tie: Option<Direction>) -> Result<(), 
     Ok(())
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     /// Feature: ruletrace-compiler, Property 23: Ranking completeness and

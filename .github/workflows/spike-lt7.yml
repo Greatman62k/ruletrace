@@ -1,0 +1,75 @@
+# Scratch spikes for LT-6 and LT-7 (task 13.9, design §11.18.5 and §11.18.6).
+# Separate from the required `ci` workflow, so it cannot affect `ci-gate`. It runs on a
+# pull request that touches the spikes (workflow_dispatch alone needs the file on the
+# default branch, which stays at the M2 commit). Runner labels are pinned per UD-15.
+# No secrets, no network beyond the runner's own loopback and the toolchain download.
+name: spike-lt7
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "spikes/**"
+      - ".github/workflows/spike-lt7.yml"
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: never
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  spikes:
+    name: spikes (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2022]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install pinned toolchain
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal --component rustfmt --component clippy
+          rustup default "$channel"
+      - name: System information
+        run: |
+          mkdir -p ci-output
+          {
+            date -u +%Y-%m-%dT%H:%M:%SZ
+            uname -a
+            rustc --version
+            cargo --version
+          } 2>&1 | tee ci-output/system.log
+      - name: cargo fmt --check
+        run: |
+          set -o pipefail
+          for dir in lt6-basic-auth lt7-lifeline; do
+            cargo fmt --manifest-path spikes/$dir/Cargo.toml --check 2>&1 | tee -a ci-output/fmt.log
+          done
+      - name: cargo clippy
+        run: |
+          set -o pipefail
+          for dir in lt6-basic-auth lt7-lifeline; do
+            cargo clippy --manifest-path spikes/$dir/Cargo.toml --locked --all-targets -- -D warnings 2>&1 | tee -a ci-output/clippy.log
+          done
+      - name: cargo test lt6-basic-auth
+        run: |
+          set -o pipefail
+          cargo test --manifest-path spikes/lt6-basic-auth/Cargo.toml --locked -- --nocapture 2>&1 | tee ci-output/test-lt6.log
+      - name: cargo test lt7-lifeline
+        run: |
+          set -o pipefail
+          cargo test --manifest-path spikes/lt7-lifeline/Cargo.toml --locked -- --nocapture --test-threads=1 2>&1 | tee ci-output/test-lt7.log
+      - name: Keep test output
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: spike-lt7-${{ matrix.os }}
+          path: ci-output/
+          if-no-files-found: warn

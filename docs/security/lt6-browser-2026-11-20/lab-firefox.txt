@@ -1,0 +1,7 @@
+2026-11-20T16:24:54.775Z lab peer=127.0.0.1:48450 GET / host=127.0.0.1:18080 origin=- authorization=absent cookie=absent -> 401 Unauthorized
+2026-11-20T16:26:28.197Z lab peer=127.0.0.1:43816 GET / host=127.0.0.1:18080 origin=- authorization=present cookie=absent -> 200 Ok
+2026-11-20T16:26:28.473Z lab peer=127.0.0.1:43822 GET /favicon.ico host=127.0.0.1:18080 origin=- authorization=present cookie=absent -> 404 Other
+2026-11-20T16:26:48.927Z lab peer=127.0.0.1:46820 POST /submit host=127.0.0.1:18080 origin=http://127.0.0.1:18080 authorization=present cookie=absent -> 200 Ok
+2026-11-20T16:28:45.833Z lab peer=127.0.0.1:49324 POST /submit host=127.0.0.1:18080 origin=http://127.0.0.1:18081 authorization=present cookie=absent -> 403 BadOrigin
+2026-11-20T16:29:53.568Z lab peer=127.0.0.1:54794 GET / host=127.0.0.1:18080 origin=- authorization=present cookie=absent -> 200 Ok
+2026-11-20T16:30:37.343Z lab peer=127.0.0.1:43560 POST /submit host=127.0.0.1:18080 origin=http://127.0.0.1:18080 authorization=present cookie=absent -> 200 Ok

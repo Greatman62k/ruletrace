@@ -14,6 +14,8 @@ mod fault_tests;
 mod lock_required_tests;
 #[path = "tests_pipeline.rs"]
 mod pipeline_tests;
+#[path = "tests_published_kinds.rs"]
+mod published_kinds_tests;
 #[path = "tests_reader_window.rs"]
 mod reader_window_tests;
 #[path = "tests_review_adopt.rs"]

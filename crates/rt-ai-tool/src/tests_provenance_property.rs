@@ -3,6 +3,7 @@
 //! and applies the checks in the order of the requirement.
 
 use crate::plan::ClauseId;
+use crate::proptest_floor::property_tests;
 use crate::provenance::verify_provenance;
 use crate::tests_provenance::{doc, escaped, model};
 use crate::tests_response::{parse, rid, wrap, SHA};
@@ -200,7 +201,7 @@ fn case() -> impl Strategy<Value = Case> {
         })
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(512))]
 
     #[test]

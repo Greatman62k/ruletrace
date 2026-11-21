@@ -20,7 +20,10 @@
     missing_docs
 )]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_compiled::{
     CType, CollectionIdx, CompiledBody, CompiledCollection, CompiledDocument, CompiledField,
     CompiledInput, CompiledLiteral, CompiledNode, CompiledParts, CompiledPrecedence, CompiledRule,
@@ -632,7 +635,7 @@ fn check_all(people: &[Person]) {
     }
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     /// Feature: ruletrace-compiler, Property 25: Trace completeness and replay

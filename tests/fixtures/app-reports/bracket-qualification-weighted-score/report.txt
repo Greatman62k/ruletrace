@@ -1,0 +1,47 @@
+RuleTrace bracket-check report   format ruletrace-app-report v1
+rulebook sha256:85f40326e2571d22b8b8b027d02e28dd4cb3c3701a33a8dbf657e5785a4f82de
+input participants sha256:faf87de810a2f0727fa557fbe0bddd15d4c22309b7740fd1f6e5a382511f7bcf
+provenance: verified (4 of 4 traces)
+statements: 
+data: synthetic
+ranking: Standings are calculated solely from the declared ranking rules; this report does not apply eligibility filtering.
+
+QUALIFICATION
+  p1  qualified  false
+      input read: judges (p1) = 8 [number]
+      input read: technical (p1) = 7 [number]
+      trace #0  verified  rules elig.qual@1, score.weighted@1
+      source elig.qual@1 app-rules.md 446..501 line 6:1
+        "4. A competitor qualifies if the score is at least 7.7."
+      source score.weighted@1 app-rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  p2  qualified  true
+      input read: judges (p2) = 7 [number]
+      input read: technical (p2) = 9 [number]
+      trace #1  verified  rules elig.qual@1, score.weighted@1
+      source elig.qual@1 app-rules.md 446..501 line 6:1
+        "4. A competitor qualifies if the score is at least 7.7."
+      source score.weighted@1 app-rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  p3  qualified  false
+      input read: judges (p3) = 6 [number]
+      input read: technical (p3) = 6 [number]
+      trace #2  verified  rules elig.qual@1, score.weighted@1
+      source elig.qual@1 app-rules.md 446..501 line 6:1
+        "4. A competitor qualifies if the score is at least 7.7."
+      source score.weighted@1 app-rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+  p4  qualified  true
+      input read: judges (p4) = 9 [number]
+      input read: technical (p4) = 6 [number]
+      trace #3  verified  rules elig.qual@1, score.weighted@1
+      source elig.qual@1 app-rules.md 446..501 line 6:1
+        "4. A competitor qualifies if the score is at least 7.7."
+      source score.weighted@1 app-rules.md 92..170 line 4:1
+        "2. The score is 0.6 times the judges score plus 0.4 times the technical score."
+
+PUBLISHED CONSISTENCY
+  not supplied
+
+DIAGNOSTICS (evaluation and provenance; published-result differences are listed under PUBLISHED CONSISTENCY; warnings that `ruletrace evaluate` writes to standard error are not part of this section)
+  none

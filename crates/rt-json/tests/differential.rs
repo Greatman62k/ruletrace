@@ -20,7 +20,10 @@
     clippy::indexing_slicing
 )]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_foundation::{Code, InputId};
 use rt_json::{parse, write_compact, write_pretty, Kind, ParseLimits, Position, Value};
 use serde_json::Value as Oracle;
@@ -261,7 +264,7 @@ fn mutate(mut bytes: Vec<u8>, m: &Mutation) -> Vec<u8> {
     bytes
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(CASES))]
 
     /// Every generated valid document is accepted by both parsers and decodes

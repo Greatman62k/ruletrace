@@ -6,7 +6,7 @@
 //! members are ignored.
 
 use crate::edges::{matches_any, Class, EdgeList};
-use crate::metadata::Metadata;
+use crate::metadata::{DepKind, Metadata};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::fmt;
 
@@ -39,6 +39,12 @@ pub enum Rule {
     ExternalNotAllowed,
     /// A network or AI crate in a resolved tree (`check-tree`).
     TreeForbidden,
+    /// An application or Laboratory package depends on a crate outside the
+    /// workspace (`check-app-layers`).
+    AppExternal,
+    /// An application or Laboratory package reaches a crate that its allowed
+    /// dependencies do not reach (`check-app-layers`).
+    AppTransitive,
 }
 
 impl Rule {
@@ -59,6 +65,8 @@ impl Rule {
             Self::ForbiddenExternal => "forbid-external",
             Self::ExternalNotAllowed => "external-not-allowed",
             Self::TreeForbidden => "tree-forbidden",
+            Self::AppExternal => "app-external",
+            Self::AppTransitive => "app-transitive",
         }
     }
 }
@@ -280,6 +288,88 @@ pub fn check_graph(list: &EdgeList, md: &Metadata) -> Vec<Finding> {
     }
     out.sort_by(|a, b| (a.rule, &a.message).cmp(&(b.rule, &b.message)));
     out
+}
+
+/// The dependency rules for the packages of class app and lab (Req 24.12),
+/// as `check-app-layers` applies them. They reuse the edge rules of
+/// [`check_graph`] and add two: an application depends on no crate outside the
+/// workspace, and everything it reaches is reached by its allowed direct
+/// dependencies in `tools/allowed-edges.v1`.
+#[must_use]
+pub fn check_app_edges(list: &EdgeList, md: &Metadata) -> Vec<Finding> {
+    let mut out = Vec::new();
+    let adj = member_adjacency(md);
+    let layers = || {
+        list.crates
+            .iter()
+            .filter(|(_, e)| matches!(e.class, Class::App | Class::Lab))
+            .filter(|(n, _)| md.members.contains_key(*n))
+    };
+    for (from, entry) in layers() {
+        let deps = md.members.get(from).map(Vec::as_slice).unwrap_or_default();
+        for dep in deps {
+            let to = dep.name.as_str();
+            if md.members.contains_key(to) {
+                check_edge(list, from, to, Some(entry.class), &mut out);
+                if !entry.deps.contains(to) {
+                    out.push(Finding::new(
+                        Rule::EdgeNotAllowed,
+                        format!("edge {from} -> {to} is not in tools/allowed-edges.v1"),
+                    ));
+                }
+            } else {
+                check_external(list, from, to, &mut out);
+                if dep.kind != DepKind::Dev {
+                    out.push(Finding::new(
+                        Rule::AppExternal,
+                        format!("crate {from} depends on external crate {to}"),
+                    ));
+                }
+            }
+        }
+        let parents = reach(&adj, from, &|_| false);
+        for rule in list
+            .forbid_transitive
+            .iter()
+            .filter(|r| matches_any(&r.from, from))
+        {
+            for to in parents.keys().filter(|n| matches_any(&rule.to, n)) {
+                out.push(Finding::new(
+                    Rule::ForbiddenTransitive,
+                    format!(
+                        "crate {from} depends on forbidden crate {to} transitively: {}",
+                        path_to(&parents, from, to)
+                    ),
+                ));
+            }
+        }
+        let permitted = listed_closure(list, &entry.deps);
+        for to in parents.keys().filter(|n| !permitted.contains(*n)) {
+            out.push(Finding::new(
+                Rule::AppTransitive,
+                format!(
+                    "crate {from} reaches {to}, which its allowed dependencies do not reach: {}",
+                    path_to(&parents, from, to)
+                ),
+            ));
+        }
+    }
+    out.sort_by(|a, b| (a.rule, &a.message).cmp(&(b.rule, &b.message)));
+    out.dedup();
+    out
+}
+
+/// The crates reachable from `roots` through the allowed dependencies of the
+/// list.
+fn listed_closure(list: &EdgeList, roots: &BTreeSet<String>) -> BTreeSet<String> {
+    let mut seen: BTreeSet<String> = BTreeSet::new();
+    let mut queue: VecDeque<&String> = roots.iter().collect();
+    while let Some(name) = queue.pop_front() {
+        if seen.insert(name.clone()) {
+            queue.extend(list.crates.get(name).into_iter().flat_map(|e| &e.deps));
+        }
+    }
+    seen
 }
 
 fn check_edge(
@@ -605,6 +695,52 @@ external sha2 allowed-in rt-hash
             .iter()
             .any(|f| f.rule == Rule::ForbiddenClass
                 && f.message.contains("rt-json -> rt-ai-adapter")));
+    }
+
+    // Req 15.5: the engine must not depend on an application crate. Either
+    // the class rule or the exact edge list alone must catch it.
+    #[test]
+    fn engine_depending_on_application_fails_by_class_and_edge_list() {
+        let (g, _) = run(
+            base(),
+            |m| {
+                m.push(("prize-check", vec![("rt-foundation", "")]));
+                if let Some(e) = m.iter_mut().find(|(n, _)| *n == "rt-engine") {
+                    e.1.push(("prize-check", ""));
+                }
+            },
+            SHA,
+        );
+        assert_eq!(
+            g,
+            vec![
+                Finding::new(
+                    Rule::EdgeNotAllowed,
+                    "edge rt-engine -> prize-check is not in tools/allowed-edges.v1".to_string()
+                ),
+                Finding::new(
+                    Rule::ForbiddenClass,
+                    "edge rt-engine -> prize-check is forbidden: class core must not depend on class app"
+                        .to_string()
+                ),
+            ]
+        );
+    }
+
+    // Req 15.5 on the committed list: the class rule must stay, and the
+    // engine's own line must name no application crate.
+    #[test]
+    fn committed_list_keeps_engine_independent_of_applications() {
+        let real = edges::parse(include_str!("../../../tools/allowed-edges.v1")).unwrap();
+        assert!(real.forbid_class.contains(&(Class::Core, Class::App)));
+        let engine = real.crates.get("rt-engine").map(|e| e.deps.clone());
+        let apps: Vec<&String> = real.of_class(Class::App).collect();
+        assert_eq!(
+            apps,
+            vec![&"bracket-check".to_string(), &"prize-check".to_string()]
+        );
+        let engine = engine.unwrap_or_default();
+        assert!(apps.iter().all(|a| !engine.contains(a.as_str())));
     }
 
     #[test]

@@ -11,6 +11,7 @@
 
 pub mod args;
 pub mod io;
+pub mod lifeline;
 pub mod render;
 
 mod commit;
@@ -23,6 +24,7 @@ mod validate;
 use rt_foundation::{Diagnostic, DiagnosticState, ExitCode};
 use std::ffi::OsString;
 
+pub use evaluate::difference_code;
 pub use io::{Fs, StdFs};
 
 /// What the process does after a command: bytes for standard output, text for
@@ -122,3 +124,5 @@ fn failure(problems: Vec<Diagnostic>) -> Outcome {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_lifeline;

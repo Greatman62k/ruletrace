@@ -30,3 +30,7 @@ pub use summary::{describe_evaluate, describe_ledger, diagnostic_codes};
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;

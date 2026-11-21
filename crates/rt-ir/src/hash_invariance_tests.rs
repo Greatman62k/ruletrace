@@ -13,6 +13,7 @@
 //! **Validates: Requirements 3.13, 25.3, 25.9**
 
 use super::*;
+use crate::proptest_floor::property_tests;
 use proptest::collection::vec;
 use proptest::prelude::*;
 use rt_foundation::InputId;
@@ -263,8 +264,8 @@ fn canonical_noise() -> Noise {
     }
 }
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(128))]
+property_tests! {
+    #![below_floor_config(ProptestConfig::with_cases(128))]
 
     /// Origin, span line and column, member order, other rules, unreferenced
     /// documents and document order never change either hash.

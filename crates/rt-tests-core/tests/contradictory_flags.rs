@@ -18,7 +18,10 @@
 
 #![allow(clippy::expect_used, clippy::indexing_slicing)]
 
+#[path = "../../../tools/proptest_floor.rs"]
+mod proptest_floor;
 use proptest::prelude::*;
+use proptest_floor::property_tests;
 use rt_foundation::InputId;
 use rt_hash::sha256;
 use rt_json::ParseLimits;
@@ -59,7 +62,7 @@ fn ledger_lines(n: usize) -> Vec<String> {
     lines
 }
 
-proptest! {
+property_tests! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
     #[test]
